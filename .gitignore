@@ -1,0 +1,10 @@
+# Mac OS X
+*.DS_Store
+
+# Editors
+*.sw[poj]
+*~
+
+/dist
+/*.egg-info
+*.py[c,o]

@@ -6,5 +6,6 @@
 *~
 
 /dist
+/build
 /*.egg-info
 *.py[c,o]

@@ -15,12 +15,30 @@ import signal
 import sys
 import thread
 import time
+import pkg_resources
 
 import pexpect
 import psutil
 
 
-logger = logging.getLogger('awx.main.utils.expect')
+logger = logging.getLogger('ansible_runner.run')
+
+
+class OutputWriter(object):
+
+    def __init__(self, handle):
+        self.handle = handle
+
+    def flush(self):
+        pass
+
+    def write(self, data):
+        sys.stdout.write(data)
+        self.handle.write(data)
+
+    def close(self):
+        sys.stdout("Process Finished")
+        self.handle.close()
 
 
 def args2cmdline(*args):
@@ -42,12 +60,34 @@ def wrap_args_with_ssh_agent(args, ssh_key_path, ssh_auth_sock=None, silence_ssh
     return args
 
 
+def generate_ansible_command(hosts_or_inv_path, limit=None, playbook=None, module=None, module_args=None):
+    base_command = os.getenv("RUNNER_BASE_COMMAND", "ansible-playbook")
+    exec_list = [base_command]
+    exec_list.append("-i")
+    exec_list.append(hosts_or_inv_path)
+    if limit is not None:
+        exec_list.append("--limit")
+        exec_list.append(limit)
+    # NOTE: Temporarily hard coded
+    exec_list.append("-c")
+    exec_list.append("local")
+    # Other parameters
+    if base_command == 'ansible-playbook':
+        exec_list.append(playbook)
+    elif base_command == 'ansible':
+        exec_list.append("-m")
+        exec_list.append(module)
+        if module_args is not None:
+            exec_list.append("-a")
+            exec_list.append(module_args)
+    return exec_list
+
 def open_fifo_write(path, data):
     '''open_fifo_write opens the fifo named pipe in a new thread.
     This blocks the thread until an external process (such as ssh-agent)
     reads data from the pipe.
     '''
-    os.mkfifo(path, 0o600)
+    os.mkfifo(path, 0600)
     thread.start_new_thread(lambda p, d: open(p, 'w').write(d), (path, data))
 
 
@@ -145,7 +185,9 @@ def run_pexpect(args, cwd, env, logfile,
         return 'failed', child.exitstatus
 
 
-def run_isolated_job(private_data_dir, secrets, logfile=sys.stdout):
+def run_isolated_job(private_data_dir, secrets, logfile=sys.stdout,
+                     inventory_hosts=None, limit=None, playbook=None,
+                     module=None, module_args=None):
     '''
     Launch `ansible-playbook`, executing a job packaged by
     `build_isolated_job_data`.
@@ -162,8 +204,15 @@ def run_isolated_job(private_data_dir, secrets, logfile=sys.stdout):
 
     Returns a tuple (status, return_code) i.e., `('successful', 0)`
     '''
-    with open(os.path.join(private_data_dir, 'args'), 'r') as args:
-        args = json.load(args)
+    if os.path.exists(os.path.join(private_data_dir, 'args')):
+        with open(os.path.join(private_data_dir, 'args'), 'r') as args:
+            args = json.load(args)
+    else:
+        args = generate_ansible_command(inventory_hosts,
+                                        limit=limit,
+                                        playbook=playbook,
+                                        module=module,
+                                        module_args=module_args)
 
     env = secrets.get('env', {})
     expect_passwords = {
@@ -191,9 +240,9 @@ def run_isolated_job(private_data_dir, secrets, logfile=sys.stdout):
     # Use local callback directory
     callback_dir = os.getenv('AWX_LIB_DIRECTORY')
     if callback_dir is None:
-        raise RuntimeError('Location for callbacks must be specified '
-                           'by environment variable AWX_LIB_DIRECTORY.')
-    env['ANSIBLE_CALLBACK_PLUGINS'] = os.path.join(callback_dir, 'isolated_callbacks')
+        callback_dir = os.path.join(os.path.dirname(__file__),
+                                    "callbacks")
+    env['ANSIBLE_CALLBACK_PLUGINS'] = callback_dir
     if 'AD_HOC_COMMAND_ID' in env:
         env['ANSIBLE_STDOUT_CALLBACK'] = 'minimal'
     else:
@@ -239,7 +288,7 @@ def handle_termination(pid, args, proot_cmd, is_cancel=True):
         logger.warn("Attempted to %s already finished job, ignoring" % keyword)
 
 
-def __run__(private_data_dir):
+def __run__(private_data_dir, hosts, playbook):
     buff = cStringIO.StringIO()
     with open(os.path.join(private_data_dir, 'env'), 'r') as f:
         for line in f:
@@ -251,11 +300,14 @@ def __run__(private_data_dir):
     stdout_filename = os.path.join(artifacts_dir, 'stdout')
     os.mknod(stdout_filename, stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR)
     stdout_handle = codecs.open(stdout_filename, 'w', encoding='utf-8')
+    stdout_handle = OutputWriter(stdout_handle)
 
     status, rc = run_isolated_job(
         private_data_dir,
         json.loads(base64.b64decode(buff.getvalue())),
-        stdout_handle
+        stdout_handle,
+        inventory_hosts=hosts,
+        playbook=playbook
     )
     for filename, data in [
         ('status', status),
@@ -267,19 +319,32 @@ def __run__(private_data_dir):
             f.write(str(data))
 
 
-if __name__ == '__main__':
-    import awx
-    __version__ = awx.__version__
-    parser = argparse.ArgumentParser(description='manage a daemonized, isolated ansible playbook')
-    parser.add_argument('--version', action='version', version=__version__ + '-isolated')
-    parser.add_argument('command', choices=['start', 'stop', 'is-alive'])
+def main():
+    version = pkg_resources.require("ansible_runner")[0].version
+    parser = argparse.ArgumentParser(description='manage ansible execution')
+    parser.add_argument('--version', action='version', version=version)
+    parser.add_argument('command', choices=['run', 'start',
+                                            'stop', 'is-alive'])
     parser.add_argument('private_data_dir')
+    parser.add_argument("--hosts")
+    parser.add_argument("--playbook")
     args = parser.parse_args()
 
     private_data_dir = args.private_data_dir
     pidfile = os.path.join(private_data_dir, 'pid')
+    if args.hosts is None:
+        hosts_actual = os.getenv("RUNNER_HOSTS", os.path.join(private_data_dir, "inventory"))
+    else:
+        hosts_actual = args.hosts
+    if args.playbook is None:
+        playbook_actual = os.getenv("RUNNER_PLAYBOOK", None)
+    else:
+        playbook_actual = args.playbook
 
-    if args.command == 'start':
+    print("Hosts: {}".format(hosts_actual))
+    print("Playbook: {}".format(playbook_actual))
+
+    if args.command in ('start', 'run'):
         # create a file to log stderr in case the daemonized process throws
         # an exception before it gets to `pexpect.spawn`
         stderr_path = os.path.join(private_data_dir, 'artifacts', 'daemon.log')
@@ -287,14 +352,18 @@ if __name__ == '__main__':
             os.mknod(stderr_path, stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR)
         stderr = open(stderr_path, 'w+')
 
-        import daemon
-        from daemon.pidfile import TimeoutPIDLockFile
-        context = daemon.DaemonContext(
-            pidfile=TimeoutPIDLockFile(pidfile),
-            stderr=stderr
-        )
+        if args.command == 'start':
+            import daemon
+            from daemon.pidfile import TimeoutPIDLockFile
+            context = daemon.DaemonContext(
+                pidfile=TimeoutPIDLockFile(pidfile),
+                stderr=stderr
+            )
+        else:
+            import threading
+            context = threading.Lock()
         with context:
-            __run__(private_data_dir)
+            __run__(private_data_dir, hosts=hosts_actual, playbook=playbook_actual)
         sys.exit(0)
 
     try:
@@ -315,3 +384,7 @@ if __name__ == '__main__':
             sys.exit(0)
         except OSError:
             sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()

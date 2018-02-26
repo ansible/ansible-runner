@@ -27,4 +27,4 @@ if awx_lib_path not in sys.path:
     sys.path.insert(0, awx_lib_path)
 
 # Tower Display Callback
-from awx_display_callback import AWXMinimalCallbackModule as CallbackModule  # noqa
+from display_callback import AWXMinimalCallbackModule as CallbackModule  # noqa

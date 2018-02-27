@@ -15,14 +15,13 @@ ENV LC_ALL en_US.UTF-8
 ADD https://github.com/krallin/tini/releases/download/v0.14.0/tini /tini
 RUN chmod +x /tini
 
-ADD demo/playbooks /runner/project
+ADD demo/project /runner/project
 ADD demo/env /runner/env
 ADD demo/inventory /runner/inventory
-#VOLUME /runner/inventory
-RUN mkdir /runner/artifacts
-VOLUME /runner/playbooks
+VOLUME /runner/inventory
+VOLUME /runner/project
 VOLUME /runner/artifacts
-ENV RUNNER_BASE_COMMAND=ansible-playbook
 ENTRYPOINT ["/tini", "--"]
 WORKDIR /
+ENV RUNNER_BASE_COMMAND=ansible-playbook
 CMD ansible-runner run /runner

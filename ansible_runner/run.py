@@ -346,7 +346,7 @@ def main():
         artifact_dir = os.path.join(private_data_dir, 'artifacts')
     else:
         print("Ident: {}".format(args.ident))
-        artifact_dir = os.path.join(private_data_dir, "artifacts-{}".format(args.ident))
+        artifact_dir = os.path.join(private_data_dir, "artifacts", "{}".format(args.ident))
     if not os.path.exists(artifact_dir):
         os.makedirs(artifact_dir)
     pidfile = os.path.join(private_data_dir, 'pid')

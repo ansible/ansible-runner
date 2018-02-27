@@ -16,6 +16,7 @@ import sys
 import thread
 import time
 import pkg_resources
+from uuid import uuid4
 
 import pexpect
 import psutil
@@ -72,7 +73,7 @@ def generate_ansible_command(hosts_or_inv_path, limit=None, playbook=None, modul
     exec_list.append("-c")
     exec_list.append("local")
     # Other parameters
-    if base_command == 'ansible-playbook':
+    if base_command.endswith('ansible-playbook'):
         exec_list.append(playbook)
     elif base_command == 'ansible':
         exec_list.append("-m")
@@ -81,6 +82,7 @@ def generate_ansible_command(hosts_or_inv_path, limit=None, playbook=None, modul
             exec_list.append("-a")
             exec_list.append(module_args)
     return exec_list
+
 
 def open_fifo_write(path, data):
     '''open_fifo_write opens the fifo named pipe in a new thread.
@@ -187,7 +189,7 @@ def run_pexpect(args, cwd, env, logfile,
 
 def run_isolated_job(private_data_dir, secrets, logfile=sys.stdout,
                      inventory_hosts=None, limit=None, playbook=None,
-                     module=None, module_args=None):
+                     module=None, module_args=None, artifact_dir=None):
     '''
     Launch `ansible-playbook`, executing a job packaged by
     `build_isolated_job_data`.
@@ -228,8 +230,8 @@ def run_isolated_job(private_data_dir, secrets, logfile=sys.stdout,
     # write the SSH key data into a fifo read by ssh-agent
     ssh_key_data = secrets.get('ssh_key_data')
     if ssh_key_data:
-        ssh_key_path = os.path.join(private_data_dir, 'ssh_key_data')
-        ssh_auth_sock = os.path.join(private_data_dir, 'ssh_auth.sock')
+        ssh_key_path = os.path.join(artifact_dir, 'ssh_key_data')
+        ssh_auth_sock = os.path.join(artifact_dir, 'ssh_auth.sock')
         open_fifo_write(ssh_key_path, ssh_key_data)
         args = wrap_args_with_ssh_agent(args, ssh_key_path, ssh_auth_sock)
 
@@ -247,7 +249,7 @@ def run_isolated_job(private_data_dir, secrets, logfile=sys.stdout,
         env['ANSIBLE_STDOUT_CALLBACK'] = 'minimal'
     else:
         env['ANSIBLE_STDOUT_CALLBACK'] = 'awx_display'
-    env['AWX_ISOLATED_DATA_DIR'] = private_data_dir
+    env['AWX_ISOLATED_DATA_DIR'] = artifact_dir
     env['PYTHONPATH'] = env.get('PYTHONPATH', '') + callback_dir + ':'
 
     return run_pexpect(args, cwd, env, logfile,
@@ -288,16 +290,17 @@ def handle_termination(pid, args, proot_cmd, is_cancel=True):
         logger.warn("Attempted to %s already finished job, ignoring" % keyword)
 
 
-def __run__(private_data_dir, hosts, playbook):
+def __run__(private_data_dir, hosts, playbook, artifact_dir=None):
     buff = cStringIO.StringIO()
     with open(os.path.join(private_data_dir, 'env'), 'r') as f:
         for line in f:
             buff.write(line)
 
-    artifacts_dir = os.path.join(private_data_dir, 'artifacts')
+    if artifact_dir is None:
+        artifact_dir = os.path.join(private_data_dir, "artifacts")
 
     # Standard out directed to pickup location without event filtering applied
-    stdout_filename = os.path.join(artifacts_dir, 'stdout')
+    stdout_filename = os.path.join(artifact_dir, 'stdout')
     os.mknod(stdout_filename, stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR)
     stdout_handle = codecs.open(stdout_filename, 'w', encoding='utf-8')
     stdout_handle = OutputWriter(stdout_handle)
@@ -307,13 +310,14 @@ def __run__(private_data_dir, hosts, playbook):
         json.loads(base64.b64decode(buff.getvalue())),
         stdout_handle,
         inventory_hosts=hosts,
-        playbook=playbook
+        playbook=playbook,
+        artifact_dir=artifact_dir
     )
     for filename, data in [
         ('status', status),
         ('rc', rc),
     ]:
-        artifact_path = os.path.join(private_data_dir, 'artifacts', filename)
+        artifact_path = os.path.join(artifact_dir, filename)
         os.mknod(artifact_path, stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR)
         with open(artifact_path, 'w') as f:
             f.write(str(data))
@@ -327,27 +331,37 @@ def main():
                                             'stop', 'is-alive'])
     parser.add_argument('private_data_dir')
     parser.add_argument("--hosts")
-    parser.add_argument("--playbook")
+    parser.add_argument("-p", "--playbook", default=os.getenv("RUNNER_PLAYBOOK", None))
+    parser.add_argument("-i", "--ident",
+                        default=uuid4(),
+                        help="An identifier that will be used when generating the"
+                             "artifacts directory and can be used to uniquely identify a playbook run")
+    parser.add_argument("--skip-ident",
+                        action="store_true",
+                        help="Do not generate a playbook run identifier")
     args = parser.parse_args()
 
     private_data_dir = args.private_data_dir
+    if args.skip_ident:
+        artifact_dir = os.path.join(private_data_dir, 'artifacts')
+    else:
+        print("Ident: {}".format(args.ident))
+        artifact_dir = os.path.join(private_data_dir, "artifacts-{}".format(args.ident))
+    if not os.path.exists(artifact_dir):
+        os.makedirs(artifact_dir)
     pidfile = os.path.join(private_data_dir, 'pid')
     if args.hosts is None:
         hosts_actual = os.getenv("RUNNER_HOSTS", os.path.join(private_data_dir, "inventory"))
     else:
         hosts_actual = args.hosts
-    if args.playbook is None:
-        playbook_actual = os.getenv("RUNNER_PLAYBOOK", None)
-    else:
-        playbook_actual = args.playbook
 
     print("Hosts: {}".format(hosts_actual))
-    print("Playbook: {}".format(playbook_actual))
+    print("Playbook: {}".format(args.playbook))
 
     if args.command in ('start', 'run'):
         # create a file to log stderr in case the daemonized process throws
         # an exception before it gets to `pexpect.spawn`
-        stderr_path = os.path.join(private_data_dir, 'artifacts', 'daemon.log')
+        stderr_path = os.path.join(artifact_dir, 'daemon.log')
         if not os.path.exists(stderr_path):
             os.mknod(stderr_path, stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR)
         stderr = open(stderr_path, 'w+')
@@ -363,7 +377,8 @@ def main():
             import threading
             context = threading.Lock()
         with context:
-            __run__(private_data_dir, hosts=hosts_actual, playbook=playbook_actual)
+            __run__(private_data_dir, hosts=hosts_actual,
+                    playbook=args.playbook, artifact_dir=artifact_dir)
         sys.exit(0)
 
     try:

@@ -46,9 +46,9 @@ class IsolatedFileWrite:
         event_uuid = key[len(':1:ev-'):]
         # Write data in a staging area and then atomic move to pickup directory
         filename = '{}-partial.json'.format(event_uuid)
-        if not os.path.exists(os.path.join(self.private_data_dir, 'artifacts', 'job_events')):
-            os.mkdir(os.path.join(self.private_data_dir, 'artifacts', 'job_events'))
-        dropoff_location = os.path.join(self.private_data_dir, 'artifacts', 'job_events', filename)
+        if not os.path.exists(os.path.join(self.private_data_dir, 'job_events')):
+            os.mkdir(os.path.join(self.private_data_dir, 'job_events'))
+        dropoff_location = os.path.join(self.private_data_dir, 'job_events', filename)
         write_location = '.'.join([dropoff_location, 'tmp'])
         partial_data = json.dumps(value)
         with os.fdopen(os.open(write_location, os.O_WRONLY | os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR), 'w') as f:

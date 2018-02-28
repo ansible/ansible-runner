@@ -1,0 +1,4 @@
+---
+idle_timeout: 600
+job_timeout: 3600
+pexpect_timeout: 10

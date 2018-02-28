@@ -2,7 +2,8 @@ FROM centos:7
 
 # Install Ansible Runner
 RUN yum -y update && yum -y install epel-release  && \
-    yum -y install ansible python-psutil python-pip bubblewrap bzip2 python-crypto
+    yum -y install ansible python-psutil python-pip bubblewrap bzip2 python-crypto openssh \
+    openssh-clients
 RUN pip install python-memcached wheel pexpect psutil python-daemon
 
 ADD dist/ansible_runner-1.0-py2.py3-none-any.whl /ansible_runner-1.0-py2.py3-none-any.whl

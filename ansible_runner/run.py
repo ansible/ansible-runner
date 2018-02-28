@@ -1,12 +1,11 @@
 #! /usr/bin/env python
 
 import argparse
-import base64
 import codecs
 import collections
-import cStringIO
 import logging
 import json
+import yaml
 import os
 import stat
 import pipes
@@ -61,7 +60,8 @@ def wrap_args_with_ssh_agent(args, ssh_key_path, ssh_auth_sock=None, silence_ssh
     return args
 
 
-def generate_ansible_command(hosts_or_inv_path, limit=None, playbook=None, module=None, module_args=None):
+def generate_ansible_command(hosts_or_inv_path, limit=None, playbook=None,
+                             extra_vars=[], module=None, module_args=None):
     base_command = os.getenv("RUNNER_BASE_COMMAND", "ansible-playbook")
     exec_list = [base_command]
     exec_list.append("-i")
@@ -69,9 +69,10 @@ def generate_ansible_command(hosts_or_inv_path, limit=None, playbook=None, modul
     if limit is not None:
         exec_list.append("--limit")
         exec_list.append(limit)
-    # NOTE: Temporarily hard coded
-    exec_list.append("-c")
-    exec_list.append("local")
+    if extra_vars:
+        for evar in extra_vars:
+            exec_list.append("-e")
+            exec_list.append("{}={}".format(evar, extra_vars[evar]))
     # Other parameters
     if base_command.endswith('ansible-playbook'):
         exec_list.append(playbook)
@@ -187,7 +188,7 @@ def run_pexpect(args, cwd, env, logfile,
         return 'failed', child.exitstatus
 
 
-def run_isolated_job(private_data_dir, secrets, logfile=sys.stdout,
+def run_isolated_job(private_data_dir, logfile=sys.stdout,
                      inventory_hosts=None, limit=None, playbook=None,
                      module=None, module_args=None, artifact_dir=None):
     '''
@@ -197,47 +198,76 @@ def run_isolated_job(private_data_dir, secrets, logfile=sys.stdout,
     :param private_data_dir:  an absolute path on the local file system where
                               job metadata exists (i.e.,
                               `/tmp/ansible_awx_xyz/`)
-    :param secrets:           a dict containing sensitive job metadata, {
-                                  'env': { ... }  # environment variables,
-                                  'passwords': { ... } # pexpect password prompts
-                                  'ssh_key_data': 'RSA KEY DATA',
-                              }
     :param logfile:           a file-like object for capturing stdout
 
     Returns a tuple (status, return_code) i.e., `('successful', 0)`
     '''
-    if os.path.exists(os.path.join(private_data_dir, 'args')):
-        with open(os.path.join(private_data_dir, 'args'), 'r') as args:
-            args = json.load(args)
-    else:
-        args = generate_ansible_command(inventory_hosts,
-                                        limit=limit,
-                                        playbook=playbook,
-                                        module=module,
-                                        module_args=module_args)
 
-    env = secrets.get('env', {})
-    expect_passwords = {
-        re.compile(pattern, re.M): password
-        for pattern, password in secrets.get('passwords', {}).items()
-    }
+    try:
+        with open(os.path.join(private_data_dir, "env", "passwords"), 'r') as f:
+            expect_passwords = {
+                re.compile(pattern, re.M): password
+                for pattern, password in yaml.load(f.read()).items()
+            }
+    except Exception:
+        print("Not loading passwords")
+        expect_passwords = dict()
+
+    try:
+        with open(os.path.join(private_data_dir, "env", "envvars"), 'r') as f:
+            env = yaml.load(f.read())
+    except Exception:
+        print("Not loading environment vars")
+        env = dict()
+
+    try:
+        with open(os.path.join(private_data_dir, "env", "extravars"), 'r') as f:
+            extra_vars = yaml.load(f.read())
+    except Exception:
+        print("Not loading extra vars")
+        extra_vars = dict()
+
+    try:
+        with open(os.path.join(private_data_dir, "env", "settings"), 'r') as f:
+            settings = yaml.load(f.read())
+    except Exception:
+        print("Not loading settings")
+        settings = dict()
+
+    try:
+        with open(os.path.join(private_data_dir, "env", "ssh_key"), 'r') as f:
+            ssh_key_data = f.read()
+    except Exception:
+        print("Not loading ssh key")
+        ssh_key_data = None
 
     if 'AD_HOC_COMMAND_ID' in env:
         cwd = private_data_dir
     else:
         cwd = os.path.join(private_data_dir, 'project')
 
+    if os.path.exists(os.path.join(private_data_dir, 'args')):
+        with open(os.path.join(private_data_dir, 'args'), 'r') as args:
+            args = yaml.load(args)
+    else:
+        args = generate_ansible_command(inventory_hosts,
+                                        limit=limit,
+                                        playbook=playbook,
+                                        extra_vars=extra_vars,
+                                        module=module,
+                                        module_args=module_args)
+
+
     # write the SSH key data into a fifo read by ssh-agent
-    ssh_key_data = secrets.get('ssh_key_data')
     if ssh_key_data:
         ssh_key_path = os.path.join(artifact_dir, 'ssh_key_data')
         ssh_auth_sock = os.path.join(artifact_dir, 'ssh_auth.sock')
         open_fifo_write(ssh_key_path, ssh_key_data)
         args = wrap_args_with_ssh_agent(args, ssh_key_path, ssh_auth_sock)
 
-    idle_timeout = secrets.get('idle_timeout', 10)
-    job_timeout = secrets.get('job_timeout', 10)
-    pexpect_timeout = secrets.get('pexpect_timeout', 5)
+    idle_timeout = settings.get('idle_timeout', 120)
+    job_timeout = settings.get('job_timeout', 120)
+    pexpect_timeout = settings.get('pexpect_timeout', 5)
 
     # Use local callback directory
     callback_dir = os.getenv('AWX_LIB_DIRECTORY')
@@ -291,11 +321,6 @@ def handle_termination(pid, args, proot_cmd, is_cancel=True):
 
 
 def __run__(private_data_dir, hosts, playbook, artifact_dir=None):
-    buff = cStringIO.StringIO()
-    with open(os.path.join(private_data_dir, 'env'), 'r') as f:
-        for line in f:
-            buff.write(line)
-
     if artifact_dir is None:
         artifact_dir = os.path.join(private_data_dir, "artifacts")
 
@@ -307,7 +332,6 @@ def __run__(private_data_dir, hosts, playbook, artifact_dir=None):
 
     status, rc = run_isolated_job(
         private_data_dir,
-        json.loads(base64.b64decode(buff.getvalue())),
         stdout_handle,
         inventory_hosts=hosts,
         playbook=playbook,

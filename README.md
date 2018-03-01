@@ -28,10 +28,10 @@ $ docker run -it --rm -e RUNNER_PLAYBOOK=test.yml docker-registry-default.opensh
 Ansible Runner takes most of its inputs from a particular directory structure. Some inputs can also be given on the command line. Primarily the `ansible-runner` command line utility requires at least two parameters:
 
 * A command, one of:
-** run - This launches the runner command in the foreground and runs to completion. runner will still write data into its `artifacts` directory
-** start - This launches the runner command in the background and writes a pid into the `artifacts` directory
-** stop - This will terminate a runner process that has been started in the background
-** is-alive - Checks the status of a background runner process
+  * run - This launches the runner command in the foreground and runs to completion. runner will still write data into its `artifacts` directory
+  * start - This launches the runner command in the background and writes a pid into the `artifacts` directory
+  * stop - This will terminate a runner process that has been started in the background
+  * is-alive - Checks the status of a background runner process
 * A base directory which contains all of the metadata necessary to run
 
 ## Input Directory Structure
@@ -54,16 +54,16 @@ The directory structure provided as an input for Runner looks like this
 
 * artifacts - This directory will be created if it doesn't exist and is used to hold the output of runs
 * env - This directory holds critical metadata used during launch
-** envvars - A yaml file that contains environment variables (see [./demo/env/envvars](./demo/env/envvars))
-** extravars - A yaml file that contains extra vars that will be passed to the runner. These will be effectively passed as `-e` parameters to `ansible-playbook` meaning they will take precedence over any other variables defined elsewhere. (see [./demo/env/extravars](./demo/env/extravars))
-** passwords - A yaml file that contains password prompt patterns and the value to be emitted (the password itself). These are regular expression patterns that runner looks for when processing the output from `ansible-playbook`. If the pattern is matched then the corresponding password will be emitted. (see [./demo/env/passwords](./demo/env/passwords))
-** settings - A yaml file representing some runner runtime settings (see [./demo/env/settings](./demo/env/settings)). If not provided defaults will be used
-*** idle_timeout - This is a value in seconds from which, if there is no output emitted from `ansible-playbook` the runner will terminate the process
-*** job_timeout - If the `ansible-playbook` process runs for longer than this number of seconds then it will be automatically terminated
-*** pexpect_timeout - This is the amount of time in seconds runner will examine output to wait for password prompts that need to be emitted
-** ssh_key - This contains the ssh private key that will be passed to `ssh-agent` as part of the `ansible-playbook` execution.
-** inventory - This directory works exactly like `ansible` itself and will be passed as the inventory argument. The behavior is for Ansible to recurse into this directory and evaluate all files and scripts to generate inventory content. If your needs are pretty simple then you can create a simple file in this directory that contains a list of hosts/groups. `Note: If the --hosts argument is given to ansible-runner it will override ansible-playbook and this directory will not be given`
-** project - This directory should contain your playbooks and roles and will be set as the `cwd` when `ansible-playbook` starts.
+  * envvars - A yaml file that contains environment variables (see [./demo/env/envvars](./demo/env/envvars))
+  * extravars - A yaml file that contains extra vars that will be passed to the runner. These will be effectively passed as `-e` parameters to `ansible-playbook` meaning they will take precedence over any other variables defined elsewhere. (see [./demo/env/extravars](./demo/env/extravars))
+  * passwords - A yaml file that contains password prompt patterns and the value to be emitted (the password itself). These are regular expression patterns that runner looks for when processing the output from `ansible-playbook`. If the pattern is matched then the corresponding password will be emitted. (see [./demo/env/passwords](./demo/env/passwords))
+  * settings - A yaml file representing some runner runtime settings (see [./demo/env/settings](./demo/env/settings)). If not provided defaults will be used
+    * idle_timeout - This is a value in seconds from which, if there is no output emitted from `ansible-playbook` the runner will terminate the process
+    * job_timeout - If the `ansible-playbook` process runs for longer than this number of seconds then it will be automatically terminated
+    * pexpect_timeout - This is the amount of time in seconds runner will examine output to wait for password prompts that need to be emitted
+  * ssh_key - This contains the ssh private key that will be passed to `ssh-agent` as part of the `ansible-playbook` execution.
+  * inventory - This directory works exactly like `ansible` itself and will be passed as the inventory argument. The behavior is for Ansible to recurse into this directory and evaluate all files and scripts to generate inventory content. If your needs are pretty simple then you can create a simple file in this directory that contains a list of hosts/groups. `Note: If the --hosts argument is given to ansible-runner it will override ansible-playbook and this directory will not be given`
+  * project - This directory should contain your playbooks and roles and will be set as the `cwd` when `ansible-playbook` starts.
 
 
 ## Output Directory Structure

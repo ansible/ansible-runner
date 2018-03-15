@@ -10,9 +10,9 @@ RUN yum -y install epel-release  && \
     pip install --no-cache-dir python-memcached wheel pexpect psutil python-daemon && \
     rm -rf /var/cache/yum
 
-ENV LANG en_US.UTF-8 \
-    LANGUAGE en_US:en \
-    LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8
 
 VOLUME /runner/inventory
 VOLUME /runner/project

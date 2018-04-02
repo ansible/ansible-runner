@@ -99,6 +99,8 @@ class RunnerConfig(object):
     def prepare(self):
         if self.base_dir is None:
             raise ConfigurationError("Runner Base Directory is not defined")
+        if self.playbook is None: # TODO: ad-hoc mode, module and args
+            raise ConfigurationError("Runner playbook is not defined")
         if not os.path.exists(self.artifact_dir):
             os.makedirs(self.artifact_dir)
 
@@ -168,7 +170,7 @@ class RunnerConfig(object):
         This blocks the thread until an external process (such as ssh-agent)
         reads data from the pipe.
         '''
-        os.mkfifo(path, 0600)
+        os.mkfifo(path, 0o644)
         thread.start_new_thread(lambda p, d: open(p, 'w').write(d), (path, data))
 
 

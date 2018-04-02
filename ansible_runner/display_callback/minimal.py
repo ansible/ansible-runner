@@ -25,4 +25,5 @@ import ansible
 
 # Because of the way Ansible loads plugins, it's not possible to import
 # ansible.plugins.callback.minimal when being loaded as the minimal plugin. Ugh.
-execfile(os.path.join(os.path.dirname(ansible.__file__), 'plugins', 'callback', 'minimal.py'))
+minimal_plugin = os.path.join(os.path.dirname(ansible.__file__), 'plugins', 'callback', 'minimal.py')
+exec(compile(open(minimal_plugin, "rb").read(), minimal_plugin, 'exec'), globals, locals)

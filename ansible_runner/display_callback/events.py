@@ -163,7 +163,7 @@ class EventContext(object):
         with self.display_lock:
             # pattern corresponding to OutputEventFilter expectation
             fileobj.write(u'\x1b[K')
-            for offset in xrange(0, len(b64data), max_width):
+            for offset in range(0, len(b64data), max_width):
                 chunk = b64data[offset:offset + max_width]
                 escaped_chunk = u'{}\x1b[{}D'.format(chunk, len(chunk))
                 fileobj.write(escaped_chunk)

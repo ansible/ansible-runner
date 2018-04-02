@@ -10,7 +10,7 @@ import pexpect
 import psutil
 
 from .utils import OutputWriter
-from .exceptions import CallbackError
+from .exceptions import CallbackError, AnsibleRunnerException
 
 
 class Runner(object):
@@ -110,6 +110,15 @@ class Runner(object):
                 f.write(str(data))
         return self.status, self.rc
 
+    @property
+    def stdout(self):
+        stdout_path = os.path.join(self.config.artifact_dir, 'stdout')
+        if not os.path.exists(stdout_path):
+            raise AnsibleRunnerException("stdout missing")
+        return open(os.path.join(self.config.artifact_dir, 'stdout'), 'r')
+
+    def events(self):
+        pass
 
     @classmethod
     def handle_termination(pid, args, proot_cmd, is_cancel=True):

@@ -21,15 +21,18 @@ class Runner(object):
         self.canceled = False
         self.timed_out = False
         self.errored = False
+        self.status = "unstarted"
+        self.rc = None
 
 
     def run(self):
+        self.status = "starting"
         stdout_filename = os.path.join(self.config.artifact_dir, 'stdout')
 
         try:
             os.makedirs(self.config.artifact_dir)
             os.mknod(stdout_filename, stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR)
-        except OSError as exc:  # Python >2.5
+        except OSError as exc:
             if exc.errno == errno.EEXIST and os.path.isdir(self.config.artifact_dir):
                 pass
             else:
@@ -48,6 +51,7 @@ class Runner(object):
         password_patterns = expect_passwords.keys()
         password_values = expect_passwords.values()
 
+        self.status = 'running'
         child = pexpect.spawn(
             self.config.command[0],
             self.config.command[1:],
@@ -83,7 +87,7 @@ class Runner(object):
                 #     extra_update_fields['job_explanation'] = "Job terminated due to timeout"
             if self.canceled or self.timed_out or self.errored:
                 # TODO: proot_cmd
-                self.handle_termination(child.pid, child.args, proot_cmd=None, is_cancel=self.canceled)
+                Runner.handle_termination(child.pid, child.args, proot_cmd=None, is_cancel=self.canceled)
             if self.config.idle_timeout and (time.time() - last_stdout_update) > self.config.idle_timeout:
                 child.close(True)
                 self.canceled = True
@@ -107,7 +111,8 @@ class Runner(object):
         return self.status, self.rc
 
 
-    def handle_termination(self, pid, args, proot_cmd, is_cancel=True):
+    @classmethod
+    def handle_termination(pid, args, proot_cmd, is_cancel=True):
         '''
         Terminate a subprocess spawned by `pexpect`.
 

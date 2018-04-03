@@ -11,11 +11,10 @@ from .exceptions import ConfigurationError
 
 class RunnerConfig(object):
 
-    def __init__(self,
-                 base_dir=None, playbook=None, ident=uuid4(),
-                 inventory=None, limit=None,
+    def __init__(self, base_dir, playbook,
+                 ident=uuid4(), inventory=None, limit=None,
                  module=None, module_args=None):
-        self.base_dir = base_dir
+        self.base_dir = os.path.abspath(base_dir)
         self.ident = ident
         self.playbook = playbook
         self.inventory = inventory

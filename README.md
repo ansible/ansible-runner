@@ -163,8 +163,10 @@ NOTE: This particular part is under heavy development at the moment so expect th
 
 ```
 $ python
->>> from ansible_runner.run import __run__
->>> __run__("/runner", hosts="/runner/inventory", playbook="test.yml")
+>>> from ansible_runner import RunnerConfig, Runner
+>>> c = RunnerConfig(base_dir='demo', playbook='test.yml')
+>>> c.prepare()
+>>> Runner(c).run()
 
 PLAY [all] *********************************************************************
 
@@ -178,6 +180,8 @@ ok: [localhost] => {
 
 PLAY RECAP *********************************************************************
 localhost                  : ok=2    changed=0    unreachable=0    failed=0   
+
+('successful', 0)
 ```
 
 ## Building the source distribution

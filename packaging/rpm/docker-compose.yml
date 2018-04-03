@@ -1,0 +1,15 @@
+---
+version: '3'
+services:
+  rpm-builder:
+    build: .
+    environment:
+      MOCK_BIN: "mock --old-chroot"
+    volumes:
+      - ../../:/ansible-runner
+      - mock-cache:/var/cache/mock
+    entrypoint: ["/bin/bash", "-c"]
+    working_dir: /ansible-runner
+    privileged: true
+volumes:
+  mock-cache:

@@ -1,10 +1,8 @@
-%global pip_name ansible_runner
-
 Name: ansible-runner
-Version: 1.0
-Release: 0%{?dist}
+Version: {{ version }}
+Release: {{ release }}%{?dist}
 Summary: Package for interfacing with Ansible
-Source0: https://github.com/ansible/%{name}/archive/%{version}.tar.gz?/%{pip_name}-%{version}.tar.gz
+Source0: https://github.com/ansible/%{name}/archive/%{version}.tar.gz?/%{name}-%{version}.tar.gz
 
 Group: Development/Libraries
 License: ASL 2.0
@@ -17,17 +15,16 @@ Requires: bubblewrap
 Requires: bzip2
 Requires: openssh
 Requires: openssh-clients
+Requires: pexpect
 Requires: python-crypto
 Requires: python-daemon
-Requires: python-memcached
-Requires: python-pexpect
 Requires: python-psutil
 
 %description
 A CLI and Python library that helps interfacing with Ansible from other systems
 
 %prep
-%setup -q -n %{pip_name}-%{version}
+%setup -q -n %{name}-%{version}
 
 %build
 # Disable debuginfo packages

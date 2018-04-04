@@ -15,7 +15,7 @@ class RunnerConfig(object):
                  private_data_dir=None, playbook=None, ident=uuid4(),
                  inventory=None, limit=None,
                  module=None, module_args=None):
-        self.private_data_dir = private_data_dir
+        self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.playbook = playbook
         self.inventory = inventory

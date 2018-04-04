@@ -12,10 +12,10 @@ from .exceptions import ConfigurationError
 class RunnerConfig(object):
 
     def __init__(self,
-                 base_dir=None, playbook=None, ident=uuid4(),
+                 private_data_dir=None, playbook=None, ident=uuid4(),
                  inventory=None, limit=None,
                  module=None, module_args=None):
-        self.base_dir = base_dir
+        self.private_data_dir = private_data_dir
         self.ident = ident
         self.playbook = playbook
         self.inventory = inventory
@@ -23,17 +23,17 @@ class RunnerConfig(object):
         self.module = module
         self.module_args = module_args
         if self.ident is None:
-            self.artifact_dir = os.path.join(self.base_dir, "artifacts")
+            self.artifact_dir = os.path.join(self.private_data_dir, "artifacts")
         else:
-            self.artifact_dir = os.path.join(self.base_dir, "artifacts", "{}".format(self.ident))
+            self.artifact_dir = os.path.join(self.private_data_dir, "artifacts", "{}".format(self.ident))
 
     def prepare_inventory(self):
         if self.inventory is None:
-            self.inventory  = os.path.join(self.base_dir, "inventory")
+            self.inventory  = os.path.join(self.private_data_dir, "inventory")
 
     def prepare_env(self):
         try:
-            with open(os.path.join(self.base_dir, "env", "passwords"), 'r') as f:
+            with open(os.path.join(self.private_data_dir, "env", "passwords"), 'r') as f:
                 self.expect_passwords = {
                     re.compile(pattern, re.M): password
                     for pattern, password in yaml.load(f.read()).items()
@@ -46,28 +46,28 @@ class RunnerConfig(object):
         self.expect_passwords[pexpect.EOF] = None
 
         try:
-            with open(os.path.join(self.base_dir, "env", "envvars"), 'r') as f:
+            with open(os.path.join(self.private_data_dir, "env", "envvars"), 'r') as f:
                 self.env = yaml.load(f.read())
         except Exception:
             print("Not loading environment vars")
             self.env = dict()
 
         try:
-            with open(os.path.join(self.base_dir, "env", "extravars"), 'r') as f:
+            with open(os.path.join(self.private_data_dir, "env", "extravars"), 'r') as f:
                 self.extra_vars = yaml.load(f.read())
         except Exception:
             print("Not loading extra vars")
             self.extra_vars = dict()
 
         try:
-            with open(os.path.join(self.base_dir, "env", "settings"), 'r') as f:
+            with open(os.path.join(self.private_data_dir, "env", "settings"), 'r') as f:
                 self.settings = yaml.load(f.read())
         except Exception:
             print("Not loading settings")
             self.settings = dict()
 
         try:
-            with open(os.path.join(self.base_dir, "env", "ssh_key"), 'r') as f:
+            with open(os.path.join(self.private_data_dir, "env", "ssh_key"), 'r') as f:
                 self.ssh_key_data = f.read()
         except Exception:
             print("Not loading ssh key")
@@ -85,19 +85,19 @@ class RunnerConfig(object):
         self.pexpect_timeout = self.settings.get('pexpect_timeout', 5)
 
         if 'AD_HOC_COMMAND_ID' in self.env:
-            self.cwd = self.base_dir
+            self.cwd = self.private_data_dir
         else:
-            self.cwd = os.path.join(self.base_dir, 'project')
+            self.cwd = os.path.join(self.private_data_dir, 'project')
 
     def prepare_command(self):
-        if os.path.exists(os.path.join(self.base_dir, 'args')):
-            with open(os.path.join(self.base_dir, 'args'), 'r') as args:
+        if os.path.exists(os.path.join(self.private_data_dir, 'args')):
+            with open(os.path.join(self.private_data_dir, 'args'), 'r') as args:
                 self.command = yaml.load(args)
         else:
             self.command = self.generate_ansible_command()
 
     def prepare(self):
-        if self.base_dir is None:
+        if self.private_data_dir is None:
             raise ConfigurationError("Runner Base Directory is not defined")
         if self.playbook is None: # TODO: ad-hoc mode, module and args
             raise ConfigurationError("Runner playbook is not defined")

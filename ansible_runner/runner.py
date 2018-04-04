@@ -105,7 +105,8 @@ class Runner(object):
             ('rc', self.rc),
         ]:
             artifact_path = os.path.join(self.config.artifact_dir, filename)
-            os.mknod(artifact_path, stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR)
+            if not os.path.exists(artifact_path):
+                os.mknod(artifact_path, stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR)
             with open(artifact_path, 'w') as f:
                 f.write(str(data))
         return self.status, self.rc

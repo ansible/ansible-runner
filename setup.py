@@ -12,7 +12,6 @@ setup(
     packages=find_packages(),
     install_requires=[
         'psutil',
-        'python-memcached==1.58',
         'pexpect',
         'python-daemon',
         'PyYAML',

@@ -14,7 +14,6 @@ pytest = "*"
 [packages]
 
 psutil = "*"
-python-memcached = "==1.58"
 pexpect = "*"
 python-daemon = "*"
 pyyaml = "*"

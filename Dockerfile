@@ -7,7 +7,7 @@ RUN yum -y install epel-release  && \
     yum -y install ansible python-psutil python-pip bubblewrap bzip2 python-crypto openssh openssh-clients && \
     localedef -c -i en_US -f UTF-8 en_US.UTF-8 && \
     chmod +x /tini && \
-    pip install --no-cache-dir python-memcached wheel pexpect psutil python-daemon && \
+    pip install --no-cache-dir wheel pexpect psutil python-daemon && \
     rm -rf /var/cache/yum
 
 ENV LANG=en_US.UTF-8 \

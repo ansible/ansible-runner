@@ -140,6 +140,7 @@ class Runner(object):
             raise AnsibleRunnerException("stdout missing")
         return open(os.path.join(self.config.artifact_dir, 'stdout'), 'r')
 
+    @property
     def events(self):
         event_path = os.path.join(self.config.artifact_dir, 'job_events')
         if not os.path.exists(event_path):
@@ -150,6 +151,19 @@ class Runner(object):
             with codecs.open(os.path.join(event_path, event_file), 'r', encoding='utf-8') as event_file_actual:
                 event = json.load(event_file_actual)
             yield event
+
+    @property
+    def stats(self):
+        last_event = filter(lambda x: 'event' in x and x['event'] == 'playbook_on_stats',
+                            self.events)
+        if not last_event:
+            return None
+        last_event = last_event[0]['event_data']
+        return dict(skipped=last_event['skipped'],
+                    ok=last_event['ok'],
+                    dark=last_event['dark'],
+                    failures=last_event['failures'],
+                    processed=last_event['processed'])
 
     @classmethod
     def handle_termination(pid, args, proot_cmd, is_cancel=True):

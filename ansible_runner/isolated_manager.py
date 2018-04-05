@@ -487,7 +487,7 @@ class IsolatedManager(object):
         """
         self.instance = instance
         self.host = host
-        self.private_data_dir = private_data_dir
+        self.private_data_dir = os.path.abspath(private_data_dir)
         self.proot_temp_dir = proot_temp_dir
         status, rc = self.dispatch()
         if status == 'successful':

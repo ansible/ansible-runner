@@ -27,6 +27,10 @@ class Runner(object):
         self.remove_partials = remove_partials
 
     def event_callback(self, event_data):
+        '''
+        Invoked for every Ansible event to collect stdout with the event data and store it for
+        later use
+        '''
         if 'uuid' in event_data:
             filename = '{}-partial.json'.format(event_data['uuid'])
             partial_filename = os.path.join(self.config.artifact_dir,
@@ -48,6 +52,10 @@ class Runner(object):
                 print("Failed writing event data: {}".format(e))
 
     def run(self):
+        '''
+        Launch the Ansible task configured in self.config (A RunnerConfig object), returns once the
+        invocation is complete
+        '''
         self.status = "starting"
         stdout_filename = os.path.join(self.config.artifact_dir, 'stdout')
 
@@ -135,6 +143,9 @@ class Runner(object):
 
     @property
     def stdout(self):
+        '''
+        Returns an open file handle to the stdout representing the Ansible run
+        '''
         stdout_path = os.path.join(self.config.artifact_dir, 'stdout')
         if not os.path.exists(stdout_path):
             raise AnsibleRunnerException("stdout missing")
@@ -142,6 +153,44 @@ class Runner(object):
 
     @property
     def events(self):
+        '''
+        A generator that will return all ansible job events in the order that they were emitted from Ansible
+
+        Example:
+
+            {  
+               "event":"runner_on_ok",
+               "uuid":"00a50d9c-161a-4b74-b978-9f60becaf209",
+               "stdout":"ok: [localhost] => {\\r\\n    \\"   msg\\":\\"Test!\\"\\r\\n}",
+               "counter":6,
+               "pid":740,
+               "created":"2018-04-05T18:24:36.096725",
+               "end_line":10,
+               "start_line":7,
+               "event_data":{  
+                  "play_pattern":"all",
+                  "play":"all",
+                  "task":"debug",
+                  "task_args":"msg=Test!",
+                  "remote_addr":"localhost",
+                  "res":{  
+                     "msg":"Test!",
+                     "changed":false,
+                     "_ansible_verbose_always":true,
+                     "_ansible_no_log":false
+                  },
+                  "pid":740,
+                  "play_uuid":"0242ac11-0002-443b-cdb1-000000000006",
+                  "task_uuid":"0242ac11-0002-443b-cdb1-000000000008",
+                  "event_loop":null,
+                  "playbook_uuid":"634edeee-3228-4c17-a1b4-f010fdd42eb2",
+                  "playbook":"test.yml",
+                  "task_action":"debug",
+                  "host":"localhost",
+                  "task_path":"/tmp/demo/project/test.yml:3"
+               }
+           }
+        '''
         event_path = os.path.join(self.config.artifact_dir, 'job_events')
         if not os.path.exists(event_path):
             raise AnsibleRunnerException("events missing")
@@ -154,6 +203,12 @@ class Runner(object):
 
     @property
     def stats(self):
+        '''
+        Returns the final high level stats from the Ansible run
+
+        Example:
+            {'dark': {}, 'failures': {}, 'skipped': {}, 'ok': {u'localhost': 2}, 'processed': {u'localhost': 1}}
+        '''
         last_event = filter(lambda x: 'event' in x and x['event'] == 'playbook_on_stats',
                             self.events)
         if not last_event:
@@ -166,6 +221,9 @@ class Runner(object):
                     processed=last_event['processed'])
 
     def host_events(self, host):
+        '''
+        Given a host name, this will return all task events executed on that host
+        '''
         all_host_events = filter(lambda x: 'event_data' in x and 'host' in x['event_data'] and x['event_data']['host'] == host,
                                  self.events)
         return all_host_events
@@ -173,7 +231,7 @@ class Runner(object):
     @classmethod
     def handle_termination(pid, args, proot_cmd, is_cancel=True):
         '''
-        Terminate a subprocess spawned by `pexpect`.
+        Internal method to terminate a subprocess spawned by `pexpect` representing an invocation of runner.
 
         :param pid:       the process id of the running the job.
         :param args:      the args for the job, i.e., ['ansible-playbook', 'abc.yml']

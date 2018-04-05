@@ -14,6 +14,28 @@ from .runner import Runner
 
 
 def run(**kwargs):
+    '''
+    Run an Ansible Runner task in the foreground and return a Runner object when complete.
+
+    Args:
+
+        private_data_dir (string, path): The directory containing all runner metadata needed
+            to invoke the runner module
+
+        ident (string, optional): The run identifier for this invocation of Runner. Will be used
+            to create and name the artifact directory holding the results of the invocation
+
+        playbook (string, filename): The playbook relative path located in the private_data_dir/project
+            directory that will be invoked by runner when executing Ansible
+
+        inventory (string): Override the inventory directory/file supplied with runner metadata at
+            private_data_dir/inventory with a specific list of hosts
+
+        limit (string): Matches ansible's --limit parameter to further constrain the inventory to be used
+
+    Returns:
+        Runner: An object that holds details and results from the invocation of Ansible itself
+    '''
     rc = RunnerConfig(**kwargs)
     rc.prepare()
     r = Runner(rc)
@@ -22,6 +44,29 @@ def run(**kwargs):
 
 
 def run_async(**kwargs):
+    '''
+    Run an Ansible Runner task in the background and return a thread object and  Runner object when complete.
+
+    Args:
+
+        private_data_dir (string, path): The directory containing all runner metadata needed
+            to invoke the runner module
+
+        ident (string, optional): The run identifier for this invocation of Runner. Will be used
+            to create and name the artifact directory holding the results of the invocation
+
+        playbook (string, filename): The playbook relative path located in the private_data_dir/project
+            directory that will be invoked by runner when executing Ansible
+
+        inventory (string): Override the inventory directory/file supplied with runner metadata at
+            private_data_dir/inventory with a specific list of hosts
+
+        limit (string): Matches ansible's --limit parameter to further constrain the inventory to be used
+
+    Returns:
+        threadObj, Runner: An object representing the thread itself and a Runner instance that holds details
+        and results from the invocation of Ansible itself
+    '''
     rc = RunnerConfig(**kwargs)
     rc.prepare()
     r = Runner(rc)

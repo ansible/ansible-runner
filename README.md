@@ -156,15 +156,16 @@ By default the image is named `ansible-runner` which can be overridden by settin
 
 # Ansible Runner as a Python Interface
 
-```
-NOTE: This particular part is under heavy development at the moment so expect this to change drastically as the module interface is expanded to allow for more flexibility and utility
-```
+The runner module exposes two interfaces:
 
+* `ansible_runner.run()` - Invokes runner in the foreground and returns a Runner object that can be used
+  to inspect the run
+* `ansible_runner.run_async()` - Invokes runner in a thread and returns the thread object and Runner object as a tuple
 
-```
-$ python
->>> from ansible_runner.run import __run__
->>> __run__("/runner", hosts="/runner/inventory", playbook="test.yml")
+Example:
+```bash
+>>> import ansible_runner
+>>> r = ansible_runner.run(private_data_dir="/tmp/demo", playbook="test.yml")
 
 PLAY [all] *********************************************************************
 
@@ -177,8 +178,18 @@ ok: [localhost] => {
 }
 
 PLAY RECAP *********************************************************************
-localhost                  : ok=2    changed=0    unreachable=0    failed=0   
+>>> r.status
+'successful'
+>>> r.rc
+0
 ```
+
+The Runner object that's returned has a few interfaces that are useful:
+
+* `stdout`: Returns a file-handle to the stdout representing the Ansible run.
+* `events`: A generator that will return all ansible job events in the order that they were emitted from Ansible
+* `stats`: Returns the final high level stats from the Ansible run
+* `host_events()`: Given a host name, this will return all task events executed on the host
 
 ## Building the source distribution
 

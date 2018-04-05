@@ -1,6 +1,7 @@
 import os
 import stat
 import time
+import json
 import errno
 import signal
 import codecs
@@ -9,13 +10,13 @@ import collections
 import pexpect
 import psutil
 
-from .utils import OutputWriter
+from .utils import OutputEventFilter
 from .exceptions import CallbackError, AnsibleRunnerException
 
 
 class Runner(object):
 
-    def __init__(self, config, cancel_callback=None):
+    def __init__(self, config, cancel_callback=None, remove_partials=True):
         self.config = config
         self.cancel_callback = cancel_callback
         self.canceled = False
@@ -23,7 +24,28 @@ class Runner(object):
         self.errored = False
         self.status = "unstarted"
         self.rc = None
+        self.remove_partials = remove_partials
 
+    def event_callback(self, event_data):
+        if 'uuid' in event_data:
+            filename = '{}-partial.json'.format(event_data['uuid'])
+            partial_filename = os.path.join(self.config.artifact_dir,
+                                            'job_events',
+                                            filename)
+            full_filename = os.path.join(self.config.artifact_dir,
+                                         'job_events',
+                                         '{}-{}.json'.format(event_data['counter'],
+                                                             event_data['uuid']))
+            try:
+                with codecs.open(partial_filename, 'r', encoding='utf-8') as read_file:
+                    partial_event_data = json.load(read_file)
+                event_data.update(partial_event_data)
+                with codecs.open(full_filename, 'w', encoding='utf-8') as write_file:
+                    json.dump(event_data, write_file)
+                if self.remove_partials:
+                    os.remove(partial_filename)
+            except IOError as e:
+                print("Failed writing event data: {}".format(e))
 
     def run(self):
         self.status = "starting"
@@ -39,7 +61,7 @@ class Runner(object):
                 raise
 
         stdout_handle = codecs.open(stdout_filename, 'w', encoding='utf-8')
-        stdout_handle = OutputWriter(stdout_handle)
+        stdout_handle = OutputEventFilter(stdout_handle, self.event_callback)
 
         if not isinstance(self.config.expect_passwords, collections.OrderedDict):
             # We iterate over `expect_passwords.keys()` and
@@ -119,7 +141,15 @@ class Runner(object):
         return open(os.path.join(self.config.artifact_dir, 'stdout'), 'r')
 
     def events(self):
-        pass
+        event_path = os.path.join(self.config.artifact_dir, 'job_events')
+        if not os.path.exists(event_path):
+            raise AnsibleRunnerException("events missing")
+        dir_events = os.listdir(event_path)
+        dir_events.sort(lambda x, y: int(x.split("-", 1)[0]) - int(y.split("-", 1)[0]))
+        for event_file in dir_events:
+            with codecs.open(os.path.join(event_path, event_file), 'r', encoding='utf-8') as event_file_actual:
+                event = json.load(event_file_actual)
+            yield event
 
     @classmethod
     def handle_termination(pid, args, proot_cmd, is_cancel=True):

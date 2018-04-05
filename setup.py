@@ -6,9 +6,10 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="ansible_runner",
+    name="ansible-runner",
     version="1.0",
     author='Red Hat Ansible',
+    url="https://github.com/ansible/ansible-runner",
     packages=find_packages(),
     install_requires=[
         'psutil',

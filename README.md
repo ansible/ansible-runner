@@ -7,20 +7,8 @@ Ansible Runner is a tool and python library that helps when interfacing with Ans
 
 The base reference container image includes a demo playbook and inventory that uses a local connection to demonstrate basic functionality.
 
-In order to use this image, which is sourced from an internal Ansible container registry you'll need to add the registry host as an `insecure-registry` option. In Linux you can modify your `/etc/docker/daemon.json`:
-
-```
-{
-  "insecure-registries" : ["docker-registry-default.openshift.ansible.eng.rdu2.redhat.com"]
-}
-```
-
-If using `Docker For Mac` there is an option to add this host in the configuration menus.
-
-Once this is added you launch the container image simply with:
-
 ```bash
-$ docker run -it --rm -e RUNNER_PLAYBOOK=test.yml docker-registry-default.openshift.ansible.eng.rdu2.redhat.com/tower/ansible-runner:latest
+$ docker run -it --rm -e RUNNER_PLAYBOOK=test.yml ansible/ansible-runner:latest
 ```
 
 # Understanding the Ansible Runner Directory Hierarchy Interface
@@ -155,6 +143,10 @@ $ make image
 By default the image is named `ansible-runner` which can be overridden by setting `IMAGE_NAME`
 
 # Ansible Runner as a Python Interface
+
+```bash
+$ pip install ansible-runner
+```
 
 The runner module exposes two interfaces:
 

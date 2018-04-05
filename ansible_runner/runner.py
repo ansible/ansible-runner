@@ -165,6 +165,11 @@ class Runner(object):
                     failures=last_event['failures'],
                     processed=last_event['processed'])
 
+    def host_events(self, host):
+        all_host_events = filter(lambda x: 'event_data' in x and 'host' in x['event_data'] and x['event_data']['host'] == host,
+                                 self.events)
+        return all_host_events
+
     @classmethod
     def handle_termination(pid, args, proot_cmd, is_cancel=True):
         '''

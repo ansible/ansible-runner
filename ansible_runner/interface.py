@@ -75,6 +75,55 @@ def run_async(**kwargs):
     return runner_thread, r
 
 
+def api(playbook, inventory, limit=None, ident=None):
+    '''
+    Run an Ansible Runner task in the foreground and return a Runner object
+    when complete.
+
+    This function will accept the playbook and inventory as native Python
+    objects and write them to temp disk.
+
+    Args:
+        playbook (list): The Ansible playbook as a list of dict objects
+
+        inventory (string): The Ansible inventory in INI-style format
+
+        ident (string, optional): The run identifier for this invocation of
+            Runner. Will be used to create and name the artifact directory
+            holding the results of the invocation
+
+        limit (string): Matches ansible's --limit parameter to further
+            constrain the inventory to be used
+
+    Returns:
+        Runner: An object that holds details and results from the invocation of
+            Ansible itself
+    '''
+    try:
+        private_data_dir = tempfile.mkdtemp()
+        kwargs = {'private_data_dir': private_data_dir, 'limit': limit,
+                  'ident': ident}
+
+        inputdir = (('playbook', playbook, 'project'),
+                    ('inventory', inventory, 'inventory'))
+
+        for name, obj, fldr in inputdir:
+            path = os.path.join(private_data_dir, fldr)
+            os.makedirs(path)
+            fd, fn = tempfile.mkstemp(dir=path)
+            kwargs[name] = fn
+            with open(fn, 'w') as f:
+                if name == 'playbook':
+                    f.write(json.dumps(obj))
+                else:
+                    f.write(obj)
+
+        return run(**kwargs)
+
+    finally:
+        shutil.rmtree(private_data_dir)
+
+
 def main():
     version = pkg_resources.require("ansible_runner")[0].version
     parser = argparse.ArgumentParser(description='manage ansible execution')

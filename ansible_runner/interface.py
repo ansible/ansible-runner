@@ -120,7 +120,7 @@ def main():
             if args.hosts is not None:
                 run_options.update(inventory=args.hosts)
             run(**run_options)
-
+            sys.exit(0)
     try:
         with open(pidfile, 'r') as f:
             pid = int(f.readline())

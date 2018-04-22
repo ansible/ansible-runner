@@ -8,9 +8,104 @@ import json
 import stat
 import sys
 import os
+import io
+import fcntl
+import tempfile
+
+from ConfigParser import ConfigParser, MissingSectionHeaderError
+from collections import Iterable
+
+from six import string_types
 
 from .runner_config import RunnerConfig
 from .runner import Runner
+
+
+def isplaybook(obj):
+    '''
+    Inspects the object and returns if it is a playbook
+
+    Args:
+        obj (object): The object to be inspected by this function
+
+    Returns:
+        boolean: True if the object is a list and False if it is not
+    '''
+    return isinstance(obj, Iterable) and not isinstance(obj, string_types)
+
+
+def dump_artifact(obj, path, filename=None):
+    '''
+    Write the artifact to disk at the specified path
+
+    Args:
+        obj (string): The string object to be dumped to disk in the specified
+            path.  The artifact filename will be automatically created
+
+        path (string): The full path to the artifacts data directory.
+
+        filename (string, optional): The name of file to write the artifact to.
+            If the filename is not provided, then one will be generated.
+
+    Returns:
+        string: The full path filename for the artifact that was generated
+    '''
+    os.makedirs(path)
+
+    lock_fp = os.path.join(path, '.artifact_lock')
+    lock_fd = os.open(lock_fp, os.O_RDWR | os.O_CREAT, 0o600)
+    fcntl.lockf(lock_fd, fcntl.LOCK_EX)
+
+    try:
+        if filename is None:
+            fd, fn = tempfile.mkstemp(dir=path)
+        else:
+            fn = os.path.join(path, filename)
+
+        with open(fn, 'w') as f:
+            f.write(str(obj))
+
+    finally:
+        fcntl.lockf(lock_fd, fcntl.LOCK_UN)
+
+    return fn
+
+
+def to_artifacts(kwargs):
+    '''
+    Introspect the kwargs and dump objects to disk
+    '''
+    try:
+        private_data_dir = kwargs.get('private_data_dir')
+        if not private_data_dir:
+            private_data_dir = tempfile.mkdtemp()
+            kwargs['private_data_dir'] = private_data_dir
+
+        for key in ('playbook', 'inventory'):
+            obj = kwargs.get(key)
+            if obj:
+                if key == 'playbook' and isplaybook(obj):
+                    path = os.path.join(private_data_dir, 'project')
+                    kwargs['playbook'] = dump_artifact(json.dumps(obj), path)
+
+                elif key == 'inventory' and not os.path.exists(obj):
+                    path = os.path.join(private_data_dir, 'inventory')
+                    kwargs['inventory'] = dump_artifact(obj, path)
+
+        for key in ('envvars', 'extravars', 'passwords', 'settings'):
+            obj = kwargs.get(key)
+            if obj:
+                path = os.path.join(private_data_dir, 'env')
+                dump_artifact(json.dumps(obj), path, filename=key)
+                kwargs.pop(key)
+
+        if 'ssh_key' in kwargs:
+            path = os.path.join(private_data_dir, 'ssh_key')
+            dump_artifact(str(obj), path, filename='ssh_key')
+            kwargs.pop('ssh_key')
+
+    except KeyError as exc:
+        raise ValueError('missing required keyword argument: %s' % exc)
 
 
 def run(**kwargs):
@@ -25,17 +120,34 @@ def run(**kwargs):
         ident (string, optional): The run identifier for this invocation of Runner. Will be used
             to create and name the artifact directory holding the results of the invocation
 
-        playbook (string, filename): The playbook relative path located in the private_data_dir/project
-            directory that will be invoked by runner when executing Ansible
+        playbook (string, filename or list): The playbook relative path located in the private_data_dir/project
+            directory that will be invoked by runner when executing Ansible.  If this value is provided as a
+            Python list object, the playbook will be written to disk and then executed.
 
         inventory (string): Override the inventory directory/file supplied with runner metadata at
-            private_data_dir/inventory with a specific list of hosts
+            private_data_dir/inventory with a specific list of hosts.  If this value is provided as
+            a INI formatted string, then it will be written to disk and used.
 
-        limit (string): Matches ansible's --limit parameter to further constrain the inventory to be used
+        envvars (dict, optional): Any environment variables to be used when running Ansible.
+
+        extravars (dict, optional): Any extra variables to be passed to Ansible at runtime using
+            the -e option when calling ansible-playbook
+
+        passwords (dict, optional): A dict object that contains password prompt patterns and response
+            values used when processing output from ansible-playbook
+
+        settings (dict, optional): A dict objec that contains values for ansible-runner runtime
+            settings.
+
+        ssh_key (string, optional): The ssh private key passed to ssh-agent as part of the
+            ansible-playbook run
+
+        limit (string, optional): Matches ansible's --limit parameter to further constrain the inventory to be used
 
     Returns:
         Runner: An object that holds details and results from the invocation of Ansible itself
     '''
+    to_artifacts(kwargs)
     rc = RunnerConfig(**kwargs)
     rc.prepare()
     r = Runner(rc)
@@ -55,18 +167,35 @@ def run_async(**kwargs):
         ident (string, optional): The run identifier for this invocation of Runner. Will be used
             to create and name the artifact directory holding the results of the invocation
 
-        playbook (string, filename): The playbook relative path located in the private_data_dir/project
-            directory that will be invoked by runner when executing Ansible
+        playbook (string, filename or list): The playbook relative path located in the private_data_dir/project
+            directory that will be invoked by runner when executing Ansible.  If this value is provided as a
+            Python list object, the playbook will be written to disk and then executed.
 
         inventory (string): Override the inventory directory/file supplied with runner metadata at
-            private_data_dir/inventory with a specific list of hosts
+            private_data_dir/inventory with a specific list of hosts.  If this value is provided as
+            a INI formatted string, then it will be written to disk and used.
 
-        limit (string): Matches ansible's --limit parameter to further constrain the inventory to be used
+        envvars (dict, optional): Any environment variables to be used when running Ansible.
+
+        extravars (dict, optional): Any extra variables to be passed to Ansible at runtime using
+            the -e option when calling ansible-playbook
+
+        passwords (dict, optional): A dict object that contains password prompt patterns and response
+            values used when processing output from ansible-playbook
+
+        settings (dict, optional): A dict objec that contains values for ansible-runner runtime
+            settings.
+
+        ssh_key (string, optional): The ssh private key passed to ssh-agent as part of the
+            ansible-playbook run
+
+        limit (string, optional): Matches ansible's --limit parameter to further constrain the inventory to be used
 
     Returns:
         threadObj, Runner: An object representing the thread itself and a Runner instance that holds details
         and results from the invocation of Ansible itself
     '''
+    to_artifacts(kwargs)
     rc = RunnerConfig(**kwargs)
     rc.prepare()
     r = Runner(rc)
@@ -74,54 +203,6 @@ def run_async(**kwargs):
     runner_thread.start()
     return runner_thread, r
 
-
-def api(playbook, inventory, limit=None, ident=None):
-    '''
-    Run an Ansible Runner task in the foreground and return a Runner object
-    when complete.
-
-    This function will accept the playbook and inventory as native Python
-    objects and write them to temp disk.
-
-    Args:
-        playbook (list): The Ansible playbook as a list of dict objects
-
-        inventory (string): The Ansible inventory in INI-style format
-
-        ident (string, optional): The run identifier for this invocation of
-            Runner. Will be used to create and name the artifact directory
-            holding the results of the invocation
-
-        limit (string): Matches ansible's --limit parameter to further
-            constrain the inventory to be used
-
-    Returns:
-        Runner: An object that holds details and results from the invocation of
-            Ansible itself
-    '''
-    try:
-        private_data_dir = tempfile.mkdtemp()
-        kwargs = {'private_data_dir': private_data_dir, 'limit': limit,
-                  'ident': ident}
-
-        inputdir = (('playbook', playbook, 'project'),
-                    ('inventory', inventory, 'inventory'))
-
-        for name, obj, fldr in inputdir:
-            path = os.path.join(private_data_dir, fldr)
-            os.makedirs(path)
-            fd, fn = tempfile.mkstemp(dir=path)
-            kwargs[name] = fn
-            with open(fn, 'w') as f:
-                if name == 'playbook':
-                    f.write(json.dumps(obj))
-                else:
-                    f.write(obj)
-
-        return run(**kwargs)
-
-    finally:
-        shutil.rmtree(private_data_dir)
 
 
 def main():

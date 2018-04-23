@@ -8,12 +8,10 @@ import json
 import stat
 import sys
 import os
-import io
 import fcntl
 import tempfile
 import hashlib
 
-from ConfigParser import ConfigParser, MissingSectionHeaderError
 from collections import Iterable
 
 from six import string_types

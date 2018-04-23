@@ -11,6 +11,7 @@ import os
 import io
 import fcntl
 import tempfile
+import hashlib
 
 from ConfigParser import ConfigParser, MissingSectionHeaderError
 from collections import Iterable
@@ -50,23 +51,33 @@ def dump_artifact(obj, path, filename=None):
     Returns:
         string: The full path filename for the artifact that was generated
     '''
-    os.makedirs(path)
+    p_sha1 = None
 
-    lock_fp = os.path.join(path, '.artifact_lock')
-    lock_fd = os.open(lock_fp, os.O_RDWR | os.O_CREAT, 0o600)
-    fcntl.lockf(lock_fd, fcntl.LOCK_EX)
+    if not os.path.exists(path):
+        os.makedirs(path)
+    else:
+        p_sha1 = hashlib.sha1()
+        p_sha1.update(obj)
 
-    try:
-        if filename is None:
-            fd, fn = tempfile.mkstemp(dir=path)
-        else:
-            fn = os.path.join(path, filename)
+    if filename is None:
+        fd, fn = tempfile.mkstemp(dir=path)
+    else:
+        fn = os.path.join(path, filename)
 
-        with open(fn, 'w') as f:
-            f.write(str(obj))
+    if os.path.exists(fn):
+        c_sha1 = hashlib.sha1()
+        c_sha1.update(open(fn).read())
 
-    finally:
-        fcntl.lockf(lock_fd, fcntl.LOCK_UN)
+    if not os.path.exists(fn) or p_sha1.hexdigest() != c_sha1.hexdigest():
+        lock_fp = os.path.join(path, '.artifact_lock')
+        lock_fd = os.open(lock_fp, os.O_RDWR | os.O_CREAT, 0o600)
+        fcntl.lockf(lock_fd, fcntl.LOCK_EX)
+
+        try:
+            with open(fn, 'w') as f:
+                f.write(str(obj))
+        finally:
+            fcntl.lockf(lock_fd, fcntl.LOCK_UN)
 
     return fn
 
@@ -86,11 +97,11 @@ def to_artifacts(kwargs):
             if obj:
                 if key == 'playbook' and isplaybook(obj):
                     path = os.path.join(private_data_dir, 'project')
-                    kwargs['playbook'] = dump_artifact(json.dumps(obj), path)
+                    kwargs['playbook'] = dump_artifact(json.dumps(obj), path, 'main.yml')
 
                 elif key == 'inventory' and not os.path.exists(obj):
                     path = os.path.join(private_data_dir, 'inventory')
-                    kwargs['inventory'] = dump_artifact(obj, path)
+                    kwargs['inventory'] = dump_artifact(obj, path, 'hosts')
 
         for key in ('envvars', 'extravars', 'passwords', 'settings'):
             obj = kwargs.get(key)

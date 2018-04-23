@@ -12,7 +12,7 @@ import fcntl
 import tempfile
 import hashlib
 
-from collections import Iterable
+from collections import Iterable, Mapping
 
 from six import string_types
 
@@ -31,6 +31,23 @@ def isplaybook(obj):
         boolean: True if the object is a list and False if it is not
     '''
     return isinstance(obj, Iterable) and not isinstance(obj, string_types)
+
+
+def isinventory(obj):
+    '''
+    Inspects the object and returns if it is an inventory
+
+    Args:
+        obj (object): The object to be inspected by this function
+
+    Returns:
+        boolean: True if the object is an inventory dict and False if it is not
+    '''
+    if isinstance(obj, Mapping):
+        return True
+    elif isinstance(obj, string_types):
+        return os.path.exists(obj)
+    raise ValueError('invalid object type for inventory')
 
 
 def dump_artifact(obj, path, filename=None):
@@ -95,11 +112,14 @@ def to_artifacts(kwargs):
             if obj:
                 if key == 'playbook' and isplaybook(obj):
                     path = os.path.join(private_data_dir, 'project')
-                    kwargs['playbook'] = dump_artifact(json.dumps(obj), path, 'main.yml')
+                    kwargs['playbook'] = dump_artifact(json.dumps(obj), path, 'main.json')
 
-                elif key == 'inventory' and not os.path.exists(obj):
+                elif key == 'inventory' and isinventory(obj):
                     path = os.path.join(private_data_dir, 'inventory')
-                    kwargs['inventory'] = dump_artifact(obj, path, 'hosts')
+                    if isinstance(obj, Mapping):
+                        kwargs['inventory'] = dump_artifact(json.dumps(obj), path, 'hosts.json')
+                    else:
+                        kwargs['inventory'] = dump_artifact(obj, path, 'hosts')
 
         for key in ('envvars', 'extravars', 'passwords', 'settings'):
             obj = kwargs.get(key)

@@ -50,13 +50,15 @@ class OutputEventFilter(object):
                 event_data = json.loads(base64.b64decode(base64_data))
             except ValueError:
                 event_data = {}
-            self._emit_event(value[:match.start()], event_data)
+            event_data = self._emit_event(value[:match.start()], event_data)
+            stdout_actual = event_data['stdout'] if 'stdout' in event_data else None
             remainder = value[match.end():]
             self._buffer = StringIO()
             self._buffer.write(remainder)
 
-            sys.stdout.write(remainder)
-            self._handle.write(remainder)
+            if stdout_actual:
+                sys.stdout.write(stdout_actual + "\n")
+                self._handle.write(stdout_actual + "\n")
 
             self._last_chunk = remainder
 
@@ -76,6 +78,7 @@ class OutputEventFilter(object):
             event_data = dict(event='verbose')
             stdout_chunks = buffered_stdout.splitlines(True)
         else:
+            event_data = dict()
             stdout_chunks = []
 
         for stdout_chunk in stdout_chunks:
@@ -89,8 +92,8 @@ class OutputEventFilter(object):
             if self._event_callback:
                 self._event_callback(event_data)
                 self._event_ct += 1
-
         if next_event_data.get('uuid', None):
             self._current_event_data = next_event_data
         else:
             self._current_event_data = None
+        return event_data

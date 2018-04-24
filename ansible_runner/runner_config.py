@@ -36,7 +36,7 @@ class RunnerConfig(object):
             with open(os.path.join(self.private_data_dir, "env", "passwords"), 'r') as f:
                 self.expect_passwords = {
                     re.compile(pattern, re.M): password
-                    for pattern, password in yaml.load(f.read()).items()
+                    for pattern, password in yaml.safe_load(f.read()).items()
                 }
         except Exception:
             # TODO: logging
@@ -47,21 +47,21 @@ class RunnerConfig(object):
 
         try:
             with open(os.path.join(self.private_data_dir, "env", "envvars"), 'r') as f:
-                self.env = yaml.load(f.read())
+                self.env = yaml.safe_load(f.read())
         except Exception:
             print("Not loading environment vars")
             self.env = dict()
 
         try:
             with open(os.path.join(self.private_data_dir, "env", "extravars"), 'r') as f:
-                self.extra_vars = yaml.load(f.read())
+                self.extra_vars = yaml.safe_load(f.read())
         except Exception:
             print("Not loading extra vars")
             self.extra_vars = dict()
 
         try:
             with open(os.path.join(self.private_data_dir, "env", "settings"), 'r') as f:
-                self.settings = yaml.load(f.read())
+                self.settings = yaml.safe_load(f.read())
         except Exception:
             print("Not loading settings")
             self.settings = dict()
@@ -92,7 +92,7 @@ class RunnerConfig(object):
     def prepare_command(self):
         if os.path.exists(os.path.join(self.private_data_dir, 'args')):
             with open(os.path.join(self.private_data_dir, 'args'), 'r') as args:
-                self.command = yaml.load(args)
+                self.command = yaml.safe_load(args)
         else:
             self.command = self.generate_ansible_command()
 
@@ -107,7 +107,7 @@ class RunnerConfig(object):
         self.prepare_inventory()
         self.prepare_env()
         self.prepare_command()
-        
+
         # Use local callback directory
         callback_dir = os.getenv('AWX_LIB_DIRECTORY')
         if callback_dir is None:

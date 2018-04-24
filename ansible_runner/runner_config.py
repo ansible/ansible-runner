@@ -118,6 +118,8 @@ class RunnerConfig(object):
             self.env['ANSIBLE_STDOUT_CALLBACK'] = 'minimal'
         else:
             self.env['ANSIBLE_STDOUT_CALLBACK'] = 'awx_display'
+        self.env['ANSIBLE_RETRY_FILES_ENABLED'] = 'False'
+        self.env['ANSIBLE_HOST_KEY_CHECKING'] = 'False'
         self.env['AWX_ISOLATED_DATA_DIR'] = self.artifact_dir
         self.env['PYTHONPATH'] = self.env.get('PYTHONPATH', '') + callback_dir + ':'
 

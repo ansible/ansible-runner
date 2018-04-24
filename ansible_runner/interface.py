@@ -154,8 +154,9 @@ def run(**kwargs):
             Python list object, the playbook will be written to disk and then executed.
 
         inventory (string): Override the inventory directory/file supplied with runner metadata at
-            private_data_dir/inventory with a specific list of hosts.  The inventory kwarg can be provided
-            as either a native Python dict supporting YAML inventory structure or a text INI formatted string.
+            private_data_dir/inventory with a specific list of hosts.  This kwarg accepts either a
+            full path to the inventory file in the private_data_dir, a native Python dict supporting
+            YAML inventory structure or a text INI formatted string.
 
         envvars (dict, optional): Any environment variables to be used when running Ansible.
 
@@ -201,8 +202,9 @@ def run_async(**kwargs):
             Python list object, the playbook will be written to disk and then executed.
 
         inventory (string): Override the inventory directory/file supplied with runner metadata at
-            private_data_dir/inventory with a specific list of hosts.  The inventory kwarg can be provided
-            as either a native Python dict supporting YAML inventory structure or a text INI formatted string.
+            private_data_dir/inventory with a specific list of hosts.  This kwarg accepts either a
+            full path to the inventory file in the private_data_dir, a native Python dict supporting
+            YAML inventory structure or a text INI formatted string.
 
         envvars (dict, optional): Any environment variables to be used when running Ansible.
 

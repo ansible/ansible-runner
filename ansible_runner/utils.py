@@ -24,7 +24,7 @@ def isplaybook(obj):
     Returns:
         boolean: True if the object is a list and False if it is not
     '''
-    return isinstance(obj, Iterable) and not isinstance(obj, string_types)
+    return isinstance(obj, Iterable) and (not isinstance(obj, string_types) and not isinstance(obj, Mapping))
 
 
 def isinventory(obj):
@@ -37,11 +37,7 @@ def isinventory(obj):
     Returns:
         boolean: True if the object is an inventory dict and False if it is not
     '''
-    if isinstance(obj, Mapping):
-        return True
-    elif isinstance(obj, string_types):
-        return os.path.exists(obj)
-    raise ValueError('invalid object type for inventory')
+    return isinstance(obj, Mapping) or isinstance(obj, string_types)
 
 
 def dump_artifact(obj, path, filename=None):
@@ -95,40 +91,40 @@ def to_artifacts(kwargs):
     '''
     Introspect the kwargs and dump objects to disk
     '''
-    try:
-        private_data_dir = kwargs.get('private_data_dir')
-        if not private_data_dir:
-            private_data_dir = tempfile.mkdtemp()
-            kwargs['private_data_dir'] = private_data_dir
+    private_data_dir = kwargs.get('private_data_dir')
+    if not private_data_dir:
+        private_data_dir = tempfile.mkdtemp()
+        kwargs['private_data_dir'] = private_data_dir
 
-        for key in ('playbook', 'inventory'):
-            obj = kwargs.get(key)
-            if obj:
-                if key == 'playbook' and isplaybook(obj):
-                    path = os.path.join(private_data_dir, 'project')
-                    kwargs['playbook'] = dump_artifact(json.dumps(obj), path, 'main.json')
+    if not os.path.exists(private_data_dir):
+        raise ValueError('private_data_dir path is either invalid or does not exist')
 
-                elif key == 'inventory' and isinventory(obj):
-                    path = os.path.join(private_data_dir, 'inventory')
-                    if isinstance(obj, Mapping):
-                        kwargs['inventory'] = dump_artifact(json.dumps(obj), path, 'hosts.json')
-                    else:
+    for key in ('playbook', 'inventory'):
+        obj = kwargs.get(key)
+        if obj:
+            if key == 'playbook' and isplaybook(obj):
+                path = os.path.join(private_data_dir, 'project')
+                kwargs['playbook'] = dump_artifact(json.dumps(obj), path, 'main.json')
+
+            elif key == 'inventory' and isinventory(obj):
+                path = os.path.join(private_data_dir, 'inventory')
+                if isinstance(obj, Mapping):
+                    kwargs['inventory'] = dump_artifact(json.dumps(obj), path, 'hosts.json')
+                elif isinstance(obj, string_types):
+                    if not os.path.exists(obj):
                         kwargs['inventory'] = dump_artifact(obj, path, 'hosts')
 
-        for key in ('envvars', 'extravars', 'passwords', 'settings'):
-            obj = kwargs.get(key)
-            if obj:
-                path = os.path.join(private_data_dir, 'env')
-                dump_artifact(json.dumps(obj), path, filename=key)
-                kwargs.pop(key)
+    for key in ('envvars', 'extravars', 'passwords', 'settings'):
+        obj = kwargs.get(key)
+        if obj:
+            path = os.path.join(private_data_dir, 'env')
+            dump_artifact(json.dumps(obj), path, key)
+            kwargs.pop(key)
 
-        if 'ssh_key' in kwargs:
-            path = os.path.join(private_data_dir, 'ssh_key')
-            dump_artifact(str(obj), path, filename='ssh_key')
-            kwargs.pop('ssh_key')
-
-    except KeyError as exc:
-        raise ValueError('missing required keyword argument: %s' % exc)
+    if 'ssh_key' in kwargs:
+        path = os.path.join(private_data_dir, 'env')
+        dump_artifact(str(kwargs['ssh_key']), path, 'ssh_key')
+        kwargs.pop('ssh_key')
 
 
 class OutputEventFilter(object):

@@ -46,8 +46,11 @@ class RunnerConfig(object):
         self.expect_passwords[pexpect.EOF] = None
 
         try:
+            # seed env with existing shell env
+            self.env = os.environ.copy()
             with open(os.path.join(self.private_data_dir, "env", "envvars"), 'r') as f:
-                self.env = yaml.safe_load(f.read())
+                # loaded envvars take precedence over existing shell env
+                self.env.update(yaml.safe_load(f.read()))
         except Exception:
             print("Not loading environment vars")
             self.env = dict()

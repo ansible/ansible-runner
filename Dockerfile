@@ -25,5 +25,5 @@ CMD ansible-runner run /runner
 ADD demo/project /runner/project
 ADD demo/env /runner/env
 ADD demo/inventory /runner/inventory
-ADD dist/ansible_runner-1.0-py2.py3-none-any.whl /ansible_runner-1.0-py2.py3-none-any.whl
-RUN pip install --no-cache-dir /ansible_runner-1.0-py2.py3-none-any.whl
+ADD dist/ansible_runner-1.0.0-py2.py3-none-any.whl /ansible_runner-1.0.0-py2.py3-none-any.whl
+RUN pip install --no-cache-dir /ansible_runner-1.0.0-py2.py3-none-any.whl

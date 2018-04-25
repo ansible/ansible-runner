@@ -73,13 +73,6 @@ class RunnerConfig(object):
             print("Not loading ssh key")
             self.ssh_key_data = None
 
-        # write the SSH key data into a fifo read by ssh-agent
-        if self.ssh_key_data:
-            self.ssh_key_path = os.path.join(self.artifact_dir, 'ssh_key_data')
-            self.ssh_auth_sock = os.path.join(self.artifact_dir, 'ssh_auth.sock')
-            self.open_fifo_write(self.ssh_key_path, self.ssh_key_data)
-            self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path, self.ssh_auth_sock)
-
         self.idle_timeout = self.settings.get('idle_timeout', 120)
         self.job_timeout = self.settings.get('job_timeout', 120)
         self.pexpect_timeout = self.settings.get('pexpect_timeout', 5)
@@ -107,6 +100,13 @@ class RunnerConfig(object):
         self.prepare_inventory()
         self.prepare_env()
         self.prepare_command()
+
+        # write the SSH key data into a fifo read by ssh-agent
+        if self.ssh_key_data:
+            self.ssh_key_path = os.path.join(self.artifact_dir, 'ssh_key_data')
+            self.ssh_auth_sock = os.path.join(self.artifact_dir, 'ssh_auth.sock')
+            self.open_fifo_write(self.ssh_key_path, self.ssh_key_data)
+            self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path, self.ssh_auth_sock)
 
         # Use local callback directory
         callback_dir = os.getenv('AWX_LIB_DIRECTORY')
@@ -172,10 +172,10 @@ class RunnerConfig(object):
         This blocks the thread until an external process (such as ssh-agent)
         reads data from the pipe.
         '''
-        os.mkfifo(path, 0o644)
+        os.mkfifo(path, 0o600)
         thread.start_new_thread(lambda p, d: open(p, 'w').write(d), (path, data))
 
 
-    def args2cmdline(*args):
+    def args2cmdline(self, *args):
         # TODO: switch to utility function
         return ' '.join([pipes.quote(a) for a in args])

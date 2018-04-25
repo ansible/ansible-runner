@@ -10,3 +10,4 @@
 /rpm-build
 /*.egg-info
 *.py[c,o]
+.pytest_cache

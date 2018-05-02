@@ -58,11 +58,11 @@ devimage:
 
 rpm:
 	docker-compose -f packaging/rpm/docker-compose.yml \
-	  run --rm -e MOCK_CONFIG rpm-builder "make mock-rpm"
+	  run --rm -e MOCK_CONFIG -e RELEASE rpm-builder "make mock-rpm"
 
 srpm:
 	docker-compose -f packaging/rpm/docker-compose.yml \
-	  run --rm -e MOCK_CONFIG rpm-builder "make mock-srpm"
+	  run --rm -e MOCK_CONFIG -e RELEASE rpm-builder "make mock-srpm"
 
 mock-rpm: rpm-build/$(RPM_NVR).$(RPM_ARCH).rpm
 

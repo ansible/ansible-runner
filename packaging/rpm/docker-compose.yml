@@ -5,6 +5,9 @@ services:
     build: .
     environment:
       MOCK_BIN: "mock --old-chroot"
+      MOCK_CONFIG:
+      RELEASE:
+      OFFICIAL:
     volumes:
       - ../../:/ansible-runner
       - mock-cache:/var/cache/mock

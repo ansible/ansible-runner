@@ -1,3 +1,8 @@
+%if 0%{?rhel} == 7
+  # Building on CentoOS 7 would result in ".el7.centos"
+  %define dist .el7
+%endif
+
 Name: ansible-runner
 Version: {{ version }}
 Release: {{ release }}%{?dist}

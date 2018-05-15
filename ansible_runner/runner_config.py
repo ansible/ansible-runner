@@ -53,7 +53,8 @@ class RunnerConfig(object):
                 self.env.update(yaml.safe_load(f.read()))
         except Exception:
             print("Not loading environment vars")
-            self.env = dict()
+            # Still need to pass default environment to pexpect
+            self.env = os.environ.copy()
 
         try:
             with open(os.path.join(self.private_data_dir, "env", "extravars"), 'r') as f:

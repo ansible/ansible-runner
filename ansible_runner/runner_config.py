@@ -1,13 +1,35 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
 import os
 import re
-import yaml
 import pipes
 import threading
 import pexpect
 import logging
-from uuid import uuid4
 
-from .exceptions import ConfigurationError
+from uuid import uuid4
+from collections import Mapping
+
+from six import iteritems, string_types
+
+from ansible_runner.exceptions import ConfigurationError
+from ansible_runner.loader import ArtifactLoader
 from ansible_runner.utils import display
 
 
@@ -33,18 +55,20 @@ class RunnerConfig(object):
 
         self.logger.info('private_data_dir: %s' % self.private_data_dir)
 
+        self.loader = ArtifactLoader(self.private_data_dir)
+
     def prepare_inventory(self):
         if self.inventory is None:
             self.inventory  = os.path.join(self.private_data_dir, "inventory")
 
     def prepare_env(self):
         try:
-            with open(os.path.join(self.private_data_dir, "env", "passwords"), 'r') as f:
-                self.expect_passwords = {
-                    re.compile(pattern, re.M): password
-                    for pattern, password in yaml.safe_load(f.read()).items()
-                }
-        except Exception as exc:
+            passwords = self.loader.load_file('env/passwords', Mapping)
+            self.expect_passwords= {
+                re.rcompile(pattern, re.M): password
+                for pattern, password in iteritems(passwords)
+            }
+        except ConfigurationError as exc:
             self.logger.exception(exc)
             display('Not loading passwords')
             self.expect_passwords = dict()
@@ -54,37 +78,34 @@ class RunnerConfig(object):
         try:
             # seed env with existing shell env
             self.env = os.environ.copy()
-            with open(os.path.join(self.private_data_dir, "env", "envvars"), 'r') as f:
-                # loaded envvars take precedence over existing shell env
-                self.env.update(yaml.safe_load(f.read()))
-        except Exception as exc:
+            envvars = self.loader.load_file('env/envvars', Mapping)
+            if envvars:
+                self.env.update(envvars)
+        except ConfigurationError as exc:
             self.logger.exception(exc)
             display("Not loading environment vars")
             # Still need to pass default environment to pexpect
             self.env = os.environ.copy()
 
         try:
-            with open(os.path.join(self.private_data_dir, "env", "extravars"), 'r') as f:
-                self.extra_vars = yaml.safe_load(f.read())
-        except Exception as exc:
+            self.extra_vars = self.loader.load_file('env/extravars', Mapping)
+        except ConfigurationError as exc:
             self.logger.exception(exc)
             display("Not loading extra vars")
             self.extra_vars = dict()
 
         try:
-            with open(os.path.join(self.private_data_dir, "env", "settings"), 'r') as f:
-                self.settings = yaml.safe_load(f.read())
-        except Exception as exc:
+            self.settings = self.loader.load_file('env/settings', Mapping)
+        except ConfigurationError as exc:
             self.logger.exception(exc)
-            display("Not loading settings")
+            print("Not loading settings")
             self.settings = dict()
 
         try:
-            with open(os.path.join(self.private_data_dir, "env", "ssh_key"), 'r') as f:
-                self.ssh_key_data = f.read()
-        except Exception as exc:
+            self.ssh_key_data = self.loader.load_file('env/ssh_key', string_types)
+        except ConfigurationError as exc:
             self.logger.exception(exc)
-            display("Not loading ssh key")
+            print("Not loading ssh key")
             self.ssh_key_data = None
 
         self.idle_timeout = self.settings.get('idle_timeout', 120)
@@ -97,10 +118,9 @@ class RunnerConfig(object):
             self.cwd = os.path.join(self.private_data_dir, 'project')
 
     def prepare_command(self):
-        if os.path.exists(os.path.join(self.private_data_dir, 'args')):
-            with open(os.path.join(self.private_data_dir, 'args'), 'r') as args:
-                self.command = yaml.safe_load(args)
-        else:
+        try:
+            self.command = self.loader.load_file('args', string_types)
+        except ConfigurationError:
             self.command = self.generate_ansible_command()
 
     def prepare(self):

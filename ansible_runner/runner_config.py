@@ -4,12 +4,16 @@ import yaml
 import pipes
 import threading
 import pexpect
+import logging
 from uuid import uuid4
 
 from .exceptions import ConfigurationError
+from ansible_runner.utils import display
 
 
 class RunnerConfig(object):
+
+    logger = logging.getLogger('ansible-runner')
 
     def __init__(self,
                  private_data_dir=None, playbook=None, ident=uuid4(),
@@ -27,6 +31,8 @@ class RunnerConfig(object):
         else:
             self.artifact_dir = os.path.join(self.private_data_dir, "artifacts", "{}".format(self.ident))
 
+        self.logger.info('private_data_dir: %s' % self.private_data_dir)
+
     def prepare_inventory(self):
         if self.inventory is None:
             self.inventory  = os.path.join(self.private_data_dir, "inventory")
@@ -38,9 +44,9 @@ class RunnerConfig(object):
                     re.compile(pattern, re.M): password
                     for pattern, password in yaml.safe_load(f.read()).items()
                 }
-        except Exception:
-            # TODO: logging
-            print("Not loading passwords")
+        except Exception as exc:
+            self.logger.exception(exc)
+            display('Not loading passwords')
             self.expect_passwords = dict()
         self.expect_passwords[pexpect.TIMEOUT] = None
         self.expect_passwords[pexpect.EOF] = None
@@ -51,30 +57,34 @@ class RunnerConfig(object):
             with open(os.path.join(self.private_data_dir, "env", "envvars"), 'r') as f:
                 # loaded envvars take precedence over existing shell env
                 self.env.update(yaml.safe_load(f.read()))
-        except Exception:
-            print("Not loading environment vars")
+        except Exception as exc:
+            self.logger.exception(exc)
+            display("Not loading environment vars")
             # Still need to pass default environment to pexpect
             self.env = os.environ.copy()
 
         try:
             with open(os.path.join(self.private_data_dir, "env", "extravars"), 'r') as f:
                 self.extra_vars = yaml.safe_load(f.read())
-        except Exception:
-            print("Not loading extra vars")
+        except Exception as exc:
+            self.logger.exception(exc)
+            display("Not loading extra vars")
             self.extra_vars = dict()
 
         try:
             with open(os.path.join(self.private_data_dir, "env", "settings"), 'r') as f:
                 self.settings = yaml.safe_load(f.read())
-        except Exception:
-            print("Not loading settings")
+        except Exception as exc:
+            self.logger.exception(exc)
+            display("Not loading settings")
             self.settings = dict()
 
         try:
             with open(os.path.join(self.private_data_dir, "env", "ssh_key"), 'r') as f:
                 self.ssh_key_data = f.read()
-        except Exception:
-            print("Not loading ssh key")
+        except Exception as exc:
+            self.logger.exception(exc)
+            display("Not loading ssh key")
             self.ssh_key_data = None
 
         self.idle_timeout = self.settings.get('idle_timeout', 120)

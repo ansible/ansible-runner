@@ -8,10 +8,37 @@ import json
 import stat
 import sys
 import os
+import logging
 
 from .runner_config import RunnerConfig
 from .runner import Runner
-from .utils import to_artifacts
+from .utils import dump_artifacts, configure_logging
+
+
+logging.getLogger('ansible-runner').addHandler(logging.NullHandler())
+
+
+def init_runner(**kwargs):
+    '''
+    Initialize the Runner() instance
+
+    This function will properly initialize both run() and run_async()
+    functions in the same way and return a value instance of Runner.
+    '''
+    dump_artifacts(kwargs)
+
+    debug = kwargs.pop('debug', None)
+
+    logfile = None
+    if debug:
+        logfile = os.path.join(kwargs['private_data_dir'], 'debug.log')
+
+    configure_logging(filename=logfile, debug=debug)
+
+    rc = RunnerConfig(**kwargs)
+    rc.prepare()
+
+    return Runner(rc)
 
 
 def run(**kwargs):
@@ -54,10 +81,7 @@ def run(**kwargs):
     Returns:
         Runner: An object that holds details and results from the invocation of Ansible itself
     '''
-    to_artifacts(kwargs)
-    rc = RunnerConfig(**kwargs)
-    rc.prepare()
-    r = Runner(rc)
+    r = init_runner(**kwargs)
     r.run()
     return r
 
@@ -103,10 +127,7 @@ def run_async(**kwargs):
         threadObj, Runner: An object representing the thread itself and a Runner instance that holds details
         and results from the invocation of Ansible itself
     '''
-    to_artifacts(kwargs)
-    rc = RunnerConfig(**kwargs)
-    rc.prepare()
-    r = Runner(rc)
+    r = init_runner(**kwargs)
     runner_thread = threading.Thread(target=r.run)
     runner_thread.start()
     return runner_thread, r

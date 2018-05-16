@@ -51,7 +51,7 @@ class ArtifactLoader(object):
         Args:
             contents (string): The contents to deserialize
 
-        Retunrs:
+        Returns:
             dict: If the contents are JSON serialized
 
             None: if the contents are not JSON serialized
@@ -75,7 +75,8 @@ class ArtifactLoader(object):
         '''
         try:
             return safe_load(contents)
-        except YAMLError:
+        except YAMLError as exc:
+            self.logger.exception(exc)
             pass
 
     def get_contents(self, path):
@@ -166,9 +167,9 @@ class ArtifactLoader(object):
             if parsed_data:
                 break
 
-        if not isinstance(contents, objtype):
+        if objtype and not isinstance(parsed_data, objtype):
             self.logger.debug('specified file %s is not of type %s' % (path, objtype))
             raise ConfigurationError('invalid file serialization type for contents')
 
-        self._cache[path] = contents
-        return contents
+        self._cache[path] = parsed_data
+        return parsed_data

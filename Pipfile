@@ -1,24 +1,17 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = false
 name = "pypi"
 
-
 [dev-packages]
-
 pytest = "*"
 "flake8" = "*"
 
-
 [packages]
-
 psutil = "*"
-pexpect = "*"
+pexpect = "==4.5.0"
 python-daemon = "*"
 pyyaml = "*"
 
-
 [requires]
-
 python_version = "2.7"

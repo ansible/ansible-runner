@@ -2,7 +2,7 @@ import os
 import re
 import yaml
 import pipes
-import thread
+import threading
 import pexpect
 from uuid import uuid4
 
@@ -177,8 +177,8 @@ class RunnerConfig(object):
         reads data from the pipe.
         '''
         os.mkfifo(path, 0o600)
-        thread.start_new_thread(lambda p, d: open(p, 'w').write(d), (path, data))
-
+        threading.Thread(target=lambda p, d: open(p, 'w').write(d),
+                         args=(path, data)).start()
 
     def args2cmdline(self, *args):
         # TODO: switch to utility function

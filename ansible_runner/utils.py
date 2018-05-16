@@ -1,4 +1,3 @@
-from StringIO import StringIO
 import base64
 import json
 import sys
@@ -9,7 +8,7 @@ import tempfile
 import hashlib
 
 from collections import Iterable, Mapping
-
+from io import StringIO
 from six import string_types
 
 

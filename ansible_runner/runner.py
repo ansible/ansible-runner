@@ -78,8 +78,8 @@ class Runner(object):
             # enforce usage of an OrderedDict so that the ordering of elements in
             # `keys()` matches `values()`.
             expect_passwords = collections.OrderedDict(self.config.expect_passwords)
-        password_patterns = expect_passwords.keys()
-        password_values = expect_passwords.values()
+        password_patterns = list(expect_passwords.keys())
+        password_values = list(expect_passwords.values())
 
         self.status = 'running'
         child = pexpect.spawn(

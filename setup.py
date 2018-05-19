@@ -19,7 +19,9 @@ setup(
         'six',
     ],
     zip_safe=False,
-    scripts=[
-        'bin/ansible-runner'
-    ]
+    entry_points={
+        'console_scripts': [
+            'ansible-runner = ansible_runner.__main__:main'
+        ]
+    }
 )

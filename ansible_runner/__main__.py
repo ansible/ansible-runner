@@ -1,4 +1,3 @@
-#!/bin/env python
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -35,8 +34,7 @@ from ansible_runner import run, run_async
 VERSION = pkg_resources.require("ansible_runner")[0].version
 DEFAULT_ROLES_PATH = os.getenv('ANSIBLE_ROLES_PATH', '/etc/ansible/roles')
 
-if __name__ == '__main__':
-
+def main():
     parser = argparse.ArgumentParser(description='manage ansible execution')
     parser.add_argument('--version', action='version', version=VERSION)
 

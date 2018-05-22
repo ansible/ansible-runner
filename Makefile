@@ -48,6 +48,9 @@ dev:
 shell:
 	pipenv shell
 
+test:
+	tox
+
 image:
 	docker pull centos:7
 	docker build --rm=true -t $(IMAGE_NAME) .

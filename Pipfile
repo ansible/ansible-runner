@@ -1,13 +1,20 @@
 [[source]]
+
 url = "https://pypi.python.org/simple"
 verify_ssl = false
 name = "pypi"
 
+
 [dev-packages]
+
 pytest = "*"
 "flake8" = "*"
+funcsigs = "*"
+mock = "*"
+
 
 [packages]
+
 psutil = "*"
 pexpect = "==4.5.0"
 python-daemon = "*"

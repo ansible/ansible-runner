@@ -65,11 +65,11 @@ class EventContext(object):
 
     def __init__(self):
         self.display_lock = multiprocessing.RLock()
-        cache_actual = os.getenv('CACHE', '127.0.0.1:11211')
         if os.getenv('AWX_ISOLATED_DATA_DIR', False):
             self.cache = IsolatedFileWrite()
         # TODO: Solve for Tower
         # else:
+        #     cache_actual = os.getenv('CACHE', '127.0.0.1:11211')
         #     self.cache = memcache.Client([cache_actual], debug=0)
 
     def add_local(self, **kwargs):

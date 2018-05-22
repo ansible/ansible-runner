@@ -5,6 +5,7 @@
 *.sw[poj]
 *~
 
+/.tox
 /dist
 /build
 /rpm-build

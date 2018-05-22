@@ -1,14 +1,11 @@
-import os
 import json
 import shutil
 
 from pytest import raises
 from mock import patch
 
-import ansible_runner.utils
-
 from ansible_runner.utils import isplaybook, isinventory
-from ansible_runner.utils import to_artifacts, dump_artifact
+from ansible_runner.utils import to_artifacts
 
 
 def test_isplaybook():
@@ -19,12 +16,14 @@ def test_isplaybook():
     for obj in (['foo'], []):
         assert isplaybook(obj) is True, obj
 
+
 def test_isinventory():
     for obj in (__file__, {}, {'foo': 'bar'}):
         assert isinventory(obj) is True, obj
 
     for obj in ([], ['foo'], True, False, None):
         assert isinventory(obj) is False, obj
+
 
 def test_to_artifacts_private_data_dir():
     data_dir = '/tmp'
@@ -122,6 +121,7 @@ def test_to_artifacts_extravars():
         assert fn == 'extravars'
         assert 'extravars' not in kwargs
 
+
 def test_to_artifacts_passwords():
     with patch('ansible_runner.utils.dump_artifact') as mock_dump_artifact:
         passwords = {'foo': 'bar'}
@@ -134,6 +134,7 @@ def test_to_artifacts_passwords():
         assert fn == 'passwords'
         assert 'passwords' not in kwargs
 
+
 def test_to_artifacts_settings():
     with patch('ansible_runner.utils.dump_artifact') as mock_dump_artifact:
         settings = {'foo': 'bar'}
@@ -145,6 +146,7 @@ def test_to_artifacts_settings():
         assert fp == '/tmp/env'
         assert fn == 'settings'
         assert 'settings' not in kwargs
+
 
 def test_to_artifacts_ssh_key():
     with patch('ansible_runner.utils.dump_artifact') as mock_dump_artifact:

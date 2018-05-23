@@ -5,6 +5,7 @@
 *.sw[poj]
 *~
 
+/demo/artifacts
 /.tox
 /dist
 /build

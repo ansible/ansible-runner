@@ -230,7 +230,7 @@ class Runner(object):
         return all_host_events
 
     @classmethod
-    def handle_termination(pid, args, proot_cmd, is_cancel=True):
+    def handle_termination(cls, pid, args, proot_cmd, is_cancel=True):
         '''
         Internal method to terminate a subprocess spawned by `pexpect` representing an invocation of runner.
 
@@ -241,7 +241,7 @@ class Runner(object):
                           instance's cancel_flag.
         '''
         try:
-            if proot_cmd in ' '.join(args):
+            if proot_cmd and proot_cmd in ' '.join(args):
                 if not psutil:
                     os.kill(pid, signal.SIGKILL)
                 else:

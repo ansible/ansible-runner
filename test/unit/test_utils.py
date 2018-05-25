@@ -5,7 +5,7 @@ from pytest import raises
 from mock import patch
 
 from ansible_runner.utils import isplaybook, isinventory
-from ansible_runner.utils import dump_artifacts, dump_artifact
+from ansible_runner.utils import dump_artifacts
 
 
 def test_isplaybook():

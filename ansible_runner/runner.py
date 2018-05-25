@@ -121,7 +121,7 @@ class Runner(object):
                 Runner.handle_termination(child.pid, child.args, proot_cmd=None, is_cancel=self.canceled)
             if self.config.idle_timeout and (time.time() - last_stdout_update) > self.config.idle_timeout:
                 child.close(True)
-                self.canceled = True
+                self.timed_out = True
 
         if self.canceled:
             self.status = "canceled"

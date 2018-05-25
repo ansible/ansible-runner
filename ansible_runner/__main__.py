@@ -29,6 +29,8 @@ import shlex
 
 from uuid import uuid4
 
+from yaml import safe_load
+
 from ansible_runner import run
 from ansible_runner.utils import dump_artifact
 from ansible_runner.runner import Runner
@@ -105,32 +107,58 @@ def main():
 
             kwargs = {'private_data_dir': args.private_data_dir}
 
-            playbook = [{'hosts': args.hosts, 'roles': [role]}]
-            path = os.path.abspath(os.path.join(args.private_data_dir, 'project'))
-            dump_artifact(json.dumps(playbook), path, 'main.json')
+            playbook = None
+            tmpvars = None
 
-            playbook_file = os.path.join(path, 'main.json')
-            kwargs['playbook'] = playbook_file
-            print('using playbook file %s' % playbook_file)
+            rc = 255
 
-            if args.inventory:
-                inventory_file = os.path.abspath(os.path.join(args.private_data_dir, 'inventory', args.inventory))
-                kwargs['inventory'] = inventory_file
-                print('using inventory file %s' % inventory_file)
+            try:
+                play = [{'hosts': args.hosts, 'roles': [role]}]
 
-            envvars = {}
+                path = os.path.abspath(os.path.join(args.private_data_dir, 'project'))
+                filename = str(uuid4().hex)
 
-            roles_path = args.roles_path or os.path.join(args.private_data_dir, 'roles')
-            roles_path = os.path.abspath(roles_path)
-            print('setting ANSIBLE_ROLES_PATH to %s' % roles_path)
+                playbook = dump_artifact(json.dumps(play), path, filename)
+                kwargs['playbook'] = playbook
+                print('using playbook file %s' % playbook)
 
-            envvars['ANSIBLE_ROLES_PATH'] = roles_path
+                if args.inventory:
+                    inventory_file = os.path.abspath(os.path.join(args.private_data_dir, 'inventory', args.inventory))
+                    kwargs['inventory'] = inventory_file
+                    print('using inventory file %s' % inventory_file)
 
-            if envvars:
+                envvars = {}
+
+                roles_path = args.roles_path or os.path.join(args.private_data_dir, 'roles')
+                roles_path = os.path.abspath(roles_path)
+                print('setting ANSIBLE_ROLES_PATH to %s' % roles_path)
+
+                # since envvars will overwrite an existing envvars, capture
+                # the content of the current envvars if it exists and
+                # restore it once done
+                envvars = {}
+                curvars = os.path.join(args.private_data_dir, 'env/envvars')
+                if os.path.exists(curvars):
+                    with open(curvars, 'rb') as f:
+                        tmpvars = f.read()
+                        envvars = safe_load(tmpvars)
+                envvars['ANSIBLE_ROLES_PATH'] = roles_path
                 kwargs['envvars'] = envvars
 
-            res = run(**kwargs)
-            sys.exit(res.rc)
+                res = run(**kwargs)
+                rc = res.rc
+
+            finally:
+                if playbook and os.path.isfile(playbook):
+                    os.remove(playbook)
+
+                # if a previous envvars existed in the private_data_dir,
+                # restore the original file contents
+                if tmpvars:
+                    with open(curvars, 'wb') as f:
+                        f.write(tmpvars)
+
+            sys.exit(rc)
 
         elif args.command == 'start':
             import daemon

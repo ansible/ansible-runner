@@ -16,8 +16,11 @@ playbook.  The following example demonstrates how to invoke a role directly
 using `ansible-runner`:
 
 ```bash
-$ ansible-runner run ./demo -r my_role --roles-path /path/to/roles
+$ ansible-runner run ./demo -r testrole --roles-path ./demo/roles
 ```
+
+The above example will run the role called `testrole` from the `demo` folder in
+the `ansible-runner` project root directory.
 
 
 # Understanding the Ansible Runner Directory Hierarchy Interface

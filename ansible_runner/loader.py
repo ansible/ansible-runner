@@ -117,10 +117,9 @@ class ArtifactLoader(object):
         Returns:
             string: The absolue path to the file
         '''
-        if path.startswith(os.path.sep) or path.startswith('~'):
-            return os.path.expanduser(path)
-        else:
-            return os.path.join(self.base_path, path)
+        if not path.startswith(os.path.sep) or path.startswith('~'):
+            path = os.path.expanduser(os.path.join(self.base_path, path))
+        return path
 
     def load_file(self, path, objtype=None, encoding='utf-8'):
         '''

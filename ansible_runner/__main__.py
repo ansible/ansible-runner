@@ -29,13 +29,20 @@ import shlex
 
 from uuid import uuid4
 
-from ansible_runner import run, run_async
+from ansible_runner import run
+from ansible_runner.utils import dump_artifact
+from ansible_runner.runner import Runner
 
 VERSION = pkg_resources.require("ansible_runner")[0].version
-DEFAULT_ROLES_PATH = os.getenv('ANSIBLE_ROLES_PATH', '/etc/ansible/roles')
+
+DEFAULT_ROLES_PATH = os.getenv('ANSIBLE_ROLES_PATH', None)
+DEFAULT_RUNNER_PLAYBOOK = os.getenv('RUNNER_PLAYBOOK', None)
+DEFAULT_RUNNER_ROLE = os.getenv('RUNNER_ROLE', None)
+
 
 def main():
     parser = argparse.ArgumentParser(description='manage ansible execution')
+
     parser.add_argument('--version', action='version', version=VERSION)
 
     parser.add_argument('command', choices=['run', 'start', 'stop', 'is-alive'])
@@ -45,10 +52,10 @@ def main():
 
     group = parser.add_mutually_exclusive_group()
 
-    group.add_argument("-p", "--playbook", default=os.getenv("RUNNER_PLAYBOOK", None),
+    group.add_argument("-p", "--playbook", default=DEFAULT_RUNNER_PLAYBOOK,
                        help="The name of the playbook to execute")
 
-    group.add_argument("-r", "--role",
+    group.add_argument("-r", "--role", default=DEFAULT_RUNNER_ROLE,
                        help="Invoke an Ansible role directly without a playbook")
 
     parser.add_argument("--hosts", default='all',
@@ -96,16 +103,28 @@ def main():
                     role_vars[key] = value
                 role['vars'] = role_vars
 
-            kwargs = {
-                'playbook': [{'hosts': args.hosts, 'roles': [role]}],
-                'inventory': args.inventory,
-            }
+            kwargs = {'private_data_dir': args.private_data_dir}
 
-            print('using inventory file %s' % args.inventory)
+            playbook = [{'hosts': args.hosts, 'roles': [role]}]
+            path = os.path.abspath(os.path.join(args.private_data_dir, 'project'))
+            dump_artifact(json.dumps(playbook), path, 'main.json')
+
+            playbook_file = os.path.join(path, 'main.json')
+            kwargs['playbook'] = playbook_file
+            print('using playbook file %s' % playbook_file)
+
+            if args.inventory:
+                inventory_file = os.path.abspath(os.path.join(args.private_data_dir, 'inventory', args.inventory))
+                kwargs['inventory'] = inventory_file
+                print('using inventory file %s' % inventory_file)
 
             envvars = {}
-            if args.roles_path:
-                envvars['ANSIBLE_ROLES_PATH'] = args.roles_path
+
+            roles_path = args.roles_path or os.path.join(args.private_data_dir, 'roles')
+            roles_path = os.path.abspath(roles_path)
+            print('setting ANSIBLE_ROLES_PATH to %s' % roles_path)
+
+            envvars['ANSIBLE_ROLES_PATH'] = roles_path
 
             if envvars:
                 kwargs['envvars'] = envvars

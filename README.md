@@ -11,6 +11,15 @@ The base reference container image includes a demo playbook and inventory that u
 $ docker run -it --rm -e RUNNER_PLAYBOOK=test.yml ansible/ansible-runner:latest
 ```
 
+The `ansible-runner` command can also directly run roles without the need for a
+playbook.  The following example demonstrates how to invoke a role directly
+using `ansible-runner`:
+
+```bash
+$ ansible-runner run ./demo -r my_role --roles-path /path/to/roles
+```
+
+
 # Understanding the Ansible Runner Directory Hierarchy Interface
 
 Ansible Runner takes most of its inputs from a particular directory structure. Some inputs can also be given on the command line. Primarily the `ansible-runner` command line utility requires at least two parameters:

@@ -28,7 +28,7 @@ ifeq ($(RPM_ARCH),)
     RPM_ARCH = $(shell uname -m)
 endif
 
-.PHONY: clean dist sdist dev shell image devimage rpm srpm
+.PHONY: clean dist sdist dev shell image devimage rpm srpm docs
 
 clean:
 	rm -rf dist
@@ -50,6 +50,9 @@ shell:
 
 test:
 	tox
+
+docs:
+	cd docs && make html
 
 image:
 	docker pull centos:7

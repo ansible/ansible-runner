@@ -6,6 +6,7 @@ import errno
 import signal
 import codecs
 import collections
+import logging
 
 import pexpect
 import psutil
@@ -15,6 +16,8 @@ from .exceptions import CallbackError, AnsibleRunnerException
 
 
 class Runner(object):
+
+    logger = logging.getLogger('ansible-runner')
 
     def __init__(self, config, cancel_callback=None, remove_partials=True):
         self.config = config
@@ -49,7 +52,7 @@ class Runner(object):
                 if self.remove_partials:
                     os.remove(partial_filename)
             except IOError as e:
-                print("Failed writing event data: {}".format(e))
+                self.logger.exception("Failed writing event data: {}".format(e))
 
     def run(self):
         '''
@@ -159,7 +162,7 @@ class Runner(object):
 
         Example:
 
-            {  
+            {
                "event":"runner_on_ok",
                "uuid":"00a50d9c-161a-4b74-b978-9f60becaf209",
                "stdout":"ok: [localhost] => {\\r\\n    \\"   msg\\":\\"Test!\\"\\r\\n}",
@@ -168,13 +171,13 @@ class Runner(object):
                "created":"2018-04-05T18:24:36.096725",
                "end_line":10,
                "start_line":7,
-               "event_data":{  
+               "event_data":{
                   "play_pattern":"all",
                   "play":"all",
                   "task":"debug",
                   "task_args":"msg=Test!",
                   "remote_addr":"localhost",
-                  "res":{  
+                  "res":{
                      "msg":"Test!",
                      "changed":false,
                      "_ansible_verbose_always":true,

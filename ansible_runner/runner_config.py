@@ -80,7 +80,7 @@ class RunnerConfig(object):
             self.env = os.environ.copy()
             envvars = self.loader.load_file('env/envvars', Mapping)
             if envvars:
-                self.env.update(envvars)
+                self.env.update({k:str(v) for k, v in envvars.items()})
         except ConfigurationError as exc:
             self.logger.exception(exc)
             display("Not loading environment vars")

@@ -33,6 +33,8 @@ def init_runner(**kwargs):
 
     This function will properly initialize both run() and run_async()
     functions in the same way and return a value instance of Runner.
+
+    See parameters given to :py:func:`ansible_runner.interface.run`
     '''
     dump_artifacts(kwargs)
 
@@ -54,41 +56,38 @@ def run(**kwargs):
     '''
     Run an Ansible Runner task in the foreground and return a Runner object when complete.
 
-    Args:
+    :param private_data_dir: The directory containing all runner metadata needed to invoke the runner
+                             module. Output artifacts will also be stored here for later consumption.
+    :param ident: The run identifier for this invocation of Runner. Will be used to create and name
+                  the artifact directory holding the results of the invocation.
+    :param playbook: The playbook (either supplied here as a list or string... or as a path relative to
+                     ``private_data_dir/project``) that will be invoked by runner when executing Ansible.
+    :param inventory: Overridees the inventory directory/file (supplied at ``private_data_dir/inventory``) with
+                      a specific host or list of hosts. This can take the form of
+      - Path to the inventory file in the ``private_data_dir``
+      - Native python dict supporting the YAML/json inventory structure
+      - A text INI formatted string
+    :param envvars: Environment variables to be used when running Ansible. Environment variables will also be
+                    read from ``env/envvars`` in ``private_data_dir``
+    :param extravars: Extra variables to be passed to Ansible at runtime using ``-e``. Extra vars will also be
+                      read from ``env/extravars`` in ``private_data_dir``.
+    :param passwords: A dictionary containing password prompt patterns and response values used when processing output from
+                      Ansible. Passwords will also be read from ``env/passwords`` in ``private_data_dir``.
+    :param settings: A dictionary containing settings values for the ``ansible-runner`` runtime environment. These will also
+                     be read from ``env/settings`` in ``private_data_dir``.
+    :param ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
+    :param limit: Matches ansible's ``--limit`` parameter to further constrain the inventory to be used
+    :type private_data_dir: str
+    :type ident: str
+    :type playbook: str or filename or list
+    :type inventory: str or dict or list
+    :type envvars: dict
+    :type extravars: dict
+    :type passwords: dict
+    :type settings: dict
+    :type ssh_key: str
 
-        private_data_dir (string, path): The directory containing all runner metadata needed
-            to invoke the runner module
-
-        ident (string, optional): The run identifier for this invocation of Runner. Will be used
-            to create and name the artifact directory holding the results of the invocation
-
-        playbook (string, filename or list): The playbook relative path located in the private_data_dir/project
-            directory that will be invoked by runner when executing Ansible.  If this value is provided as a
-            Python list object, the playbook will be written to disk and then executed.
-
-        inventory (string): Override the inventory directory/file supplied with runner metadata at
-            private_data_dir/inventory with a specific list of hosts.  This kwarg accepts either a
-            full path to the inventory file in the private_data_dir, a native Python dict supporting
-            YAML inventory structure or a text INI formatted string.
-
-        envvars (dict, optional): Any environment variables to be used when running Ansible.
-
-        extravars (dict, optional): Any extra variables to be passed to Ansible at runtime using
-            the -e option when calling ansible-playbook
-
-        passwords (dict, optional): A dict object that contains password prompt patterns and response
-            values used when processing output from ansible-playbook
-
-        settings (dict, optional): A dict objec that contains values for ansible-runner runtime
-            settings.
-
-        ssh_key (string, optional): The ssh private key passed to ssh-agent as part of the
-            ansible-playbook run
-
-        limit (string, optional): Matches ansible's --limit parameter to further constrain the inventory to be used
-
-    Returns:
-        Runner: An object that holds details and results from the invocation of Ansible itself
+    :returns: A :py:class:`ansible_runner.runner.Runner` object
     '''
     r = init_runner(**kwargs)
     r.run()
@@ -97,44 +96,11 @@ def run(**kwargs):
 
 def run_async(**kwargs):
     '''
-    Run an Ansible Runner task in the background and return a thread object and  Runner object when complete.
+    Runs an Ansible Runner task in the background which will start immediately. Returns the thread object and a Runner object.
 
-    Args:
+    This uses the same parameters as :py:func:`ansible_runner.interface.run`
 
-        private_data_dir (string, path): The directory containing all runner metadata needed
-            to invoke the runner module
-
-        ident (string, optional): The run identifier for this invocation of Runner. Will be used
-            to create and name the artifact directory holding the results of the invocation
-
-        playbook (string, filename or list): The playbook relative path located in the private_data_dir/project
-            directory that will be invoked by runner when executing Ansible.  If this value is provided as a
-            Python list object, the playbook will be written to disk and then executed.
-
-        inventory (string): Override the inventory directory/file supplied with runner metadata at
-            private_data_dir/inventory with a specific list of hosts.  This kwarg accepts either a
-            full path to the inventory file in the private_data_dir, a native Python dict supporting
-            YAML inventory structure or a text INI formatted string.
-
-        envvars (dict, optional): Any environment variables to be used when running Ansible.
-
-        extravars (dict, optional): Any extra variables to be passed to Ansible at runtime using
-            the -e option when calling ansible-playbook
-
-        passwords (dict, optional): A dict object that contains password prompt patterns and response
-            values used when processing output from ansible-playbook
-
-        settings (dict, optional): A dict objec that contains values for ansible-runner runtime
-            settings.
-
-        ssh_key (string, optional): The ssh private key passed to ssh-agent as part of the
-            ansible-playbook run
-
-        limit (string, optional): Matches ansible's --limit parameter to further constrain the inventory to be used
-
-    Returns:
-        threadObj, Runner: An object representing the thread itself and a Runner instance that holds details
-        and results from the invocation of Ansible itself
+    :returns: A tuple containing a :py:class:`threading.Thread` object and a :py:class:`ansible_runner.runner.Runner` object
     '''
     r = init_runner(**kwargs)
     runner_thread = threading.Thread(target=r.run)

@@ -34,6 +34,22 @@ from ansible_runner.utils import display
 
 
 class RunnerConfig(object):
+    """
+    A ``Runner`` configuration object that's meant to encapsulate the configuration used by the
+    :py:mod:`ansible_runner.runner.Runner` object to launch and manage the invocation of ``ansible``
+    and ``ansible-playbook``
+
+    Typically this object is initialized for you when using the standard ``run`` interfaces in :py:mod:`ansible_runner.interface`
+    but can be used to construct the ``Runner`` configuration to be invoked elsewhere. It can also be overridden to provide different
+    functionality to the Runner object.
+
+    :Example:
+
+    >>> rc = RunnerConfig(...)
+    >>> r = Runner(config=rc)
+    >>> r.run()
+
+    """
 
     logger = logging.getLogger('ansible-runner')
 
@@ -57,11 +73,62 @@ class RunnerConfig(object):
 
         self.loader = ArtifactLoader(self.private_data_dir)
 
+    def prepare(self):
+        """
+        Performs basic checks and then properly invokes
+
+        - prepare_inventory
+        - prepare_env
+        - prepare_command
+
+        It's also responsiblel for wrapping the command with the proper ssh agent invocation
+        and setting early ANSIBLE_ environment variables.
+        """
+        if self.private_data_dir is None:
+            raise ConfigurationError("Runner Base Directory is not defined")
+        if self.playbook is None: # TODO: ad-hoc mode, module and args
+            raise ConfigurationError("Runner playbook is not defined")
+        if not os.path.exists(self.artifact_dir):
+            os.makedirs(self.artifact_dir)
+
+        self.prepare_inventory()
+        self.prepare_env()
+        self.prepare_command()
+
+        # write the SSH key data into a fifo read by ssh-agent
+        if self.ssh_key_data:
+            self.ssh_key_path = os.path.join(self.artifact_dir, 'ssh_key_data')
+            self.ssh_auth_sock = os.path.join(self.artifact_dir, 'ssh_auth.sock')
+            self.open_fifo_write(self.ssh_key_path, self.ssh_key_data)
+            self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path, self.ssh_auth_sock)
+
+        # Use local callback directory
+        callback_dir = os.getenv('AWX_LIB_DIRECTORY')
+        if callback_dir is None:
+            callback_dir = os.path.join(os.path.split(os.path.abspath(__file__))[0],
+                                        "callbacks")
+        self.env['ANSIBLE_CALLBACK_PLUGINS'] = callback_dir
+        if 'AD_HOC_COMMAND_ID' in self.env:
+            self.env['ANSIBLE_STDOUT_CALLBACK'] = 'minimal'
+        else:
+            self.env['ANSIBLE_STDOUT_CALLBACK'] = 'awx_display'
+        self.env['ANSIBLE_RETRY_FILES_ENABLED'] = 'False'
+        self.env['ANSIBLE_HOST_KEY_CHECKING'] = 'False'
+        self.env['AWX_ISOLATED_DATA_DIR'] = self.artifact_dir
+        self.env['PYTHONPATH'] = self.env.get('PYTHONPATH', '') + callback_dir + ':'
+
     def prepare_inventory(self):
+        """
+        Prepares the inventory default under ``private_data_dir`` if it's not overridden by the constructor.
+        """
         if self.inventory is None:
             self.inventory  = os.path.join(self.private_data_dir, "inventory")
 
     def prepare_env(self):
+        """
+        Manages reading environment metadata files under ``private_data_dir`` and merging/updating
+        with existing values so the :py:class:`ansible_runner.runner.Runner` object can read and use them easily
+        """
         try:
             passwords = self.loader.load_file('env/passwords', Mapping)
             self.expect_passwords = {
@@ -118,47 +185,22 @@ class RunnerConfig(object):
             self.cwd = os.path.join(self.private_data_dir, 'project')
 
     def prepare_command(self):
+        """
+        Determines if the literal ``ansible`` or ``ansible-playbook`` commands are given
+        and if not calls :py:meth:`ansible_runner.runner_config.RunnerConfig.generate_ansible_command`
+        """
         try:
             self.command = self.loader.load_file('args', string_types)
         except ConfigurationError:
             self.command = self.generate_ansible_command()
 
-    def prepare(self):
-        if self.private_data_dir is None:
-            raise ConfigurationError("Runner Base Directory is not defined")
-        if self.playbook is None: # TODO: ad-hoc mode, module and args
-            raise ConfigurationError("Runner playbook is not defined")
-        if not os.path.exists(self.artifact_dir):
-            os.makedirs(self.artifact_dir)
-
-        self.prepare_inventory()
-        self.prepare_env()
-        self.prepare_command()
-
-        # write the SSH key data into a fifo read by ssh-agent
-        if self.ssh_key_data:
-            self.ssh_key_path = os.path.join(self.artifact_dir, 'ssh_key_data')
-            self.ssh_auth_sock = os.path.join(self.artifact_dir, 'ssh_auth.sock')
-            self.open_fifo_write(self.ssh_key_path, self.ssh_key_data)
-            self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path, self.ssh_auth_sock)
-
-        # Use local callback directory
-        callback_dir = os.getenv('AWX_LIB_DIRECTORY')
-        if callback_dir is None:
-            callback_dir = os.path.join(os.path.split(os.path.abspath(__file__))[0],
-                                        "callbacks")
-        self.env['ANSIBLE_CALLBACK_PLUGINS'] = callback_dir
-        if 'AD_HOC_COMMAND_ID' in self.env:
-            self.env['ANSIBLE_STDOUT_CALLBACK'] = 'minimal'
-        else:
-            self.env['ANSIBLE_STDOUT_CALLBACK'] = 'awx_display'
-        self.env['ANSIBLE_RETRY_FILES_ENABLED'] = 'False'
-        self.env['ANSIBLE_HOST_KEY_CHECKING'] = 'False'
-        self.env['AWX_ISOLATED_DATA_DIR'] = self.artifact_dir
-        self.env['PYTHONPATH'] = self.env.get('PYTHONPATH', '') + callback_dir + ':'
-
 
     def generate_ansible_command(self):
+        """
+        Given that the ``RunnerConfig`` preparation methods have been run to gather the inputs this method
+        will generate the ``ansible`` or ``ansible-playbook`` command that will be used by the
+        :py:class:`ansible_runner.runner.Runner` object to start the process
+        """
         if self.module is not None:
             base_command = 'ansible'
         else:
@@ -186,6 +228,10 @@ class RunnerConfig(object):
 
 
     def wrap_args_with_ssh_agent(self, args, ssh_key_path, ssh_auth_sock=None, silence_ssh_add=False):
+        """
+        Given an existing command line and parameterization this will return the same command line wrapped with the
+        necessary calls to ``ssh-agent``
+        """
         if ssh_key_path:
             ssh_add_command = self.args2cmdline('ssh-add', ssh_key_path)
             if silence_ssh_add:

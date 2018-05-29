@@ -21,7 +21,7 @@ setup(
     zip_safe=False,
     entry_points={
         'console_scripts': [
-            'ansible-runner=ansible_runner.interface:main',
-        ],
-    },
+            'ansible-runner = ansible_runner.__main__:main'
+        ]
+    }
 )

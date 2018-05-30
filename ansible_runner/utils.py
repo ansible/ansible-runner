@@ -110,7 +110,7 @@ def dump_artifact(obj, path, filename=None):
         os.makedirs(path)
     else:
         p_sha1 = hashlib.sha1()
-        p_sha1.update(obj)
+        p_sha1.update(obj.encode(encoding='UTF-8'))
 
     if filename is None:
         fd, fn = tempfile.mkstemp(dir=path)
@@ -119,7 +119,9 @@ def dump_artifact(obj, path, filename=None):
 
     if os.path.exists(fn):
         c_sha1 = hashlib.sha1()
-        c_sha1.update(open(fn).read())
+        with open(fn) as f:
+            contents = f.read()
+        c_sha1.update(contents.encode(encoding='UTF-8'))
 
     if not os.path.exists(fn) or p_sha1.hexdigest() != c_sha1.hexdigest():
         lock_fp = os.path.join(path, '.artifact_write_lock')

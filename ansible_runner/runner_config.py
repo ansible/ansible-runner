@@ -64,8 +64,8 @@ class RunnerConfig(object):
     def prepare_env(self):
         try:
             passwords = self.loader.load_file('env/passwords', Mapping)
-            self.expect_passwords= {
-                re.rcompile(pattern, re.M): password
+            self.expect_passwords = {
+                re.compile(pattern, re.M): password
                 for pattern, password in iteritems(passwords)
             }
         except ConfigurationError as exc:

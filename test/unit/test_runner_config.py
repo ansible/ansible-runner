@@ -1,6 +1,7 @@
 
 from ansible_runner.runner_config import RunnerConfig
 from mock import patch
+import re
 from collections import Mapping
 from six import string_types
 from pexpect import TIMEOUT, EOF
@@ -19,7 +20,7 @@ def envvar_side_effect(*args, **kwargs):
 
 def password_side_effect(*args, **kwargs):
     if args[0] == 'env/passwords':
-        return {'Password': 'secret'}
+        return {'^SSH [pP]assword.*$': 'secret'}
     elif args[1] == Mapping:
         return dict()
     elif args[1] == string_types:
@@ -53,4 +54,8 @@ def test_prepare_env_passwords():
     rc = RunnerConfig(private_data_dir='/')
     with patch.object(rc.loader, 'load_file', side_effect=password_side_effect):
         rc.prepare_env()
+        rc.expect_passwords.pop(TIMEOUT)
+        rc.expect_passwords.pop(EOF)
+        assert len(rc.expect_passwords) == 1
+        assert isinstance(list(rc.expect_passwords.keys())[0], re._pattern_type)
         assert 'secret' in rc.expect_passwords.values()

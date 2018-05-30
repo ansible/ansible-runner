@@ -60,7 +60,7 @@ def main():
     group.add_argument("-r", "--role", default=DEFAULT_RUNNER_ROLE,
                        help="Invoke an Ansible role directly without a playbook")
 
-    parser.add_argument("--hosts", default='all',
+    parser.add_argument("--hosts",
                         help="Define the set of hosts to execute against")
 
     parser.add_argument("-i", "--ident",

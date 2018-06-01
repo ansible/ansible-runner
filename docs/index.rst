@@ -24,10 +24,13 @@ There are 3 primary ways of interacting with **Runner**
   Openshift or Kubernetes
 * A python module - library interface
 
+Why would I use this over Ansible?
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   install
 
 
 Indices and tables

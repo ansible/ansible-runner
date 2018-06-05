@@ -11,7 +11,7 @@ mock = "*"
 
 [packages]
 psutil = "*"
-pexpect = "==4.6.0"
+pexpect = "*"
 python-daemon = "*"
 pyyaml = "*"
 six = "*"

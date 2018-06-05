@@ -13,7 +13,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'psutil',
-        'pexpect==4.5.0',
+        'pexpect',
         'python-daemon',
         'PyYAML',
         'six',

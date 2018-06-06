@@ -11,8 +11,8 @@ whether that be through a container image interface, as a standalone tool, or as
 is to provide a stable and consistent interface abstraction to Ansible.
 
 **Ansible Runner** represents the modularization of the part of `Ansible Tower/AWX <https://github.com/ansible/awx>`_ that is responsible
-for running ``ansible`` and ``ansible-playbook`` tasks. It does this by presenting a common interface that doesn't change, even as **Ansible**
-itself grows and evolves.
+for running ``ansible`` and ``ansible-playbook`` tasks and gathers the output from it. It does this by presenting a common interface that doesn't
+change, even as **Ansible** itself grows and evolves.
 
 Part of what makes this tooling useful is that it can gather its inputs in a flexible way <link here>. It also has a system for storing the
 output (stdout) and artifacts (host-level event data, fact data, etc) of the playbook run.
@@ -24,13 +24,13 @@ There are 3 primary ways of interacting with **Runner**
   Openshift or Kubernetes
 * A python module - library interface
 
-Why would I use this over Ansible?
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    install
+   intro
 
 
 Indices and tables

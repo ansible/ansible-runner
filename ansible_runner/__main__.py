@@ -113,7 +113,8 @@ def main():
             rc = 255
 
             try:
-                play = [{'hosts': args.hosts, 'roles': [role]}]
+                play = [{'hosts': args.hosts if args.hosts is not None else "all",
+                         'roles': [role]}]
 
                 path = os.path.abspath(os.path.join(args.private_data_dir, 'project'))
                 filename = str(uuid4().hex)

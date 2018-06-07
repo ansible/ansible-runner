@@ -31,6 +31,9 @@ There are 3 primary ways of interacting with **Runner**
 
    install
    intro
+   standalone
+   python_interface
+   container
 
 
 Indices and tables

@@ -15,6 +15,8 @@ from elsewhere and preparing them for consumption by **Runner**, then the toolin
 This is best seen in the way Ansible **AWX** uses **Runner** where most of the content comes from the database (and other content-management components) but
 ultimately needs to be brought together in a single place when launching the **Ansible** task.
 
+.. _inputdir:
+
 Runner Input Directory Hierarchy
 --------------------------------
 
@@ -141,6 +143,8 @@ Roles
 **Runner** has the ability to execute `Roles <https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.html>`_ directly without first needing
 a playbook to reference them. This directory holds roles used for that. Behind the scenes **Runner** will generate a playbook and invoke the ``Role``.
 
+.. _artifactdir:
+
 Runner Artifact Directory Hierarchy
 -----------------------------------
 
@@ -182,6 +186,8 @@ The **status** file contains one of two statuses suitable for displaying
 * failed: The **Ansible** process failed
 
 The **stdout** file contains the actual stdout as it appears at that moment
+
+.. _artifactevents:
 
 Runner Artifact Job Events (Host and Playbook Events)
 -----------------------------------------------------

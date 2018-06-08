@@ -14,7 +14,7 @@ is to provide a stable and consistent interface abstraction to Ansible.
 for running ``ansible`` and ``ansible-playbook`` tasks and gathers the output from it. It does this by presenting a common interface that doesn't
 change, even as **Ansible** itself grows and evolves.
 
-Part of what makes this tooling useful is that it can gather its inputs in a flexible way <link here>. It also has a system for storing the
+Part of what makes this tooling useful is that it can gather its inputs in a flexible way (See :ref:`intro`:). It also has a system for storing the
 output (stdout) and artifacts (host-level event data, fact data, etc) of the playbook run.
 
 There are 3 primary ways of interacting with **Runner**

@@ -82,6 +82,7 @@ the environment variables that will be added to the environment at run-time::
   test: val
 
 ``env/passwords``
+-----------------
 
 .. note::
 

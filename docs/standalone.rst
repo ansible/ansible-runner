@@ -48,9 +48,15 @@ When launching **Runner** with the ``start`` command. The program will generate 
 Running Playbooks
 -----------------
 
-**TODO**
+An example invocation using ``demo`` as private directory::
+
+  $ ansible-runner --playbook test.yml run demo
 
 Running Roles Directly
 ----------------------
 
-**TODO**
+An example invocation using ``demo`` as private directory and ``localhost`` as target::
+
+  $ ansible-runner --role testrole --hosts localhost run demo
+
+Ansible roles directory can be provided with ``--roles-path`` option. Role variables can be passed with ``--role-vars`` in runtime.

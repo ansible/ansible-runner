@@ -14,7 +14,7 @@ process/store it for use later.
 Helper Interfaces
 -----------------
 
-The :mod:`helper interfaces <ansible_runner.interface>` provide a quick way of providing the recommended inputs in order to launch a **Runner** process.
+The helper :mod:`interfaces <ansible_runner.interface>` provides a quick way of providing the recommended inputs in order to launch a **Runner** process.
 
 ``run()`` helper function
 -------------------------

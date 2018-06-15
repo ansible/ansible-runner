@@ -46,7 +46,7 @@ To produce an installable ``wheel`` file::
 
   make dist
 
-To produce and distribution tarball::
+To produce a distribution tarball::
 
   make sdist
 
@@ -62,7 +62,7 @@ Make sure the ``wheel`` distribution is built (see :ref:`builddist`) and run::
 Building the RPM
 ----------------
 
-The RPM build uses a container image to bootstrap the environment in order to produce the RPM, make sure you have docker
+The RPM build uses a container image to bootstrap the environment in order to produce the RPM. Make sure you have docker
 installed and proceed with::
 
   make rpm

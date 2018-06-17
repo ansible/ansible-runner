@@ -54,7 +54,7 @@ class ArtifactLoader(object):
         Returns:
             dict: If the contents are JSON serialized
 
-            None: if the contents are not JSON serialized
+            None: If the contents are not JSON serialized
         '''
         try:
             return json.loads(contents)
@@ -71,7 +71,7 @@ class ArtifactLoader(object):
         Retunrs:
             dict: If the contents are YAML serialized
 
-            None: if the contents are not YAML serialized
+            None: If the contents are not YAML serialized
         '''
         try:
             return safe_load(contents)
@@ -115,7 +115,7 @@ class ArtifactLoader(object):
             path (string): The path to transform to an absolute path
 
         Returns:
-            string: The absolue path to the file
+            string: The absolute path to the file
         '''
         if not path.startswith(os.path.sep) or path.startswith('~'):
             path = os.path.expanduser(os.path.join(self.base_path, path))

@@ -81,7 +81,7 @@ class RunnerConfig(object):
         - prepare_env
         - prepare_command
 
-        It's also responsiblel for wrapping the command with the proper ssh agent invocation
+        It's also responsible for wrapping the command with the proper ssh agent invocation
         and setting early ANSIBLE_ environment variables.
         """
         if self.private_data_dir is None:

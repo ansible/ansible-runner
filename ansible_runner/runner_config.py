@@ -21,7 +21,6 @@ import re
 import pipes
 import threading
 import pexpect
-import logging
 import stat
 
 from uuid import uuid4
@@ -29,9 +28,9 @@ from collections import Mapping
 
 from six import iteritems, string_types
 
+from ansible_runner import output
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.loader import ArtifactLoader
-from ansible_runner.utils import display
 
 
 class RunnerConfig(object):
@@ -51,8 +50,6 @@ class RunnerConfig(object):
     >>> r.run()
 
     """
-
-    logger = logging.getLogger('ansible-runner')
 
     def __init__(self,
                  private_data_dir=None, playbook=None, ident=uuid4(),
@@ -74,10 +71,6 @@ class RunnerConfig(object):
 
         self.extra_vars = None
         self.verbosity = verbosity
-
-        self.logger.info('private_data_dir: %s' % self.private_data_dir)
-        self.logger.info('artifact_dir: %s' % self.private_data_dir)
-
         self.loader = ArtifactLoader(self.private_data_dir)
 
     def prepare(self):
@@ -143,8 +136,7 @@ class RunnerConfig(object):
                 for pattern, password in iteritems(passwords)
             }
         except ConfigurationError as exc:
-            self.logger.debug(exc)
-            display('Not loading passwords')
+            output.display('Not loading passwords')
             self.expect_passwords = dict()
         self.expect_passwords[pexpect.TIMEOUT] = None
         self.expect_passwords[pexpect.EOF] = None
@@ -156,8 +148,7 @@ class RunnerConfig(object):
             if envvars:
                 self.env.update({k:str(v) for k, v in envvars.items()})
         except ConfigurationError as exc:
-            self.logger.debug(exc)
-            display("Not loading environment vars")
+            output.display("Not loading environment vars")
             # Still need to pass default environment to pexpect
             self.env = os.environ.copy()
 
@@ -167,15 +158,13 @@ class RunnerConfig(object):
         try:
             self.settings = self.loader.load_file('env/settings', Mapping)
         except ConfigurationError as exc:
-            self.logger.debug(exc)
-            print("Not loading settings")
+            output.display("Not loading settings")
             self.settings = dict()
 
         try:
             self.ssh_key_data = self.loader.load_file('env/ssh_key', string_types)
         except ConfigurationError as exc:
-            self.logger.debug(exc)
-            print("Not loading ssh key")
+            output.display("Not loading ssh key")
             self.ssh_key_data = None
 
         self.idle_timeout = self.settings.get('idle_timeout', 120)

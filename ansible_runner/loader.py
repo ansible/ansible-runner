@@ -18,11 +18,11 @@
 #
 import os
 import json
-import logging
 
 from yaml import safe_load, YAMLError
 
 from ansible_runner.exceptions import ConfigurationError
+from ansible_runner.output import debug
 
 
 class ArtifactLoader(object):
@@ -37,8 +37,6 @@ class ArtifactLoader(object):
     instance to avoid any additional reads from disk for subsequent calls
     to load the same file.
     '''
-
-    logger = logging.getLogger('ansible-runner')
 
     def __init__(self, base_path):
         self._cache = {}
@@ -76,7 +74,6 @@ class ArtifactLoader(object):
         try:
             return safe_load(contents)
         except YAMLError as exc:
-            self.logger.exception(exc)
             pass
 
     def get_contents(self, path):
@@ -104,7 +101,6 @@ class ArtifactLoader(object):
             return data
 
         except (IOError, OSError) as exc:
-            self.logger.exception(exc)
             raise ConfigurationError('error trying to load file contents: %s' % exc)
 
     def abspath(self, path):
@@ -156,19 +152,19 @@ class ArtifactLoader(object):
             ConfigurationError:
         '''
         path = self.abspath(path)
-        self.logger.debug('file path is %s' % path)
+        debug('file path is %s' % path)
 
         if path in self._cache:
             return self._cache[path]
 
         try:
-            self.logger.debug('cache miss, attempting to load file from disk: %s' % path)
+            debug('cache miss, attempting to load file from disk: %s' % path)
             contents = self.get_contents(path)
             parsed_data = contents.encode(encoding)
         except ConfigurationError as exc:
+            debug(exc)
             raise
         except UnicodeEncodeError as exc:
-            self.logger.exception(exc)
             raise ConfigurationError('unable to encode file contents')
 
         for deserializer in (self._load_json, self._load_yaml):
@@ -177,7 +173,7 @@ class ArtifactLoader(object):
                 break
 
         if objtype and not isinstance(parsed_data, objtype):
-            self.logger.debug('specified file %s is not of type %s' % (path, objtype))
+            debug('specified file %s is not of type %s' % (path, objtype))
             raise ConfigurationError('invalid file serialization type for contents')
 
         self._cache[path] = parsed_data

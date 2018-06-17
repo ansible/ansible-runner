@@ -6,61 +6,11 @@ import os
 import fcntl
 import tempfile
 import hashlib
-import logging
 import stat
 
-from functools import partial
 from collections import Iterable, Mapping
 from io import StringIO
 from six import string_types
-
-
-STDOUT_MSG_FORMAT = '%(message)s'
-DEBUG_MSG_FORMAT = '%(asctime)s:[%(module)s.%(funcName)s:%(lineno)s]: %(message)s'
-
-LOGGER = logging.getLogger('ansible-runner')
-
-
-display = partial(LOGGER.log, 60)
-
-
-def configure_logging(filename=None, debug=False):
-    '''
-    Configures the logging facility
-
-    Args:
-        filename (string): The name of the file to log debug messages to.  If
-            this argument is None, then file logging is disabled.
-
-        debug (string): Specifies if debug should be sent to stdout.  If the
-            value of this argument is True, debug messages are sent to
-            stdout.  If this value is False, only display messages (level 60)
-            are sent ot stdout.
-
-    Returns:
-        None
-    '''
-    root_logger = logging.getLogger('')
-    root_logger.setLevel(logging.DEBUG)
-
-    # Set up logging to a file
-    if filename:
-        file_handler = logging.FileHandler(filename)
-        formatter = logging.Formatter(DEBUG_MSG_FORMAT)
-        file_handler.setFormatter(formatter)
-        root_logger.addHandler(file_handler)
-
-    stdout_handler = logging.StreamHandler(sys.stdout)
-
-    if debug:
-        stdout_handler.setLevel(10)
-        formatter = logging.Formatter(DEBUG_MSG_FORMAT)
-    else:
-        stdout_handler.setLevel(60)
-        formatter = logging.Formatter(STDOUT_MSG_FORMAT)
-
-    stdout_handler.setFormatter(formatter)
-    root_logger.addHandler(stdout_handler)
 
 
 def isplaybook(obj):

@@ -6,18 +6,16 @@ import errno
 import signal
 import codecs
 import collections
-import logging
 
 import pexpect
 import psutil
 
 from .utils import OutputEventFilter
 from .exceptions import CallbackError, AnsibleRunnerException
+from ansible_runner.output import debug
 
 
 class Runner(object):
-
-    logger = logging.getLogger('ansible-runner')
 
     def __init__(self, config, cancel_callback=None, remove_partials=True):
         self.config = config
@@ -52,7 +50,7 @@ class Runner(object):
                 if self.remove_partials:
                     os.remove(partial_filename)
             except IOError as e:
-                self.logger.exception("Failed writing event data: {}".format(e))
+                debug("Failed writing event data: {}".format(e))
 
     def run(self):
         '''

@@ -28,9 +28,9 @@ from collections import Mapping
 
 from six import iteritems, string_types
 
+from ansible_runner import output
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.loader import ArtifactLoader
-from ansible_runner.utils import display
 
 
 class RunnerConfig(object):
@@ -137,7 +137,7 @@ class RunnerConfig(object):
             }
         except ConfigurationError as exc:
             self.logger.exception(exc)
-            display('Not loading passwords')
+            output.display('Not loading passwords')
             self.expect_passwords = dict()
         self.expect_passwords[pexpect.TIMEOUT] = None
         self.expect_passwords[pexpect.EOF] = None
@@ -150,7 +150,7 @@ class RunnerConfig(object):
                 self.env.update({k:str(v) for k, v in envvars.items()})
         except ConfigurationError as exc:
             self.logger.exception(exc)
-            display("Not loading environment vars")
+            output.display("Not loading environment vars")
             # Still need to pass default environment to pexpect
             self.env = os.environ.copy()
 
@@ -158,21 +158,21 @@ class RunnerConfig(object):
             self.extra_vars = self.loader.load_file('env/extravars', Mapping)
         except ConfigurationError as exc:
             self.logger.exception(exc)
-            display("Not loading extra vars")
+            output.display("Not loading extra vars")
             self.extra_vars = dict()
 
         try:
             self.settings = self.loader.load_file('env/settings', Mapping)
         except ConfigurationError as exc:
             self.logger.exception(exc)
-            print("Not loading settings")
+            output.display("Not loading settings")
             self.settings = dict()
 
         try:
             self.ssh_key_data = self.loader.load_file('env/ssh_key', string_types)
         except ConfigurationError as exc:
             self.logger.exception(exc)
-            print("Not loading ssh key")
+            output.display("Not loading ssh key")
             self.ssh_key_data = None
 
         self.idle_timeout = self.settings.get('idle_timeout', 120)

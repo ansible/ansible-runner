@@ -68,7 +68,7 @@ class ArtifactLoader(object):
         Args:
             contents (string): The contents to deserialize
 
-        Retunrs:
+        Returns:
             dict: If the contents are YAML serialized
 
             None: If the contents are not YAML serialized

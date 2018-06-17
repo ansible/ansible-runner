@@ -79,6 +79,24 @@ class ArtifactLoader(object):
             self.logger.exception(exc)
             pass
 
+
+    def _load_ssh_key(self, contents):
+        '''
+        Attempts to validate the contents of a ssh key
+
+        Args:
+            contents (string): The contents to validate
+
+        Retunrs:
+            dict: If the contents correspond to a valid ssh key
+
+            None: if the contents are not a ssh key
+        '''
+        if contents.startswith('-----BEGIN RSA PRIVATE KEY-----'):
+            return contents
+        else:
+            return None
+
     def get_contents(self, path):
         '''
         Loads the contents of the file specified by path
@@ -161,7 +179,7 @@ class ArtifactLoader(object):
             self.logger.exception(exc)
             raise ConfigurationError('unable to encode file contents')
 
-        for deserializer in (self._load_json, self._load_yaml):
+        for deserializer in (self._load_json, self._load_ssh_key, self._load_yaml):
             parsed_data = deserializer(contents)
             if parsed_data:
                 break

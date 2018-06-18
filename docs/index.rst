@@ -19,7 +19,7 @@ output (stdout) and artifacts (host-level event data, fact data, etc) of the pla
 
 There are 3 primary ways of interacting with **Runner**
 
-* A standalone command line tool (``ansible-runner``) that can be started in the foreground or run in the background asynchronously.
+* A standalone command line tool (``ansible-runner``) that can be started in the foreground or run in the background asynchronously
 * A reference container image that can be used as a base for your own images and will work as a standalone container or running in
   Openshift or Kubernetes
 * A python module - library interface
@@ -29,8 +29,8 @@ There are 3 primary ways of interacting with **Runner**
    :maxdepth: 2
    :caption: Contents:
 
-   install
    intro
+   install
    standalone
    python_interface
    container

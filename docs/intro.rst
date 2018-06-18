@@ -5,7 +5,7 @@ Introduction to Ansible Runner
 
 **Runner** is intended to be most useful as part of automation and tooling that needs to invoke Ansible and consume its results.
 Most of the parameterization of the **Ansible** command line is also available on the **Runner** command line but **Runner** also
-can rely on an input interface that is mapped onto a directory structure an example of which can be seen in `the source tree <https://github.com/ansible/ansible-runner/tree/master/demo>`_
+can rely on an input interface that is mapped onto a directory structure, an example of which can be seen in `the source tree <https://github.com/ansible/ansible-runner/tree/master/demo>`_.
 
 Further sections in this document refer to the configuration and layout of that hierarchy. This isn't the only way to interface with **Runner**
 itself. The Python module interface allows supplying these details as direct module parameters in many forms, and the command line interface allows
@@ -20,7 +20,7 @@ ultimately needs to be brought together in a single place when launching the **A
 Runner Input Directory Hierarchy
 --------------------------------
 
-This directory will contain all necessary inputs. Here's a view of the `demo directory <https://github.com/ansible/ansible-runner/tree/master/demo>`_ showing
+This directory contains all necessary inputs. Here's a view of the `demo directory <https://github.com/ansible/ansible-runner/tree/master/demo>`_ showing
 an active configuration.
 
 Note that not everything is required. Defaults will be used or values will be omitted if they are not provided.
@@ -60,7 +60,7 @@ pipe providing a bit of an extra layer of security. The formatting and expectati
 
 .. note::
 
-   For an example see `the demo envvars <https://github.com/ansible/ansible-runner/blob/master/demo/env/envvars>`_
+   For an example see `the demo envvars <https://github.com/ansible/ansible-runner/blob/master/demo/env/envvars>`_.
 
 **Ansible Runner** will inherit the environment of the launching shell (or container, or system itself). This file (which can be in json or yaml format) represents
 the environment variables that will be added to the environment at run-time::
@@ -73,7 +73,7 @@ the environment variables that will be added to the environment at run-time::
 
 .. note::
 
-   For an example see `the demo extravars <https://github.com/ansible/ansible-runner/blob/master/demo/env/extravars>`_
+   For an example see `the demo extravars <https://github.com/ansible/ansible-runner/blob/master/demo/env/extravars>`_.
 
 **Ansible Runner** gathers the extra vars provided here and supplies them to the **Ansible Process** itself. This file can be in either json or yaml format::
 
@@ -86,18 +86,18 @@ the environment variables that will be added to the environment at run-time::
 
 .. note::
 
-   For an example see `the demo passwords <https://github.com/ansible/ansible-runner/blob/master/demo/env/passwords>`_
+   For an example see `the demo passwords <https://github.com/ansible/ansible-runner/blob/master/demo/env/passwords>`_.
 
 .. warning::
 
    We expect this interface to change/simplify in the future but will guarantee backwards compatibility. The goal is for the user of **Runner** to not
-   have to worry about the format of certain prompts emitted from **Ansible** itself. In particular vault passwords need to become more flexible.
+   have to worry about the format of certain prompts emitted from **Ansible** itself. In particular, vault passwords need to become more flexible.
 
 **Ansible** itself is set up to emit passwords to certain prompts, these prompts can be requested (``-k`` for example to prompt for the connection password).
-Likewise Prompts can be emitted via `vars_prompt <https://docs.ansible.com/ansible/latest/user_guide/playbooks_prompts.html>`_ and also
+Likewise, prompts can be emitted via `vars_prompt <https://docs.ansible.com/ansible/latest/user_guide/playbooks_prompts.html>`_ and also
 `Ansible Vault <https://docs.ansible.com/ansible/2.5/user_guide/vault.html#vault-ids-and-multiple-vault-passwords>`_.
 
-In order for **Runner** to respond with the correct password it needs to be able to match the prompt and provide the correct password. This is currently supported
+In order for **Runner** to respond with the correct password, it needs to be able to match the prompt and provide the correct password. This is currently supported
 by providing a yaml or json formatted file with a regular expression and a value to emit, for example::
 
   ---
@@ -109,7 +109,7 @@ by providing a yaml or json formatted file with a regular expression and a value
 
 .. note::
 
-   Currently only a single ssh key can be provided via this mechanism but this is set to `change soon <https://github.com/ansible/ansible-runner/issues/51>`_
+   Currently only a single ssh key can be provided via this mechanism but this is set to `change soon <https://github.com/ansible/ansible-runner/issues/51>`_.
 
 This file should contain the ssh private key used to connect to the host(s). **Runner** detects when a private key is provided and will wrap the call to
 **Ansible** in ssh-agent.
@@ -142,12 +142,12 @@ Roles
 -----
 
 **Runner** has the ability to execute `Roles <https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.html>`_ directly without first needing
-a playbook to reference them. This directory holds roles used for that. Behind the scenes **Runner** will generate a playbook and invoke the ``Role``.
+a playbook to reference them. This directory holds roles used for that. Behind the scenes, **Runner** will generate a playbook and invoke the ``Role``.
 
 .. _artifactdir:
 
-Runner Artifact Directory Hierarchy
------------------------------------
+Runner Artifacts Directory Hierarchy
+------------------------------------
 
 This directory will contain the results of **Runner** invocation grouped under an ``identifier`` directory. This identifier can be supplied to **Runner** directly
 and if not given, an identifier will be generated as a `UUID <https://docs.python.org/3/library/uuid.html#uuid.uuid4>`_. This is how the directory structure looks
@@ -181,12 +181,12 @@ The artifact directory itself contains a particular structure that provides a lo
 
 The **rc** file contains the actual return code from the **Ansible** process.
 
-The **status** file contains one of two statuses suitable for displaying
+The **status** file contains one of two statuses suitable for displaying:
 
 * success: The **Ansible** process finished successfully
 * failed: The **Ansible** process failed
 
-The **stdout** file contains the actual stdout as it appears at that moment
+The **stdout** file contains the actual stdout as it appears at that moment.
 
 .. _artifactevents:
 
@@ -266,4 +266,4 @@ If the playbook runs to completion without getting killed, the last event will a
 
 .. note::
 
-   The **Runner module interface** presents a programatic interface to these events that allow getting the final status and performing host filtering of task events
+   The **Runner module interface** presents a programmatic interface to these events that allow getting the final status and performing host filtering of task events.

@@ -121,6 +121,17 @@ class ArtifactLoader(object):
             path = os.path.expanduser(os.path.join(self.base_path, path))
         return path
 
+    def isfile(self, path):
+        '''
+        Check if the path is a file
+
+        :params path: The path to the file to check.  If the path is relative
+            it will be exanded to an absolute path
+
+        :returns: boolean
+        '''
+        return os.path.isfile(self.abspath(path))
+
     def load_file(self, path, objtype=None, encoding='utf-8'):
         '''
         Load the file specified by path

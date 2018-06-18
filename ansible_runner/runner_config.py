@@ -69,6 +69,8 @@ class RunnerConfig(object):
         else:
             self.artifact_dir = os.path.join(self.private_data_dir, "artifacts", "{}".format(self.ident))
 
+        self.extra_vars = None
+
         self.logger.info('private_data_dir: %s' % self.private_data_dir)
 
         self.loader = ArtifactLoader(self.private_data_dir)
@@ -154,12 +156,8 @@ class RunnerConfig(object):
             # Still need to pass default environment to pexpect
             self.env = os.environ.copy()
 
-        try:
-            self.extra_vars = self.loader.load_file('env/extravars', Mapping)
-        except ConfigurationError as exc:
-            self.logger.exception(exc)
-            display("Not loading extra vars")
-            self.extra_vars = dict()
+        if self.loader.isfile('env/extravars'):
+            self.extra_vars = self.loader.abspath('env/extravars')
 
         try:
             self.settings = self.loader.load_file('env/settings', Mapping)
@@ -212,9 +210,7 @@ class RunnerConfig(object):
             exec_list.append("--limit")
             exec_list.append(self.limit)
         if self.extra_vars:
-            for evar in self.extra_vars:
-                exec_list.append("-e")
-                exec_list.append("{}={}".format(evar, self.extra_vars[evar]))
+            exec_list.extend(['-e', '@%s' % self.extra_vars])
         # Other parameters
         if base_command.endswith('ansible-playbook'):
             exec_list.append(self.playbook)

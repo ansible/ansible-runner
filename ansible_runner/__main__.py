@@ -32,6 +32,7 @@ from uuid import uuid4
 from yaml import safe_load
 
 from ansible_runner import run
+from ansible_runner import output
 from ansible_runner.utils import dump_artifact
 from ansible_runner.runner import Runner
 
@@ -76,7 +77,25 @@ def main():
 
     parser.add_argument("--inventory")
 
+    parser.add_argument("--debug", action="store_true",
+                        help="Enable debug output logging")
+
+    parser.add_argument("--logfile",
+                        help="Log output messages to a file")
+
     args = parser.parse_args()
+
+    output.configure()
+
+    # enable or disable debug mode
+    output.set_debug('enable' if args.debug else 'disable')
+
+    # set the output logfile
+    if args.logfile:
+        output.set_logfile(args.logfile)
+
+    output.display('starting ansible')
+    output.debug('starting debug logging')
 
     pidfile = os.path.join(args.private_data_dir, 'pid')
 
@@ -121,18 +140,18 @@ def main():
 
                 playbook = dump_artifact(json.dumps(play), path, filename)
                 kwargs['playbook'] = playbook
-                print('using playbook file %s' % playbook)
+                output.debug('using playbook file %s' % playbook)
 
                 if args.inventory:
                     inventory_file = os.path.abspath(os.path.join(args.private_data_dir, 'inventory', args.inventory))
                     kwargs['inventory'] = inventory_file
-                    print('using inventory file %s' % inventory_file)
+                    output.debug('using inventory file %s' % inventory_file)
 
                 envvars = {}
 
                 roles_path = args.roles_path or os.path.join(args.private_data_dir, 'roles')
                 roles_path = os.path.abspath(roles_path)
-                print('setting ANSIBLE_ROLES_PATH to %s' % roles_path)
+                output.debug('setting ANSIBLE_ROLES_PATH to %s' % roles_path)
 
                 # since envvars will overwrite an existing envvars, capture
                 # the content of the current envvars if it exists and

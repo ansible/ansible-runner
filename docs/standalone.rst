@@ -15,7 +15,7 @@ To view the parameters accepted by ``ansible-runner``::
 
   $ ansible-runner --help
 
-An example invocation of the standalone ``ansible-runner`` utilty::
+An example invocation of the standalone ``ansible-runner`` utility::
 
   $ ansible-runner -p playbook.yml run /tmp/private
 
@@ -36,14 +36,14 @@ Executing **Runner** in the foreground
 --------------------------------------
 
 When launching **Runner** with the ``run`` command, as above, the program will stay in the foreground and you'll see output just as you expect from a normal
-**Ansible** process. **Runner** will still populate the ``artifacts`` directory, as mentioned in the last section, to preserve the output and allow processing
+**Ansible** process. **Runner** will still populate the ``artifacts`` directory, as mentioned in the previous section, to preserve the output and allow processing
 of the artifacts after exit.
 
 Executing **Runner** in the background
 --------------------------------------
 
 When launching **Runner** with the ``start`` command. The program will generate a pid file and move to the background. You can check its status with the
-``is-alive`` command, or terminate it with the ``stop`` command. You can the stdout, status, and return code in the ``artifacts`` directory.
+``is-alive`` command, or terminate it with the ``stop`` command. You can find the stdout, status, and return code in the ``artifacts`` directory.
 
 Running Playbooks
 -----------------

@@ -9,7 +9,7 @@ can rely on an input interface that is mapped onto a directory structure an exam
 
 Further sections in this document refer to the configuration and layout of that hierarchy. This isn't the only way to interface with **Runner**
 itself. The Python module interface allows supplying these details as direct module parameters in many forms, and the command line interface allows
-supplying them directly as arguments mimicing the behavior of ``ansible-playbook``. Having the directory structure **does** allow gathering the inputs
+supplying them directly as arguments, mimicking the behavior of ``ansible-playbook``. Having the directory structure **does** allow gathering the inputs
 from elsewhere and preparing them for consumption by **Runner**, then the tooling can come along and inspect the results after the run.
 
 This is best seen in the way Ansible **AWX** uses **Runner** where most of the content comes from the database (and other content-management components) but
@@ -20,10 +20,10 @@ ultimately needs to be brought together in a single place when launching the **A
 Runner Input Directory Hierarchy
 --------------------------------
 
-This directory will contain all necessary inputs, here's a view of the `demo directory <https://github.com/ansible/ansible-runner/tree/master/demo>`_ showing
+This directory will contain all necessary inputs. Here's a view of the `demo directory <https://github.com/ansible/ansible-runner/tree/master/demo>`_ showing
 an active configuration.
 
-Note that not everything is required, if not provided defaults will be used or the values will just be omitted.
+Note that not everything is required. Defaults will be used or values will be omitted if they are not provided.
 
 .. code-block:: none
 
@@ -51,7 +51,7 @@ Note that not everything is required, if not provided defaults will be used or t
 The ``env`` directory
 ---------------------
 
-The **env** directory contains settings and sensitive files that inform certain aspects of the invocation of the **Ansible** process an example of which can
+The **env** directory contains settings and sensitive files that inform certain aspects of the invocation of the **Ansible** process, an example of which can
 be found in `the demo env directory <https://github.com/ansible/ansible-runner/tree/master/demo/env>`_. Each of these files can also be represented by a named
 pipe providing a bit of an extra layer of security. The formatting and expectation of these files differs slightly depending on what they are representing.
 

@@ -178,8 +178,8 @@ def test_prepare_inventory():
 def test_generate_ansible_command():
     rc = RunnerConfig(private_data_dir='/', playbook='main.yaml')
     rc.prepare_inventory()
-
     rc.extra_vars = None
+
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', '/inventory', 'main.yaml']
 
@@ -196,14 +196,30 @@ def test_generate_ansible_command():
     rc.limit = 'hosts'
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', '/inventory', '--limit', 'hosts', 'main.yaml']
+    rc.limit = None
 
     rc.module = 'setup'
     cmd = rc.generate_ansible_command()
-    assert cmd == ['ansible', '-i', '/inventory', '--limit', 'hosts', '-m', 'setup']
+    assert cmd == ['ansible', '-i', '/inventory', '-m', 'setup']
+    rc.module = None
 
+    rc.module = 'setup'
     rc.module_args = 'test=string'
     cmd = rc.generate_ansible_command()
-    assert cmd == ['ansible', '-i', '/inventory', '--limit', 'hosts', '-m', 'setup', '-a', 'test=string']
+    assert cmd == ['ansible', '-i', '/inventory', '-m', 'setup', '-a', 'test=string']
+    rc.module_args = None
+
+
+def test_generate_ansible_command_with_cmdline_args():
+    rc = RunnerConfig(private_data_dir='/', playbook='main.yaml')
+    rc.prepare_inventory()
+    rc.extra_vars = {}
+
+    cmdline_side_effect = partial(load_file_side_effect, 'env/cmdline', '--tags foo --skip-tags')
+
+    with patch.object(rc.loader, 'load_file', side_effect=cmdline_side_effect):
+        cmd = rc.generate_ansible_command()
+        assert cmd == ['ansible-playbook', '--tags', 'foo', '--skip-tags', '-i', '/inventory', 'main.yaml']
 
 
 

@@ -77,6 +77,7 @@ def run(**kwargs):
     :param settings: A dictionary containing settings values for the ``ansible-runner`` runtime environment. These will also
                      be read from ``env/settings`` in ``private_data_dir``.
     :param ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
+    :param cmdline: Commnad line options passed to Ansible read from ``env/cmdline`` in ``private_data_dir``
     :param limit: Matches ansible's ``--limit`` parameter to further constrain the inventory to be used
     :param verbosity: Control how verbose the output of ansible-playbook is
     :param artifact_dir: The path to the directory where artifacts should live
@@ -90,8 +91,8 @@ def run(**kwargs):
     :type passwords: dict
     :type settings: dict
     :type ssh_key: str
-    :type verbosity: int
     :type artifact_dir: str
+    :type cmdline: str
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object
     '''

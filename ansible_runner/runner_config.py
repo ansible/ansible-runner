@@ -23,6 +23,7 @@ import threading
 import pexpect
 import logging
 import stat
+import shlex
 
 from uuid import uuid4
 from collections import Mapping
@@ -208,26 +209,42 @@ class RunnerConfig(object):
             base_command = 'ansible'
         else:
             base_command = 'ansible-playbook'
+
         exec_list = [base_command]
+
+        try:
+            cmdline_args = self.loader.load_file('env/cmdline', string_types)
+            args = shlex.split(cmdline_args)
+            self.logger.debug(args)
+            exec_list.extend(args)
+        except ConfigurationError:
+            pass
+
         exec_list.append("-i")
         exec_list.append(self.inventory)
+
         if self.limit is not None:
             exec_list.append("--limit")
             exec_list.append(self.limit)
+
         if self.extra_vars:
             exec_list.extend(['-e', '@%s' % self.extra_vars])
         if self.verbosity:
             v = 'v' * self.verbosity
             exec_list.append('-%s' % v)
+
         # Other parameters
         if base_command.endswith('ansible-playbook'):
             exec_list.append(self.playbook)
+
         elif base_command == 'ansible':
             exec_list.append("-m")
             exec_list.append(self.module)
+
             if self.module_args is not None:
                 exec_list.append("-a")
                 exec_list.append(self.module_args)
+
         return exec_list
 
 

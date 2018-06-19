@@ -93,7 +93,7 @@ class ArtifactLoader(object):
 
             None: if the contents are not a valid ssh key
         '''
-        if validate_ssh_key:
+        if validate_ssh_key(contents):
             return contents
         else:
             return None

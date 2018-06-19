@@ -289,6 +289,8 @@ def validate_ssh_key(data):
     pem_obj_header_re = re.compile(r'^(.+?):\s*?(.+?)(\\??)$')
     data = data.lstrip()
     match = pem_obj_re.match(data)
+    if not match:
+        return False
     pem_obj_info = {}
     pem_obj_info['all'] = match.group(0)
     pem_obj_info['type'] = match.group('type')

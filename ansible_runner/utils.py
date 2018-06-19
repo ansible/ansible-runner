@@ -271,3 +271,54 @@ class OutputEventFilter(object):
         else:
             self._current_event_data = None
         return event_data
+
+
+def validate_ssh_key(data):
+    """
+    Validates if data corresponds to a ssh_key.
+    Based on: https://github.com/ansible/awx/blob/7d51b3b6b6efce91eb91b4df6b5ae0942b049e87/awx/main/validators.py#L20
+    Args:
+        data(string): ssh_key data to validate
+    """
+    pem_obj_re = re.compile(
+        r'^(?P<dashes>-{4,}) *BEGIN (?P<type>[A-Z ]+?) *(?P=dashes)' +
+        r'\s*(?P<data>.+?)\s*' +
+        r'(?P=dashes) *END (?P=type) *(?P=dashes)' +
+        r'(?P<next>.*?)$', re.DOTALL
+    )
+    pem_obj_header_re = re.compile(r'^(.+?):\s*?(.+?)(\\??)$')
+    data = data.lstrip()
+    match = pem_obj_re.match(data)
+    pem_obj_info = {}
+    pem_obj_info['all'] = match.group(0)
+    pem_obj_info['type'] = match.group('type')
+    if pem_obj_info['type'].endswith('PRIVATE KEY'):
+        pem_obj_info['type'] = 'PRIVATE KEY'
+    else:
+        return False
+    pem_obj_info['data'] = match.group('data')
+    base64_data = ''
+    line_continues = False
+    for line  in pem_obj_info['data'].splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if line_continues:
+            line_continues = line.endswith('\\')
+            continue
+        line_match = pem_obj_header_re.match(line)
+        if line_match:
+            line_continues = line.endswith('\\')
+            continue
+        base64_data += line
+    try:
+        decoded_data = base64.b64decode(base64_data)
+        if not decoded_data:
+            raise TypeError
+        pem_obj_info['b64'] = base64_data
+        pem_obj_info['bin'] = decoded_data
+    except TypeError:
+        return False  # Invalid base64 data
+
+    pem_obj_info['key_enc'] = bool('ENCRYPTED' in pem_obj_info['data'])
+    return pem_obj_info

@@ -23,6 +23,7 @@ import logging
 from yaml import safe_load, YAMLError
 
 from ansible_runner.exceptions import ConfigurationError
+from ansible_runner.utils import validate_ssh_key
 
 
 class ArtifactLoader(object):
@@ -87,12 +88,12 @@ class ArtifactLoader(object):
         Args:
             contents (string): The contents to validate
 
-        Retunrs:
-            dict: If the contents correspond to a valid ssh key
+        Returns:
+            string: If the contents correspond to a valid ssh key. Same as contents.
 
-            None: if the contents are not a ssh key
+            None: if the contents are not a valid ssh key
         '''
-        if contents.startswith('-----BEGIN RSA PRIVATE KEY-----'):
+        if validate_ssh_key:
             return contents
         else:
             return None

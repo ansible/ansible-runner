@@ -101,6 +101,29 @@ def dump_artifacts(kwargs):
     if not os.path.exists(private_data_dir):
         raise ValueError('private_data_dir path is either invalid or does not exist')
 
+    if 'role' in kwargs:
+        role = {'name': kwargs.pop('role')}
+        if 'role_vars' in kwargs:
+            role['vars'] = kwargs.pop('role_vars')
+
+        play = [{'hosts': kwargs.pop('hosts', 'all'), 'roles': [role]}]
+
+        if kwargs.pop('role_skip_facts', False):
+            play[0]['gather_facts'] = False
+
+        kwargs['playbook'] = play
+
+        if 'envvars' not in kwargs:
+            kwargs['envvars'] = {}
+
+        roles_path = kwargs.pop('roles_path', None)
+        if not roles_path:
+            roles_path = os.path.join(private_data_dir, 'roles')
+        else:
+            roles_path += ':%s' % os.path.join(private_data_dir, 'roles')
+
+        kwargs['envvars']['ANSIBLE_ROLES_PATH'] = roles_path
+
     for key in ('playbook', 'inventory'):
         obj = kwargs.get(key)
         if obj:

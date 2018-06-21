@@ -77,7 +77,7 @@ def main():
     parser.add_argument("--inventory")
 
     parser.add_argument("-v", action="count",
-                        help="Increase the verbosity of the ansible-playbook output")
+                        help="Increase the verbosity with multiple v's (up to 5) of the ansible-playbook output")
 
     args = parser.parse_args()
 

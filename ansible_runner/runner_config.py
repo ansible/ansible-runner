@@ -22,6 +22,7 @@ import pipes
 import threading
 import pexpect
 import logging
+import stat
 
 from uuid import uuid4
 from collections import Mapping
@@ -252,7 +253,7 @@ class RunnerConfig(object):
         This blocks the thread until an external process (such as ssh-agent)
         reads data from the pipe.
         '''
-        os.mkfifo(path, 0o600)
+        os.mkfifo(path, stat.S_IRUSR | stat.S_IWUSR)
         threading.Thread(target=lambda p, d: open(p, 'w').write(d),
                          args=(path, data)).start()
 

@@ -64,7 +64,7 @@ class Runner(object):
 
         try:
             os.makedirs(self.config.artifact_dir)
-            os.mknod(stdout_filename, stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR)
+            os.close(os.open(stdout_filename, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
         except OSError as exc:
             if exc.errno == errno.EEXIST and os.path.isdir(self.config.artifact_dir):
                 pass
@@ -140,7 +140,7 @@ class Runner(object):
         ]:
             artifact_path = os.path.join(self.config.artifact_dir, filename)
             if not os.path.exists(artifact_path):
-                os.mknod(artifact_path, stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR)
+                os.close(os.open(artifact_path, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
             with open(artifact_path, 'w') as f:
                 f.write(str(data))
         return self.status, self.rc

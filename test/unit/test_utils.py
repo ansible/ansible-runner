@@ -196,7 +196,8 @@ nsYDJfgRDy4Du8FikB5yEP4RsfY7diXpmOOKggORuK9OZ9nYp/w=
 
 def test_non_key():
     ssh_key = "This is not a key"
-    assert validate_ssh_key(ssh_key) is False
+    with raises(AnsibleRunnerException):
+        validate_ssh_key(ssh_key)
 
 
 def test_invalid_base64_key():

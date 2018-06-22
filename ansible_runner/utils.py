@@ -292,7 +292,7 @@ def validate_ssh_key(data):
     data = data.lstrip()
     match = pem_obj_re.match(data)
     if not match:
-        return False
+        raise AnsibleRunnerException('Invalid key format')
     pem_obj_info = {}
     pem_obj_info['all'] = match.group(0)
     pem_obj_info['type'] = match.group('type')

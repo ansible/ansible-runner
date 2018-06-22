@@ -80,25 +80,6 @@ class ArtifactLoader(object):
             self.logger.exception(exc)
             pass
 
-
-    def _load_ssh_key(self, contents):
-        '''
-        Attempts to validate the contents of a ssh key
-
-        Args:
-            contents (string): The contents to validate
-
-        Returns:
-            string: If the contents correspond to a valid ssh key. Same as contents.
-
-            None: if the contents are not a valid ssh key
-        '''
-        try:
-            if validate_ssh_key(contents):
-                return contents
-        except AnsibleRunnerException as exc:
-            self.logger.exception(exc)
-
     def get_contents(self, path):
         '''
         Loads the contents of the file specified by path
@@ -141,6 +122,68 @@ class ArtifactLoader(object):
             path = os.path.expanduser(os.path.join(self.base_path, path))
         return path
 
+    def _load_file_data(self, path, encoding='utf-8'):
+        '''
+        Load file contents from cache or disk.
+
+        Args:
+            path (string): The full or relative path to the file to be loaded
+
+            encoding (string): The file contents text encoding
+        Returns:
+            contents: The file contents
+            parsed_data: The file encoded data
+
+        Raises:
+            ConfigurationError:
+        '''
+
+        try:
+            self.logger.debug('cache miss, attempting to load file from disk: %s' % path)
+            contents = self.get_contents(path)
+            parsed_data = contents.encode(encoding)
+        except ConfigurationError as exc:
+            self.logger.exception(exc)
+            raise
+        except UnicodeEncodeError as exc:
+            self.logger.exception(exc)
+            raise ConfigurationError('unable to encode file contents')
+        return contents, parsed_data
+
+    def load_key(self, path, encoding='utf-8'):
+        '''
+        Load the key specified by path
+
+        This method will first try to load the key contents from cache and
+        if there is a cache miss, it will load the contents from disk
+
+        Args:
+            path (string): The full or relative path to the file to be loaded
+
+            encoding (string): The file contents text encoding
+        Returns:
+            key_data: The validated key
+
+        Raises:
+            AnsibleRunnerException:
+        '''
+        path = self.abspath(path)
+        self.logger.debug('file path is %s' % path)
+
+        if path in self._cache:
+            return self._cache[path]
+        else:
+            contents, _ = self._load_file_data(path, encoding) 
+        try:
+            validate_ssh_key(contents)
+        except AnsibleRunnerException as exc:
+            print(exc)
+            self.logger.exception(exc)
+
+        self._cache[path] = contents 
+        return contents
+
+
     def load_file(self, path, objtype=None, encoding='utf-8'):
         '''
         Load the file specified by path
@@ -169,19 +212,9 @@ class ArtifactLoader(object):
 
         if path in self._cache:
             return self._cache[path]
-
-        try:
-            self.logger.debug('cache miss, attempting to load file from disk: %s' % path)
-            contents = self.get_contents(path)
-            parsed_data = contents.encode(encoding)
-        except ConfigurationError as exc:
-            self.logger.exception(exc)
-            raise
-        except UnicodeEncodeError as exc:
-            self.logger.exception(exc)
-            raise ConfigurationError('unable to encode file contents')
-
-        for deserializer in (self._load_json, self._load_ssh_key, self._load_yaml):
+        else:
+            contents, parsed_data = self._load_file_data(path, encoding) 
+        for deserializer in (self._load_json, self._load_yaml):
             parsed_data = deserializer(contents)
             if parsed_data:
                 break

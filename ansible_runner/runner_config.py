@@ -169,7 +169,7 @@ class RunnerConfig(object):
             self.settings = dict()
 
         try:
-            self.ssh_key_data = self.loader.load_file('env/ssh_key', string_types)
+            self.ssh_key_data = self.loader.load_key('env/ssh_key')
         except ConfigurationError as exc:
             self.logger.exception(exc)
             print("Not loading ssh key")

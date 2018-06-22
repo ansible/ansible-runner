@@ -321,7 +321,7 @@ def validate_ssh_key(data):
             raise TypeError
         pem_obj_info['b64'] = base64_data
         pem_obj_info['bin'] = decoded_data
-    except TypeError:
+    except (TypeError, base64.binascii.Error) as err:
         raise AnsibleRunnerException('Private Key contents not valid')
 
     pem_obj_info['key_enc'] = bool('ENCRYPTED' in pem_obj_info['data'])

@@ -13,6 +13,8 @@ from collections import Iterable, Mapping
 from io import StringIO
 from six import string_types
 
+from ansible_runner.exceptions import AnsibleRunnerException
+
 
 STDOUT_MSG_FORMAT = '%(message)s'
 DEBUG_MSG_FORMAT = '%(asctime)s:[%(module)s.%(funcName)s:%(lineno)s]: %(message)s'
@@ -297,7 +299,7 @@ def validate_ssh_key(data):
     if pem_obj_info['type'].endswith('PRIVATE KEY'):
         pem_obj_info['type'] = 'PRIVATE KEY'
     else:
-        return False
+        raise AnsibleRunnerException('Object does not look like a private key')
     pem_obj_info['data'] = match.group('data')
     base64_data = ''
     line_continues = False
@@ -320,7 +322,7 @@ def validate_ssh_key(data):
         pem_obj_info['b64'] = base64_data
         pem_obj_info['bin'] = decoded_data
     except TypeError:
-        return False  # Invalid base64 data
+        raise AnsibleRunnerException('Private Key contents not valid')
 
     pem_obj_info['key_enc'] = bool('ENCRYPTED' in pem_obj_info['data'])
     return pem_obj_info

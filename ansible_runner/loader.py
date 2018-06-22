@@ -22,7 +22,7 @@ import logging
 
 from yaml import safe_load, YAMLError
 
-from ansible_runner.exceptions import ConfigurationError
+from ansible_runner.exceptions import ConfigurationError, AnsibleRunnerException
 from ansible_runner.utils import validate_ssh_key
 
 
@@ -93,10 +93,11 @@ class ArtifactLoader(object):
 
             None: if the contents are not a valid ssh key
         '''
-        if validate_ssh_key(contents):
-            return contents
-        else:
-            return None
+        try:
+            if validate_ssh_key(contents):
+                return contents
+        except AnsibleRunnerException as exc:
+            self.logger.exception(exc)
 
     def get_contents(self, path):
         '''

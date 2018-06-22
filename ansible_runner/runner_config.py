@@ -215,7 +215,6 @@ class RunnerConfig(object):
         try:
             cmdline_args = self.loader.load_file('env/cmdline', string_types)
             args = shlex.split(cmdline_args)
-            self.logger.debug(args)
             exec_list.extend(args)
         except ConfigurationError:
             pass

@@ -303,7 +303,7 @@ def validate_ssh_key(data):
     pem_obj_info['data'] = match.group('data')
     base64_data = ''
     line_continues = False
-    for line  in pem_obj_info['data'].splitlines():
+    for line in pem_obj_info['data'].splitlines():
         line = line.strip()
         if not line:
             continue

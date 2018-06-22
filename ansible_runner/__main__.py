@@ -74,6 +74,9 @@ def main():
     parser.add_argument("--role-vars",
                         help="Variables to pass to the role at runtime")
 
+    parser.add_argument("--role-skip-facts", action="store_true", default=False,
+                        help="Disable fact collection when executing a role directly")
+
     parser.add_argument("--inventory")
 
     args = parser.parse_args()
@@ -114,6 +117,7 @@ def main():
 
             try:
                 play = [{'hosts': args.hosts if args.hosts is not None else "all",
+                         'gather_facts': not args.role_skip_facts,
                          'roles': [role]}]
 
                 path = os.path.abspath(os.path.join(args.private_data_dir, 'project'))

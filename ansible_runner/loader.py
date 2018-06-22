@@ -55,7 +55,7 @@ class ArtifactLoader(object):
         Returns:
             dict: If the contents are JSON serialized
 
-            None: if the contents are not JSON serialized
+            None: If the contents are not JSON serialized
         '''
         try:
             return json.loads(contents)
@@ -69,10 +69,10 @@ class ArtifactLoader(object):
         Args:
             contents (string): The contents to deserialize
 
-        Retunrs:
+        Returns:
             dict: If the contents are YAML serialized
 
-            None: if the contents are not YAML serialized
+            None: If the contents are not YAML serialized
         '''
         try:
             return safe_load(contents)
@@ -116,7 +116,7 @@ class ArtifactLoader(object):
             path (string): The path to transform to an absolute path
 
         Returns:
-            string: The absolue path to the file
+            string: The absolute path to the file
         '''
         if not path.startswith(os.path.sep) or path.startswith('~'):
             path = os.path.expanduser(os.path.join(self.base_path, path))
@@ -183,6 +183,16 @@ class ArtifactLoader(object):
         self._cache[path] = contents 
         return contents
 
+    def isfile(self, path):
+        '''
+        Check if the path is a file
+
+        :params path: The path to the file to check.  If the path is relative
+            it will be exanded to an absolute path
+
+        :returns: boolean
+        '''
+        return os.path.isfile(self.abspath(path))
 
     def load_file(self, path, objtype=None, encoding='utf-8'):
         '''

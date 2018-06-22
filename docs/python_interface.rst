@@ -14,14 +14,14 @@ process/store it for use later.
 Helper Interfaces
 -----------------
 
-The helper :mod:`interfaces <ansible_runner.interface>` provides a quick way of providing the recommended inputs in order to launch a **Runner** process.
+The helper :mod:`interfaces <ansible_runner.interface>` provides a quick way of supplying the recommended inputs in order to launch a **Runner** process.
 
 ``run()`` helper function
 -------------------------
 
 :meth:`ansible_runner.interface.run`
 
-When called will take the inputs (either provided as direct inputs to the function or from the :ref:`inputdir`), and execute **Ansible**. It will run in the
+When called, this function will take the inputs (either provided as direct inputs to the function or from the :ref:`inputdir`), and execute **Ansible**. It will run in the
 foreground and return the :class:`Runner <ansible_runner.runner.Runner>` object when finished.
 
 ``run_async()`` helper function
@@ -41,9 +41,9 @@ properties:
 
 * ``rc`` will represent the actual return code of the **Ansible** process
 * ``status`` will represent the state and can be one of:
-   * ``unstarted``
-   * ``successfull``
-   * ``failed``
+   * ``unstarted``: This is a very brief state where the Runner task has been created but hasn't actually started yet.
+   * ``successfull``: The ``ansible`` process finished successfully.
+   * ``failed``: The ``ansible`` process failed.
 
 ``Runner.stdout``
 -----------------

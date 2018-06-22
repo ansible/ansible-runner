@@ -4,18 +4,17 @@ Using Runner as a standalone command line tool
 ==============================================
 
 The **Ansible Runner** command line tool can be used as a standard command line interface to **Ansible** itself but is primarily intended
-to fit into automation and pipeline workflows. Because of this it has a bit of a different workflow than **Ansible** itself in that you can select
-between a few different modes to launch the command.
+to fit into automation and pipeline workflows. Because of this, it has a bit of a different workflow than **Ansible** itself because you can select between a few different modes to launch the command.
 
 While you can launch **Runner** and provide it all of the inputs as arguments to the command line (as you do with **Ansible** itself),
-there is another interface where inputs are gathered into a single location referred to in the command line parameters as ``private_data_dir``
+there is another interface where inputs are gathered into a single location referred to in the command line parameters as ``private_data_dir``.
 (see :ref:`inputdir`)
 
 To view the parameters accepted by ``ansible-runner``::
 
   $ ansible-runner --help
 
-An example invocation of the standalone ``ansible-runner`` utilty::
+An example invocation of the standalone ``ansible-runner`` utility::
 
   $ ansible-runner -p playbook.yml run /tmp/private
 
@@ -36,14 +35,14 @@ Executing **Runner** in the foreground
 --------------------------------------
 
 When launching **Runner** with the ``run`` command, as above, the program will stay in the foreground and you'll see output just as you expect from a normal
-**Ansible** process. **Runner** will still populate the ``artifacts`` directory, as mentioned in the last section, to preserve the output and allow processing
+**Ansible** process. **Runner** will still populate the ``artifacts`` directory, as mentioned in the previous section, to preserve the output and allow processing
 of the artifacts after exit.
 
 Executing **Runner** in the background
 --------------------------------------
 
-When launching **Runner** with the ``start`` command. The program will generate a pid file and move to the background. You can check its status with the
-``is-alive`` command, or terminate it with the ``stop`` command. You can the stdout, status, and return code in the ``artifacts`` directory.
+When launching **Runner** with the ``start`` command, the program will generate a pid file and move to the background. You can check its status with the
+``is-alive`` command, or terminate it with the ``stop`` command. You can find the stdout, status, and return code in the ``artifacts`` directory.
 
 Running Playbooks
 -----------------
@@ -59,4 +58,4 @@ An example invocation using ``demo`` as private directory and ``localhost`` as t
 
   $ ansible-runner --role testrole --hosts localhost run demo
 
-Ansible roles directory can be provided with ``--roles-path`` option. Role variables can be passed with ``--role-vars`` in runtime.
+Ansible roles directory can be provided with ``--roles-path`` option. Role variables can be passed with ``--role-vars`` at runtime.

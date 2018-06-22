@@ -91,7 +91,7 @@ def main():
     if args.command != 'run':
         stderr_path = os.path.join(args.private_data_dir, 'daemon.log')
         if not os.path.exists(stderr_path):
-            os.mknod(stderr_path, stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR)
+            os.close(os.open(stderr_path, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
         stderr = open(stderr_path, 'w+')
 
     if args.command in ('start', 'run'):

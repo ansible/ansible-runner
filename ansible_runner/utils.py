@@ -7,6 +7,7 @@ import fcntl
 import tempfile
 import hashlib
 import logging
+import stat
 
 from functools import partial
 from collections import Iterable, Mapping
@@ -127,7 +128,7 @@ def dump_artifact(obj, path, filename=None):
 
     if not os.path.exists(fn) or p_sha1.hexdigest() != c_sha1.hexdigest():
         lock_fp = os.path.join(path, '.artifact_write_lock')
-        lock_fd = os.open(lock_fp, os.O_RDWR | os.O_CREAT, 0o600)
+        lock_fd = os.open(lock_fp, os.O_RDWR | os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR)
         fcntl.lockf(lock_fd, fcntl.LOCK_EX)
 
         try:

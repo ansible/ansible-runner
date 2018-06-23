@@ -57,7 +57,7 @@ class RunnerConfig(object):
     def __init__(self,
                  private_data_dir=None, playbook=None, ident=uuid4(),
                  inventory=None, limit=None, module=None, module_args=None,
-                 verbosity=None, json_mode=False):
+                 verbosity=None, json_mode=False, artifact_dir=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.json_mode = json_mode
@@ -66,15 +66,17 @@ class RunnerConfig(object):
         self.limit = limit
         self.module = module
         self.module_args = module_args
+        self.artifact_dir = artifact_dir or self.private_data_dir
         if self.ident is None:
-            self.artifact_dir = os.path.join(self.private_data_dir, "artifacts")
+            self.artifact_dir = os.path.join(self.artifact_dir, "artifacts")
         else:
-            self.artifact_dir = os.path.join(self.private_data_dir, "artifacts", "{}".format(self.ident))
+            self.artifact_dir = os.path.join(self.artifact_dir, "artifacts", "{}".format(self.ident))
 
         self.extra_vars = None
         self.verbosity = verbosity
 
         self.logger.info('private_data_dir: %s' % self.private_data_dir)
+        self.logger.info('artifact_dir: %s' % self.private_data_dir)
 
         self.loader = ArtifactLoader(self.private_data_dir)
 

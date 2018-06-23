@@ -79,6 +79,7 @@ def run(**kwargs):
     :param ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
     :param limit: Matches ansible's ``--limit`` parameter to further constrain the inventory to be used
     :param verbosity: Control how verbose the output of ansible-playbook is
+    :param artifact_dir: The path to the directory where artifacts should live
     :type private_data_dir: str
     :type ident: str
     :type json_mode: bool
@@ -90,6 +91,7 @@ def run(**kwargs):
     :type settings: dict
     :type ssh_key: str
     :type verbosity: int
+    :type artifact_dir: str
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object
     '''

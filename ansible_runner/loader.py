@@ -21,6 +21,7 @@ import json
 import logging
 
 from yaml import safe_load, YAMLError
+from six import string_types
 
 from ansible_runner.exceptions import ConfigurationError
 
@@ -147,6 +148,7 @@ class ArtifactLoader(object):
             objtype (object): The object type of the file contents.  This
                 is used to type check the deserialized content against the
                 contents loaded from disk.
+                Ignore serializing if objtype is string_types
 
         Returns:
             object: The deserialized file contents which could be either a
@@ -172,14 +174,15 @@ class ArtifactLoader(object):
             self.logger.exception(exc)
             raise ConfigurationError('unable to encode file contents')
 
-        for deserializer in (self._load_json, self._load_yaml):
-            parsed_data = deserializer(contents)
-            if parsed_data:
-                break
+        if objtype is not string_types:
+            for deserializer in (self._load_json, self._load_yaml):
+                parsed_data = deserializer(contents)
+                if parsed_data:
+                    break
 
-        if objtype and not isinstance(parsed_data, objtype):
-            self.logger.debug('specified file %s is not of type %s' % (path, objtype))
-            raise ConfigurationError('invalid file serialization type for contents')
+            if objtype and not isinstance(parsed_data, objtype):
+                self.logger.debug('specified file %s is not of type %s' % (path, objtype))
+                raise ConfigurationError('invalid file serialization type for contents')
 
         self._cache[path] = parsed_data
         return parsed_data

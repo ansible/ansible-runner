@@ -254,7 +254,7 @@ class RunnerConfig(object):
         reads data from the pipe.
         '''
         os.mkfifo(path, stat.S_IRUSR | stat.S_IWUSR)
-        threading.Thread(target=lambda p, d: open(p, 'w').write(d),
+        threading.Thread(target=lambda p, d: open(p, 'wb').write(d),
                          args=(path, data)).start()
 
     def args2cmdline(self, *args):

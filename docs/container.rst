@@ -39,3 +39,11 @@ Gathering output from the reference container image
 ---------------------------------------------------
 
 **TODO**
+
+Changing the console output to emit raw events
+----------------------------------------------
+
+This can be useful when directing task-level event data to an external system by means of the container's console output.
+
+See :ref:`outputjson`
+

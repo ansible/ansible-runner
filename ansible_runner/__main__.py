@@ -75,6 +75,8 @@ def main():
                         help="Variables to pass to the role at runtime")
 
     parser.add_argument("--inventory")
+    parser.add_argument("-j", "--json", action="store_true",
+                        help="Output the json event structure to stdout instead of Ansible output")
 
     parser.add_argument("-v", action="count",
                         help="Increase the verbosity with multiple v's (up to 5) of the ansible-playbook output")
@@ -108,7 +110,8 @@ def main():
                     role_vars[key] = value
                 role['vars'] = role_vars
 
-            kwargs = {'private_data_dir': args.private_data_dir}
+            kwargs = dict(private_data_dir=args.private_data_dir,
+                          json_mode=args.json)
 
             playbook = None
             tmpvars = None
@@ -178,7 +181,8 @@ def main():
             run_options = dict(private_data_dir=args.private_data_dir,
                                ident=args.ident,
                                playbook=args.playbook,
-                               verbosity=args.v)
+                               verbosity=args.v,
+                               json_mode=args.json)
             if args.hosts is not None:
                 run_options.update(inventory=args.hosts)
             run(**run_options)

@@ -60,6 +60,7 @@ def run(**kwargs):
                              module. Output artifacts will also be stored here for later consumption.
     :param ident: The run identifier for this invocation of Runner. Will be used to create and name
                   the artifact directory holding the results of the invocation.
+    :param json_mode: Store event data in place of stdout on the console and in the stdout file
     :param playbook: The playbook (either supplied here as a list or string... or as a path relative to
                      ``private_data_dir/project``) that will be invoked by runner when executing Ansible.
     :param inventory: Overridees the inventory directory/file (supplied at ``private_data_dir/inventory``) with
@@ -80,6 +81,7 @@ def run(**kwargs):
     :param verbosity: Control how verbose the output of ansible-playbook is
     :type private_data_dir: str
     :type ident: str
+    :type json_mode: bool
     :type playbook: str or filename or list
     :type inventory: str or dict or list
     :type envvars: dict

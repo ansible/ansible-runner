@@ -123,6 +123,7 @@ The **settings** file is a little different than the other files provided in thi
   idle_timeout: 600 # If no output is detected from ansible in this number of seconds the execution will be terminated.
   job_timeout: 3600 # The maximum amount of time to allow the job to run for, exceeding this and the execution will be terminated.
   pexpect_timeout: 10 # Number of seconds for the internal pexpect command to wait to block on input before continuuing
+  suppress_ansible_output: False # Allow output from ansible to not be printed to the screen
 
 Inventory
 ---------
@@ -238,13 +239,13 @@ If the playbook runs to completion without getting killed, the last event will a
         "playbook": "test.yml",
         "playbook_uuid": "34437b34-addd-45ae-819a-4d8c9711e191",
         "changed": {
-          
+
         },
         "dark": {
-          
+
         },
         "failures": {
-          
+
         },
         "ok": {
           "localhost,": 2
@@ -253,10 +254,10 @@ If the playbook runs to completion without getting killed, the last event will a
           "localhost,": 1
         },
         "skipped": {
-          
+
         },
         "artifact_data": {
-          
+
         },
         "pid": 10640
       },

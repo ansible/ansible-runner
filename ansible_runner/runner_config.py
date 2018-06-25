@@ -22,7 +22,6 @@ import pipes
 import threading
 import pexpect
 import logging
-import stat
 
 from uuid import uuid4
 from collections import Mapping
@@ -72,7 +71,6 @@ class RunnerConfig(object):
 
         self.extra_vars = None
         self.verbosity = verbosity
-
         self.logger.info('private_data_dir: %s' % self.private_data_dir)
 
         self.loader = ArtifactLoader(self.private_data_dir)
@@ -85,7 +83,7 @@ class RunnerConfig(object):
         - prepare_env
         - prepare_command
 
-        It's also responsible for wrapping the command with the proper ssh agent invocation
+        It's also responsiblel for wrapping the command with the proper ssh agent invocation
         and setting early ANSIBLE_ environment variables.
         """
         if self.private_data_dir is None:
@@ -158,8 +156,12 @@ class RunnerConfig(object):
             # Still need to pass default environment to pexpect
             self.env = os.environ.copy()
 
-        if self.loader.isfile('env/extravars'):
-            self.extra_vars = self.loader.abspath('env/extravars')
+        try:
+            self.extra_vars = self.loader.load_file('env/extravars', Mapping)
+        except ConfigurationError as exc:
+            self.logger.exception(exc)
+            display("Not loading extra vars")
+            self.extra_vars = dict()
 
         try:
             self.settings = self.loader.load_file('env/settings', Mapping)
@@ -253,8 +255,8 @@ class RunnerConfig(object):
         This blocks the thread until an external process (such as ssh-agent)
         reads data from the pipe.
         '''
-        os.mkfifo(path, stat.S_IRUSR | stat.S_IWUSR)
-        threading.Thread(target=lambda p, d: open(p, 'w').write(d),
+        os.mkfifo(path, 0o600)
+        threading.Thread(target=lambda p, d: open(p, 'wb').write(d),
                          args=(path, data)).start()
 
     def args2cmdline(self, *args):

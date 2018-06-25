@@ -106,15 +106,18 @@ def test_prepare_env_passwords():
 def test_prepare_env_extra_vars_defaults():
     rc = RunnerConfig('/')
     rc.prepare_env()
-    assert rc.extra_vars is None
+    assert rc.extra_vars == {}
 
 
 def test_prepare_env_extra_vars():
     rc = RunnerConfig('/')
 
-    with patch.object(rc.loader, 'isfile', side_effect=lambda x: True):
+    value = {'test': 'string'}
+    extravars_side_effect = partial(load_file_side_effect, 'env/extravars', value)
+
+    with patch.object(rc.loader, 'load_file', side_effect=extravars_side_effect):
         rc.prepare_env()
-        assert rc.extra_vars == '/env/extravars'
+        assert rc.extra_vars  == value
 
 
 def test_prepare_env_settings_defaults():
@@ -178,7 +181,7 @@ def test_generate_ansible_command():
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', '/inventory', 'main.yaml']
 
-    rc.extra_vars = '/env/extravars'
+    rc.extra_vars = {'test': 'string'}
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '@/env/extravars', 'main.yaml']
     rc.extra_vars = None

@@ -1,6 +1,5 @@
 import json
 import shutil
-import tempfile
 
 from pytest import raises
 from mock import patch
@@ -27,14 +26,14 @@ def test_isinventory():
 
 
 def test_dump_artifacts_private_data_dir():
-    data_dir = tempfile.gettempdir()
+    data_dir = '/tmp'
     kwargs = {'private_data_dir': data_dir}
     dump_artifacts(kwargs)
     assert kwargs['private_data_dir'] == data_dir
 
     kwargs = {'private_data_dir': None}
     dump_artifacts(kwargs)
-    assert kwargs['private_data_dir'].startswith(tempfile.gettempdir())
+    assert kwargs['private_data_dir'].startswith('/tmp/tmp')
     shutil.rmtree(kwargs['private_data_dir'])
 
     with raises(ValueError):

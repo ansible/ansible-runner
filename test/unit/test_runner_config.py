@@ -106,15 +106,18 @@ def test_prepare_env_passwords():
 def test_prepare_env_extra_vars_defaults():
     rc = RunnerConfig('/')
     rc.prepare_env()
-    assert rc.extra_vars is None
+    assert rc.extra_vars == {}
 
 
 def test_prepare_env_extra_vars():
     rc = RunnerConfig('/')
 
-    with patch.object(rc.loader, 'isfile', side_effect=lambda x: True):
+    value = {'test': 'string'}
+    extravars_side_effect = partial(load_file_side_effect, 'env/extravars', value)
+
+    with patch.object(rc.loader, 'load_file', side_effect=extravars_side_effect):
         rc.prepare_env()
-        assert rc.extra_vars == '/env/extravars'
+        assert rc.extra_vars  == value
 
 
 def test_prepare_env_settings_defaults():
@@ -143,36 +146,10 @@ def test_prepare_env_sshkey_defaults():
 def test_prepare_env_sshkey():
     rc = RunnerConfig('/')
 
-    value = '''-----BEGIN RSA PRIVATE KEY-----
-MIIEogIBAAKCAQEAxsB2TfnP9c9uHotCTe7hTjA67xDbGT7gl650v7PMOQTS6azx
-MhYw8rynuSJXognjM/oSWmTvAn5BsLsYThmORYOCD/qmmqQfhfi6K5UOIynqH5VX
-y2zBPgK98T7hpivlj2IsUYG2LENTDAt7soac+SdmSu/ogRS4Cp43n46H8jtZ97Hk
-b+bT1WXCT9175/hjFFDxa6Y3RjzS+47rAjeIDHL15ANHf8FbpH7EtIv5BbkVeJjg
-50p21HmG408XzmvFkE8FDpx36NMJjLeZY2+Fbej1KaLw/xLhmytOXbMR2IDJT5PG
-GsWgxcpOPy7ai4AL+WqXNUZx5OS3xPkcJ8w1iQIDAQABAoIBAHoXktU1x7Vl1my2
-+WUsgIVqhVmEjkNE5+zlw1xcE/FW8EWR8pzlGu6SS6oj2Zd14Xd1gD69UEHE04/A
-bx7S/h3fuk8cl6nZdm/zKlJJf2TEg8khEcyqI093mb0P9sgAoUVidn0fZIxuUx7M
-ExHJNbasqF8SX06kLqZ/KQZAJWz8SZQjrWLxFsX4xztzzMWPaV7bBkSrqYOgFvGh
-YIALvsOaDOeXdYg4LNtykdB7jb098FQ1Cg1ALL8+a/QZf6P+vTRiDyMFdvSWbYQY
-DYmqnsHeoolwUpZDVKQyjQ4mXSyHlIuPt0wLoES6AfBmqluUjCzXKRlkZ4nonZKk
-620PCIECgYEA45/VXcWR9wp5JTBTOLtYmPIk9Ha62tM43j4PLQPqo5FNMxkyMhiU
-G3kTrjB4hRPyuvyo0cweKaarIdyyM3JoGRRBkHpUJWehZhL/8mzFO6rRQX8hdzfO
-hIxTTl5LI5IGdfTA7VfZIkp03gMyFGFMtGkatc3MPxEra8AiQvs6KTkCgYEA34c4
-aGF00UBCm/bk7nWxOdZYv0JLRSeympsLef7oxINVHkQo77W/j3dxFSlBw0jpcBWK
-CU4X1RpAc59UddViAxWsfIB27sDgB1tJav0mcqiwMLSeAFCRPglI8AAyuxMgIawg
-PAsVkfGjUSzbHKsz4lR161vOQZ2dlqaay426/tECgYAVAYsPPExcH/tOE0ea1K84
-biA67zoPN67n05JS9SmSLraRIKIhPWNtpZ7LVG3K2ixsVSS/N7cQ4PCqD1Piq4wv
-xE7IpoFdclLSuK4mESOifgERqknMVroYQVruwITuo2s1N4EWZiUDpRtj4aeded06
-SPjODk/rAgqfxvticwzLAQKBgHP93y+LIutSxT3ZqIJ1YDn7GKJm7Fg+eVfxDMuJ
-k5Al9o12ISgC0BzKhkvM1OtZcolPJAogFA3pSXi2PUXILMwc+xzALPdH7vjiTf7O
-zpzBHGypzTOsmzHt74NbFvgsvIe8oh2GQvMwyObet/TwgkP4QBiZ0zYJbDU4zyrB
-qT+BAoGAQ3+6hyWYhWijOSrSGG1RhL9j+kLZP5lIEGNIgxe2hIb0C39uAas/W0Yv
-ipUvkv0tGIsSOStuIg5tA6lNviTA6xBSb4XYKrr6wDEqENjFKle8oHhtTy2t6BZl
-nsYDJfgRDy4Du8FikB5yEP4RsfY7diXpmOOKggORuK9OZ9nYp/w=
------END RSA PRIVATE KEY-----'''
+    value = '01234567890'
     sshkey_side_effect = partial(load_file_side_effect, 'env/ssh_key', value)
 
-    with patch.object(rc.loader, 'load_key', side_effect=sshkey_side_effect):
+    with patch.object(rc.loader, 'load_file', side_effect=sshkey_side_effect):
         rc.prepare_env()
         assert rc.ssh_key_data == value
 
@@ -204,9 +181,9 @@ def test_generate_ansible_command():
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', '/inventory', 'main.yaml']
 
-    rc.extra_vars = '/env/extravars'
+    rc.extra_vars = {'test': 'string'}
     cmd = rc.generate_ansible_command()
-    assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '@/env/extravars', 'main.yaml']
+    assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', 'test=string', 'main.yaml']
 
     rc.extra_vars = None
     rc.limit = 'hosts'

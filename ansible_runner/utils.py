@@ -7,14 +7,11 @@ import fcntl
 import tempfile
 import hashlib
 import logging
-import stat
 
 from functools import partial
 from collections import Iterable, Mapping
 from io import StringIO
 from six import string_types
-
-from ansible_runner.exceptions import AnsibleRunnerException
 
 
 STDOUT_MSG_FORMAT = '%(message)s'
@@ -128,7 +125,7 @@ def dump_artifact(obj, path, filename=None):
 
     if not os.path.exists(fn) or p_sha1.hexdigest() != c_sha1.hexdigest():
         lock_fp = os.path.join(path, '.artifact_write_lock')
-        lock_fd = os.open(lock_fp, os.O_RDWR | os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR)
+        lock_fd = os.open(lock_fp, os.O_RDWR | os.O_CREAT, 0o600)
         fcntl.lockf(lock_fd, fcntl.LOCK_EX)
 
         try:
@@ -274,56 +271,3 @@ class OutputEventFilter(object):
         else:
             self._current_event_data = None
         return event_data
-
-
-def validate_ssh_key(data):
-    """
-    Validates if data corresponds to a ssh_key.
-    Based on: https://github.com/ansible/awx/blob/7d51b3b6b6efce91eb91b4df6b5ae0942b049e87/awx/main/validators.py#L20
-    Args:
-        data(string): ssh_key data to validate
-    """
-    pem_obj_re = re.compile(
-        r'^(?P<dashes>-{4,}) *BEGIN (?P<type>[A-Z ]+?) *(?P=dashes)' +
-        r'\s*(?P<data>.+?)\s*' +
-        r'(?P=dashes) *END (?P=type) *(?P=dashes)' +
-        r'(?P<next>.*?)$', re.DOTALL
-    )
-    pem_obj_header_re = re.compile(r'^(.+?):\s*?(.+?)(\\??)$')
-    data = data.lstrip()
-    match = pem_obj_re.match(data)
-    if not match:
-        raise AnsibleRunnerException('Invalid key format')
-    pem_obj_info = {}
-    pem_obj_info['all'] = match.group(0)
-    pem_obj_info['type'] = match.group('type')
-    if pem_obj_info['type'].endswith('PRIVATE KEY'):
-        pem_obj_info['type'] = 'PRIVATE KEY'
-    else:
-        raise AnsibleRunnerException('Object does not look like a private key')
-    pem_obj_info['data'] = match.group('data')
-    base64_data = ''
-    line_continues = False
-    for line in pem_obj_info['data'].splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        if line_continues:
-            line_continues = line.endswith('\\')
-            continue
-        line_match = pem_obj_header_re.match(line)
-        if line_match:
-            line_continues = line.endswith('\\')
-            continue
-        base64_data += line
-    try:
-        decoded_data = base64.b64decode(base64_data)
-        if not decoded_data:
-            raise TypeError
-        pem_obj_info['b64'] = base64_data
-        pem_obj_info['bin'] = decoded_data
-    except (TypeError, base64.binascii.Error) as err:
-        raise AnsibleRunnerException('Private Key contents not valid')
-
-    pem_obj_info['key_enc'] = bool('ENCRYPTED' in pem_obj_info['data'])
-    return pem_obj_info

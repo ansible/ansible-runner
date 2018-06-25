@@ -1,14 +1,11 @@
 import json
 import shutil
-import tempfile
 
 from pytest import raises
 from mock import patch
 
-from ansible_runner.exceptions import AnsibleRunnerException
 from ansible_runner.utils import isplaybook, isinventory
 from ansible_runner.utils import dump_artifacts
-from ansible_runner.utils import validate_ssh_key
 
 
 def test_isplaybook():
@@ -29,14 +26,14 @@ def test_isinventory():
 
 
 def test_dump_artifacts_private_data_dir():
-    data_dir = tempfile.gettempdir()
+    data_dir = '/tmp'
     kwargs = {'private_data_dir': data_dir}
     dump_artifacts(kwargs)
     assert kwargs['private_data_dir'] == data_dir
 
     kwargs = {'private_data_dir': None}
     dump_artifacts(kwargs)
-    assert kwargs['private_data_dir'].startswith(tempfile.gettempdir())
+    assert kwargs['private_data_dir'].startswith('/tmp/tmp')
     shutil.rmtree(kwargs['private_data_dir'])
 
     with raises(ValueError):
@@ -162,46 +159,3 @@ def test_dump_artifacts_ssh_key():
         assert fp == '/tmp/env'
         assert fn == 'ssh_key'
         assert 'ssh_key' not in kwargs
-
-
-def test_valid_ssh_key():
-    ssh_key = """-----BEGIN RSA PRIVATE KEY-----
-MIIEogIBAAKCAQEAxsB2TfnP9c9uHotCTe7hTjA67xDbGT7gl650v7PMOQTS6azx
-MhYw8rynuSJXognjM/oSWmTvAn5BsLsYThmORYOCD/qmmqQfhfi6K5UOIynqH5VX
-y2zBPgK98T7hpivlj2IsUYG2LENTDAt7soac+SdmSu/ogRS4Cp43n46H8jtZ97Hk
-b+bT1WXCT9175/hjFFDxa6Y3RjzS+47rAjeIDHL15ANHf8FbpH7EtIv5BbkVeJjg
-50p21HmG408XzmvFkE8FDpx36NMJjLeZY2+Fbej1KaLw/xLhmytOXbMR2IDJT5PG
-GsWgxcpOPy7ai4AL+WqXNUZx5OS3xPkcJ8w1iQIDAQABAoIBAHoXktU1x7Vl1my2
-+WUsgIVqhVmEjkNE5+zlw1xcE/FW8EWR8pzlGu6SS6oj2Zd14Xd1gD69UEHE04/A
-bx7S/h3fuk8cl6nZdm/zKlJJf2TEg8khEcyqI093mb0P9sgAoUVidn0fZIxuUx7M
-ExHJNbasqF8SX06kLqZ/KQZAJWz8SZQjrWLxFsX4xztzzMWPaV7bBkSrqYOgFvGh
-YIALvsOaDOeXdYg4LNtykdB7jb098FQ1Cg1ALL8+a/QZf6P+vTRiDyMFdvSWbYQY
-DYmqnsHeoolwUpZDVKQyjQ4mXSyHlIuPt0wLoES6AfBmqluUjCzXKRlkZ4nonZKk
-620PCIECgYEA45/VXcWR9wp5JTBTOLtYmPIk9Ha62tM43j4PLQPqo5FNMxkyMhiU
-G3kTrjB4hRPyuvyo0cweKaarIdyyM3JoGRRBkHpUJWehZhL/8mzFO6rRQX8hdzfO
-hIxTTl5LI5IGdfTA7VfZIkp03gMyFGFMtGkatc3MPxEra8AiQvs6KTkCgYEA34c4
-aGF00UBCm/bk7nWxOdZYv0JLRSeympsLef7oxINVHkQo77W/j3dxFSlBw0jpcBWK
-CU4X1RpAc59UddViAxWsfIB27sDgB1tJav0mcqiwMLSeAFCRPglI8AAyuxMgIawg
-PAsVkfGjUSzbHKsz4lR161vOQZ2dlqaay426/tECgYAVAYsPPExcH/tOE0ea1K84
-biA67zoPN67n05JS9SmSLraRIKIhPWNtpZ7LVG3K2ixsVSS/N7cQ4PCqD1Piq4wv
-xE7IpoFdclLSuK4mESOifgERqknMVroYQVruwITuo2s1N4EWZiUDpRtj4aeded06
-SPjODk/rAgqfxvticwzLAQKBgHP93y+LIutSxT3ZqIJ1YDn7GKJm7Fg+eVfxDMuJ
-k5Al9o12ISgC0BzKhkvM1OtZcolPJAogFA3pSXi2PUXILMwc+xzALPdH7vjiTf7O
-zpzBHGypzTOsmzHt74NbFvgsvIe8oh2GQvMwyObet/TwgkP4QBiZ0zYJbDU4zyrB
-qT+BAoGAQ3+6hyWYhWijOSrSGG1RhL9j+kLZP5lIEGNIgxe2hIb0C39uAas/W0Yv
-ipUvkv0tGIsSOStuIg5tA6lNviTA6xBSb4XYKrr6wDEqENjFKle8oHhtTy2t6BZl
-nsYDJfgRDy4Du8FikB5yEP4RsfY7diXpmOOKggORuK9OZ9nYp/w=
------END RSA PRIVATE KEY-----"""
-    assert isinstance(validate_ssh_key(ssh_key), dict)
-
-
-def test_non_key():
-    ssh_key = "This is not a key"
-    with raises(AnsibleRunnerException):
-        validate_ssh_key(ssh_key)
-
-
-def test_invalid_base64_key():
-    ssh_key = """-----BEGIN RSA PRIVATE KEY-----This is not base 64-----END RSA PRIVATE KEY-----"""
-    with raises(AnsibleRunnerException):
-        validate_ssh_key(ssh_key)

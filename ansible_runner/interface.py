@@ -77,6 +77,7 @@ def run(**kwargs):
                      be read from ``env/settings`` in ``private_data_dir``.
     :param ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
     :param limit: Matches ansible's ``--limit`` parameter to further constrain the inventory to be used
+    :param verbosity: Control how verbose the output of ansible-playbook is
     :type private_data_dir: str
     :type ident: str
     :type playbook: str or filename or list
@@ -86,6 +87,7 @@ def run(**kwargs):
     :type passwords: dict
     :type settings: dict
     :type ssh_key: str
+    :type verbosity: int
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object
     '''

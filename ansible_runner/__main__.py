@@ -76,6 +76,9 @@ def main():
 
     parser.add_argument("--inventory")
 
+    parser.add_argument("-v", action="count",
+                        help="Increase the verbosity with multiple v's (up to 5) of the ansible-playbook output")
+
     args = parser.parse_args()
 
     pidfile = os.path.join(args.private_data_dir, 'pid')
@@ -174,7 +177,8 @@ def main():
         with context:
             run_options = dict(private_data_dir=args.private_data_dir,
                                ident=args.ident,
-                               playbook=args.playbook)
+                               playbook=args.playbook,
+                               verbosity=args.v)
             if args.hosts is not None:
                 run_options.update(inventory=args.hosts)
             run(**run_options)

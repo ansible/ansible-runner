@@ -196,7 +196,7 @@ class OutputEventFilter(object):
         self._last_chunk = ''
         self._current_event_data = None
         self.output_json = output_json
-        self. suppress_ansible_output = suppress_ansible_output
+        self.suppress_ansible_output = suppress_ansible_output
 
     def flush(self):
         # pexpect wants to flush the file it writes to, but we're not

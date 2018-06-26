@@ -36,6 +36,11 @@ def test_runner_config_init_defaults():
     assert isinstance(rc.loader, ArtifactLoader)
 
 
+def test_runner_config_with_artifact_dir():
+    rc = RunnerConfig('/', artifact_dir='/this-is-some-dir')
+    assert rc.artifact_dir == os.path.join('/this-is-some-dir', 'artifacts/%s' % rc.ident)
+
+
 def test_runner_config_init_with_ident():
     rc = RunnerConfig('/', ident='test')
     assert rc.private_data_dir == '/'

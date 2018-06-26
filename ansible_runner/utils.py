@@ -186,7 +186,7 @@ class OutputEventFilter(object):
 
     EVENT_DATA_RE = re.compile(r'\x1b\[K((?:[A-Za-z0-9+/=]+\x1b\[\d+D)+)\x1b\[K')
 
-    def __init__(self, handle, event_callback, suppress_ansible_output):
+    def __init__(self, handle, event_callback, suppress_ansible_output, output_json=False):
         self._event_callback = event_callback
         self._counter = 0
         self._start_line = 0
@@ -194,6 +194,7 @@ class OutputEventFilter(object):
         self._buffer = StringIO()
         self._last_chunk = ''
         self._current_event_data = None
+        self.output_json = output_json
         self. suppress_ansible_output = suppress_ansible_output
 
     def flush(self):
@@ -225,12 +226,16 @@ class OutputEventFilter(object):
             except ValueError:
                 event_data = {}
             event_data = self._emit_event(value[:match.start()], event_data)
-            stdout_actual = event_data['stdout'] if 'stdout' in event_data else None
+            if not self.output_json:
+                stdout_actual = event_data['stdout'] if 'stdout' in event_data else None
+            else:
+                stdout_actual = json.dumps(event_data)
             remainder = value[match.end():]
             self._buffer = StringIO()
             self._buffer.write(remainder)
 
-            if stdout_actual:
+
+            if stdout_actual and stdout_actual != "{}":
                 if not self.suppress_ansible_output:
                     sys.stdout.write(stdout_actual + "\n")
                 self._handle.write(stdout_actual + "\n")

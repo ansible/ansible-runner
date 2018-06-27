@@ -76,6 +76,8 @@ def main():
 
     parser.add_argument("--role-skip-facts", action="store_true", default=False,
                         help="Disable fact collection when executing a role directly")
+    parser.add_argument("--artifact-dir",
+                        help="Path for the artifact root directory")
 
     parser.add_argument("--inventory")
     parser.add_argument("-j", "--json", action="store_true",
@@ -115,6 +117,8 @@ def main():
 
             kwargs = dict(private_data_dir=args.private_data_dir,
                           json_mode=args.json)
+            if args.artifact_dir:
+                kwargs['artifact_dir'] = args.artifact_dir
 
             playbook = None
             tmpvars = None

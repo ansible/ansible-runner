@@ -64,6 +64,12 @@ handle containing the ``stdout`` of the **Ansible** process.
 ``Runner.host_events``
 :meth:`ansible_runner.runner.Runner.host_events` is a method that, given a hostname, will return a list of only **Ansible** event data executed on that Host.
 
+Usage examples
+--------------
+.. code-block:: python
+
+  import ansible_runner
+  r = ansible_runner.run(private_data_dir='/tmp/demo', playbook='test.yml')
 
 Providing custom behavior and inputs
 ------------------------------------

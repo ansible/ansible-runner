@@ -199,7 +199,7 @@ class Runner(object):
         if not os.path.exists(event_path):
             raise AnsibleRunnerException("events missing")
         dir_events = os.listdir(event_path)
-        dir_events.sort(lambda x, y: int(x.split("-", 1)[0]) - int(y.split("-", 1)[0]))
+        dir_events.sort(key=lambda filenm: int(filenm.split("-", 1)[0]))
         for event_file in dir_events:
             with codecs.open(os.path.join(event_path, event_file), 'r', encoding='utf-8') as event_file_actual:
                 event = json.load(event_file_actual)

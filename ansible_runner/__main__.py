@@ -26,6 +26,7 @@ import stat
 import sys
 import os
 import shlex
+import shutil
 
 from uuid import uuid4
 
@@ -34,6 +35,7 @@ from yaml import safe_load
 from ansible_runner import run
 from ansible_runner.utils import dump_artifact
 from ansible_runner.runner import Runner
+from ansible_runner.exceptions import AnsibleRunnerException
 
 VERSION = pkg_resources.require("ansible_runner")[0].version
 
@@ -120,58 +122,82 @@ def main():
             if args.artifact_dir:
                 kwargs['artifact_dir'] = args.artifact_dir
 
+            project_path = os.path.abspath(os.path.join(args.private_data_dir, 'project'))
+            project_exists = os.path.exists(project_path)
+
+            env_path = os.path.join(args.private_data_dir, 'env')
+            env_exists = os.path.exists(env_path)
+
+            envvars_path = os.path.join(args.private_data_dir, 'env/envvars')
+            envvars_exists = os.path.exists(envvars_path)
+
             playbook = None
             tmpvars = None
 
             rc = 255
+            errmsg = None
 
             try:
                 play = [{'hosts': args.hosts if args.hosts is not None else "all",
                          'gather_facts': not args.role_skip_facts,
                          'roles': [role]}]
 
-                path = os.path.abspath(os.path.join(args.private_data_dir, 'project'))
                 filename = str(uuid4().hex)
 
-                playbook = dump_artifact(json.dumps(play), path, filename)
+                playbook = dump_artifact(json.dumps(play), project_path, filename)
                 kwargs['playbook'] = playbook
                 print('using playbook file %s' % playbook)
 
                 if args.inventory:
                     inventory_file = os.path.abspath(os.path.join(args.private_data_dir, 'inventory', args.inventory))
+                    if not os.path.exists(inventory_file):
+                        raise AnsibleRunnerException('location specified by --inventory does not exist')
                     kwargs['inventory'] = inventory_file
                     print('using inventory file %s' % inventory_file)
-
-                envvars = {}
 
                 roles_path = args.roles_path or os.path.join(args.private_data_dir, 'roles')
                 roles_path = os.path.abspath(roles_path)
                 print('setting ANSIBLE_ROLES_PATH to %s' % roles_path)
 
-                # since envvars will overwrite an existing envvars, capture
-                # the content of the current envvars if it exists and
-                # restore it once done
                 envvars = {}
-                curvars = os.path.join(args.private_data_dir, 'env/envvars')
-                if os.path.exists(curvars):
-                    with open(curvars, 'rb') as f:
+                if envvars_exists:
+                    with open(envvars_path, 'rb') as f:
                         tmpvars = f.read()
                         envvars = safe_load(tmpvars)
+
                 envvars['ANSIBLE_ROLES_PATH'] = roles_path
                 kwargs['envvars'] = envvars
 
                 res = run(**kwargs)
                 rc = res.rc
 
+            except AnsibleRunnerException as exc:
+                errmsg = str(exc)
+
             finally:
-                if playbook and os.path.isfile(playbook):
+                if not project_exists and os.path.exists(project_path):
+                    print('removing dynamically generated project folder')
+                    shutil.rmtree(project_path)
+                elif playbook and os.path.isfile(playbook):
+                    print('removing dynamically generated playbook')
                     os.remove(playbook)
 
                 # if a previous envvars existed in the private_data_dir,
                 # restore the original file contents
                 if tmpvars:
-                    with open(curvars, 'wb') as f:
+                    with open(envvars_path, 'wb') as f:
                         f.write(tmpvars)
+                elif not envvars_exists and os.path.exists(envvars_path):
+                    print('removing dynamically generated envvars folder')
+                    os.remove(envvars_path)
+
+                # since ansible-runner created the env folder, remove it
+                if not env_exists and os.path.exists(env_path):
+                    print('removing dynamically generated env folder')
+                    shutil.rmtree(env_path)
+
+            if errmsg:
+                print('ansible-runner: ERROR: %s' % errmsg)
 
             sys.exit(rc)
 

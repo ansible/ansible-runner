@@ -77,7 +77,7 @@ def main():
     parser.add_argument("--role-skip-facts", action="store_true", default=False,
                         help="Disable fact collection when executing a role directly")
     parser.add_argument("--artifact-dir",
-                        help="Path for the artifact root directory")
+                        help="Optional Path for the artifact root directory, by default it is located inside the private data dir")
 
     parser.add_argument("--inventory")
     parser.add_argument("-j", "--json", action="store_true",

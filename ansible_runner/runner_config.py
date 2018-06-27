@@ -23,6 +23,7 @@ import threading
 import pexpect
 import logging
 import stat
+import shutil
 
 from uuid import uuid4
 from collections import Mapping
@@ -91,6 +92,8 @@ class RunnerConfig(object):
         It's also responsible for wrapping the command with the proper ssh agent invocation
         and setting early ANSIBLE_ environment variables.
         """
+        if shutil.which('ansible') is None:
+            raise ConfigurationError("Could not find ansible. Make sure that it is installed and in the path")
         if self.private_data_dir is None:
             raise ConfigurationError("Runner Base Directory is not defined")
         if self.playbook is None: # TODO: ad-hoc mode, module and args

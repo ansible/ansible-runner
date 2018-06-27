@@ -19,6 +19,7 @@
 import pkg_resources
 import threading
 import argparse
+import logging
 import signal
 import errno
 import json
@@ -42,6 +43,8 @@ VERSION = pkg_resources.require("ansible_runner")[0].version
 DEFAULT_ROLES_PATH = os.getenv('ANSIBLE_ROLES_PATH', None)
 DEFAULT_RUNNER_PLAYBOOK = os.getenv('RUNNER_PLAYBOOK', None)
 DEFAULT_RUNNER_ROLE = os.getenv('RUNNER_ROLE', None)
+
+logger = logging.getLogger('ansible-runner')
 
 
 def main():
@@ -176,10 +179,10 @@ def main():
 
             finally:
                 if not project_exists and os.path.exists(project_path):
-                    print('removing dynamically generated project folder')
+                    logger.debug('removing dynamically generated project folder')
                     shutil.rmtree(project_path)
                 elif playbook and os.path.isfile(playbook):
-                    print('removing dynamically generated playbook')
+                    logger.debug('removing dynamically generated playbook')
                     os.remove(playbook)
 
                 # if a previous envvars existed in the private_data_dir,
@@ -188,12 +191,12 @@ def main():
                     with open(envvars_path, 'wb') as f:
                         f.write(tmpvars)
                 elif not envvars_exists and os.path.exists(envvars_path):
-                    print('removing dynamically generated envvars folder')
+                    logger.debug('removing dynamically generated envvars folder')
                     os.remove(envvars_path)
 
                 # since ansible-runner created the env folder, remove it
                 if not env_exists and os.path.exists(env_path):
-                    print('removing dynamically generated env folder')
+                    logger.debug('removing dynamically generated env folder')
                     shutil.rmtree(env_path)
 
             if errmsg:

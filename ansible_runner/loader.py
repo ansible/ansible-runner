@@ -166,7 +166,6 @@ class ArtifactLoader(object):
             contents = self.get_contents(path)
             parsed_data = contents.encode(encoding)
         except ConfigurationError as exc:
-            self.logger.exception(exc)
             raise
         except UnicodeEncodeError as exc:
             self.logger.exception(exc)

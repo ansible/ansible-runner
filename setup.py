@@ -5,12 +5,18 @@
 
 from setuptools import setup, find_packages
 
+with open('README.md', 'r') as f:
+    long_description = f.read()
+
 setup(
     name="ansible-runner",
     version="1.0.3",
     author='Red Hat Ansible',
     url="https://github.com/ansible/ansible-runner",
+    license='Apache',
     packages=find_packages(),
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     install_requires=[
         'psutil',
         'pexpect>=4.5',

@@ -74,15 +74,7 @@ def main():
     parser.add_argument("--role-vars",
                         help="Variables to pass to the role at runtime")
 
-    parser.add_argument("--role-skip-facts", action="store_true", default=False,
-                        help="Disable fact collection when executing a role directly")
-
     parser.add_argument("--inventory")
-    parser.add_argument("-j", "--json", action="store_true",
-                        help="Output the json event structure to stdout instead of Ansible output")
-
-    parser.add_argument("-v", action="count",
-                        help="Increase the verbosity with multiple v's (up to 5) of the ansible-playbook output")
 
     args = parser.parse_args()
 
@@ -113,8 +105,7 @@ def main():
                     role_vars[key] = value
                 role['vars'] = role_vars
 
-            kwargs = dict(private_data_dir=args.private_data_dir,
-                          json_mode=args.json)
+            kwargs = {'private_data_dir': args.private_data_dir}
 
             playbook = None
             tmpvars = None
@@ -123,7 +114,6 @@ def main():
 
             try:
                 play = [{'hosts': args.hosts if args.hosts is not None else "all",
-                         'gather_facts': not args.role_skip_facts,
                          'roles': [role]}]
 
                 path = os.path.abspath(os.path.join(args.private_data_dir, 'project'))
@@ -184,9 +174,7 @@ def main():
         with context:
             run_options = dict(private_data_dir=args.private_data_dir,
                                ident=args.ident,
-                               playbook=args.playbook,
-                               verbosity=args.v,
-                               json_mode=args.json)
+                               playbook=args.playbook)
             if args.hosts is not None:
                 run_options.update(inventory=args.hosts)
             run(**run_options)

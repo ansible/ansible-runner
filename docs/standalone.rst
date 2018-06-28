@@ -59,15 +59,3 @@ An example invocation using ``demo`` as private directory and ``localhost`` as t
   $ ansible-runner --role testrole --hosts localhost run demo
 
 Ansible roles directory can be provided with ``--roles-path`` option. Role variables can be passed with ``--role-vars`` at runtime.
-
-.. _outputjson:
-
-Outputting json (raw event data) to the console instead of normal output
-------------------------------------------------------------------------
-
-**Runner** supports outputting json event data structure directly to the console (and stdout file) instead of the standard **Ansible** output, thus
-mimicing the behavior of the ``json`` output plugin. This is in addition to the event data that's already present in the artifact directory. All that is needed
-is to supply the ``-j`` argument on the command line::
-
-  $ ansible-runner ... -j ...
-

@@ -186,13 +186,8 @@ def test_generate_ansible_command():
     rc.extra_vars = '/env/extravars'
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '@/env/extravars', 'main.yaml']
+
     rc.extra_vars = None
-
-    rc.verbosity = 3
-    cmd = rc.generate_ansible_command()
-    assert cmd == ['ansible-playbook', '-i', '/inventory', '-vvv', 'main.yaml']
-    rc.verbosity = None
-
     rc.limit = 'hosts'
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', '/inventory', '--limit', 'hosts', 'main.yaml']
@@ -204,7 +199,6 @@ def test_generate_ansible_command():
     rc.module_args = 'test=string'
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible', '-i', '/inventory', '--limit', 'hosts', '-m', 'setup', '-a', 'test=string']
-
 
 
 def test_prepare_command_defaults():

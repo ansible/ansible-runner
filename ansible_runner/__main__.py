@@ -85,11 +85,6 @@ def main():
                         help="Optional Path for the artifact root directory, by default it is located inside the private data dir")
 
     parser.add_argument("--inventory")
-    parser.add_argument("-j", "--json", action="store_true",
-                        help="Output the json event structure to stdout instead of Ansible output")
-
-    parser.add_argument("-v", action="count",
-                        help="Increase the verbosity with multiple v's (up to 5) of the ansible-playbook output")
 
     args = parser.parse_args()
 
@@ -142,7 +137,6 @@ def main():
 
             try:
                 play = [{'hosts': args.hosts if args.hosts is not None else "all",
-                         'gather_facts': not args.role_skip_facts,
                          'roles': [role]}]
 
                 filename = str(uuid4().hex)
@@ -217,9 +211,7 @@ def main():
         with context:
             run_options = dict(private_data_dir=args.private_data_dir,
                                ident=args.ident,
-                               playbook=args.playbook,
-                               verbosity=args.v,
-                               json_mode=args.json)
+                               playbook=args.playbook)
             if args.hosts is not None:
                 run_options.update(inventory=args.hosts)
             run(**run_options)

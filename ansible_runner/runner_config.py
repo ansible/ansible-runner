@@ -60,7 +60,6 @@ class RunnerConfig(object):
                  verbosity=None, json_mode=False, artifact_dir=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
-        self.json_mode = json_mode
         self.playbook = playbook
         self.inventory = inventory
         self.limit = limit
@@ -73,7 +72,6 @@ class RunnerConfig(object):
             self.artifact_dir = os.path.join(self.artifact_dir, "artifacts", "{}".format(self.ident))
 
         self.extra_vars = None
-        self.verbosity = verbosity
 
         self.logger.info('private_data_dir: %s' % self.private_data_dir)
         self.logger.info('artifact_dir: %s' % self.private_data_dir)
@@ -181,6 +179,7 @@ class RunnerConfig(object):
         self.idle_timeout = self.settings.get('idle_timeout', 120)
         self.job_timeout = self.settings.get('job_timeout', 120)
         self.pexpect_timeout = self.settings.get('pexpect_timeout', 5)
+        self.suppress_ansible_output = self.settings.get('suppress_ansible_output', False)
 
         if 'AD_HOC_COMMAND_ID' in self.env:
             self.cwd = self.private_data_dir
@@ -216,9 +215,6 @@ class RunnerConfig(object):
             exec_list.append(self.limit)
         if self.extra_vars:
             exec_list.extend(['-e', '@%s' % self.extra_vars])
-        if self.verbosity:
-            v = 'v' * self.verbosity
-            exec_list.append('-%s' % v)
         # Other parameters
         if base_command.endswith('ansible-playbook'):
             exec_list.append(self.playbook)

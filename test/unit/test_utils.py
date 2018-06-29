@@ -160,3 +160,16 @@ def test_dump_artifacts_ssh_key():
         assert fp == '/tmp/env'
         assert fn == 'ssh_key'
         assert 'ssh_key' not in kwargs
+
+
+def test_dump_artifacts_cmdline():
+    with patch('ansible_runner.utils.dump_artifact') as mock_dump_artifact:
+        cmdline = '--tags foo --skip-tags'
+        kwargs = {'private_data_dir': '/tmp', 'cmdline': cmdline}
+        dump_artifacts(kwargs)
+        assert mock_dump_artifact.call_count == 1
+        data, fp, fn = mock_dump_artifact.call_args[0]
+        assert data == cmdline
+        assert fp == '/tmp/env'
+        assert fn == 'cmdline'
+        assert 'cmdline' not in kwargs

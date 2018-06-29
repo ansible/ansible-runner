@@ -91,6 +91,9 @@ def main():
     parser.add_argument("-v", action="count",
                         help="Increase the verbosity with multiple v's (up to 5) of the ansible-playbook output")
 
+    parser.add_argument("--cmdline",
+                        help="Command line options to pass to ansible-playbook at execution time")
+
     args = parser.parse_args()
 
     pidfile = os.path.join(args.private_data_dir, 'pid')
@@ -111,7 +114,6 @@ def main():
 
     if args.command in ('start', 'run'):
         if args.role:
-
             role = {'name': args.role}
             if args.role_vars:
                 role_vars = {}
@@ -133,6 +135,9 @@ def main():
 
             envvars_path = os.path.join(args.private_data_dir, 'env/envvars')
             envvars_exists = os.path.exists(envvars_path)
+
+            if args.cmdline:
+                kwargs['cmdline'] = args.cmdline
 
             playbook = None
             tmpvars = None
@@ -220,8 +225,13 @@ def main():
                                playbook=args.playbook,
                                verbosity=args.v,
                                json_mode=args.json)
+
             if args.hosts is not None:
                 run_options.update(inventory=args.hosts)
+
+            if args.cmdline:
+                run_options['cmdline'] = args.cmdline
+
             run(**run_options)
             sys.exit(0)
 

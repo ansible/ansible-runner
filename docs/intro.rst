@@ -32,6 +32,7 @@ Note that not everything is required. Defaults will be used or values will be om
     │   ├── envvars
     │   ├── extravars
     │   ├── passwords
+    │   ├── cmdline
     │   ├── settings
     │   └── ssh_key
     ├── inventory
@@ -103,6 +104,18 @@ by providing a yaml or json formatted file with a regular expression and a value
   ---
   "^SSH [pP]assword:$": "some_password"
   "^BECOME [pP]assword:$": "become_password"
+
+``env/cmdline``
+---------------
+
+.. note::
+    
+    For an example see `the demo cmdline <https://github.com/ansible/ansible-runner/blob/master/demo/env/cmdline>`_
+
+.. warning::
+
+    Current **Ansible Runner** does not validate the command line arguments passed using this method so it is up to the playbook writer to provide a valid set of options
+    The command line options provided by this method are lower priority than the ones set by **Ansible Runner**.  For instance, this will not override `inventory` or `limit` values.
 
 ``env/ssh_key``
 ---------------

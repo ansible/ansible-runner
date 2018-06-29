@@ -173,10 +173,12 @@ def dump_artifacts(kwargs):
             dump_artifact(json.dumps(obj), path, key)
             kwargs.pop(key)
 
-    if 'ssh_key' in kwargs:
-        path = os.path.join(private_data_dir, 'env')
-        dump_artifact(str(kwargs['ssh_key']), path, 'ssh_key')
-        kwargs.pop('ssh_key')
+    for key in ('ssh_key', 'cmdline'):
+        obj = kwargs.get(key)
+        if obj:
+            path = os.path.join(private_data_dir, 'env')
+            dump_artifact(str(kwargs[key]), path, key)
+            kwargs.pop(key)
 
 
 class OutputEventFilter(object):

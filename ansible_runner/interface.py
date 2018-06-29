@@ -82,6 +82,7 @@ def run(**kwargs):
     :param cmdline: Commnad line options passed to Ansible read from ``env/cmdline`` in ``private_data_dir``
     :param limit: Matches ansible's ``--limit`` parameter to further constrain the inventory to be used
     :param verbosity: Control how verbose the output of ansible-playbook is
+    :param quiet: Disable all output
     :param artifact_dir: The path to the directory where artifacts should live
     :type private_data_dir: str
     :type ident: str
@@ -95,6 +96,8 @@ def run(**kwargs):
     :type ssh_key: str
     :type artifact_dir: str
     :type cmdline: str
+    :type quiet: bool
+    :type verbosity: int
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object
     '''

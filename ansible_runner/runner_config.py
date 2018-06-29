@@ -55,7 +55,7 @@ class RunnerConfig(object):
     def __init__(self,
                  private_data_dir=None, playbook=None, ident=uuid4(),
                  inventory=None, limit=None, module=None, module_args=None,
-                 verbosity=None, json_mode=False, artifact_dir=None):
+                 verbosity=None, quiet=False, json_mode=False, artifact_dir=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.json_mode = json_mode
@@ -72,6 +72,7 @@ class RunnerConfig(object):
 
         self.extra_vars = None
         self.verbosity = verbosity
+        self.quiet = quiet
         self.loader = ArtifactLoader(self.private_data_dir)
 
     def prepare(self):
@@ -171,7 +172,7 @@ class RunnerConfig(object):
         self.idle_timeout = self.settings.get('idle_timeout', 120)
         self.job_timeout = self.settings.get('job_timeout', 120)
         self.pexpect_timeout = self.settings.get('pexpect_timeout', 5)
-        self.suppress_ansible_output = self.settings.get('suppress_ansible_output', False)
+        self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
 
         if 'AD_HOC_COMMAND_ID' in self.env:
             self.cwd = self.private_data_dir

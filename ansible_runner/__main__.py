@@ -94,6 +94,9 @@ def main():
     parser.add_argument("-v", action="count",
                         help="Increase the verbosity with multiple v's (up to 5) of the ansible-playbook output")
 
+    parser.add_argument("-q", "--quiet", action="store_true",
+                        help="Disable all output")
+
     parser.add_argument("--cmdline",
                         help="Command line options to pass to ansible-playbook at execution time")
     parser.add_argument("--debug", action="store_true",
@@ -244,6 +247,7 @@ def main():
                                ident=args.ident,
                                playbook=args.playbook,
                                verbosity=args.v,
+                               quiet=args.quiet,
                                json_mode=args.json)
 
             if args.hosts is not None:

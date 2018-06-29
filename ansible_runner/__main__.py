@@ -85,7 +85,9 @@ def main():
     parser.add_argument("--artifact-dir",
                         help="Optional Path for the artifact root directory, by default it is located inside the private data dir")
 
-    parser.add_argument("--inventory")
+    parser.add_argument("--inventory",
+                        help="Override the default inventory location in private_data_dir")
+
     parser.add_argument("-j", "--json", action="store_true",
                         help="Output the json event structure to stdout instead of Ansible output")
 

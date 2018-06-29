@@ -3,7 +3,7 @@ import re
 
 from functools import partial
 
-from six import string_types
+from six import string_types, b
 from pexpect import TIMEOUT, EOF
 
 from pytest import raises
@@ -213,7 +213,7 @@ def test_generate_ansible_command_with_cmdline_args():
     rc.prepare_inventory()
     rc.extra_vars = {}
 
-    cmdline_side_effect = partial(load_file_side_effect, 'env/cmdline', '--tags foo --skip-tags')
+    cmdline_side_effect = partial(load_file_side_effect, 'env/cmdline', b('--tags foo --skip-tags'))
 
     with patch.object(rc.loader, 'load_file', side_effect=cmdline_side_effect):
         cmd = rc.generate_ansible_command()

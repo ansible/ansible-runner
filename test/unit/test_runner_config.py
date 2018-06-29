@@ -32,7 +32,6 @@ def test_runner_config_init_defaults():
     assert rc.module is None
     assert rc.module_args is None
     assert rc.artifact_dir == os.path.join('/artifacts/%s' % rc.ident)
-    assert rc.logger is not None
     assert isinstance(rc.loader, ArtifactLoader)
 
 
@@ -51,7 +50,6 @@ def test_runner_config_init_with_ident():
     assert rc.module is None
     assert rc.module_args is None
     assert rc.artifact_dir == os.path.join('/artifacts/test')
-    assert rc.logger is not None
     assert isinstance(rc.loader, ArtifactLoader)
 
 

@@ -17,12 +17,12 @@
 # under the License.
 #
 import threading
-import os
 import logging
 
+from ansible_runner import output
 from ansible_runner.runner_config import RunnerConfig
 from ansible_runner.runner import Runner
-from ansible_runner.utils import dump_artifacts, configure_logging
+from ansible_runner.utils import dump_artifacts
 
 logging.getLogger('ansible-runner').addHandler(logging.NullHandler())
 
@@ -38,13 +38,15 @@ def init_runner(**kwargs):
     '''
     dump_artifacts(kwargs)
 
+    output.configure()
+
     debug = kwargs.pop('debug', None)
+    if debug in (True, False):
+        output.set_debug('enable' if debug is True else 'disable')
 
-    logfile = None
-    if debug:
-        logfile = os.path.join(kwargs['private_data_dir'], 'debug.log')
-
-    configure_logging(filename=logfile, debug=debug)
+    logfile = kwargs.pop('logfile', None)
+    if logfile:
+        output.set_logfile(logfile)
 
     rc = RunnerConfig(**kwargs)
     rc.prepare()

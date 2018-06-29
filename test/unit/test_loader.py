@@ -2,6 +2,7 @@ from io import BytesIO
 
 from pytest import raises, fixture
 from mock import patch
+from six import string_types
 
 import ansible_runner.loader
 
@@ -55,23 +56,23 @@ def test_abspath(loader):
 
 def test_load_file_text(loader):
     with patch.object(ansible_runner.loader.ArtifactLoader, 'get_contents') as mock_get_contents:
-        mock_get_contents.return_value = 'test string'
+        mock_get_contents.return_value = 'test\nstring'
 
         assert not loader._cache
 
         # cache miss
-        res = loader.load_file('/tmp/test')
+        res = loader.load_file('/tmp/test', string_types)
         assert mock_get_contents.called
         assert mock_get_contents.called_with_args('/tmp/test')
-        assert res == 'test string'
+        assert res == b'test\nstring'
         assert '/tmp/test' in loader._cache
 
         mock_get_contents.reset_mock()
 
         # cache hit
-        res = loader.load_file('/tmp/test')
+        res = loader.load_file('/tmp/test', string_types)
         assert not mock_get_contents.called
-        assert res == 'test string'
+        assert res == b'test\nstring'
         assert '/tmp/test' in loader._cache
 
 

@@ -66,3 +66,5 @@ The RPM build uses a container image to bootstrap the environment in order to pr
 installed and proceed with::
 
   make rpm
+
+.. include:: ../CHANGES.rst

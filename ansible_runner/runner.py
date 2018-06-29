@@ -70,7 +70,7 @@ class Runner(object):
                 raise
 
         stdout_handle = codecs.open(stdout_filename, 'w', encoding='utf-8')
-        stdout_handle = OutputEventFilter(stdout_handle, self.event_callback, output_json=self.config.json_mode)
+        stdout_handle = OutputEventFilter(stdout_handle, self.event_callback, self.config.suppress_ansible_output, output_json=self.config.json_mode)
 
         if not isinstance(self.config.expect_passwords, collections.OrderedDict):
             # We iterate over `expect_passwords.keys()` and

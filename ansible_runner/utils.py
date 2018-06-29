@@ -138,7 +138,8 @@ class OutputEventFilter(object):
 
     EVENT_DATA_RE = re.compile(r'\x1b\[K((?:[A-Za-z0-9+/=]+\x1b\[\d+D)+)\x1b\[K')
 
-    def __init__(self, handle, event_callback, output_json=False):
+    def __init__(self, handle, event_callback,
+                 suppress_ansible_output=False, output_json=False):
         self._event_callback = event_callback
         self._counter = 0
         self._start_line = 0
@@ -147,6 +148,7 @@ class OutputEventFilter(object):
         self._last_chunk = ''
         self._current_event_data = None
         self.output_json = output_json
+        self.suppress_ansible_output = suppress_ansible_output
 
     def flush(self):
         # pexpect wants to flush the file it writes to, but we're not
@@ -186,7 +188,8 @@ class OutputEventFilter(object):
             self._buffer.write(remainder)
 
             if stdout_actual and stdout_actual != "{}":
-                sys.stdout.write(stdout_actual + "\n")
+                if not self.suppress_ansible_output:
+                    sys.stdout.write(stdout_actual + "\n")
                 self._handle.write(stdout_actual + "\n")
 
             self._last_chunk = remainder

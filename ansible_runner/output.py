@@ -37,9 +37,7 @@ def debug(msg):
         if isinstance(msg, Exception):
             if TRACEBACK_ENABLED:
                 _debug_logger.exception(msg)
-            display(msg.message)
-        else:
-            display(msg)
+        display(msg)
 
 
 def set_logfile(filename):

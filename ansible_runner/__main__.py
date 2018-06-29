@@ -116,7 +116,6 @@ def main():
     if args.logfile:
         output.set_logfile(args.logfile)
 
-    output.display('starting ansible')
     output.debug('starting debug logging')
 
     pidfile = os.path.join(args.private_data_dir, 'pid')

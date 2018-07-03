@@ -7,6 +7,7 @@ import signal
 import codecs
 import collections
 
+import six
 import pexpect
 import psutil
 
@@ -81,6 +82,12 @@ class Runner(object):
             expect_passwords = collections.OrderedDict(self.config.expect_passwords)
         password_patterns = list(expect_passwords.keys())
         password_values = list(expect_passwords.values())
+
+        # pexpect needs all env vars to be utf-8 encoded strings
+        # https://github.com/pexpect/pexpect/issues/512
+        for k, v in self.config.env.items():
+            if k != 'PATH' and isinstance(v, six.text_type):
+                self.config.env[k] = v.encode('utf-8')
 
         self.status = 'running'
         child = pexpect.spawn(

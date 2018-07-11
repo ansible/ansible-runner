@@ -98,7 +98,7 @@ class Runner(object):
             ignore_sighup=True,
             encoding='utf-8',
             echo=False,
-            use_poll=True,
+            use_poll=self.config.pexpect_use_poll,
         )
         child.logfile_read = stdout_handle
         last_stdout_update = time.time()

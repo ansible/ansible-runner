@@ -38,20 +38,23 @@ def init_runner(**kwargs):
     '''
     dump_artifacts(kwargs)
 
-    output.configure()
-
     debug = kwargs.pop('debug', None)
-    if debug in (True, False):
-        output.set_debug('enable' if debug is True else 'disable')
-
     logfile = kwargs.pop('logfile', None)
-    if logfile:
-        output.set_logfile(logfile)
+
+    if not kwargs.pop("ignore_logging", False):
+        output.configure()
+        if debug in (True, False):
+            output.set_debug('enable' if debug is True else 'disable')
+
+        if logfile:
+            output.set_logfile(logfile)
+
+    event_callback_handler = kwargs.pop('event_handler', None)
 
     rc = RunnerConfig(**kwargs)
     rc.prepare()
 
-    return Runner(rc)
+    return Runner(rc, event_handler=event_callback_handler)
 
 
 def run(**kwargs):
@@ -84,6 +87,7 @@ def run(**kwargs):
     :param verbosity: Control how verbose the output of ansible-playbook is
     :param quiet: Disable all output
     :param artifact_dir: The path to the directory where artifacts should live
+    :param event_handler: An optional callback that will be invoked any time an event is received by Runner itself
     :type private_data_dir: str
     :type ident: str
     :type json_mode: bool
@@ -98,6 +102,7 @@ def run(**kwargs):
     :type cmdline: str
     :type quiet: bool
     :type verbosity: int
+    :type event_handler: function
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object
     '''
@@ -116,5 +121,6 @@ def run_async(**kwargs):
     '''
     r = init_runner(**kwargs)
     runner_thread = threading.Thread(target=r.run)
+    #runner_thread.daemon = True
     runner_thread.start()
     return runner_thread, r

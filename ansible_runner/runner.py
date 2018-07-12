@@ -18,9 +18,10 @@ from ansible_runner.output import debug
 
 class Runner(object):
 
-    def __init__(self, config, cancel_callback=None, remove_partials=True):
+    def __init__(self, config, cancel_callback=None, remove_partials=True, event_handler=None):
         self.config = config
         self.cancel_callback = cancel_callback
+        self.event_handler = event_handler
         self.canceled = False
         self.timed_out = False
         self.errored = False
@@ -50,6 +51,8 @@ class Runner(object):
                     json.dump(event_data, write_file)
                 if self.remove_partials:
                     os.remove(partial_filename)
+                if self.event_handler is not None:
+                    self.event_handler(event_data)
             except IOError as e:
                 debug("Failed writing event data: {}".format(e))
 

@@ -57,7 +57,7 @@ def test_error_code(rc):
 
 
 def test_password_prompt(rc):
-    rc.command = ['python', '-c' 'import time; print raw_input("Password: "); time.sleep(.05)']
+    rc.command = ['python', '-c' 'import time; print(input("Password: ")); time.sleep(.05)']
     rc.expect_passwords[re.compile(r'Password:\s*?$', re.M)] = 'secret123'
     status, exitcode = Runner(config=rc).run()
     assert status == 'successful'
@@ -75,7 +75,7 @@ def test_job_timeout(rc):
 
 
 def test_cancel_callback(rc):
-    rc.command = ['python', '-c', 'print raw_input("Password: ")']
+    rc.command = ['python', '-c', 'print(input("Password: "))']
     status, exitcode = Runner(config=rc, cancel_callback=lambda: True).run()
     assert status == 'canceled'
 
@@ -84,14 +84,14 @@ def test_cancel_callback_error(rc):
     def kaboom():
         raise Exception('kaboom')
 
-    rc.command = ['python', '-c', 'print raw_input("Password: ")']
+    rc.command = ['python', '-c', 'print(input("Password: "))']
     with pytest.raises(CallbackError):
         Runner(config=rc, cancel_callback=kaboom).run()
 
 
 @pytest.mark.parametrize('value', ['abc123', six.u('Iñtërnâtiônàlizætiøn')])
 def test_env_vars(rc, value):
-    rc.command = ['python', '-c', 'import os; print os.getenv("X_MY_ENV")']
+    rc.command = ['python', '-c', 'import os; print(os.getenv("X_MY_ENV"))']
     rc.env = {'X_MY_ENV': value}
     status, exitcode = Runner(config=rc).run()
     assert status == 'successful'

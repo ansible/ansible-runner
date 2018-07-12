@@ -3,6 +3,13 @@
 Changelog
 ---------
 
+1.0.5 (pending)
++++++++++++++++
+
+- Fix a bug that could cause a hang if unicode environment variables are used
+- Allow select() to be used instead of poll() when invoking pexpect
+
+
 1.0.4 (2018-06-29)
 ++++++++++++++++++
 

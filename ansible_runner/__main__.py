@@ -100,7 +100,7 @@ def main():
     parser.add_argument("--cmdline",
                         help="Command line options to pass to ansible-playbook at execution time")
     parser.add_argument("--debug", action="store_true",
-                        help="Enable debug output logging")
+                        help="Enable Runner debug output logging")
 
     parser.add_argument("--logfile",
                         help="Log output messages to a file")

@@ -29,6 +29,7 @@ def rc(request, tmpdir):
     rc.job_timeout = .1
     rc.idle_timeout = 0
     rc.pexpect_timeout = .1
+    rc.pexpect_use_poll = True
     return rc
 
 

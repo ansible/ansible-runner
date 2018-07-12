@@ -172,6 +172,8 @@ class RunnerConfig(object):
         self.idle_timeout = self.settings.get('idle_timeout', 120)
         self.job_timeout = self.settings.get('job_timeout', 120)
         self.pexpect_timeout = self.settings.get('pexpect_timeout', 5)
+
+        self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
 
         if 'AD_HOC_COMMAND_ID' in self.env:

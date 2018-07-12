@@ -120,7 +120,7 @@ def dump_artifacts(kwargs):
         if not roles_path:
             roles_path = os.path.join(private_data_dir, 'roles')
         else:
-            roles_path += ':%s' % os.path.join(private_data_dir, 'roles')
+            roles_path += ':{}'.format(os.path.join(private_data_dir, 'roles'))
 
         kwargs['envvars']['ANSIBLE_ROLES_PATH'] = roles_path
 
@@ -138,7 +138,6 @@ def dump_artifacts(kwargs):
                 elif isinstance(obj, string_types):
                     if not os.path.exists(obj):
                         kwargs['inventory'] = dump_artifact(obj, path, 'hosts')
-
     for key in ('envvars', 'extravars', 'passwords', 'settings'):
         obj = kwargs.get(key)
         if obj:

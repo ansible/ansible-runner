@@ -75,6 +75,32 @@ def test_dump_artifacts_playbook():
             assert mock_dump_artifact.called is False
 
 
+def test_dump_artifacts_roles():
+    with patch('ansible_runner.utils.dump_artifact') as mock_dump_artifact:
+        kwargs = dict(private_data_dir="/tmp",
+                      role="test",
+                      playbook=[{'playbook': [{'hosts': 'all'}]}])
+        dump_artifacts(kwargs)
+        assert mock_dump_artifact.call_count == 2
+        data, envpath, fp = mock_dump_artifact.call_args[0]
+        assert fp == "envvars"
+        data = json.loads(data)
+        assert "ANSIBLE_ROLES_PATH" in data
+        assert data['ANSIBLE_ROLES_PATH'] == "/tmp/roles"
+        mock_dump_artifact.reset_mock()
+        kwargs = dict(private_data_dir="/tmp",
+                      role="test",
+                      roles_path="/tmp/altrole",
+                      playbook=[{'playbook': [{'hosts': 'all'}]}])
+        dump_artifacts(kwargs)
+        assert mock_dump_artifact.call_count == 2
+        data, envpath, fp = mock_dump_artifact.call_args[0]
+        assert fp == "envvars"
+        data = json.loads(data)
+        assert "ANSIBLE_ROLES_PATH" in data
+        assert data['ANSIBLE_ROLES_PATH'] == "/tmp/altrole:/tmp/roles"
+
+
 def test_dump_artifacts_inventory():
     with patch('ansible_runner.utils.dump_artifact') as mock_dump_artifact:
         # inventory as a string (INI)

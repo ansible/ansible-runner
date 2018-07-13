@@ -1,4 +1,5 @@
 import os
+import re
 import stat
 import time
 import json
@@ -207,8 +208,12 @@ class Runner(object):
         if not os.path.exists(event_path):
             raise AnsibleRunnerException("events missing")
         dir_events = os.listdir(event_path)
-        dir_events.sort(key=lambda filenm: int(filenm.split("-", 1)[0]))
-        for event_file in dir_events:
+        dir_events_actual = []
+        for each_file in dir_events:
+            if re.match("^[0-9]+\-.+json$", each_file):
+                dir_events_actual.append(each_file)
+        dir_events_actual.sort(key=lambda filenm: int(filenm.split("-", 1)[0]))
+        for event_file in dir_events_actual:
             with codecs.open(os.path.join(event_path, event_file), 'r', encoding='utf-8') as event_file_actual:
                 event = json.load(event_file_actual)
             yield event

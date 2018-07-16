@@ -64,6 +64,18 @@ handle containing the ``stdout`` of the **Ansible** process.
 ``Runner.host_events``
 :meth:`ansible_runner.runner.Runner.host_events` is a method that, given a hostname, will return a list of only **Ansible** event data executed on that Host.
 
+``Runner.event_handler``
+------------------------
+
+A function passed to `__init__` of :class:`Runner <ansible_runner.runner.Runner>`, this is invoked every time an Ansible event is received. You can use this to
+inspect/process/handle events as they come out of Ansible.
+
+``Runner.cancel_callback``
+--------------------------
+
+A function passed to ``_init__`` of :class:`Runner <ansible_runner.runner.Runner>`, this function will be called for every iteration of the :meth:`ansible_runner.interface.run`
+event loop and should return `True` to inform **Runner** cancel and shutdown the **Ansible** process or `False` to allow it to continue.
+
 Usage examples
 --------------
 .. code-block:: python

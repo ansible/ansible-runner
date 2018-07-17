@@ -41,7 +41,7 @@ def init_runner(**kwargs):
     debug = kwargs.pop('debug', None)
     logfile = kwargs.pop('logfile', None)
 
-    if not kwargs.pop("ignore_logging", False):
+    if not kwargs.pop("ignore_logging", True):
         output.configure()
         if debug in (True, False):
             output.set_debug('enable' if debug is True else 'disable')

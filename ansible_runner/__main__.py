@@ -145,7 +145,7 @@ def main():
                 role['vars'] = role_vars
 
             kwargs = dict(private_data_dir=args.private_data_dir,
-                          json_mode=args.json)
+                          json_mode=args.json, ignore_logging=False)
             if args.artifact_dir:
                 kwargs['artifact_dir'] = args.artifact_dir
 
@@ -247,6 +247,7 @@ def main():
                                playbook=args.playbook,
                                verbosity=args.v,
                                quiet=args.quiet,
+                               ignore_logging=False,
                                json_mode=args.json)
 
             if args.hosts is not None:

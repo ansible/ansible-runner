@@ -73,8 +73,15 @@ inspect/process/handle events as they come out of Ansible.
 ``Runner.cancel_callback``
 --------------------------
 
-A function passed to ``_init__`` of :class:`Runner <ansible_runner.runner.Runner>`, this function will be called for every iteration of the :meth:`ansible_runner.interface.run`
-event loop and should return `True` to inform **Runner** cancel and shutdown the **Ansible** process or `False` to allow it to continue.
+A function passed to ``__init__`` of :class:`Runner <ansible_runner.runner.Runner>`, and to the :meth:`ansible_runner.interface.run` interface functions.
+This function will be called for every iteration of the :meth:`ansible_runner.interface.run` event loop and should return `True`
+to inform **Runner** cancel and shutdown the **Ansible** process or `False` to allow it to continue.
+
+``Runner.finished_callback``
+----------------------------
+
+A function passed to ``__init__`` of :class:`Runner <ansible_runner.runner.Runner>`, and to the :meth:`ansible_runner.interface.run` interface functions.
+This function will be called immediately before the **Runner** event loop finishes once **Ansible** has been shut down.
 
 Usage examples
 --------------

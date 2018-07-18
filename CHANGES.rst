@@ -8,6 +8,8 @@ Changelog
 
 - Fix a bug that could cause a hang if unicode environment variables are used
 - Allow select() to be used instead of poll() when invoking pexpect
+- Check for the presence of Ansible before executing
+- Fix an issue where a missing project directory would cause Runner to fail silently
 
 
 1.0.4 (2018-06-29)

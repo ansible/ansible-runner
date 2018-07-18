@@ -180,7 +180,7 @@ class RunnerConfig(object):
         self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
 
-        if 'AD_HOC_COMMAND_ID' in self.env:
+        if 'AD_HOC_COMMAND_ID' in self.env or not os.path.exists(os.path.join(self.private_data_dir, 'project')):
             self.cwd = self.private_data_dir
         else:
             self.cwd = os.path.join(self.private_data_dir, 'project')

@@ -1,4 +1,5 @@
 import os
+import re
 import stat
 import time
 import json
@@ -18,9 +19,11 @@ from ansible_runner.output import debug
 
 class Runner(object):
 
-    def __init__(self, config, cancel_callback=None, remove_partials=True):
+    def __init__(self, config, cancel_callback=None, remove_partials=True, event_handler=None, finished_callback=None):
         self.config = config
         self.cancel_callback = cancel_callback
+        self.event_handler = event_handler
+        self.finished_callback = finished_callback
         self.canceled = False
         self.timed_out = False
         self.errored = False
@@ -50,6 +53,8 @@ class Runner(object):
                     json.dump(event_data, write_file)
                 if self.remove_partials:
                     os.remove(partial_filename)
+                if self.event_handler is not None:
+                    self.event_handler(event_data)
             except IOError as e:
                 debug("Failed writing event data: {}".format(e))
 
@@ -115,11 +120,11 @@ class Runner(object):
             if self.cancel_callback:
                 try:
                     self.canceled = self.cancel_callback()
-                except Exception:
+                except Exception as e:
                     # TODO: logger.exception('Could not check cancel callback - cancelling immediately')
                     #if isinstance(extra_update_fields, dict):
                     #    extra_update_fields['job_explanation'] = "System error during job execution, check system logs"
-                    raise CallbackError("Exception in Cancel Callback")
+                    raise CallbackError("Exception in Cancel Callback: {}".format(e))
             if not self.canceled and self.config.job_timeout != 0 and (time.time() - job_start) > self.config.job_timeout:
                 self.timed_out = True
                 # if isinstance(extra_update_fields, dict):
@@ -148,6 +153,11 @@ class Runner(object):
                 os.close(os.open(artifact_path, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
             with open(artifact_path, 'w') as f:
                 f.write(str(data))
+        if self.finished_callback is not None:
+            try:
+                self.finished_callback(self)
+            except Exception as e:
+                raise CallbackError("Exception in Finished Callback: {}".format(e))
         return self.status, self.rc
 
     @property
@@ -204,8 +214,12 @@ class Runner(object):
         if not os.path.exists(event_path):
             raise AnsibleRunnerException("events missing")
         dir_events = os.listdir(event_path)
-        dir_events.sort(key=lambda filenm: int(filenm.split("-", 1)[0]))
-        for event_file in dir_events:
+        dir_events_actual = []
+        for each_file in dir_events:
+            if re.match("^[0-9]+\-.+json$", each_file):
+                dir_events_actual.append(each_file)
+        dir_events_actual.sort(key=lambda filenm: int(filenm.split("-", 1)[0]))
+        for event_file in dir_events_actual:
             with codecs.open(os.path.join(event_path, event_file), 'r', encoding='utf-8') as event_file_actual:
                 event = json.load(event_file_actual)
             yield event

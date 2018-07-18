@@ -155,13 +155,14 @@ def test_prepare_env_sshkey():
 
 
 def test_prepare_env_defaults():
-    rc = RunnerConfig('/')
-    rc.prepare_env()
-
-    assert rc.idle_timeout == 120
-    assert rc.job_timeout == 120
-    assert rc.pexpect_timeout == 5
-    assert rc.cwd == '/project'
+    with patch('os.path.exists') as path_exists:
+        path_exists.return_value=True
+        rc = RunnerConfig('/')
+        rc.prepare_env()
+        assert rc.idle_timeout == 120
+        assert rc.job_timeout == 120
+        assert rc.pexpect_timeout == 5
+        assert rc.cwd == '/project'
 
 
 def test_prepare_inventory():

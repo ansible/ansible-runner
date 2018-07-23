@@ -92,6 +92,7 @@ def run(**kwargs):
     :param verbosity: Control how verbose the output of ansible-playbook is
     :param quiet: Disable all output
     :param artifact_dir: The path to the directory where artifacts should live
+    :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
     :param event_handler: An optional callback that will be invoked any time an event is received by Runner itself
     :param cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
     :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
@@ -106,6 +107,7 @@ def run(**kwargs):
     :type settings: dict
     :type ssh_key: str
     :type artifact_dir: str
+    :type rotate_artifacts: int
     :type cmdline: str
     :type quiet: bool
     :type verbosity: int

@@ -12,7 +12,7 @@ import six
 import pexpect
 import psutil
 
-from .utils import OutputEventFilter
+from .utils import OutputEventFilter, cleanup_artifact_dir
 from .exceptions import CallbackError, AnsibleRunnerException
 from ansible_runner.output import debug
 
@@ -37,6 +37,11 @@ class Runner(object):
         later use
         '''
         if 'uuid' in event_data:
+            should_write = True
+            if self.event_handler is not None:
+                should_write = self.event_handler(event_data)
+            if not should_write:
+                return
             filename = '{}-partial.json'.format(event_data['uuid'])
             partial_filename = os.path.join(self.config.artifact_dir,
                                             'job_events',
@@ -53,8 +58,6 @@ class Runner(object):
                     json.dump(event_data, write_file)
                 if self.remove_partials:
                     os.remove(partial_filename)
-                if self.event_handler is not None:
-                    self.event_handler(event_data)
             except IOError as e:
                 debug("Failed writing event data: {}".format(e))
 
@@ -74,6 +77,9 @@ class Runner(object):
                 pass
             else:
                 raise
+
+        if self.config.ident is not None:
+            cleanup_artifact_dir(os.path.join(self.config.artifact_dir, ".."), self.config.rotate_artifacts)
 
         stdout_handle = codecs.open(stdout_filename, 'w', encoding='utf-8')
         stdout_handle = OutputEventFilter(stdout_handle, self.event_callback, self.config.suppress_ansible_output, output_json=self.config.json_mode)

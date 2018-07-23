@@ -74,6 +74,11 @@ def main():
                         help="An identifier that will be used when generating the"
                              "artifacts directory and can be used to uniquely identify a playbook run")
 
+    parser.add_argument("--rotate-artifacts",
+                        default=0,
+                        type=int,
+                        help="Automatically clean up old artifact directories after a given number has been created, the default is 0 which disables rotation")
+
     parser.add_argument("--roles-path", default=DEFAULT_ROLES_PATH,
                         help="Path to the Ansible roles directory")
 
@@ -145,7 +150,9 @@ def main():
                 role['vars'] = role_vars
 
             kwargs = dict(private_data_dir=args.private_data_dir,
-                          json_mode=args.json, ignore_logging=False)
+                          json_mode=args.json,
+                          ignore_logging=False,
+                          rotate_artifacts=args.rotate_artifacts)
             if args.artifact_dir:
                 kwargs['artifact_dir'] = args.artifact_dir
 
@@ -247,6 +254,7 @@ def main():
                                playbook=args.playbook,
                                verbosity=args.v,
                                quiet=args.quiet,
+                               rotate_artifacts=args.rotate_artifacts,
                                ignore_logging=False,
                                json_mode=args.json)
 
@@ -255,6 +263,9 @@ def main():
 
             if args.cmdline:
                 run_options['cmdline'] = args.cmdline
+
+            if args.artifact_dir:
+                kwargs['artifact_dir'] = args.artifact_dir
 
             run(**run_options)
             sys.exit(0)

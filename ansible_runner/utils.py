@@ -3,10 +3,12 @@ import json
 import sys
 import re
 import os
-import fcntl
-import tempfile
-import hashlib
 import stat
+import fcntl
+import shutil
+import hashlib
+import tempfile
+
 
 from collections import Iterable, Mapping
 from io import StringIO
@@ -87,6 +89,17 @@ def dump_artifact(obj, path, filename=None):
             os.remove(lock_fp)
 
     return fn
+
+
+def cleanup_artifact_dir(path, num_keep=0):
+    # 0 disables artifact dir cleanup/rotation
+    if num_keep < 1:
+        return
+    all_paths = sorted([os.path.join(path, p) for p in os.listdir(path)],
+                       key=lambda x: os.path.getmtime(x))
+    total_remove = len(all_paths) - num_keep
+    for f in range(total_remove):
+        shutil.rmtree(all_paths[f])
 
 
 def dump_artifacts(kwargs):

@@ -159,8 +159,8 @@ def test_prepare_env_defaults():
         path_exists.return_value=True
         rc = RunnerConfig('/')
         rc.prepare_env()
-        assert rc.idle_timeout == 120
-        assert rc.job_timeout == 120
+        assert rc.idle_timeout is None
+        assert rc.job_timeout is None
         assert rc.pexpect_timeout == 5
         assert rc.cwd == '/project'
 

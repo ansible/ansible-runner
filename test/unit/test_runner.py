@@ -67,11 +67,12 @@ def test_password_prompt(rc):
         assert 'secret123' in f.read()
 
 
+# TODO: matt does not like this test
 def test_job_timeout(rc):
     rc.command = ['python', '-c', 'import time; time.sleep(5)']
     runner = Runner(config=rc)
     status, exitcode = runner.run()
-    assert status == 'failed'
+    assert status == 'timeout'
     assert runner.timed_out is True
 
 

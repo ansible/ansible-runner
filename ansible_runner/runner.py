@@ -36,6 +36,7 @@ class Runner(object):
         Invoked for every Ansible event to collect stdout with the event data and store it for
         later use
         '''
+        self.last_stdout_update = time.time()
         if 'uuid' in event_data:
             should_write = True
             if self.event_handler is not None:
@@ -112,7 +113,7 @@ class Runner(object):
             use_poll=self.config.pexpect_use_poll,
         )
         child.logfile_read = stdout_handle
-        last_stdout_update = time.time()
+        self.last_stdout_update = time.time()
 
         job_start = time.time()
         while child.isalive():
@@ -122,7 +123,7 @@ class Runner(object):
             password = password_values[result_id]
             if password is not None:
                 child.sendline(password)
-                last_stdout_update = time.time()
+                self.last_stdout_update = time.time()
             if self.cancel_callback:
                 try:
                     self.canceled = self.cancel_callback()
@@ -131,14 +132,14 @@ class Runner(object):
                     #if isinstance(extra_update_fields, dict):
                     #    extra_update_fields['job_explanation'] = "System error during job execution, check system logs"
                     raise CallbackError("Exception in Cancel Callback: {}".format(e))
-            if not self.canceled and self.config.job_timeout != 0 and (time.time() - job_start) > self.config.job_timeout:
+            if self.config.job_timeout and not self.canceled and (time.time() - job_start) > self.config.job_timeout:
                 self.timed_out = True
                 # if isinstance(extra_update_fields, dict):
                 #     extra_update_fields['job_explanation'] = "Job terminated due to timeout"
             if self.canceled or self.timed_out or self.errored:
                 # TODO: proot_cmd
                 Runner.handle_termination(child.pid, child.args, proot_cmd=None, is_cancel=self.canceled)
-            if self.config.idle_timeout and (time.time() - last_stdout_update) > self.config.idle_timeout:
+            if self.config.idle_timeout and (time.time() - self.last_stdout_update) > self.config.idle_timeout:
                 child.close(True)
                 self.timed_out = True
 
@@ -147,8 +148,8 @@ class Runner(object):
         elif child.exitstatus == 0 and not self.timed_out:
             self.status = "successful"
         else:
-            self.status = "failed"
-        self.rc = child.exitstatus
+            self.status = "timeout" if self.timed_out else "failed"
+        self.rc = child.exitstatus if not self.timed_out else 254
 
         for filename, data in [
             ('status', self.status),

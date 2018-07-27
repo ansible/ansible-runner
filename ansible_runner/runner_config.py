@@ -175,8 +175,8 @@ class RunnerConfig(object):
             output.debug("Not loading ssh key")
             self.ssh_key_data = None
 
-        self.idle_timeout = self.settings.get('idle_timeout', 120)
-        self.job_timeout = self.settings.get('job_timeout', 120)
+        self.idle_timeout = self.settings.get('idle_timeout', None)
+        self.job_timeout = self.settings.get('job_timeout', None)
         self.pexpect_timeout = self.settings.get('pexpect_timeout', 5)
 
         self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)

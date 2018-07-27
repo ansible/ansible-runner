@@ -267,8 +267,8 @@ def main():
             if args.artifact_dir:
                 kwargs['artifact_dir'] = args.artifact_dir
 
-            run(**run_options)
-            sys.exit(0)
+            res = run(**run_options)
+            sys.exit(res.rc)
 
     try:
         with open(pidfile, 'r') as f:

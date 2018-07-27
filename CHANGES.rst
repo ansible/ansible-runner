@@ -3,6 +3,11 @@
 Changelog
 ---------
 
+1.0.6 (pending)
+
+- Fix an issue where timeout settings were far too short
+- Add a new status and return code to indicate Runner timeout occurred.
+
 1.0.5 (2018-07-23)
 ++++++++++++++++++
 

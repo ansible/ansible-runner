@@ -127,6 +127,8 @@ by providing a yaml or json formatted file with a regular expression and a value
 This file should contain the ssh private key used to connect to the host(s). **Runner** detects when a private key is provided and will wrap the call to
 **Ansible** in ssh-agent.
 
+.. _runnersettings:
+
 ``env/settings`` - Settings for Runner itself
 ---------------------------------------------
 
@@ -198,10 +200,11 @@ The artifact directory itself contains a particular structure that provides a lo
 
 The **rc** file contains the actual return code from the **Ansible** process.
 
-The **status** file contains one of two statuses suitable for displaying:
+The **status** file contains one of three statuses suitable for displaying:
 
 * success: The **Ansible** process finished successfully
 * failed: The **Ansible** process failed
+* timeout: The **Runner** timeout (see :ref:`runnersettings`)`
 
 The **stdout** file contains the actual stdout as it appears at that moment.
 

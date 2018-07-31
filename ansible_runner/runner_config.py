@@ -55,7 +55,7 @@ class RunnerConfig(object):
 
     def __init__(self,
                  private_data_dir=None, playbook=None, ident=uuid4(),
-                 inventory=None, limit=None, module=None, module_args=None,
+                 inventory=None, roles_path=None, limit=None, module=None, module_args=None,
                  verbosity=None, quiet=False, json_mode=False, artifact_dir=None,
                  rotate_artifacts=0):
         self.private_data_dir = os.path.abspath(private_data_dir)
@@ -63,6 +63,7 @@ class RunnerConfig(object):
         self.json_mode = json_mode
         self.playbook = playbook
         self.inventory = inventory
+        self.roles_path = roles_path
         self.limit = limit
         self.module = module
         self.module_args = module_args
@@ -124,6 +125,8 @@ class RunnerConfig(object):
         self.env['ANSIBLE_HOST_KEY_CHECKING'] = 'False'
         self.env['AWX_ISOLATED_DATA_DIR'] = self.artifact_dir
         self.env['PYTHONPATH'] = self.env.get('PYTHONPATH', '') + callback_dir + ':'
+        if self.roles_path:
+            self.env['ANSIBLE_ROLES_PATH'] = ':'.join(roles_path)
 
     def prepare_inventory(self):
         """

@@ -42,7 +42,7 @@ properties:
 * ``rc`` will represent the actual return code of the **Ansible** process
 * ``status`` will represent the state and can be one of:
    * ``unstarted``: This is a very brief state where the Runner task has been created but hasn't actually started yet.
-   * ``successfull``: The ``ansible`` process finished successfully.
+   * ``successful``: The ``ansible`` process finished successfully.
    * ``failed``: The ``ansible`` process failed.
 
 ``Runner.stdout``

@@ -117,6 +117,7 @@ class BaseCallbackModule(CallbackBase):
         self.clear_task()
 
     def set_task(self, task, local=False):
+        self.clear_task(local)
         # FIXME: Task is "global" unless using free strategy!
         task_ctx = dict(
             task=(task.name or task.action),

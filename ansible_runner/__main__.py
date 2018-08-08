@@ -28,6 +28,7 @@ import sys
 import os
 import shlex
 import shutil
+from contextlib import contextmanager
 
 from uuid import uuid4
 
@@ -35,7 +36,7 @@ from yaml import safe_load
 
 from ansible_runner import run
 from ansible_runner import output
-from ansible_runner.utils import dump_artifact
+from ansible_runner.utils import dump_artifact, Bunch
 from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
 
@@ -47,6 +48,97 @@ DEFAULT_RUNNER_ROLE = os.getenv('RUNNER_ROLE', None)
 DEFAULT_RUNNER_MODULE = os.getenv('RUNNER_MODULE', None)
 
 logger = logging.getLogger('ansible-runner')
+
+
+@contextmanager
+def role_manager(args):
+    if args.role:
+        role = {'name': args.role}
+        if args.role_vars:
+            role_vars = {}
+            for item in shlex.split(args.role_vars):
+                key, value = item.split('=')
+                role_vars[key] = value
+            role['vars'] = role_vars
+
+        kwargs = Bunch(**args.__dict__)
+        kwargs.update(private_data_dir=args.private_data_dir,
+                      json_mode=args.json,
+                      ignore_logging=False,
+                      rotate_artifacts=args.rotate_artifacts)
+        if args.artifact_dir:
+            kwargs.artifact_dir = args.artifact_dir
+
+        project_path = os.path.abspath(os.path.join(args.private_data_dir, 'project'))
+        project_exists = os.path.exists(project_path)
+
+        env_path = os.path.join(args.private_data_dir, 'env')
+        env_exists = os.path.exists(env_path)
+
+        envvars_path = os.path.join(args.private_data_dir, 'env/envvars')
+        envvars_exists = os.path.exists(envvars_path)
+
+        if args.cmdline:
+            kwargs.cmdline = args.cmdline
+
+        playbook = None
+        tmpvars = None
+
+        play = [{'hosts': args.hosts if args.hosts is not None else "all",
+                 'gather_facts': not args.role_skip_facts,
+                 'roles': [role]}]
+
+        filename = str(uuid4().hex)
+
+        playbook = dump_artifact(json.dumps(play), project_path, filename)
+        kwargs.playbook = playbook
+        output.debug('using playbook file %s' % playbook)
+
+        if args.inventory:
+            inventory_file = os.path.abspath(os.path.join(args.private_data_dir, 'inventory', args.inventory))
+            if not os.path.exists(inventory_file):
+                raise AnsibleRunnerException('location specified by --inventory does not exist')
+            kwargs.inventory = inventory_file
+            output.debug('using inventory file %s' % inventory_file)
+
+        roles_path = args.roles_path or os.path.join(args.private_data_dir, 'roles')
+        roles_path = os.path.abspath(roles_path)
+        output.debug('setting ANSIBLE_ROLES_PATH to %s' % roles_path)
+
+        envvars = {}
+        if envvars_exists:
+            with open(envvars_path, 'rb') as f:
+                tmpvars = f.read()
+                envvars = safe_load(tmpvars)
+
+        envvars['ANSIBLE_ROLES_PATH'] = roles_path
+        kwargs.envvars = envvars
+    else:
+        kwargs = args
+
+    yield kwargs
+
+    if args.role:
+        if not project_exists and os.path.exists(project_path):
+            logger.debug('removing dynamically generated project folder')
+            shutil.rmtree(project_path)
+        elif playbook and os.path.isfile(playbook):
+            logger.debug('removing dynamically generated playbook')
+            os.remove(playbook)
+
+        # if a previous envvars existed in the private_data_dir,
+        # restore the original file contents
+        if tmpvars:
+            with open(envvars_path, 'wb') as f:
+                f.write(tmpvars)
+        elif not envvars_exists and os.path.exists(envvars_path):
+            logger.debug('removing dynamically generated envvars folder')
+            os.remove(envvars_path)
+
+        # since ansible-runner created the env folder, remove it
+        if not env_exists and os.path.exists(env_path):
+            logger.debug('removing dynamically generated env folder')
+            shutil.rmtree(env_path)
 
 
 def main():
@@ -147,105 +239,8 @@ def main():
         stderr = open(stderr_path, 'w+')
 
     if args.command in ('start', 'run'):
-        if args.role:
-            role = {'name': args.role}
-            if args.role_vars:
-                role_vars = {}
-                for item in shlex.split(args.role_vars):
-                    key, value = item.split('=')
-                    role_vars[key] = value
-                role['vars'] = role_vars
 
-            kwargs = dict(private_data_dir=args.private_data_dir,
-                          json_mode=args.json,
-                          ignore_logging=False,
-                          rotate_artifacts=args.rotate_artifacts)
-            if args.artifact_dir:
-                kwargs['artifact_dir'] = args.artifact_dir
-
-            project_path = os.path.abspath(os.path.join(args.private_data_dir, 'project'))
-            project_exists = os.path.exists(project_path)
-
-            env_path = os.path.join(args.private_data_dir, 'env')
-            env_exists = os.path.exists(env_path)
-
-            envvars_path = os.path.join(args.private_data_dir, 'env/envvars')
-            envvars_exists = os.path.exists(envvars_path)
-
-            if args.cmdline:
-                kwargs['cmdline'] = args.cmdline
-
-            playbook = None
-            tmpvars = None
-
-            rc = 255
-            errmsg = None
-
-            try:
-                play = [{'hosts': args.hosts if args.hosts is not None else "all",
-                         'gather_facts': not args.role_skip_facts,
-                         'roles': [role]}]
-
-                filename = str(uuid4().hex)
-
-                playbook = dump_artifact(json.dumps(play), project_path, filename)
-                kwargs['playbook'] = playbook
-                output.debug('using playbook file %s' % playbook)
-
-                if args.inventory:
-                    inventory_file = os.path.abspath(os.path.join(args.private_data_dir, 'inventory', args.inventory))
-                    if not os.path.exists(inventory_file):
-                        raise AnsibleRunnerException('location specified by --inventory does not exist')
-                    kwargs['inventory'] = inventory_file
-                    output.debug('using inventory file %s' % inventory_file)
-
-                roles_path = args.roles_path or os.path.join(args.private_data_dir, 'roles')
-                roles_path = os.path.abspath(roles_path)
-                output.debug('setting ANSIBLE_ROLES_PATH to %s' % roles_path)
-
-                envvars = {}
-                if envvars_exists:
-                    with open(envvars_path, 'rb') as f:
-                        tmpvars = f.read()
-                        envvars = safe_load(tmpvars)
-
-                envvars['ANSIBLE_ROLES_PATH'] = roles_path
-                kwargs['envvars'] = envvars
-
-                res = run(**kwargs)
-                rc = res.rc
-
-            except AnsibleRunnerException as exc:
-                errmsg = str(exc)
-
-            finally:
-                if not project_exists and os.path.exists(project_path):
-                    logger.debug('removing dynamically generated project folder')
-                    shutil.rmtree(project_path)
-                elif playbook and os.path.isfile(playbook):
-                    logger.debug('removing dynamically generated playbook')
-                    os.remove(playbook)
-
-                # if a previous envvars existed in the private_data_dir,
-                # restore the original file contents
-                if tmpvars:
-                    with open(envvars_path, 'wb') as f:
-                        f.write(tmpvars)
-                elif not envvars_exists and os.path.exists(envvars_path):
-                    logger.debug('removing dynamically generated envvars folder')
-                    os.remove(envvars_path)
-
-                # since ansible-runner created the env folder, remove it
-                if not env_exists and os.path.exists(env_path):
-                    logger.debug('removing dynamically generated env folder')
-                    shutil.rmtree(env_path)
-
-            if errmsg:
-                print('ansible-runner: ERROR: %s' % errmsg)
-
-            sys.exit(rc)
-
-        elif args.command == 'start':
+        if args.command == 'start':
             import daemon
             from daemon.pidfile import TimeoutPIDLockFile
             context = daemon.DaemonContext(
@@ -256,28 +251,26 @@ def main():
             context = threading.Lock()
 
         with context:
-            run_options = dict(private_data_dir=args.private_data_dir,
-                               ident=args.ident,
-                               playbook=args.playbook,
-                               module=args.module,
-                               module_args=args.module_args,
-                               host_pattern=args.hosts,
-                               verbosity=args.v,
-                               quiet=args.quiet,
-                               rotate_artifacts=args.rotate_artifacts,
-                               ignore_logging=False,
-                               json_mode=args.json)
+            with role_manager(args) as args:
+                run_options = dict(private_data_dir=args.private_data_dir,
+                                   ident=args.ident,
+                                   playbook=args.playbook,
+                                   module=args.module,
+                                   module_args=args.module_args,
+                                   host_pattern=args.hosts,
+                                   verbosity=args.v,
+                                   quiet=args.quiet,
+                                   rotate_artifacts=args.rotate_artifacts,
+                                   ignore_logging=False,
+                                   json_mode=args.json)
 
-            if args.hosts is not None:
-                run_options.update(inventory=args.hosts)
+                if args.hosts is not None:
+                    run_options.update(inventory=args.hosts)
 
-            if args.cmdline:
-                run_options['cmdline'] = args.cmdline
+                if args.cmdline:
+                    run_options['cmdline'] = args.cmdline
 
-            if args.artifact_dir:
-                kwargs['artifact_dir'] = args.artifact_dir
-
-            res = run(**run_options)
+                res = run(**run_options)
             sys.exit(res.rc)
 
     try:

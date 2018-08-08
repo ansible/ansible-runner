@@ -15,6 +15,20 @@ from io import StringIO
 from six import string_types
 
 
+class Bunch(object):
+
+    '''
+    Collect a bunch of variables together in an object.
+    This is a slight modification of Alex Martelli's and Doug Hudgeon's Bunch pattern.
+    '''
+
+    def __init__(self, **kwargs):
+        self.update(**kwargs)
+
+    def update(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+
 def isplaybook(obj):
     '''
     Inspects the object and returns if it is a playbook

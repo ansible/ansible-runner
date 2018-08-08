@@ -137,8 +137,7 @@ class Runner(object):
                 # if isinstance(extra_update_fields, dict):
                 #     extra_update_fields['job_explanation'] = "Job terminated due to timeout"
             if self.canceled or self.timed_out or self.errored:
-                # TODO: proot_cmd
-                Runner.handle_termination(child.pid, child.args, proot_cmd=None, is_cancel=self.canceled)
+                Runner.handle_termination(child.pid, is_cancel=self.canceled)
             if self.config.idle_timeout and (time.time() - self.last_stdout_update) > self.config.idle_timeout:
                 child.close(True)
                 self.timed_out = True
@@ -259,33 +258,19 @@ class Runner(object):
         return all_host_events
 
     @classmethod
-    def handle_termination(cls, pid, args, proot_cmd, is_cancel=True):
+    def handle_termination(cls, pid, is_cancel=True):
         '''
         Internal method to terminate a subprocess spawned by `pexpect` representing an invocation of runner.
 
         :param pid:       the process id of the running the job.
-        :param args:      the args for the job, i.e., ['ansible-playbook', 'abc.yml']
-        :param proot_cmd  the command used to isolate processes i.e., `bwrap`
         :param is_cancel: flag showing whether this termination is caused by
                           instance's cancel_flag.
         '''
         try:
-            if proot_cmd and proot_cmd in ' '.join(args):
-                if not psutil:
-                    os.kill(pid, signal.SIGKILL)
-                else:
-                    try:
-                        main_proc = psutil.Process(pid=pid)
-                        child_procs = main_proc.children(recursive=True)
-                        for child_proc in child_procs:
-                            os.kill(child_proc.pid, signal.SIGKILL)
-                        os.kill(main_proc.pid, signal.SIGKILL)
-                    except (TypeError, psutil.Error):
-                        os.kill(pid, signal.SIGKILL)
-            else:
-                os.kill(pid, signal.SIGTERM)
-            time.sleep(3)
-        except OSError:
-            raise
-            #keyword = 'cancel' if is_cancel else 'timeout'
-            #TODO: logger.warn("Attempted to %s already finished job, ignoring" % keyword)
+            main_proc = psutil.Process(pid=pid)
+            child_procs = main_proc.children(recursive=True)
+            for child_proc in child_procs:
+                os.kill(child_proc.pid, signal.SIGKILL)
+            os.kill(main_proc.pid, signal.SIGKILL)
+        except (TypeError, psutil.Error):
+            os.kill(pid, signal.SIGKILL)

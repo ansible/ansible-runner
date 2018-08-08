@@ -137,7 +137,7 @@ The **settings** file is a little different than the other files provided in thi
   ---
   idle_timeout: 600 # If no output is detected from ansible in this number of seconds the execution will be terminated.
   job_timeout: 3600 # The maximum amount of time to allow the job to run for, exceeding this and the execution will be terminated.
-  pexpect_timeout: 10 # Number of seconds for the internal pexpect command to wait to block on input before continuuing
+  pexpect_timeout: 10 # Number of seconds for the internal pexpect command to wait to block on input before continuing
   pexpect_use_poll: True # Use poll() function for communication with child processes instead of select(). select() is used when
                          # the value is set to ``False``. select() has a known limitation of using only up to 1024 file descriptors.
 

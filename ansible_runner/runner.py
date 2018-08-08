@@ -38,11 +38,6 @@ class Runner(object):
         '''
         self.last_stdout_update = time.time()
         if 'uuid' in event_data:
-            should_write = True
-            if self.event_handler is not None:
-                should_write = self.event_handler(event_data)
-            if not should_write:
-                return
             filename = '{}-partial.json'.format(event_data['uuid'])
             partial_filename = os.path.join(self.config.artifact_dir,
                                             'job_events',
@@ -55,10 +50,15 @@ class Runner(object):
                 with codecs.open(partial_filename, 'r', encoding='utf-8') as read_file:
                     partial_event_data = json.load(read_file)
                 event_data.update(partial_event_data)
-                with codecs.open(full_filename, 'w', encoding='utf-8') as write_file:
-                    json.dump(event_data, write_file)
                 if self.remove_partials:
                     os.remove(partial_filename)
+                if self.event_handler is not None:
+                    should_write = self.event_handler(event_data)
+                else:
+                    should_write = True
+                if should_write:
+                    with codecs.open(full_filename, 'w', encoding='utf-8') as write_file:
+                        json.dump(event_data, write_file)
             except IOError as e:
                 debug("Failed writing event data: {}".format(e))
 

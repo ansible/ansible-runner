@@ -229,7 +229,8 @@ class OutputEventFilter(object):
 
             self._last_chunk = remainder
         else:
-            sys.stdout.write(data + '\n')
+            if not self.suppress_ansible_output:
+                sys.stdout.write(data + '\n')
             self._handle.write(data + '\n')
 
     def close(self):

@@ -57,7 +57,7 @@ class RunnerConfig(object):
                  private_data_dir=None, playbook=None, ident=uuid4(),
                  inventory=None, roles_path=None, limit=None, module=None, module_args=None,
                  verbosity=None, quiet=False, json_mode=False, artifact_dir=None,
-                 rotate_artifacts=0):
+                 rotate_artifacts=0, host_pattern=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.json_mode = json_mode
@@ -67,6 +67,7 @@ class RunnerConfig(object):
         self.limit = limit
         self.module = module
         self.module_args = module_args
+        self.host_pattern = host_pattern
         self.rotate_artifacts = rotate_artifacts
         self.artifact_dir = artifact_dir or self.private_data_dir
         if self.ident is None:
@@ -95,8 +96,10 @@ class RunnerConfig(object):
             raise ConfigurationError("Ansible not found. Make sure that it is installed.")
         if self.private_data_dir is None:
             raise ConfigurationError("Runner Base Directory is not defined")
-        if self.playbook is None: # TODO: ad-hoc mode, module and args
-            raise ConfigurationError("Runner playbook is not defined")
+        if self.module is None and self.playbook is None: # TODO: ad-hoc mode, module and args
+            raise ConfigurationError("Runner playbook or module is not defined")
+        if len(filter(None, [self.module, self.playbook])) > 1:
+            raise ConfigurationError("Only one of playbook and module options are allowed")
         if not os.path.exists(self.artifact_dir):
             os.makedirs(self.artifact_dir)
 
@@ -245,6 +248,9 @@ class RunnerConfig(object):
             if self.module_args is not None:
                 exec_list.append("-a")
                 exec_list.append(self.module_args)
+
+            if self.host_pattern is not None:
+                exec_list.append(self.host_pattern)
 
         return exec_list
 

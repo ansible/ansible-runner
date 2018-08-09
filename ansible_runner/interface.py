@@ -73,6 +73,9 @@ def run(**kwargs):
     :param json_mode: Store event data in place of stdout on the console and in the stdout file
     :param playbook: The playbook (either supplied here as a list or string... or as a path relative to
                      ``private_data_dir/project``) that will be invoked by runner when executing Ansible.
+    :param module: The module that will be invoked in ad-hoc mode by runner when executing Ansible.
+    :param module_args: The module arguments that will be supplied to ad-hoc mode.
+    :param host_pattern: The host pattern to match when running in ad-hoc mode.
     :param inventory: Overridees the inventory directory/file (supplied at ``private_data_dir/inventory``) with
                       a specific host or list of hosts. This can take the form of
       - Path to the inventory file in the ``private_data_dir``

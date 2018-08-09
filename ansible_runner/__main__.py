@@ -44,6 +44,7 @@ VERSION = pkg_resources.require("ansible_runner")[0].version
 DEFAULT_ROLES_PATH = os.getenv('ANSIBLE_ROLES_PATH', None)
 DEFAULT_RUNNER_PLAYBOOK = os.getenv('RUNNER_PLAYBOOK', None)
 DEFAULT_RUNNER_ROLE = os.getenv('RUNNER_ROLE', None)
+DEFAULT_RUNNER_MODULE = os.getenv('RUNNER_MODULE', None)
 
 logger = logging.getLogger('ansible-runner')
 
@@ -59,6 +60,9 @@ def main():
                         help='Base directory containing Runner metadata (project, inventory, etc')
 
     group = parser.add_mutually_exclusive_group()
+
+    group.add_argument("-m", "--module", default=DEFAULT_RUNNER_MODULE,
+                       help="Invoke an Ansible module directly without a playbook")
 
     group.add_argument("-p", "--playbook", default=DEFAULT_RUNNER_PLAYBOOK,
                        help="The name of the playbook to execute")
@@ -109,6 +113,9 @@ def main():
 
     parser.add_argument("--logfile",
                         help="Log output messages to a file")
+
+    parser.add_argument("-a", "--args", dest='module_args',
+                        help="Module arguments")
 
     args = parser.parse_args()
 
@@ -252,6 +259,9 @@ def main():
             run_options = dict(private_data_dir=args.private_data_dir,
                                ident=args.ident,
                                playbook=args.playbook,
+                               module=args.module,
+                               module_args=args.module_args,
+                               host_pattern=args.hosts,
                                verbosity=args.v,
                                quiet=args.quiet,
                                rotate_artifacts=args.rotate_artifacts,

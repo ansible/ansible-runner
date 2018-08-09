@@ -157,6 +157,11 @@ The **Runner** ``project`` directory  is the playbook root containing playbooks 
 directory that will be set as the ``current working directory`` when launching the **Ansible** process.
 
 
+Modules
+-------
+
+**Runner** has the ability to execute modules directly using Ansible ad-hoc mode.
+
 Roles
 -----
 

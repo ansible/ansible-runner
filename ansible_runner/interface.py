@@ -78,6 +78,7 @@ def run(**kwargs):
       - Path to the inventory file in the ``private_data_dir``
       - Native python dict supporting the YAML/json inventory structure
       - A text INI formatted string
+    :param roles_path: Directory or list of directories to assign to ANSIBLE_ROLES_PATH
     :param envvars: Environment variables to be used when running Ansible. Environment variables will also be
                     read from ``env/envvars`` in ``private_data_dir``
     :param extravars: Extra variables to be passed to Ansible at runtime using ``-e``. Extra vars will also be

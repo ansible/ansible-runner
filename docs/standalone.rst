@@ -51,6 +51,14 @@ An example invocation using ``demo`` as private directory::
 
   $ ansible-runner --playbook test.yml run demo
 
+Running Modules Directly
+----------------------
+
+An example invocating the ``debug`` module with ``demo`` as a private directory::
+
+  $ ansible-runner -m debug --hosts localhost -a msg=hello run demo
+
+
 Running Roles Directly
 ----------------------
 

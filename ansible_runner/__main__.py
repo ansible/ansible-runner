@@ -289,9 +289,9 @@ def main():
     if args.command == 'stop':
         try:
             with open(os.path.join(args.private_data_dir, 'args'), 'r') as args:
-                Runner.handle_termination(pid, json.load(args), 'bwrap')
+                Runner.handle_termination(pid)
         except IOError:
-            Runner.handle_termination(pid, [], 'bwrap')
+            Runner.handle_termination(pid)
 
     elif args.command == 'is-alive':
         try:

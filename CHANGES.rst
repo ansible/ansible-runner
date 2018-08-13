@@ -7,6 +7,12 @@ Changelog
 
 - Fix an issue where timeout settings were far too short
 - Add a new status and return code to indicate Runner timeout occurred.
+- Add support for running ad-hoc commands (direct module invocation, ala ansible vs ansible-playbook)
+- Fix an issue that caused missing data in events sent to the event handler(s)
+- Adding support for supplying role_path in module interface
+- Fix an issue where messages would still be emitted when --quiet was used
+- Fix a bug where ansible processes could be orphaned after canceling a job
+
 
 1.0.5 (2018-07-23)
 ++++++++++++++++++

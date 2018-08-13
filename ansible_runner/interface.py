@@ -100,6 +100,7 @@ def run(**kwargs):
     :param event_handler: An optional callback that will be invoked any time an event is received by Runner itself
     :param cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
     :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
+    :param status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
     :type private_data_dir: str
     :type ident: str
     :type json_mode: bool
@@ -118,6 +119,7 @@ def run(**kwargs):
     :type event_handler: function
     :type cancel_callback: function
     :type finished_callback: function
+    :type status_handler: function
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object
     '''

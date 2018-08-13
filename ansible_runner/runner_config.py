@@ -98,7 +98,7 @@ class RunnerConfig(object):
             raise ConfigurationError("Runner Base Directory is not defined")
         if self.module is None and self.playbook is None: # TODO: ad-hoc mode, module and args
             raise ConfigurationError("Runner playbook or module is not defined")
-        if len(filter(None, [self.module, self.playbook])) > 1:
+        if self.module and self.playbook:
             raise ConfigurationError("Only one of playbook and module options are allowed")
         if not os.path.exists(self.artifact_dir):
             os.makedirs(self.artifact_dir)
@@ -129,7 +129,7 @@ class RunnerConfig(object):
         self.env['AWX_ISOLATED_DATA_DIR'] = self.artifact_dir
         self.env['PYTHONPATH'] = self.env.get('PYTHONPATH', '') + callback_dir + ':'
         if self.roles_path:
-            self.env['ANSIBLE_ROLES_PATH'] = ':'.join(roles_path)
+            self.env['ANSIBLE_ROLES_PATH'] = ':'.join(self.roles_path)
 
     def prepare_inventory(self):
         """

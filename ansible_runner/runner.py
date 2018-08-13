@@ -238,8 +238,8 @@ class Runner(object):
         Example:
             {'dark': {}, 'failures': {}, 'skipped': {}, 'ok': {u'localhost': 2}, 'processed': {u'localhost': 1}}
         '''
-        last_event = filter(lambda x: 'event' in x and x['event'] == 'playbook_on_stats',
-                            self.events)
+        last_event = list(filter(lambda x: 'event' in x and x['event'] == 'playbook_on_stats',
+                                 self.events))
         if not last_event:
             return None
         last_event = last_event[0]['event_data']

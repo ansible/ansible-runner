@@ -83,6 +83,20 @@ to inform **Runner** cancel and shutdown the **Ansible** process or `False` to a
 A function passed to ``__init__`` of :class:`Runner <ansible_runner.runner.Runner>`, and to the :meth:`ansible_runner.interface.run` interface functions.
 This function will be called immediately before the **Runner** event loop finishes once **Ansible** has been shut down.
 
+.. _runnerstatushandler:
+
+``Runner.status_handler``
+-------------------------
+
+A function passed to ``__init__`` of :class:`Runner <ansible_runner.runner.Runner>` and to the :meth:`ansible_runner.interface.run` interface functions.
+This function will be called any time the ``status`` changes, expected values are:
+
+* `starting`: Preparing to start but hasn't started running yet
+* `running`: The **Ansible** task is running
+* `canceled`: The task was manually canceled either via callback or the cli
+* `timeout`: The timeout configured in Runner Settings was reached (see :ref:`runnersettings`)
+* `failed`: The **Ansible** process failed
+
 Usage examples
 --------------
 .. code-block:: python

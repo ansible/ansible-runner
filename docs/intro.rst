@@ -209,7 +209,7 @@ The **status** file contains one of three statuses suitable for displaying:
 
 * success: The **Ansible** process finished successfully
 * failed: The **Ansible** process failed
-* timeout: The **Runner** timeout (see :ref:`runnersettings`)`
+* timeout: The **Runner** timeout (see :ref:`runnersettings`)
 
 The **stdout** file contains the actual stdout as it appears at that moment.
 

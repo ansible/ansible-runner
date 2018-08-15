@@ -69,7 +69,7 @@ def role_manager(args):
         if args.artifact_dir:
             kwargs.artifact_dir = args.artifact_dir
 
-        project_path = os.path.abspath(os.path.join(args.private_data_dir, 'project'))
+        project_path = os.path.join(args.private_data_dir, 'project')
         project_exists = os.path.exists(project_path)
 
         env_path = os.path.join(args.private_data_dir, 'env')
@@ -95,7 +95,7 @@ def role_manager(args):
         output.debug('using playbook file %s' % playbook)
 
         if args.inventory:
-            inventory_file = os.path.abspath(os.path.join(args.private_data_dir, 'inventory', args.inventory))
+            inventory_file = os.path.join(args.private_data_dir, 'inventory', args.inventory)
             if not os.path.exists(inventory_file):
                 raise AnsibleRunnerException('location specified by --inventory does not exist')
             kwargs.inventory = inventory_file
@@ -221,6 +221,9 @@ def main():
         output.set_logfile(args.logfile)
 
     output.debug('starting debug logging')
+
+    # get the absolute path for start since it is a daemon
+    args.private_data_dir = os.path.abspath(args.private_data_dir)
 
     pidfile = os.path.join(args.private_data_dir, 'pid')
 

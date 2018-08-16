@@ -162,6 +162,9 @@ def main():
     group.add_argument("-r", "--role", default=DEFAULT_RUNNER_ROLE,
                        help="Invoke an Ansible role directly without a playbook")
 
+    parser.add_argument("-b", "--binary", default=None,
+                       help="The full path to ansible[-playbook] binary")
+
     parser.add_argument("--hosts",
                         help="Define the set of hosts to execute against")
 
@@ -257,6 +260,7 @@ def main():
             with role_manager(args) as args:
                 run_options = dict(private_data_dir=args.private_data_dir,
                                    ident=args.ident,
+                                   binary=args.binary,
                                    playbook=args.playbook,
                                    module=args.module,
                                    module_args=args.module_args,

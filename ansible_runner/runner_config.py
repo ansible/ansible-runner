@@ -57,7 +57,7 @@ class RunnerConfig(object):
                  private_data_dir=None, playbook=None, ident=uuid4(),
                  inventory=None, roles_path=None, limit=None, module=None, module_args=None,
                  verbosity=None, quiet=False, json_mode=False, artifact_dir=None,
-                 rotate_artifacts=0, host_pattern=None):
+                 rotate_artifacts=0, host_pattern=None, binary=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.json_mode = json_mode
@@ -68,6 +68,7 @@ class RunnerConfig(object):
         self.module = module
         self.module_args = module_args
         self.host_pattern = host_pattern
+        self.binary = binary
         self.rotate_artifacts = rotate_artifacts
         self.artifact_dir = artifact_dir or self.private_data_dir
         if self.ident is None:
@@ -210,7 +211,9 @@ class RunnerConfig(object):
         will generate the ``ansible`` or ``ansible-playbook`` command that will be used by the
         :py:class:`ansible_runner.runner.Runner` object to start the process
         """
-        if self.module is not None:
+        if self.binary is not None:
+            base_command = self.binary
+        elif self.module is not None:
             base_command = 'ansible'
         else:
             base_command = 'ansible-playbook'
@@ -241,7 +244,7 @@ class RunnerConfig(object):
         if base_command.endswith('ansible-playbook'):
             exec_list.append(self.playbook)
 
-        elif base_command == 'ansible':
+        elif base_command.endswith('ansible'):
             exec_list.append("-m")
             exec_list.append(self.module)
 

@@ -12,6 +12,8 @@ import six
 import pexpect
 import psutil
 
+import ansible_runner.plugins
+
 from .utils import OutputEventFilter, cleanup_artifact_dir
 from .exceptions import CallbackError, AnsibleRunnerException
 from ansible_runner.output import debug
@@ -19,11 +21,13 @@ from ansible_runner.output import debug
 
 class Runner(object):
 
-    def __init__(self, config, cancel_callback=None, remove_partials=True, event_handler=None, finished_callback=None):
+    def __init__(self, config, cancel_callback=None, remove_partials=True,
+                 event_handler=None, finished_callback=None, status_handler=None):
         self.config = config
         self.cancel_callback = cancel_callback
         self.event_handler = event_handler
         self.finished_callback = finished_callback
+        self.status_handler = status_handler
         self.canceled = False
         self.timed_out = False
         self.errored = False
@@ -56,18 +60,32 @@ class Runner(object):
                     should_write = self.event_handler(event_data)
                 else:
                     should_write = True
+                if ansible_runner.plugins:
+                    plugin_event = dict(runner_ident=str(self.config.ident))
+                    plugin_event.update(event_data)
+                for plugin in ansible_runner.plugins:
+                    ansible_runner.plugins[plugin].event_handler(self.config, plugin_event)
                 if should_write:
                     with codecs.open(full_filename, 'w', encoding='utf-8') as write_file:
                         json.dump(event_data, write_file)
             except IOError as e:
                 debug("Failed writing event data: {}".format(e))
 
+    def status_callback(self, status):
+        self.status = status
+        for plugin in ansible_runner.plugins:
+            ansible_runner.plugins[plugin].status_handler(self.config,
+                                                          dict(status=status,
+                                                               runner_ident=str(self.config.ident)))
+        if self.status_handler is not None:
+            self.status_handler(status)
+
     def run(self):
         '''
         Launch the Ansible task configured in self.config (A RunnerConfig object), returns once the
         invocation is complete
         '''
-        self.status = "starting"
+        self.status_callback("starting")
         stdout_filename = os.path.join(self.config.artifact_dir, 'stdout')
 
         try:
@@ -143,11 +161,13 @@ class Runner(object):
                 self.timed_out = True
 
         if self.canceled:
-            self.status = "canceled"
+            self.status_callback('canceled')
         elif child.exitstatus == 0 and not self.timed_out:
-            self.status = "successful"
+            self.status_callback('successful')
+        elif self.timed_out:
+            self.status_callback('timeout')
         else:
-            self.status = "timeout" if self.timed_out else "failed"
+            self.status_callback('failed')
         self.rc = child.exitstatus if not self.timed_out else 254
 
         for filename, data in [

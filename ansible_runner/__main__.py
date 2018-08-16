@@ -43,6 +43,7 @@ from ansible_runner.exceptions import AnsibleRunnerException
 VERSION = pkg_resources.require("ansible_runner")[0].version
 
 DEFAULT_ROLES_PATH = os.getenv('ANSIBLE_ROLES_PATH', None)
+DEFAULT_RUNNER_BINARY = os.getenv('RUNNER_BINARY', None)
 DEFAULT_RUNNER_PLAYBOOK = os.getenv('RUNNER_PLAYBOOK', None)
 DEFAULT_RUNNER_ROLE = os.getenv('RUNNER_ROLE', None)
 DEFAULT_RUNNER_MODULE = os.getenv('RUNNER_MODULE', None)
@@ -162,7 +163,7 @@ def main():
     group.add_argument("-r", "--role", default=DEFAULT_RUNNER_ROLE,
                        help="Invoke an Ansible role directly without a playbook")
 
-    parser.add_argument("-b", "--binary", default=None,
+    parser.add_argument("-b", "--binary", default=DEFAULT_RUNNER_BINARY,
                        help="The full path to ansible[-playbook] binary")
 
     parser.add_argument("--hosts",

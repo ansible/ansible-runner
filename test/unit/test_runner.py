@@ -51,20 +51,20 @@ def test_simple_spawn(rc):
 
 
 def test_error_code(rc):
-    rc.command = ['ls', '-nonsense']
+    rc.command = ['ls', '--nonsense']
     status, exitcode = Runner(config=rc).run()
     assert status == 'failed'
     assert exitcode > 0
 
 
 def test_password_prompt(rc):
-    rc.command = ['python', '-c' 'import time; print(input("Password: ")); time.sleep(.05)']
-    rc.expect_passwords[re.compile(r'Password:\s*?$', re.M)] = 'secret123'
+    rc.command = ['python', '-c' 'from __future__ import print_function; import time; print(input("Password: "))']
+    rc.expect_passwords[re.compile(r'Password:\s*?$', re.M)] = '1234'
     status, exitcode = Runner(config=rc).run()
     assert status == 'successful'
     assert exitcode == 0
     with open(os.path.join(rc.artifact_dir, 'stdout')) as f:
-        assert 'secret123' in f.read()
+        assert '1234' in f.read()
 
 
 # TODO: matt does not like this test

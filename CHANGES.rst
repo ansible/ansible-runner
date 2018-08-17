@@ -3,8 +3,13 @@
 Changelog
 ---------
 
-1.0.6 (pending)
+1.1.0 (2018-08-16)
+++++++++++++++++++
 
+- Added a feature that supports sending ansible status and events to external systems via a plugin
+  interface
+- Added support for Runner module users to receive runtime status changes in the form of a callback
+  that can be supplied to the run() methods (or passing it directly on Runner initialization)
 - Fix an issue where timeout settings were far too short
 - Add a new status and return code to indicate Runner timeout occurred.
 - Add support for running ad-hoc commands (direct module invocation, ala ansible vs ansible-playbook)
@@ -12,6 +17,9 @@ Changelog
 - Adding support for supplying role_path in module interface
 - Fix an issue where messages would still be emitted when --quiet was used
 - Fix a bug where ansible processes could be orphaned after canceling a job
+- Fix a bug where calling the Runner stats method would fail on python 3
+- Fix a bug where direct execution of roles couldn't be daemonized
+- Fix a bug where relative paths couldn't be used when calling start vs run
 
 
 1.0.5 (2018-07-23)

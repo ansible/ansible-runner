@@ -39,6 +39,7 @@ Examples of this could include:
 
    intro
    install
+   externalintf
    standalone
    python_interface
    container

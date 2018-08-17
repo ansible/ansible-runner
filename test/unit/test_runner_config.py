@@ -15,6 +15,13 @@ from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError
 
 
+try:
+    Pattern = re._pattern_type
+except AttributeError:
+    # Python 3.7
+    Pattern = re.Pattern
+
+
 def load_file_side_effect(path, value=None, *args, **kwargs):
     if args[0] == path:
         if value:
@@ -102,7 +109,7 @@ def test_prepare_env_passwords():
         rc.expect_passwords.pop(TIMEOUT)
         rc.expect_passwords.pop(EOF)
         assert len(rc.expect_passwords) == 1
-        assert isinstance(list(rc.expect_passwords.keys())[0], re._pattern_type)
+        assert isinstance(list(rc.expect_passwords.keys())[0], Pattern)
         assert 'secret' in rc.expect_passwords.values()
 
 

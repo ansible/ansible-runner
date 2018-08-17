@@ -149,7 +149,7 @@ class RunnerConfig(object):
                 re.compile(pattern, re.M): password
                 for pattern, password in iteritems(passwords)
             }
-        except ConfigurationError as exc:
+        except ConfigurationError:
             output.debug('Not loading passwords')
             self.expect_passwords = dict()
         self.expect_passwords[pexpect.TIMEOUT] = None
@@ -161,7 +161,7 @@ class RunnerConfig(object):
             envvars = self.loader.load_file('env/envvars', Mapping)
             if envvars:
                 self.env.update({k:str(v) for k, v in envvars.items()})
-        except ConfigurationError as exc:
+        except ConfigurationError:
             output.debug("Not loading environment vars")
             # Still need to pass default environment to pexpect
             self.env = os.environ.copy()
@@ -171,13 +171,13 @@ class RunnerConfig(object):
 
         try:
             self.settings = self.loader.load_file('env/settings', Mapping)
-        except ConfigurationError as exc:
+        except ConfigurationError:
             output.debug("Not loading settings")
             self.settings = dict()
 
         try:
             self.ssh_key_data = self.loader.load_file('env/ssh_key', string_types)
-        except ConfigurationError as exc:
+        except ConfigurationError:
             output.debug("Not loading ssh key")
             self.ssh_key_data = None
 

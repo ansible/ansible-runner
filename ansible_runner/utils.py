@@ -224,7 +224,7 @@ class OutputEventFilter(object):
                 break
             try:
                 base64_data = re.sub(r'\x1b\[\d+D', '', match.group(1))
-                event_data = json.loads(base64.b64decode(base64_data))
+                event_data = json.loads(base64.b64decode(base64_data).decode('utf-8'))
             except ValueError:
                 event_data = {}
             event_data = self._emit_event(value[:match.start()], event_data)

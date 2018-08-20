@@ -110,7 +110,9 @@ def role_manager(args):
         if envvars_exists:
             with open(envvars_path, 'rb') as f:
                 tmpvars = f.read()
-                envvars = safe_load(tmpvars)
+                new_envvars = safe_load(tmpvars)
+                if new_envvars:
+                    envvars = new_envvars
 
         envvars['ANSIBLE_ROLES_PATH'] = roles_path
         kwargs.envvars = envvars

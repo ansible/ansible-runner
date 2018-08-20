@@ -290,11 +290,8 @@ def main(sys_args=None):
         return(1)
 
     if args.command == 'stop':
-        try:
-            with open(os.path.join(args.private_data_dir, 'args'), 'r') as args:
-                Runner.handle_termination(pid)
-        except IOError:
-            Runner.handle_termination(pid)
+        Runner.handle_termination(pid)
+        return (0)
 
     elif args.command == 'is-alive':
         try:

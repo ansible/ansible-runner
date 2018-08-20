@@ -7,11 +7,13 @@ import shutil
 import yaml
 import tempfile
 import time
-from functools import wraps
+from contextlib import contextmanager
 from pytest import raises
 
 
 from ansible_runner.exceptions import AnsibleRunnerException
+
+HERE = os.path.abspath(os.path.dirname(__file__))
 
 
 def ensure_directory(directory):
@@ -25,37 +27,32 @@ def ensure_removed(file_path):
         os.unlink(file_path)
 
 
-def with_temp_directory(fn):
+@contextmanager
+def temp_directory():
 
-    @wraps(fn)
-    def _wrapper(*args, **kwargs):
-        temp_dir = tempfile.mkdtemp()
-        try:
-
-            ret_value = fn(temp_dir, *args, **kwargs)
-            shutil.rmtree(temp_dir)
-            return ret_value
-        except BaseException:
-            print(temp_dir)
-            raise
-
-    return _wrapper
+    temp_dir = tempfile.mkdtemp()
+    try:
+        yield temp_dir
+        shutil.rmtree(temp_dir)
+    except BaseException:
+        print(temp_dir)
+        raise
 
 
-def test_with_tempdirectory():
+def test_temp_directory():
 
     context = dict()
 
 
-    @with_temp_directory
-    def will_fail(temp_dir):
-        context['saved_temp_dir'] = temp_dir
-        assert False
+    def will_fail():
+        with temp_directory() as temp_dir:
+            context['saved_temp_dir'] = temp_dir
+            assert False
 
-    @with_temp_directory
-    def will_pass(temp_dir):
-        context['saved_temp_dir'] = temp_dir
-        assert True
+    def will_pass():
+        with temp_directory() as temp_dir:
+            context['saved_temp_dir'] = temp_dir
+            assert True
 
     with raises(AssertionError):
         will_fail()
@@ -80,13 +77,13 @@ def test_module_run():
           'ping'])
 
 
-@with_temp_directory
-def test_module_run_clean(temp_dir):
+def test_module_run_clean():
 
-    main(['-m', 'ping',
-          '--hosts', 'localhost',
-          'run',
-          temp_dir])
+    with temp_directory() as temp_dir:
+        main(['-m', 'ping',
+              '--hosts', 'localhost',
+              'run',
+              temp_dir])
 
 
 def test_role_run():
@@ -125,14 +122,14 @@ def test_role_bad_project_dir():
         os.unlink('bad_project_dir')
 
 
-@with_temp_directory
-def test_role_run_clean(temp_dir):
+def test_role_run_clean():
 
-    main(['-r', 'benthomasson.hello_role',
-          '--hosts', 'localhost',
-          '--roles-path', 'test/integration/roles',
-          'run',
-          temp_dir])
+    with temp_directory() as temp_dir:
+        main(['-r', 'benthomasson.hello_role',
+              '--hosts', 'localhost',
+              '--roles-path', 'test/integration/roles',
+              'run',
+              temp_dir])
 
 
 def test_role_run_cmd_line():
@@ -188,7 +185,7 @@ def test_role_run_args():
 def test_role_run_inventory():
 
     ensure_directory('hello/inventory')
-    shutil.copy('test/integration/inventories/localhost', 'hello/inventory/localhost')
+    shutil.copy(os.path.join(HERE, 'inventories/localhost'), 'hello/inventory/localhost')
 
     main(['-r', 'benthomasson.hello_role',
           '--hosts', 'localhost',
@@ -201,7 +198,7 @@ def test_role_run_inventory():
 def test_role_run_inventory_missing():
 
     ensure_directory('hello/inventory')
-    shutil.copy('test/integration/inventories/localhost', 'hello/inventory/localhost')
+    shutil.copy(os.path.join(HERE, 'inventories/localhost'), 'hello/inventory/localhost')
 
     with raises(AnsibleRunnerException):
         main(['-r', 'benthomasson.hello_role',
@@ -212,52 +209,52 @@ def test_role_run_inventory_missing():
               'hello'])
 
 
-@with_temp_directory
-def test_role_start(temp_dir):
+def test_role_start():
 
 
-    p = multiprocessing.Process(target=main,
-                                args=[['-r', 'benthomasson.hello_role',
-                                       '--hosts', 'localhost',
-                                       '--roles-path', 'test/integration/roles',
-                                       'start',
-                                       temp_dir]])
-    p.start()
-    p.join()
+    with temp_directory() as temp_dir:
+        p = multiprocessing.Process(target=main,
+                                    args=[['-r', 'benthomasson.hello_role',
+                                           '--hosts', 'localhost',
+                                           '--roles-path', 'test/integration/roles',
+                                           'start',
+                                           temp_dir]])
+        p.start()
+        p.join()
 
 
-@with_temp_directory
-def test_playbook_start(temp_dir):
+def test_playbook_start():
 
-    project_dir = os.path.join(temp_dir, 'project')
-    ensure_directory(project_dir)
-    shutil.copy('test/integration/playbooks/hello.yml', project_dir)
-
-
-    p = multiprocessing.Process(target=main,
-                                args=[['-p', 'hello.yml',
-                                       '--hosts', 'localhost',
-                                       'start',
-                                       temp_dir]])
-    p.start()
+    with temp_directory() as temp_dir:
+        project_dir = os.path.join(temp_dir, 'project')
+        ensure_directory(project_dir)
+        shutil.copy(os.path.join(HERE, 'playbooks/hello.yml'), project_dir)
 
 
-    time.sleep(5)
+        p = multiprocessing.Process(target=main,
+                                    args=[['-p', 'hello.yml',
+                                           '--hosts', 'localhost',
+                                           'start',
+                                           temp_dir]])
+        p.start()
 
-    assert os.path.exists(os.path.join(temp_dir, 'pid'))
 
-    rc = main(['is-alive', temp_dir])
-    assert rc == 0
-    rc = main(['stop', temp_dir])
-    assert rc == 0
+        time.sleep(5)
 
-    time.sleep(1)
+        assert os.path.exists(os.path.join(temp_dir, 'pid'))
 
-    rc = main(['is-alive', temp_dir])
-    assert rc == 1
+        rc = main(['is-alive', temp_dir])
+        assert rc == 0
+        rc = main(['stop', temp_dir])
+        assert rc == 0
 
-    ensure_removed(os.path.join(temp_dir, 'pid'))
+        time.sleep(1)
 
-    rc = main(['stop', temp_dir])
+        rc = main(['is-alive', temp_dir])
+        assert rc == 1
+
+        ensure_removed(os.path.join(temp_dir, 'pid'))
+
+        rc = main(['stop', temp_dir])
     assert rc == 1
 

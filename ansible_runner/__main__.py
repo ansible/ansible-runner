@@ -24,7 +24,6 @@ import signal
 import errno
 import json
 import stat
-import sys
 import os
 import shlex
 import shutil

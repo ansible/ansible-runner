@@ -151,20 +151,20 @@ def dump_artifacts(kwargs):
 
         kwargs['envvars']['ANSIBLE_ROLES_PATH'] = roles_path
 
-    for key in ('playbook', 'inventory'):
-        obj = kwargs.get(key)
-        if obj:
-            if key == 'playbook' and isplaybook(obj):
-                path = os.path.join(private_data_dir, 'project')
-                kwargs['playbook'] = dump_artifact(json.dumps(obj), path, 'main.json')
+    obj = kwargs.get('playbook')
+    if obj and isplaybook(obj):
+        path = os.path.join(private_data_dir, 'project')
+        kwargs['playbook'] = dump_artifact(json.dumps(obj), path, 'main.json')
 
-            elif key == 'inventory' and isinventory(obj):
-                path = os.path.join(private_data_dir, 'inventory')
-                if isinstance(obj, Mapping):
-                    kwargs['inventory'] = dump_artifact(json.dumps(obj), path, 'hosts.json')
-                elif isinstance(obj, string_types):
-                    if not os.path.exists(obj):
-                        kwargs['inventory'] = dump_artifact(obj, path, 'hosts')
+    obj = kwargs.get('inventory')
+    if obj and isinventory(obj):
+        path = os.path.join(private_data_dir, 'inventory')
+        if isinstance(obj, Mapping):
+            kwargs['inventory'] = dump_artifact(json.dumps(obj), path, 'hosts.json')
+        elif isinstance(obj, string_types):
+            if not os.path.exists(obj):
+                kwargs['inventory'] = dump_artifact(obj, path, 'hosts')
+
     for key in ('envvars', 'extravars', 'passwords', 'settings'):
         obj = kwargs.get(key)
         if obj:

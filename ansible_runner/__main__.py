@@ -260,6 +260,11 @@ def main(sys_args=None):
 
         with context:
             with role_manager(args) as args:
+                if args.inventory:
+                    with open(args.inventory) as f:
+                        inventory_data = f.read()
+                else:
+                    inventory_data = None
                 run_options = dict(private_data_dir=args.private_data_dir,
                                    ident=args.ident,
                                    binary=args.binary,
@@ -271,10 +276,8 @@ def main(sys_args=None):
                                    quiet=args.quiet,
                                    rotate_artifacts=args.rotate_artifacts,
                                    ignore_logging=False,
-                                   json_mode=args.json)
-
-                if args.hosts is not None:
-                    run_options.update(inventory=args.hosts)
+                                   json_mode=args.json,
+                                   inventory=inventory_data)
 
                 if args.cmdline:
                     run_options['cmdline'] = args.cmdline

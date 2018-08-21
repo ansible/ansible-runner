@@ -209,7 +209,7 @@ def test_cmdline_playbook_hosts():
         with open(inventory, 'w') as f:
             f.write('[all]\nlocalhost ansible_connection=local')
 
-        cmdline('run', private_data_dir, '-p', playbook, '--inventory', 'inventory/hosts', '--hosts', 'all')
+        cmdline('run', private_data_dir, '-p', playbook, '--hosts', 'all')
 
         assert main() == 0
 

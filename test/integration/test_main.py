@@ -241,7 +241,7 @@ def test_playbook_start():
 
         p = multiprocessing.Process(target=main,
                                     args=[['-p', 'hello.yml',
-                                           '--inventory', 'localhost',
+                                           '--inventory', os.path.join(HERE, 'inventories/localhost'),
                                            '--hosts', 'localhost',
                                            'start',
                                            temp_dir]])

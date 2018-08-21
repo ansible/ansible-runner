@@ -1,5 +1,5 @@
 - hosts: all
   tasks:
-    - debug: msg="Test!"
+    - debug: msg="Before!"
     - shell: sleep 90
-    - debug: msg="AFter!"
+    - debug: msg="After!"

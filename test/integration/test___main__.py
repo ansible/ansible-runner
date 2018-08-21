@@ -177,7 +177,7 @@ def test_cmdline_playbook():
 
         inventory = os.path.join(path, 'hosts')
         with open(inventory, 'w') as f:
-            f.write('localhost')
+            f.write('[all]\nlocalhost ansible_connection=local')
 
         cmdline('run', private_data_dir, '-p', playbook, '--inventory', inventory)
 
@@ -185,9 +185,6 @@ def test_cmdline_playbook():
 
         with open(playbook) as f:
             assert json.loads(f.read()) == play
-
-        with open(inventory) as f:
-            assert f.read() == 'localhost'
 
     finally:
         shutil.rmtree(private_data_dir)
@@ -210,17 +207,14 @@ def test_cmdline_playbook_hosts():
 
         inventory = os.path.join(path, 'hosts')
         with open(inventory, 'w') as f:
-            f.write('localhost')
+            f.write('[all]\nlocalhost ansible_connection=local')
 
-        cmdline('run', private_data_dir, '-p', playbook, '--hosts', 'all')
+        cmdline('run', private_data_dir, '-p', playbook, '--inventory', 'inventory/hosts', '--hosts', 'all')
 
-        assert main() == 4
+        assert main() == 0
 
         with open(playbook) as f:
             assert json.loads(f.read()) == play
-
-        with open(inventory) as f:
-            assert f.read() == 'all'
 
     finally:
         shutil.rmtree(private_data_dir)

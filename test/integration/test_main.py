@@ -235,10 +235,13 @@ def test_playbook_start():
         project_dir = os.path.join(temp_dir, 'project')
         ensure_directory(project_dir)
         shutil.copy(os.path.join(HERE, 'playbooks/hello.yml'), project_dir)
+        ensure_directory(os.path.join(temp_dir, 'inventory'))
+        shutil.copy(os.path.join(HERE, 'inventories/localhost'), os.path.join(temp_dir, 'inventory/localhost'))
 
 
         p = multiprocessing.Process(target=main,
                                     args=[['-p', 'hello.yml',
+                                           '--inventory', 'localhost',
                                            '--hosts', 'localhost',
                                            'start',
                                            temp_dir]])

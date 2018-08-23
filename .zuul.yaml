@@ -1,4 +1,4 @@
 - project:
     check:
       jobs:
-        - tox
+        - flake8

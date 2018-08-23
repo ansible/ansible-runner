@@ -27,7 +27,7 @@ import stat
 import sys
 import os
 import shlex
-import shutil
+from shutil import *
 from contextlib import contextmanager
 
 from uuid import uuid4

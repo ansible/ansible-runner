@@ -1,0 +1,8 @@
+- project:
+    check:
+      jobs:
+        - flake8
+      debug: true
+    gate:
+      jobs:
+        - noop

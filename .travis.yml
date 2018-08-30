@@ -1,0 +1,12 @@
+language: python
+python:
+  - "2.7"
+  - "3.5"
+  - "3.6"
+install:
+  - pip install ansible
+  - pip install -e .
+  - pip install flake8
+script:
+  - flake8 .
+  - py.test

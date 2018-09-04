@@ -120,6 +120,9 @@ class RunnerConfig(object):
         if callback_dir is None:
             callback_dir = os.path.join(os.path.split(os.path.abspath(__file__))[0],
                                         "callbacks")
+        python_path = os.getenv('PYTHONPATH', '')
+        if python_path:
+            python_path += ":"
         self.env['ANSIBLE_CALLBACK_PLUGINS'] = callback_dir
         if 'AD_HOC_COMMAND_ID' in self.env:
             self.env['ANSIBLE_STDOUT_CALLBACK'] = 'minimal'
@@ -128,7 +131,8 @@ class RunnerConfig(object):
         self.env['ANSIBLE_RETRY_FILES_ENABLED'] = 'False'
         self.env['ANSIBLE_HOST_KEY_CHECKING'] = 'False'
         self.env['AWX_ISOLATED_DATA_DIR'] = self.artifact_dir
-        self.env['PYTHONPATH'] = self.env.get('PYTHONPATH', '') + callback_dir + ':'
+
+        self.env['PYTHONPATH'] = python_path + callback_dir + ':'
         if self.roles_path:
             self.env['ANSIBLE_ROLES_PATH'] = ':'.join(self.roles_path)
 

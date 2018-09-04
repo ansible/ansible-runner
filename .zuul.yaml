@@ -1,8 +1,7 @@
 - project:
     check:
       jobs:
-        - flake8
-      debug: true
+        - pipenv-tox
     gate:
       jobs:
-        - noop
+        - pipenv-tox

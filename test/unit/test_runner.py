@@ -2,7 +2,6 @@
 
 import codecs
 import os
-import re
 
 import mock
 import pexpect
@@ -55,16 +54,6 @@ def test_error_code(rc):
     status, exitcode = Runner(config=rc).run()
     assert status == 'failed'
     assert exitcode > 0
-
-
-def test_password_prompt(rc):
-    rc.command = ['python', '-c' 'import time; print(input("Password: ")); time.sleep(.05)']
-    rc.expect_passwords[re.compile(r'Password:\s*?$', re.M)] = 'secret123'
-    status, exitcode = Runner(config=rc).run()
-    assert status == 'successful'
-    assert exitcode == 0
-    with open(os.path.join(rc.artifact_dir, 'stdout')) as f:
-        assert 'secret123' in f.read()
 
 
 # TODO: matt does not like this test

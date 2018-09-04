@@ -26,7 +26,7 @@ import shlex
 
 from uuid import uuid4
 from collections import Mapping
-from distutils.spawn import find_executable
+#from distutils.spawn import find_executable
 
 from six import iteritems, string_types
 
@@ -92,9 +92,9 @@ class RunnerConfig(object):
         It's also responsible for wrapping the command with the proper ssh agent invocation
         and setting early ANSIBLE_ environment variables.
         """
-        ansible_path = find_executable('ansible')
-        if ansible_path is None or not os.access(ansible_path, os.X_OK):
-            raise ConfigurationError("Ansible not found. Make sure that it is installed.")
+        # ansible_path = find_executable('ansible')
+        # if ansible_path is None or not os.access(ansible_path, os.X_OK):
+        #     raise ConfigurationError("Ansible not found. Make sure that it is installed.")
         if self.private_data_dir is None:
             raise ConfigurationError("Runner Base Directory is not defined")
         if self.module is None and self.playbook is None: # TODO: ad-hoc mode, module and args

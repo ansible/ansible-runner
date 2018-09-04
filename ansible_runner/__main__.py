@@ -27,7 +27,7 @@ import stat
 import sys
 import os
 import shlex
-from shutil import *
+import shutil
 from contextlib import contextmanager
 
 from uuid import uuid4
@@ -164,7 +164,7 @@ def main():
                        help="Invoke an Ansible role directly without a playbook")
 
     parser.add_argument("-b", "--binary", default=DEFAULT_RUNNER_BINARY,
-                       help="The full path to ansible[-playbook] binary")
+                        help="The full path to ansible[-playbook] binary")
 
     parser.add_argument("--hosts",
                         help="Define the set of hosts to execute against")

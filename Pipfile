@@ -8,6 +8,8 @@ pytest = "*"
 "flake8" = "*"
 funcsigs = "*"
 mock = "*"
+pathlib2 = "*"
+scandir = "*"
 
 [packages]
 psutil = "*"
@@ -15,4 +17,3 @@ pexpect = ">=4.5"
 python-daemon = "*"
 pyyaml = "*"
 six = "*"
-"pathlib2" = "*"

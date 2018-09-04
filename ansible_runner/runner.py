@@ -51,6 +51,7 @@ class Runner(object):
                                          '{}-{}.json'.format(event_data['counter'],
                                                              event_data['uuid']))
             try:
+                event_data.update(dict(runner_ident=str(self.config.ident)))
                 with codecs.open(partial_filename, 'r', encoding='utf-8') as read_file:
                     partial_event_data = json.load(read_file)
                 event_data.update(partial_event_data)

@@ -15,6 +15,9 @@ from ansible_runner.runner_config import RunnerConfig
 HERE, FILENAME = os.path.split(__file__)
 
 
+# TODO: callback data structure verification
+
+
 @pytest.fixture(scope='function')
 def rc(request, tmpdir):
     rc = RunnerConfig(str(tmpdir))

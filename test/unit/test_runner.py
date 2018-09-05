@@ -56,16 +56,6 @@ def test_error_code(rc):
     assert exitcode > 0
 
 
-def test_password_prompt(rc):
-    rc.command = ['python', '-c' 'from __future__ import print_function; import time; print(input("Password: "))']
-    rc.expect_passwords[re.compile(r'Password:\s*?$', re.M)] = '1234'
-    status, exitcode = Runner(config=rc).run()
-    assert status == 'successful'
-    assert exitcode == 0
-    with open(os.path.join(rc.artifact_dir, 'stdout')) as f:
-        assert '1234' in f.read()
-
-
 # TODO: matt does not like this test
 def test_job_timeout(rc):
     rc.command = ['python', '-c', 'import time; time.sleep(5)']

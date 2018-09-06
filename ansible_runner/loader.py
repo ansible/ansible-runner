@@ -74,7 +74,7 @@ class ArtifactLoader(object):
         '''
         try:
             return safe_load(contents)
-        except YAMLError as exc:
+        except YAMLError:
             pass
 
     def get_contents(self, path):

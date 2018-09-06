@@ -24,7 +24,6 @@ import signal
 import errno
 import json
 import stat
-import sys
 import os
 import shlex
 import shutil
@@ -110,7 +109,9 @@ def role_manager(args):
         if envvars_exists:
             with open(envvars_path, 'rb') as f:
                 tmpvars = f.read()
-                envvars = safe_load(tmpvars)
+                new_envvars = safe_load(tmpvars)
+                if new_envvars:
+                    envvars = new_envvars
 
         envvars['ANSIBLE_ROLES_PATH'] = roles_path
         kwargs.envvars = envvars
@@ -142,7 +143,7 @@ def role_manager(args):
             shutil.rmtree(env_path)
 
 
-def main():
+def main(sys_args=None):
     parser = argparse.ArgumentParser(description='manage ansible execution')
 
     parser.add_argument('--version', action='version', version=VERSION)
@@ -213,7 +214,7 @@ def main():
     parser.add_argument("-a", "--args", dest='module_args',
                         help="Module arguments")
 
-    args = parser.parse_args()
+    args = parser.parse_args(sys_args)
 
     output.configure()
 
@@ -259,6 +260,11 @@ def main():
 
         with context:
             with role_manager(args) as args:
+                if args.inventory:
+                    with open(args.inventory) as f:
+                        inventory_data = f.read()
+                else:
+                    inventory_data = None
                 run_options = dict(private_data_dir=args.private_data_dir,
                                    ident=args.ident,
                                    binary=args.binary,
@@ -270,33 +276,28 @@ def main():
                                    quiet=args.quiet,
                                    rotate_artifacts=args.rotate_artifacts,
                                    ignore_logging=False,
-                                   json_mode=args.json)
-
-                if args.hosts is not None:
-                    run_options.update(inventory=args.hosts)
+                                   json_mode=args.json,
+                                   inventory=inventory_data)
 
                 if args.cmdline:
                     run_options['cmdline'] = args.cmdline
 
                 res = run(**run_options)
-            sys.exit(res.rc)
+            return(res.rc)
 
     try:
         with open(pidfile, 'r') as f:
             pid = int(f.readline())
     except IOError:
-        sys.exit(1)
+        return(1)
 
     if args.command == 'stop':
-        try:
-            with open(os.path.join(args.private_data_dir, 'args'), 'r') as args:
-                Runner.handle_termination(pid)
-        except IOError:
-            Runner.handle_termination(pid)
+        Runner.handle_termination(pid)
+        return (0)
 
     elif args.command == 'is-alive':
         try:
             os.kill(pid, signal.SIG_DFL)
-            sys.exit(0)
+            return(0)
         except OSError:
-            sys.exit(1)
+            return(1)

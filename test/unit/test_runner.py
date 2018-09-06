@@ -51,7 +51,7 @@ def test_simple_spawn(rc):
 
 
 def test_error_code(rc):
-    rc.command = ['ls', '-nonsense']
+    rc.command = ['ls', '--nonsense']
     status, exitcode = Runner(config=rc).run()
     assert status == 'failed'
     assert exitcode > 0

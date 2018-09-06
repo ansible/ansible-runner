@@ -61,11 +61,8 @@ class Runner(object):
                     should_write = self.event_handler(event_data)
                 else:
                     should_write = True
-                if ansible_runner.plugins:
-                    plugin_event = dict(runner_ident=str(self.config.ident))
-                    plugin_event.update(event_data)
                 for plugin in ansible_runner.plugins:
-                    ansible_runner.plugins[plugin].event_handler(self.config, plugin_event)
+                    ansible_runner.plugins[plugin].event_handler(self.config, event_data)
                 if should_write:
                     with codecs.open(full_filename, 'w', encoding='utf-8') as write_file:
                         json.dump(event_data, write_file)

@@ -9,16 +9,11 @@ import pexpect
 import pytest
 import six
 
-from StringIO import StringIO
-
 from ansible_runner import Runner
 from ansible_runner.exceptions import CallbackError
 from ansible_runner.runner_config import RunnerConfig
 
 HERE, FILENAME = os.path.split(__file__)
-
-
-# TODO: callback data structure verification
 
 
 @pytest.fixture(scope='function')

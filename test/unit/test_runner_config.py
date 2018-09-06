@@ -300,6 +300,10 @@ def test_prepare():
     assert rc.env['AWX_ISOLATED_DATA_DIR'] == '/'
     assert rc.env['PYTHONPATH'] == '/:'
 
+    os.environ['PYTHONPATH'] = "/foo/bar"
+    rc.prepare()
+    assert rc.env['PYTHONPATH'] == "/foo/bar:/:"
+
 
 def test_prepare_with_ssh_key():
     rc = RunnerConfig('/')

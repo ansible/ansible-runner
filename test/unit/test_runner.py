@@ -3,10 +3,13 @@
 import codecs
 import os
 
+import json
 import mock
 import pexpect
 import pytest
 import six
+
+from StringIO import StringIO
 
 from ansible_runner import Runner
 from ansible_runner.exceptions import CallbackError
@@ -92,3 +95,24 @@ def test_env_vars(rc, value):
     assert exitcode == 0
     with codecs.open(os.path.join(rc.artifact_dir, 'stdout'), 'r', encoding='utf-8') as f:
         assert value in f.read()
+
+
+def test_event_callback_interface_has_ident(rc):
+    rc.ident = "testident"
+    runner = Runner(config=rc, remove_partials=False)
+    runner.event_handler = mock.Mock()
+    with mock.patch('codecs.open', mock.mock_open(read_data=json.dumps(dict(event="test")))):
+        runner.event_callback(dict(uuid="testuuid", counter=0))
+        assert runner.event_handler.call_count == 1
+        runner.event_handler.assert_called_with(dict(runner_ident='testident', counter=0, uuid='testuuid', event='test'))
+    runner.status_callback("running")
+
+
+def test_status_callback_interface(rc):
+    runner = Runner(config=rc)
+    assert runner.status == 'unstarted'
+    runner.status_handler = mock.Mock()
+    runner.status_callback("running")
+    assert runner.status_handler.call_count == 1
+    runner.status_handler.assert_called_with('running')
+    assert runner.status == 'running'

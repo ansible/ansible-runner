@@ -3,6 +3,16 @@
 Changelog
 ---------
 
+1.1.1 (2018-09-13)
+++++++++++++++++++
+
+- Fix an issue when attaching PYTHONPATH environment variable
+- Allow selecting a different ansible binary with the RUNNER_BINARY
+- Fix --inventory command line arguments
+- Fix some issues related to terminating ansible
+- Add runner ident to to the event processing callback
+- Adding integration tests and improving unit tests
+
 1.1.0 (2018-08-16)
 ++++++++++++++++++
 

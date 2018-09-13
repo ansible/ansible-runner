@@ -31,4 +31,4 @@ ADD dist/ansible_runner-1.1.0-py2.py3-none-any.whl /ansible_runner-1.1.0-py2.py3
 # are writeable by the root group.
 RUN chmod 755 /entrypoint.sh && chmod -R g+w /runner && chgrp -R root /runner && \
     chmod g+w /etc/passwd && \
-    pip install --no-cache-dir /ansible_runner-1.1.0-py2.py3-none-any.whl
+    pip install --no-cache-dir /ansible_runner-1.1.1-py2.py3-none-any.whl

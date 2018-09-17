@@ -26,7 +26,7 @@ ADD utils/entrypoint.sh /entrypoint.sh
 ADD demo/project /runner/project
 ADD demo/env /runner/env
 ADD demo/inventory /runner/inventory
-ADD dist/ansible_runner-1.1.0-py2.py3-none-any.whl /ansible_runner-1.1.0-py2.py3-none-any.whl
+ADD dist/ansible_runner-1.1.1-py2.py3-none-any.whl /ansible_runner-1.1.1-py2.py3-none-any.whl
 # In OpenShift, container will run as a random uid number and gid 0. Make sure things
 # are writeable by the root group.
 RUN chmod 755 /entrypoint.sh && chmod -R g+w /runner && chgrp -R root /runner && \

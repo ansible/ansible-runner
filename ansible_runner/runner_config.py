@@ -111,9 +111,8 @@ class RunnerConfig(object):
         # write the SSH key data into a fifo read by ssh-agent
         if self.ssh_key_data:
             self.ssh_key_path = os.path.join(self.artifact_dir, 'ssh_key_data')
-            self.ssh_auth_sock = os.path.join(self.artifact_dir, 'ssh_auth.sock')
             self.open_fifo_write(self.ssh_key_path, self.ssh_key_data)
-            self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path, self.ssh_auth_sock)
+            self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path)
 
         # Use local callback directory
         callback_dir = os.getenv('AWX_LIB_DIRECTORY')

@@ -291,7 +291,6 @@ def test_prepare():
     assert rc.prepare_command.called
 
     assert not hasattr(rc, 'ssh_key_path')
-    assert not hasattr(rc, 'ssh_auth_sock')
     assert not hasattr(rc, 'command')
 
     assert rc.env['ANSIBLE_STDOUT_CALLBACK'] == 'awx_display'
@@ -327,7 +326,6 @@ def test_prepare_with_ssh_key():
     rc.prepare()
 
     assert rc.ssh_key_path == '/ssh_key_data'
-    assert rc.ssh_auth_sock == '/ssh_auth.sock'
     assert rc.wrap_args_with_ssh_agent.called
     assert rc.open_fifo_write.called
 

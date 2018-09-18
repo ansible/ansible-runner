@@ -57,7 +57,7 @@ class RunnerConfig(object):
                  private_data_dir=None, playbook=None, ident=uuid4(),
                  inventory=None, roles_path=None, limit=None, module=None, module_args=None,
                  verbosity=None, quiet=False, json_mode=False, artifact_dir=None,
-                 rotate_artifacts=0, host_pattern=None, binary=None):
+                 rotate_artifacts=0, host_pattern=None, binary=None, extravars=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.json_mode = json_mode
@@ -76,7 +76,7 @@ class RunnerConfig(object):
         else:
             self.artifact_dir = os.path.join(self.artifact_dir, "artifacts", "{}".format(self.ident))
 
-        self.extra_vars = None
+        self.extra_vars = extravars
         self.verbosity = verbosity
         self.quiet = quiet
         self.loader = ArtifactLoader(self.private_data_dir)
@@ -170,7 +170,8 @@ class RunnerConfig(object):
             # Still need to pass default environment to pexpect
             self.env = os.environ.copy()
 
-        if self.loader.isfile('env/extravars'):
+        # extravars dict passed in via the interface API takes precedence over on-disk
+        if not self.extra_vars and self.loader.isfile('env/extravars'):
             self.extra_vars = self.loader.abspath('env/extravars')
 
         try:
@@ -237,7 +238,16 @@ class RunnerConfig(object):
             exec_list.append("--limit")
             exec_list.append(self.limit)
 
-        if self.extra_vars:
+        if type(self.extra_vars) == dict:
+            exec_list.extend(
+                [
+                    '-e',
+                    '\'%s\'' % ' '.join(
+                        ["{}=\"{}\"".format(k, self.extra_vars[k]) for k in self.extra_vars]
+                    )
+                ]
+            )
+        elif self.extra_vars:
             exec_list.extend(['-e', '@%s' % self.extra_vars])
         if self.verbosity:
             v = 'v' * self.verbosity

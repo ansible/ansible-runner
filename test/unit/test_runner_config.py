@@ -215,6 +215,7 @@ def test_generate_ansible_command():
     assert cmd == ['ansible', '-i', '/inventory', '-m', 'setup', '-a', 'test=string']
     rc.module_args = None
 
+
 def test_generate_ansible_command_with_api_extravars():
     rc = RunnerConfig(private_data_dir='/', playbook='main.yaml', extravars={"foo":"bar"})
     rc.prepare_inventory()

@@ -238,7 +238,7 @@ class RunnerConfig(object):
             exec_list.append("--limit")
             exec_list.append(self.limit)
 
-        if type(self.extra_vars) == dict:
+        if (type(self.extra_vars) == dict) and self.extra_vars:
             exec_list.extend(
                 [
                     '-e',

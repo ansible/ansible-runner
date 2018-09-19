@@ -215,6 +215,13 @@ def test_generate_ansible_command():
     assert cmd == ['ansible', '-i', '/inventory', '-m', 'setup', '-a', 'test=string']
     rc.module_args = None
 
+def test_generate_ansible_command_with_api_extravars():
+    rc = RunnerConfig(private_data_dir='/', playbook='main.yaml', extravars={"foo":"bar"})
+    rc.prepare_inventory()
+
+    cmd = rc.generate_ansible_command()
+    assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '\'foo="bar"\'', 'main.yaml']
+
 
 def test_generate_ansible_command_with_cmdline_args():
     rc = RunnerConfig(private_data_dir='/', playbook='main.yaml')
@@ -226,7 +233,6 @@ def test_generate_ansible_command_with_cmdline_args():
     with patch.object(rc.loader, 'load_file', side_effect=cmdline_side_effect):
         cmd = rc.generate_ansible_command()
         assert cmd == ['ansible-playbook', '--tags', 'foo', '--skip-tags', '-i', '/inventory', 'main.yaml']
-
 
 
 def test_prepare_command_defaults():

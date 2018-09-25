@@ -1,7 +1,14 @@
+- job:
+    name: runner-docker-test
+    nodeset: static-node
+    run: test.yaml
+
 - project:
     check:
       jobs:
-        - pipenv-tox
+        - runner-docker-test
+        # TMP: only test the new job for the moment
+        #- pipenv-tox
     gate:
       jobs:
         - pipenv-tox

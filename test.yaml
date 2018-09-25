@@ -1,0 +1,11 @@
+- hosts: all
+  tasks:
+    - name: Check project is copied
+      command: ls -la
+      args:
+        chdir: "{{ zuul.project.src_dir }}"
+
+    - name: Check docker works
+      command: docker version
+      ignore_errors: yes
+

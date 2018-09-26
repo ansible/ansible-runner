@@ -1,7 +1,0 @@
-- project:
-    check:
-      jobs:
-        - pipenv-tox
-    gate:
-      jobs:
-        - pipenv-tox

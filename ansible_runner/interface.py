@@ -50,6 +50,7 @@ def init_runner(**kwargs):
             output.set_logfile(logfile)
 
     event_callback_handler = kwargs.pop('event_handler', None)
+    status_callback_handler = kwargs.pop('status_handler', None)
     cancel_callback = kwargs.pop('cancel_callback', None)
     finished_callback = kwargs.pop('finished_callback',  None)
 
@@ -58,6 +59,7 @@ def init_runner(**kwargs):
 
     return Runner(rc,
                   event_handler=event_callback_handler,
+                  status_handler=status_callback_handler,
                   cancel_callback=cancel_callback,
                   finished_callback=finished_callback)
 

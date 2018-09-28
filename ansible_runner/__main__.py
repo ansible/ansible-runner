@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+import ast
 import pkg_resources
 import threading
 import argparse
@@ -25,7 +26,6 @@ import errno
 import json
 import stat
 import os
-import shlex
 import shutil
 from contextlib import contextmanager
 
@@ -56,9 +56,12 @@ def role_manager(args):
         role = {'name': args.role}
         if args.role_vars:
             role_vars = {}
-            for item in shlex.split(args.role_vars):
+            for item in args.role_vars.split():
                 key, value = item.split('=')
-                role_vars[key] = value
+                try:
+                    role_vars[key] = ast.literal_eval(value)
+                except Exception:
+                    role_vars[key] = value
             role['vars'] = role_vars
 
         kwargs = Bunch(**args.__dict__)

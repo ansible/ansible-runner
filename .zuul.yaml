@@ -1,0 +1,17 @@
+- job:
+    name: tox-all
+    parent: tox
+    vars:
+      tox_envlist: ALL
+    nodeset:
+      nodes:
+        - name: fedora-28
+          label: ansible-fedora-28-1vcpu
+
+- project:
+    check:
+      jobs:
+        - tox-all
+    gate:
+      jobs:
+        - tox-all

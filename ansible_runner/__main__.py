@@ -280,7 +280,8 @@ def main(sys_args=None):
                                    rotate_artifacts=args.rotate_artifacts,
                                    ignore_logging=False,
                                    json_mode=args.json,
-                                   inventory=inventory_data)
+                                   inventory=inventory_data,
+                                   roles_path=[args.roles_path] if args.roles_path else None)
 
                 if args.cmdline:
                     run_options['cmdline'] = args.cmdline

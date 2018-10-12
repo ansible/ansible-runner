@@ -239,13 +239,16 @@ class OutputEventFilter(object):
             if stdout_actual and stdout_actual != "{}":
                 if not self.suppress_ansible_output:
                     sys.stdout.write(stdout_actual + "\n")
+                    sys.stdout.flush()
                 self._handle.write(stdout_actual + "\n")
+                self._handle.flush()
 
             self._last_chunk = remainder
         else:
             if not self.suppress_ansible_output:
                 sys.stdout.write(data + '\n')
             self._handle.write(data + '\n')
+            self._handle.flush()
 
     def close(self):
         value = self._buffer.getvalue()

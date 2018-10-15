@@ -31,11 +31,11 @@ def ensure_removed(file_path):
 def temp_directory(files=None):
 
     temp_dir = tempfile.mkdtemp()
+    print(temp_dir)
     try:
         yield temp_dir
         shutil.rmtree(temp_dir)
     except BaseException:
-        print(temp_dir)
         if files is not None:
             for file in files:
                 if os.path.exists(file):
@@ -95,7 +95,6 @@ def test_module_run_clean():
 
 def test_role_run():
 
-    #with temp_directory() as temp_dir:
     rc = main(['-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
                '--roles-path', 'test/integration/roles',
@@ -104,14 +103,35 @@ def test_role_run():
     assert rc == 0
 
 
+def test_role_run_abs():
+    with temp_directory() as temp_dir:
+        rc = main(['-r', 'benthomasson.hello_role',
+                   '--hosts', 'localhost',
+                   '--roles-path', os.path.join(HERE, 'project/roles'),
+                   'run',
+                   temp_dir])
+    assert rc == 0
+
+
 def test_role_logfile():
 
     rc = main(['-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
-               '--roles-path', 'test/integration/roles',
+               '--roles-path', 'test/integration/project/roles',
                '--logfile', 'new_logfile',
                'run',
                'test/integration'])
+    assert rc == 0
+
+
+def test_role_logfile_abs():
+    with temp_directory() as temp_dir:
+        rc = main(['-r', 'benthomasson.hello_role',
+                   '--hosts', 'localhost',
+                   '--roles-path', os.path.join(HERE, 'project/roles'),
+                   '--logfile', 'new_logfile',
+                   'run',
+                   temp_dir])
     assert rc == 0
 
 
@@ -124,7 +144,7 @@ def test_role_bad_project_dir():
         with raises(OSError):
             main(['-r', 'benthomasson.hello_role',
                   '--hosts', 'localhost',
-                  '--roles-path', 'test/integration/roles',
+                  '--roles-path', os.path.join(HERE, 'project/roles'),
                   '--logfile', 'new_logfile',
                   'run',
                   'bad_project_dir'])
@@ -142,14 +162,13 @@ def test_role_run_clean():
     assert rc == 0
 
 
-def test_role_run_cmd_line():
-
-    rc = main(['-r', 'benthomasson.hello_role',
-               '--hosts', 'localhost',
-               '--roles-path', 'test/integration/project/roles',
-               '--cmdline', 'msg=hi',
-               'run',
-               "test/integration"])
+def test_role_run_cmd_line_abs():
+    with temp_directory() as temp_dir:
+        rc = main(['-r', 'benthomasson.hello_role',
+                   '--hosts', 'localhost',
+                   '--roles-path', os.path.join(HERE, 'project/roles'),
+                   'run',
+                   temp_dir])
     assert rc == 0
 
 
@@ -164,6 +183,17 @@ def test_role_run_artifacts_dir():
     assert rc == 0
 
 
+def test_role_run_artifacts_dir_abs():
+    with temp_directory() as temp_dir:
+        rc = main(['-r', 'benthomasson.hello_role',
+                   '--hosts', 'localhost',
+                   '--roles-path', os.path.join(HERE, 'project/roles'),
+                   '--artifact-dir', 'otherartifacts',
+                   'run',
+                   temp_dir])
+    assert rc == 0
+
+
 def test_role_run_env_vars():
 
     with temp_directory() as temp_dir:
@@ -173,7 +203,7 @@ def test_role_run_env_vars():
 
         rc = main(['-r', 'benthomasson.hello_role',
                    '--hosts', 'localhost',
-                   '--roles-path', 'test/integration/project/roles',
+                   '--roles-path', os.path.join(HERE, 'project/roles'),
                    'run',
                    temp_dir])
     assert rc == 0
@@ -184,7 +214,7 @@ def test_role_run_args():
     with temp_directory() as temp_dir:
         rc = main(['-r', 'benthomasson.hello_role',
                    '--hosts', 'localhost',
-                   '--roles-path', 'test/integration/roles',
+                   '--roles-path', os.path.join(HERE, 'project/roles'),
                    '--role-vars', 'msg=hi',
                    'run',
                    temp_dir])
@@ -199,7 +229,7 @@ def test_role_run_inventory():
 
         rc = main(['-r', 'benthomasson.hello_role',
                    '--hosts', 'localhost',
-                   '--roles-path', 'test/integration/roles',
+                   '--roles-path', os.path.join(HERE, 'project/roles'),
                    '--inventory', 'localhost',
                    'run',
                    temp_dir])
@@ -215,7 +245,7 @@ def test_role_run_inventory_missing():
         with raises(AnsibleRunnerException):
             main(['-r', 'benthomasson.hello_role',
                   '--hosts', 'localhost',
-                  '--roles-path', 'test/integration/roles',
+                  '--roles-path', os.path.join(HERE, 'project/roles'),
                   '--inventory', 'does_not_exist',
                   'run',
                   temp_dir])
@@ -228,7 +258,7 @@ def test_role_start():
         p = multiprocessing.Process(target=main,
                                     args=[['-r', 'benthomasson.hello_role',
                                            '--hosts', 'localhost',
-                                           '--roles-path', 'test/integration/roles',
+                                           '--roles-path', os.path.join(HERE, 'project/roles'),
                                            'start',
                                            temp_dir]])
         p.start()
@@ -240,7 +270,7 @@ def test_playbook_start():
     with temp_directory() as temp_dir:
         project_dir = os.path.join(temp_dir, 'project')
         ensure_directory(project_dir)
-        shutil.copy(os.path.join(HERE, 'playbooks/hello.yml'), project_dir)
+        shutil.copy(os.path.join(HERE, 'project/hello.yml'), project_dir)
         ensure_directory(os.path.join(temp_dir, 'inventory'))
         shutil.copy(os.path.join(HERE, 'inventories/localhost'), os.path.join(temp_dir, 'inventory/localhost'))
 

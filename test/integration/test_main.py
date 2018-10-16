@@ -95,24 +95,23 @@ def test_module_run_clean():
 
 def test_role_run():
 
-    with temp_directory() as temp_dir:
-        rc = main(['-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', 'test/integration/roles',
-                   'run',
-                   temp_dir])
+    #with temp_directory() as temp_dir:
+    rc = main(['-r', 'benthomasson.hello_role',
+               '--hosts', 'localhost',
+               '--roles-path', 'test/integration/roles',
+               'run',
+               "test/integration"])
     assert rc == 0
 
 
 def test_role_logfile():
 
-    with temp_directory() as temp_dir:
-        rc = main(['-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', 'test/integration/roles',
-                   '--logfile', 'new_logfile',
-                   'run',
-                   temp_dir])
+    rc = main(['-r', 'benthomasson.hello_role',
+               '--hosts', 'localhost',
+               '--roles-path', 'test/integration/roles',
+               '--logfile', 'new_logfile',
+               'run',
+               'test/integration'])
     assert rc == 0
 
 
@@ -135,36 +134,33 @@ def test_role_bad_project_dir():
 
 def test_role_run_clean():
 
-    with temp_directory() as temp_dir:
-        rc = main(['-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', 'test/integration/roles',
-                   'run',
-                   temp_dir])
+    rc = main(['-r', 'benthomasson.hello_role',
+               '--hosts', 'localhost',
+               '--roles-path', 'test/integration/roles',
+               'run',
+               "test/integration"])
     assert rc == 0
 
 
 def test_role_run_cmd_line():
 
-    with temp_directory() as temp_dir:
-        rc = main(['-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', 'test/integration/roles',
-                   '--cmdline', 'msg=hi',
-                   'run',
-                   temp_dir])
+    rc = main(['-r', 'benthomasson.hello_role',
+               '--hosts', 'localhost',
+               '--roles-path', 'test/integration/project/roles',
+               '--cmdline', 'msg=hi',
+               'run',
+               "test/integration"])
     assert rc == 0
 
 
 def test_role_run_artifacts_dir():
 
-    with temp_directory() as temp_dir:
-        rc = main(['-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', 'test/integration/roles',
-                   '--artifact-dir', 'otherartifacts',
-                   'run',
-                   temp_dir])
+    rc = main(['-r', 'benthomasson.hello_role',
+               '--hosts', 'localhost',
+               '--roles-path', 'test/integration/roles',
+               '--artifact-dir', 'otherartifacts',
+               'run',
+               "test/integration"])
     assert rc == 0
 
 
@@ -177,7 +173,7 @@ def test_role_run_env_vars():
 
         rc = main(['-r', 'benthomasson.hello_role',
                    '--hosts', 'localhost',
-                   '--roles-path', 'test/integration/roles',
+                   '--roles-path', 'test/integration/project/roles',
                    'run',
                    temp_dir])
     assert rc == 0

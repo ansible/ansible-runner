@@ -7,6 +7,12 @@ Changelog
 ++++++++++++
 
 - Fix an issue where ssh sock path could be too long
+- Fix an issue passing extra vars as dictionaries via the interface
+- Fix an issue where stdout was delayed on buffering which also caused
+  stdout not to be available if the task was canceled or failed
+- Fix role-path parameter not being honored when given on the command line
+  Also fixed up unit tests to actually surface this error if it comes back
+- Fully onboard Zuul-CI for unit and integration testing
 
 1.1.1 (2018-09-13)
 ++++++++++++++++++

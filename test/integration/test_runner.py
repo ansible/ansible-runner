@@ -3,9 +3,14 @@ import os
 import re
 import pexpect
 import pytest
+try:
+    from unittest.mock import MagicMock
+except ImportError:
+    from mock import MagicMock
 from ansible_runner import Runner
 
 from ansible_runner.runner_config import RunnerConfig
+from ansible_runner.exceptions import AnsibleRunnerException
 
 
 @pytest.fixture(scope='function')
@@ -33,3 +38,177 @@ def test_password_prompt(rc):
     assert exitcode == 0
     with open(os.path.join(rc.artifact_dir, 'stdout')) as f:
         assert '1234' in f.read()
+
+
+def test_run_command(rc):
+    rc.command = ['pwd']
+    status, exitcode = Runner(config=rc).run()
+    assert status == 'successful'
+    assert exitcode == 0
+
+
+def test_run_command_finished_callback(rc):
+    finished_callback = MagicMock()
+    rc.command = ['pwd']
+    runner = Runner(config=rc, finished_callback=finished_callback)
+    status, exitcode = runner.run()
+    assert status == 'successful'
+    assert exitcode == 0
+    finished_callback.assert_called_with(runner)
+
+
+def test_run_command_explosive_finished_callback(rc):
+    def boom(*args):
+        raise Exception('boom')
+    rc.command = ['pwd']
+    runner = Runner(config=rc, finished_callback=boom)
+    with pytest.raises(Exception):
+        runner.run()
+
+
+def test_run_command_explosive_cancel_callback(rc):
+    def boom(*args):
+        raise Exception('boom')
+    rc.command = ['pwd']
+    runner = Runner(config=rc, cancel_callback=boom)
+    with pytest.raises(Exception):
+        runner.run()
+
+
+def test_run_command_cancel_callback(rc):
+    def cancel(*args):
+        return True
+    rc.command = ['pwd']
+    runner = Runner(config=rc, cancel_callback=cancel)
+    status, exitcode = runner.run()
+    assert status == 'canceled'
+    assert exitcode == 0
+
+
+def test_run_command_job_timeout(rc):
+    rc.command = ['pwd']
+    rc.job_timeout = 0.0000001
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
+    assert status == 'timeout'
+    assert exitcode == 254
+
+
+def test_run_command_idle_timeout(rc):
+    rc.command = ['pwd']
+    rc.idle_timeout = 0.0000001
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
+    assert status == 'timeout'
+    assert exitcode == 254
+
+
+def test_run_command_failed(rc):
+    rc.command = ['false']
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
+    assert status == 'failed'
+    assert exitcode == 1
+
+
+def test_run_command_long_running(rc):
+    rc.command = ['yes']
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
+    assert status == 'timeout'
+    assert exitcode == 254
+
+
+def test_run_command_long_running_children(rc):
+    rc.command = ['bash', '-c', "(yes)"]
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
+    assert status == 'timeout'
+    assert exitcode == 254
+
+
+def test_run_command_events_missing(rc):
+    rc.command = ['pwd']
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
+    assert status == 'successful'
+    assert exitcode == 0
+    with pytest.raises(AnsibleRunnerException):
+        list(runner.events)
+
+
+def test_run_command_stdout_missing(rc):
+    rc.command = ['pwd']
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
+    assert status == 'successful'
+    assert exitcode == 0
+    os.unlink(os.path.join(runner.config.artifact_dir, 'stdout'))
+    with pytest.raises(AnsibleRunnerException):
+        list(runner.stdout)
+
+
+def test_run_command_no_stats(rc):
+    rc.command = ['pwd']
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
+    assert status == 'successful'
+    assert exitcode == 0
+    with pytest.raises(AnsibleRunnerException):
+        runner.stats
+
+
+def test_run_command_ansible(rc):
+    rc.module = "debug"
+    rc.host_pattern = "localhost"
+    rc.prepare()
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
+    assert status == 'successful'
+    assert exitcode == 0
+    assert list(runner.events) != []
+    assert runner.stats != {}
+    assert list(runner.host_events('localhost')) != []
+    stdout = runner.stdout
+    assert stdout.read() != ""
+
+
+def test_run_command_ansible_event_handler(rc):
+    event_handler = MagicMock()
+    status_handler = MagicMock()
+    rc.module = "debug"
+    rc.host_pattern = "localhost"
+    rc.prepare()
+    runner = Runner(config=rc, event_handler=event_handler, status_handler=status_handler)
+    status, exitcode = runner.run()
+    assert status == 'successful'
+    assert exitcode == 0
+    event_handler.assert_called()
+    status_handler.assert_called()
+
+
+def test_run_command_ansible_event_handler_failure(rc):
+    def event_handler(*args):
+        raise IOError()
+    rc.module = "debug"
+    rc.host_pattern = "localhost"
+    rc.prepare()
+    runner = Runner(config=rc, event_handler=event_handler)
+    status, exitcode = runner.run()
+    assert status == 'successful'
+    assert exitcode == 0
+
+
+def test_run_command_ansible_rotate_artifacts(rc):
+    rc.module = "debug"
+    rc.host_pattern = "localhost"
+    rc.prepare()
+    rc.rotate_artifacts = 1
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
+    assert status == 'successful'
+    assert exitcode == 0
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
+    assert status == 'successful'
+    assert exitcode == 0

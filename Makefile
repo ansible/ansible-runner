@@ -73,17 +73,17 @@ srpm:
 mock-rpm: rpm-build/$(RPM_NVR).$(RPM_ARCH).rpm
 
 rpm-build/$(RPM_NVR).$(RPM_ARCH).rpm: rpm-build/$(RPM_NVR).src.rpm
-	$(MOCK_BIN) -r $(MOCK_CONFIG) \
+	$(MOCK_BIN) -r $(MOCK_CONFIG) --arch=noarch \
 	  --resultdir=rpm-build \
 	  --rebuild rpm-build/$(RPM_NVR).src.rpm
 
 mock-srpm: rpm-build/$(RPM_NVR).src.rpm
 
 rpm-build/$(RPM_NVR).src.rpm: dist/$(PIP_NAME)-$(VERSION).tar.gz rpm-build rpm-build/$(NAME).spec
-	$(MOCK_BIN) -r $(MOCK_CONFIG) \
+	$(MOCK_BIN) -r $(MOCK_CONFIG) --arch=noarch \
 	  --resultdir=rpm-build \
 	  --spec=rpm-build/$(NAME).spec \
-	  --sources=dist \
+	  --sources=rpm-build \
 	  --buildsrpm
 
 rpm-build/$(NAME).spec:
@@ -93,5 +93,7 @@ rpm-build/$(NAME).spec:
 	    -e version=$(VERSION) \
 	    -e release=$(RELEASE)
 
-rpm-build:
+rpm-build: sdist
 	mkdir -p $@
+	cp dist/$(NAME)-$(VERSION).tar.gz rpm-build/$(NAME)-$(VERSION)-$(RELEASE).tar.gz
+

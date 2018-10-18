@@ -83,6 +83,16 @@ def test_module_run():
     assert rc == 0
 
 
+def test_module_run_debug():
+
+    rc = main(['-m', 'ping',
+               '--hosts', 'localhost',
+               '--debug',
+               'run',
+               'ping'])
+    assert rc == 0
+
+
 def test_module_run_clean():
 
     with temp_directory() as temp_dir:

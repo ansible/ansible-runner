@@ -16,3 +16,4 @@
 .pytest_cache
 .coverage
 *,cover
+/test/integration/artifacts

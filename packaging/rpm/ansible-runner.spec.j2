@@ -1,18 +1,14 @@
-%if 0%{?rhel} == 7
-  # Building on CentoOS 7 would result in ".el7.centos"
-  %define dist .el7
-%endif
-
 Name: ansible-runner
 Version: {{ version }}
 Release: {{ release }}%{?dist}
 Summary: Package for interfacing with Ansible
-Source0: https://github.com/ansible/%{name}/archive/%{version}.tar.gz?/%{name}-%{version}.tar.gz
+Source0: https://github.com/ansible/%{name}/archive/%{version}.tar.gz?/%{name}-%{version}-{{ release }}.tar.gz
 
 Group: Development/Libraries
 License: ASL 2.0
 Url: http://ansible.com
 
+BuildArch: noarch
 BuildRequires: python-setuptools
 
 Requires: ansible

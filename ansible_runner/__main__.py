@@ -217,6 +217,24 @@ def main(sys_args=None):
     parser.add_argument("-a", "--args", dest='module_args',
                         help="Module arguments")
 
+    parser.add_argument("--process-isolation", dest='process_isolation', default=False,
+                        help="Limits what directories on the filesystem the playbook run has access to, defaults to /tmp")
+
+    parser.add_argument("--process-isolation-executable", dest='process_isolation_executable', default="bwrap",
+                        help="Path that an isolated playbook run will use for staging. Defaults to /tmp")
+
+    parser.add_argument("--process-isolation-path", dest='process_isolation_path', default="/tmp",
+                        help="Path that an isolated playbook run will use for staging. Defaults to /tmp")
+
+    parser.add_argument("--process-isolation-hide-paths", dest='process_isolation_hide_paths',
+                        help="List of paths on the system that should be hidden from the playbook run")
+
+    parser.add_argument("--process-isolation-show-paths", dest='process_isolation_show_paths',
+                        help="List of paths on the system that should be exposed to the playbook run")
+
+    parser.add_argument("--process-isolation-venv", dest='process_isolation_venv',
+                        help="Path of a virtual environment to bind in to the isolated environment")
+
     args = parser.parse_args(sys_args)
 
     output.configure()
@@ -281,8 +299,13 @@ def main(sys_args=None):
                                    ignore_logging=False,
                                    json_mode=args.json,
                                    inventory=inventory_data,
-                                   roles_path=[args.roles_path] if args.roles_path else None)
-
+                                   roles_path=[args.roles_path] if args.roles_path else None,
+                                   process_isolation=args.process_isolation,
+                                   process_isolation_executable=args.process_isolation_executable,
+                                   process_isolation_path=args.process_isolation_path,
+                                   process_isolation_hide_paths=args.process_isolation_hide_paths,
+                                   process_isolation_show_paths=args.process_isolation_show_paths,
+                                   process_isolation_venv=args.process_isolation_venv)
                 if args.cmdline:
                     run_options['cmdline'] = args.cmdline
 

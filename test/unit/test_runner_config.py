@@ -363,3 +363,61 @@ def test_args2cmdline():
     rc = RunnerConfig('/')
     res = rc.args2cmdline('ansible', '-m', 'setup', 'localhost')
     assert res == 'ansible -m setup localhost'
+
+
+def test_process_isolation_defaults():
+    rc = RunnerConfig('/')
+    rc.artifact_dir = '/tmp/artifacts'
+    rc.playbook = 'main.yaml'
+    rc.command = 'ansible-playbook'
+    rc.process_isolation = True
+    rc.prepare()
+
+    assert rc.command == [
+        'bwrap',
+        '--unshare-pid',
+        '--dev-bind', '/', '/',
+        '--proc', '/proc',
+        '--bind', '/', '/',
+        '--chdir', '/project',
+        'ansible-playbook', '-i', '/inventory', 'main.yaml',
+    ]
+
+
+def test_process_isolation_settings():
+    rc = RunnerConfig('/')
+    rc.artifact_dir = '/tmp/artifacts'
+    rc.playbook = 'main.yaml'
+    rc.command = 'ansible-playbook'
+    rc.process_isolation = True
+    rc.process_isolation_executable = 'not_bwrap'
+    rc.process_isolation_hide_paths = ['/home', '/var']
+    rc.process_isolation_show_paths = ['/usr']
+    rc.process_isolation_path = '/tmp'
+    rc.prepare()
+
+    assert rc.command[0:7] == [
+        'not_bwrap',
+        '--unshare-pid',
+        '--dev-bind', '/', '/',
+        '--proc', '/proc',
+    ]
+
+    # hide /home
+    assert rc.command[7] == '--bind'
+    assert 'ansible_runner_pi' in rc.command[8]
+    assert rc.command[9] == '/home'
+
+    # hide /var
+    assert rc.command[10] == '--bind'
+    assert 'ansible_runner_pi' in rc.command[11]
+    assert rc.command[12] == '/var'
+
+    # root bind
+    assert rc.command[13:16] == ['--bind', '/', '/']
+
+    # show /usr
+    assert rc.command[16:19] == ['--bind', '/usr', '/usr']
+
+    # chdir and ansible-playbook command
+    assert rc.command[19:] == ['--chdir', '/project', 'ansible-playbook', '-i', '/inventory', 'main.yaml']

@@ -71,12 +71,11 @@ class Runner(object):
 
     def status_callback(self, status):
         self.status = status
+        status_data = dict(status=status, runner_ident=str(self.config.ident))
         for plugin in ansible_runner.plugins:
-            ansible_runner.plugins[plugin].status_handler(self.config,
-                                                          dict(status=status,
-                                                               runner_ident=str(self.config.ident)))
+            ansible_runner.plugins[plugin].status_handler(self.config, status_data)
         if self.status_handler is not None:
-            self.status_handler(status)
+            self.status_handler(status_data)
 
     def run(self):
         '''

@@ -3,7 +3,7 @@
 Changelog
 ---------
 
-1.1.2 (soon)
+1.1.2 (2018-10-18)
 ++++++++++++
 
 - Fix an issue where ssh sock path could be too long

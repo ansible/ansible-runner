@@ -65,6 +65,7 @@ class EventContext(object):
 
     def __init__(self):
         self.display_lock = multiprocessing.RLock()
+        self._local = threading.local()
         if os.getenv('AWX_ISOLATED_DATA_DIR', False):
             self.cache = IsolatedFileWrite()
         # TODO: Solve for Tower
@@ -73,15 +74,13 @@ class EventContext(object):
         #     self.cache = memcache.Client([cache_actual], debug=0)
 
     def add_local(self, **kwargs):
-        if not hasattr(self, '_local'):
-            self._local = threading.local()
-            self._local._ctx = {}
-        self._local._ctx.update(kwargs)
+        tls = vars(self._local)
+        ctx = tls.setdefault('_ctx', {})
+        ctx.update(kwargs)
 
     def remove_local(self, **kwargs):
-        if hasattr(self, '_local'):
-            for key in kwargs.keys():
-                self._local._ctx.pop(key, None)
+        for key in kwargs.keys():
+            self._local._ctx.pop(key, None)
 
     @contextlib.contextmanager
     def set_local(self, **kwargs):

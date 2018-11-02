@@ -1,7 +1,6 @@
 
 import os
 import re
-import pexpect
 import pytest
 try:
     from unittest.mock import MagicMock
@@ -9,25 +8,7 @@ except ImportError:
     from mock import MagicMock
 from ansible_runner import Runner
 
-from ansible_runner.runner_config import RunnerConfig
 from ansible_runner.exceptions import AnsibleRunnerException
-
-
-@pytest.fixture(scope='function')
-def rc(request, tmpdir):
-    rc = RunnerConfig(str(tmpdir))
-    rc.suppress_ansible_output = True
-    rc.expect_passwords = {
-        pexpect.TIMEOUT: None,
-        pexpect.EOF: None
-    }
-    rc.cwd = str(tmpdir)
-    rc.env = {}
-    rc.job_timeout = .1
-    rc.idle_timeout = 0
-    rc.pexpect_timeout = .1
-    rc.pexpect_use_poll = True
-    return rc
 
 
 def test_password_prompt(rc):

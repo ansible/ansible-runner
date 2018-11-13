@@ -82,7 +82,7 @@ class Runner(object):
         Launch the Ansible task configured in self.config (A RunnerConfig object), returns once the
         invocation is complete
         '''
-        self.status_callback("starting")
+        self.status_callback('starting')
         stdout_filename = os.path.join(self.config.artifact_dir, 'stdout')
 
         try:
@@ -116,7 +116,7 @@ class Runner(object):
             if k != 'PATH' and isinstance(v, six.text_type):
                 self.config.env[k] = v.encode('utf-8')
 
-        self.status = 'running'
+        self.status_callback('running')
         child = pexpect.spawn(
             self.config.command[0],
             self.config.command[1:],

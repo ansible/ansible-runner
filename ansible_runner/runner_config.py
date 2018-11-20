@@ -56,7 +56,7 @@ class RunnerConfig(object):
     def __init__(self,
                  private_data_dir=None, playbook=None, ident=uuid4(),
                  inventory=None, roles_path=None, limit=None, module=None, module_args=None,
-                 verbosity=None, quiet=False, json_mode=False, artifact_dir=None,
+                 verbosity=None, quiet=False, json_mode=False, artifact_dir=None, tags= None,
                  rotate_artifacts=0, host_pattern=None, binary=None, extravars=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
@@ -78,6 +78,7 @@ class RunnerConfig(object):
 
         self.extra_vars = extravars
         self.verbosity = verbosity
+        self.tags = tags
         self.quiet = quiet
         self.loader = ArtifactLoader(self.private_data_dir)
 
@@ -252,6 +253,9 @@ class RunnerConfig(object):
         if self.verbosity:
             v = 'v' * self.verbosity
             exec_list.append('-%s' % v)
+
+        if self.tags:
+            exec_list.extend(['--tags', '%s' % self.tags])
 
         # Other parameters
         if base_command.endswith('ansible-playbook'):

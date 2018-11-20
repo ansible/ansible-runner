@@ -60,7 +60,7 @@ class RunnerConfig(object):
     def __init__(self,
                  private_data_dir=None, playbook=None, ident=uuid4(),
                  inventory=None, roles_path=None, limit=None, module=None, module_args=None,
-                 verbosity=None, quiet=False, json_mode=False, artifact_dir=None,
+                 verbosity=None, quiet=False, json_mode=False, artifact_dir=None, tags= None,
                  rotate_artifacts=0, host_pattern=None, binary=None, extravars=None,
                  process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None):
@@ -90,6 +90,7 @@ class RunnerConfig(object):
         self.process_isolation_show_paths = process_isolation_show_paths
         self.process_isolation_ro_paths = process_isolation_ro_paths
         self.verbosity = verbosity
+        self.tags = tags
         self.quiet = quiet
         self.loader = ArtifactLoader(self.private_data_dir)
 
@@ -266,6 +267,9 @@ class RunnerConfig(object):
         if self.verbosity:
             v = 'v' * self.verbosity
             exec_list.append('-%s' % v)
+
+        if self.tags:
+            exec_list.extend(['--tags', '%s' % self.tags])
 
         # Other parameters
         if base_command.endswith('ansible-playbook'):

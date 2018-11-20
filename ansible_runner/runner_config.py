@@ -57,7 +57,7 @@ class RunnerConfig(object):
                  private_data_dir=None, playbook=None, ident=uuid4(),
                  inventory=None, roles_path=None, limit=None, module=None, module_args=None,
                  verbosity=None, quiet=False, json_mode=False, artifact_dir=None, tags=None, skiptags=None,
-                 rotate_artifacts=0, host_pattern=None, binary=None, extravars=None):
+                 rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, suppress_ansible_output=False):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.json_mode = json_mode
@@ -81,6 +81,7 @@ class RunnerConfig(object):
         self.tags = tags
         self.skiptags = skiptags
         self.quiet = quiet
+        self.suppress_ansible_output = suppress_ansible_output
         self.loader = ArtifactLoader(self.private_data_dir)
 
     def prepare(self):

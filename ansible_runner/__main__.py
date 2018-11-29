@@ -217,11 +217,11 @@ def main(sys_args=None):
     parser.add_argument("-a", "--args", dest='module_args',
                         help="Module arguments")
 
-    parser.add_argument("--process-isolation", dest='process_isolation', default=False,
+    parser.add_argument("--process-isolation", dest='process_isolation', action="store_true",
                         help="Limits what directories on the filesystem the playbook run has access to, defaults to /tmp")
 
     parser.add_argument("--process-isolation-executable", dest='process_isolation_executable', default="bwrap",
-                        help="Path that an isolated playbook run will use for staging. Defaults to /tmp")
+                        help="Process isolation executable that will be used. Defaults to bwrap")
 
     parser.add_argument("--process-isolation-path", dest='process_isolation_path', default="/tmp",
                         help="Path that an isolated playbook run will use for staging. Defaults to /tmp")
@@ -232,8 +232,8 @@ def main(sys_args=None):
     parser.add_argument("--process-isolation-show-paths", dest='process_isolation_show_paths',
                         help="List of paths on the system that should be exposed to the playbook run")
 
-    parser.add_argument("--process-isolation-venv", dest='process_isolation_venv',
-                        help="Path of a virtual environment to bind in to the isolated environment")
+    parser.add_argument("--process-isolation-ro-paths", dest='process_isolation_ro_paths',
+                        help="List of paths on the system that should be exposed to the playbook run as read-only")
 
     args = parser.parse_args(sys_args)
 
@@ -305,7 +305,7 @@ def main(sys_args=None):
                                    process_isolation_path=args.process_isolation_path,
                                    process_isolation_hide_paths=args.process_isolation_hide_paths,
                                    process_isolation_show_paths=args.process_isolation_show_paths,
-                                   process_isolation_venv=args.process_isolation_venv)
+                                   process_isolation_ro_paths=args.process_isolation_ro_paths)
                 if args.cmdline:
                     run_options['cmdline'] = args.cmdline
 

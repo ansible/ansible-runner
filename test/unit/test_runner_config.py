@@ -393,8 +393,12 @@ def test_process_isolation_settings():
     rc.process_isolation_executable = 'not_bwrap'
     rc.process_isolation_hide_paths = ['/home', '/var']
     rc.process_isolation_show_paths = ['/usr']
+    rc.process_isolation_ro_paths = ['/venv']
     rc.process_isolation_path = '/tmp'
-    rc.prepare()
+
+    with patch('os.path.exists') as path_exists:
+        rc.prepare()
+        path_exists.return_value=True
 
     assert rc.command[0:7] == [
         'not_bwrap',
@@ -413,11 +417,14 @@ def test_process_isolation_settings():
     assert 'ansible_runner_pi' in rc.command[11]
     assert rc.command[12] == '/var'
 
+    # read-only bind
+    assert rc.command[13:16] == ['--ro-bind', '/venv', '/venv']
+
     # root bind
-    assert rc.command[13:16] == ['--bind', '/', '/']
+    assert rc.command[16:19] == ['--bind', '/', '/']
 
     # show /usr
-    assert rc.command[16:19] == ['--bind', '/usr', '/usr']
+    assert rc.command[19:22] == ['--bind', '/usr', '/usr']
 
     # chdir and ansible-playbook command
-    assert rc.command[19:] == ['--chdir', '/project', 'ansible-playbook', '-i', '/inventory', 'main.yaml']
+    assert rc.command[22:] == ['--chdir', '/project', 'ansible-playbook', '-i', '/inventory', 'main.yaml']

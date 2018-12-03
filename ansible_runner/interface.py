@@ -1,3 +1,4 @@
+# Copyright (c) 2016 Ansible by Red Hat, Inc.
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -22,7 +23,10 @@ import logging
 from ansible_runner import output
 from ansible_runner.runner_config import RunnerConfig
 from ansible_runner.runner import Runner
-from ansible_runner.utils import dump_artifacts
+from ansible_runner.utils import (
+    dump_artifacts,
+    check_isolation_executable_installed,
+)
 
 logging.getLogger('ansible-runner').addHandler(logging.NullHandler())
 
@@ -48,6 +52,9 @@ def init_runner(**kwargs):
 
         if logfile:
             output.set_logfile(logfile)
+
+    if kwargs.get("process_isolation", False):
+        check_isolation_executable_installed(kwargs.get("process_isolation_executable", "bwrap"))
 
     event_callback_handler = kwargs.pop('event_handler', None)
     status_callback_handler = kwargs.pop('status_handler', None)
@@ -103,6 +110,12 @@ def run(**kwargs):
     :param cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
     :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
     :param status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
+    :param process_isolation: Enable limiting what directories on the filesystem the playbook run has access to.
+    :param process_isolation_executable: Path to the executable that will be used to provide filesystem isolation (default: bwrap)
+    :param process_isolation_path: Path that an isolated playbook run will use for staging. (default: /tmp)
+    :param process_isolation_hide_paths: A path or list of paths on the system that should be hidden from the playbook run.
+    :param process_isolation_show_paths: A path or list of paths on the system that should be exposed to the playbook run.
+    :param process_isolation_ro_paths: A path or list of paths on the system that should be exposed to the playbook run as read-only.
     :type private_data_dir: str
     :type ident: str
     :type json_mode: bool
@@ -122,6 +135,12 @@ def run(**kwargs):
     :type cancel_callback: function
     :type finished_callback: function
     :type status_handler: function
+    :type process_isolation: bool
+    :type process_isolation_executable: str
+    :type process_isolation_path: str
+    :type process_isolation_hide_paths: str or list
+    :type process_isolation_show_paths: str or list
+    :type process_isolation_ro_paths: str or list
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object
     '''

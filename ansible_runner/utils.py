@@ -1,4 +1,4 @@
-import base64
+
 import json
 import sys
 import re
@@ -8,7 +8,8 @@ import fcntl
 import shutil
 import hashlib
 import tempfile
-
+import subprocess
+import base64
 
 from collections import Iterable, Mapping
 from io import StringIO
@@ -53,6 +54,22 @@ def isinventory(obj):
         boolean: True if the object is an inventory dict and False if it is not
     '''
     return isinstance(obj, Mapping) or isinstance(obj, string_types)
+
+
+def check_isolation_executable_installed(isolation_executable):
+    '''
+    Check that proot is installed.
+    '''
+    cmd = [isolation_executable, '--version']
+    try:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        proc.communicate()
+        return bool(proc.returncode == 0)
+    except (OSError, ValueError) as e:
+        if isinstance(e, ValueError) or getattr(e, 'errno', 1) != 2:  # ENOENT, no such file or directory
+            raise RuntimeError('bwrap unavailable for unexpected reason.')
+        return False
 
 
 def dump_artifact(obj, path, filename=None):

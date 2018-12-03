@@ -23,6 +23,8 @@ import threading
 import pexpect
 import stat
 import shlex
+import tempfile
+import logging
 
 from uuid import uuid4
 from collections import Mapping
@@ -33,6 +35,8 @@ from six import iteritems, string_types
 from ansible_runner import output
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.loader import ArtifactLoader
+
+logger = logging.getLogger('ansible-runner')
 
 
 class RunnerConfig(object):
@@ -57,7 +61,9 @@ class RunnerConfig(object):
                  private_data_dir=None, playbook=None, ident=uuid4(),
                  inventory=None, roles_path=None, limit=None, module=None, module_args=None,
                  verbosity=None, quiet=False, json_mode=False, artifact_dir=None,
-                 rotate_artifacts=0, host_pattern=None, binary=None, extravars=None):
+                 rotate_artifacts=0, host_pattern=None, binary=None, extravars=None,
+                 process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
+                 process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.json_mode = json_mode
@@ -77,6 +83,12 @@ class RunnerConfig(object):
             self.artifact_dir = os.path.join(self.artifact_dir, "artifacts", "{}".format(self.ident))
 
         self.extra_vars = extravars
+        self.process_isolation = process_isolation
+        self.process_isolation_executable = process_isolation_executable
+        self.process_isolation_path = process_isolation_path
+        self.process_isolation_hide_paths = process_isolation_hide_paths
+        self.process_isolation_show_paths = process_isolation_show_paths
+        self.process_isolation_ro_paths = process_isolation_ro_paths
         self.verbosity = verbosity
         self.quiet = quiet
         self.loader = ArtifactLoader(self.private_data_dir)
@@ -134,6 +146,9 @@ class RunnerConfig(object):
         self.env['PYTHONPATH'] = python_path + callback_dir + ':'
         if self.roles_path:
             self.env['ANSIBLE_ROLES_PATH'] = ':'.join(self.roles_path)
+
+        if self.process_isolation:
+            self.command = self.wrap_args_with_process_isolation(self.command)
 
     def prepare_inventory(self):
         """
@@ -208,7 +223,6 @@ class RunnerConfig(object):
         except ConfigurationError:
             self.command = self.generate_ansible_command()
 
-
     def generate_ansible_command(self):
         """
         Given that the ``RunnerConfig`` preparation methods have been run to gather the inputs this method
@@ -270,6 +284,66 @@ class RunnerConfig(object):
 
         return exec_list
 
+    def build_process_isolation_temp_dir(self):
+        '''
+        Create a temporary directory for process isolation to use.
+        '''
+        path = tempfile.mkdtemp(prefix='ansible_runner_pi_', dir=self.process_isolation_path)
+        os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+        return path
+
+    def wrap_args_with_process_isolation(self, args):
+        '''
+        Wrap existing command line with bwrap to restrict access to:
+         - self.process_isolation_path (generally, /tmp) (except for own /tmp files)
+        '''
+        cwd = os.path.realpath(self.cwd)
+        pi_temp_dir = self.build_process_isolation_temp_dir()
+        new_args = [self.process_isolation_executable or 'bwrap', '--unshare-pid', '--dev-bind', '/', '/', '--proc', '/proc']
+
+        for path in sorted(set(self.process_isolation_hide_paths or [])):
+            if not os.path.exists(path):
+                logger.debug('hide path not found: {0}'.format(path))
+                continue
+            path = os.path.realpath(path)
+            if os.path.isdir(path):
+                new_path = tempfile.mkdtemp(dir=pi_temp_dir)
+                os.chmod(new_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+            else:
+                handle, new_path = tempfile.mkstemp(dir=pi_temp_dir)
+                os.close(handle)
+                os.chmod(new_path, stat.S_IRUSR | stat.S_IWUSR)
+            new_args.extend(['--bind', '{0}'.format(new_path), '{0}'.format(path)])
+
+        if self.private_data_dir:
+            show_paths = [self.private_data_dir]
+        else:
+            show_paths = [cwd]
+
+        for path in sorted(set(self.process_isolation_ro_paths or [])):
+            if not os.path.exists(path):
+                logger.debug('read-only path not found: {0}'.format(path))
+                continue
+            path = os.path.realpath(path)
+            new_args.extend(['--ro-bind', '{0}'.format(path),  '{0}'.format(path)])
+
+        show_paths.extend(self.process_isolation_show_paths or [])
+        for path in sorted(set(show_paths)):
+            if not os.path.exists(path):
+                logger.debug('show path not found: {0}'.format(path))
+                continue
+            path = os.path.realpath(path)
+            new_args.extend(['--bind', '{0}'.format(path), '{0}'.format(path)])
+
+        if 'ansible-playbook' in args[0]:
+            # playbook runs should cwd to the SCM checkout dir
+            new_args.extend(['--chdir', os.path.join(self.private_data_dir, 'project')])
+        else:
+            # ad-hoc runs should cwd to the root of the private data dir
+            new_args.extend(['--chdir', self.private_data_dir])
+
+        new_args.extend(args)
+        return new_args
 
     def wrap_args_with_ssh_agent(self, args, ssh_key_path, ssh_auth_sock=None, silence_ssh_add=False):
         """

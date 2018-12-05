@@ -61,7 +61,7 @@ class RunnerConfig(object):
                  private_data_dir=None, playbook=None, ident=uuid4(),
                  inventory=None, roles_path=None, limit=None, module=None, module_args=None,
                  verbosity=None, quiet=False, json_mode=False, artifact_dir=None,
-                 rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, suppress_ansible_output=False
+                 rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, suppress_ansible_output=False,
                  process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None):
         self.private_data_dir = os.path.abspath(private_data_dir)

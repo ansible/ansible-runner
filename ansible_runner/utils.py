@@ -117,6 +117,7 @@ def dump_artifact(obj, path, filename=None):
                 f.write(str(obj))
         finally:
             fcntl.lockf(lock_fd, fcntl.LOCK_UN)
+            os.close(lock_fd)
             os.remove(lock_fp)
 
     return fn

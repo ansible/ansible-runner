@@ -3,8 +3,20 @@
 Changelog
 ---------
 
+1.2.0 (2018-12-19)
+++++++++++++++++++
+
+- Add support for runner_on_start from Ansible 2.8
+- Fix thread race condition issues in event gathering
+- Add Code Of Conduct
+- Fix an issue where the "running" status wouldn't be emitted to the
+  status callback
+- Add process isolation support via bubblewrap
+- Fix an issue with orphaned file descriptors
+- Add ability to suppress ansible output from the module interface
+
 1.1.2 (2018-10-18)
-++++++++++++
+++++++++++++++++++
 
 - Fix an issue where ssh sock path could be too long
 - Fix an issue passing extra vars as dictionaries via the interface

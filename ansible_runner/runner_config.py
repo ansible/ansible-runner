@@ -1,4 +1,4 @@
-#
+############################
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -63,7 +63,8 @@ class RunnerConfig(object):
                  verbosity=None, quiet=False, json_mode=False, artifact_dir=None,
                  rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, suppress_ansible_output=False,
                  process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
-                 process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None):
+                 process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None,
+                 tags=None, skip_tags=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.json_mode = json_mode
@@ -93,6 +94,8 @@ class RunnerConfig(object):
         self.quiet = quiet
         self.suppress_ansible_output = suppress_ansible_output
         self.loader = ArtifactLoader(self.private_data_dir)
+        self.tags = tags
+        self.skip_tags = skip_tags
 
     def prepare(self):
         """
@@ -267,6 +270,12 @@ class RunnerConfig(object):
         if self.verbosity:
             v = 'v' * self.verbosity
             exec_list.append('-%s' % v)
+
+        if self.tags:
+            exec_list.extend(['--tags', '%s' % self.tags])
+
+        if self.skip_tags:
+            exec_list.extend(['--skip-tags', '%s' % self.skip_tags])
 
         # Other parameters
         if base_command.endswith('ansible-playbook'):

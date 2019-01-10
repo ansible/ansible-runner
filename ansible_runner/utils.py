@@ -262,11 +262,6 @@ class OutputEventFilter(object):
                 self._handle.flush()
 
             self._last_chunk = remainder
-        else:
-            if not self.suppress_ansible_output:
-                sys.stdout.write(data + '\n')
-            self._handle.write(data + '\n')
-            self._handle.flush()
 
     def close(self):
         value = self._buffer.getvalue()

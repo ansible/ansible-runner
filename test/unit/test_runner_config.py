@@ -415,7 +415,7 @@ def test_process_isolation_settings():
     # hide /var
     assert rc.command[10] == '--bind'
     assert 'ansible_runner_pi' in rc.command[11]
-    assert rc.command[12] == '/var'
+    assert rc.command[12] == '/var' or rc.command[12] == '/private/var'
 
     # read-only bind
     assert rc.command[13:16] == ['--ro-bind', '/venv', '/venv']

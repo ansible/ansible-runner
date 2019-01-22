@@ -64,7 +64,7 @@ class RunnerConfig(object):
                  rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, suppress_ansible_output=False,
                  process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None,
-                 tags=None, skip_tags=None):
+                 tags=None, skip_tags=None, output_filter='event'):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.json_mode = json_mode
@@ -96,6 +96,7 @@ class RunnerConfig(object):
         self.loader = ArtifactLoader(self.private_data_dir)
         self.tags = tags
         self.skip_tags = skip_tags
+        self.output_filter = output_filter
 
     def prepare(self):
         """
@@ -119,6 +120,10 @@ class RunnerConfig(object):
             raise ConfigurationError("Only one of playbook and module options are allowed")
         if not os.path.exists(self.artifact_dir):
             os.makedirs(self.artifact_dir)
+
+        output_filter_valid = ['event', 'newline']
+        if self.output_filter not in output_filter_valid:
+            raise ValueError("Invalid output_filter {}. Expected {}".format(self.output_filter, output_filter_valid))
 
         self.prepare_inventory()
         self.prepare_env()

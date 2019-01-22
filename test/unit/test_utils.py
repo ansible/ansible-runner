@@ -1,12 +1,17 @@
 import json
 import shutil
 import tempfile
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 from pytest import raises
 from mock import patch
 
 from ansible_runner.utils import isplaybook, isinventory
 from ansible_runner.utils import dump_artifacts
+from ansible_runner.utils import OutputVerboseFilter
 
 
 def test_isplaybook():
@@ -199,3 +204,56 @@ def test_dump_artifacts_cmdline():
         assert fp == '/tmp/env'
         assert fn == 'cmdline'
         assert 'cmdline' not in kwargs
+
+
+def test_verbose_line_buffering():
+    events = []
+
+    def _callback(event_data):
+        events.append(event_data)
+
+    stdout_handler = StringIO()
+    f = OutputVerboseFilter(stdout_handler, _callback)
+    f.write('one two\r\n\r\n')
+
+    assert len(events) == 2
+    assert events[0]['start_line'] == 0
+    assert events[0]['end_line'] == 1
+    assert events[0]['stdout'] == 'one two'
+
+    assert events[1]['start_line'] == 1
+    assert events[1]['end_line'] == 2
+    assert events[1]['stdout'] == ''
+
+    f.write('three')
+    assert len(events) == 2
+    f.write('\r\nfou')
+
+    # three is not pushed to buffer until its line completes
+    assert len(events) == 3
+    assert events[2]['start_line'] == 2
+    assert events[2]['end_line'] == 3
+    assert events[2]['stdout'] == 'three'
+
+    f.write('r\r')
+    f.write('\nfi')
+
+    assert events[3]['start_line'] == 3
+    assert events[3]['end_line'] == 4
+    assert events[3]['stdout'] == 'four'
+
+    f.write('ve')
+    f.write('\r\n')
+
+    assert len(events) == 5
+    assert events[4]['start_line'] == 4
+    assert events[4]['end_line'] == 5
+    assert events[4]['stdout'] == 'five'
+
+    f.close()
+
+    from pprint import pprint
+    pprint(events)
+    assert len(events) == 6
+
+    assert events[5]['event'] == 'EOF'

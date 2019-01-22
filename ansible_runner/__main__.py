@@ -235,6 +235,9 @@ def main(sys_args=None):
     parser.add_argument("--process-isolation-ro-paths", dest='process_isolation_ro_paths',
                         help="List of paths on the system that should be exposed to the playbook run as read-only")
 
+    parser.add_argument("--output-filter", dest='output_filter', default="event",
+                        help="Output filter type ['event'|'newline']. Defaults to event")
+
     args = parser.parse_args(sys_args)
 
     output.configure()

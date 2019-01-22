@@ -12,7 +12,10 @@ import subprocess
 import base64
 
 from collections import Iterable, Mapping
-from io import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 from six import string_types
 
 
@@ -302,3 +305,29 @@ class OutputEventFilter(object):
         else:
             self._current_event_data = None
         return event_data
+
+
+class OutputVerboseFilter(OutputEventFilter):
+    '''
+    File-like object that dispatches stdout data.
+    Does not search for encoded job event data.
+    Use for unified job types that do not encode job event data.
+    '''
+    def write(self, data):
+        self._buffer.write(data)
+
+        # if the current chunk contains a line break
+        if data and '\n' in data:
+            # emit events for all complete lines we know about
+            lines = self._buffer.getvalue().splitlines(True)  # keep ends
+            remainder = None
+            # if last line is not a complete line, then exclude it
+            if '\n' not in lines[-1]:
+                remainder = lines.pop()
+            # emit all complete lines
+            for line in lines:
+                self._emit_event(line)
+            self._buffer = StringIO()
+            # put final partial line back on buffer
+            if remainder:
+                self._buffer.write(remainder)

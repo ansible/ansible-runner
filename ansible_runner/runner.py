@@ -7,6 +7,7 @@ import errno
 import signal
 import codecs
 import collections
+import uuid
 
 import six
 import pexpect
@@ -14,7 +15,7 @@ import psutil
 
 import ansible_runner.plugins
 
-from .utils import OutputEventFilter, cleanup_artifact_dir
+from .utils import OutputEventFilter, OutputVerboseFilter, cleanup_artifact_dir
 from .exceptions import CallbackError, AnsibleRunnerException
 from ansible_runner.output import debug
 
@@ -41,6 +42,8 @@ class Runner(object):
         later use
         '''
         self.last_stdout_update = time.time()
+        if 'uuid' not in event_data:
+            event_data['uuid'] = str(uuid.uuid4())
         if 'uuid' in event_data:
             filename = '{}-partial.json'.format(event_data['uuid'])
             partial_filename = os.path.join(self.config.artifact_dir,
@@ -52,11 +55,14 @@ class Runner(object):
                                                              event_data['uuid']))
             try:
                 event_data.update(dict(runner_ident=str(self.config.ident)))
-                with codecs.open(partial_filename, 'r', encoding='utf-8') as read_file:
-                    partial_event_data = json.load(read_file)
-                event_data.update(partial_event_data)
-                if self.remove_partials:
-                    os.remove(partial_filename)
+                try:
+                    with codecs.open(partial_filename, 'r', encoding='utf-8') as read_file:
+                        partial_event_data = json.load(read_file)
+                    event_data.update(partial_event_data)
+                    if self.remove_partials:
+                        os.remove(partial_filename)
+                except IOError as e:
+                    debug("Failed to open ansible stdout callback plugin partial data file {}".format(partial_filename))
                 if self.event_handler is not None:
                     should_write = self.event_handler(event_data)
                 else:
@@ -98,7 +104,10 @@ class Runner(object):
             cleanup_artifact_dir(os.path.join(self.config.artifact_dir, ".."), self.config.rotate_artifacts)
 
         stdout_handle = codecs.open(stdout_filename, 'w', encoding='utf-8')
-        stdout_handle = OutputEventFilter(stdout_handle, self.event_callback, self.config.suppress_ansible_output, output_json=self.config.json_mode)
+        if self.config.output_filter == 'event':
+            stdout_handle = OutputEventFilter(stdout_handle, self.event_callback, self.config.suppress_ansible_output, output_json=self.config.json_mode)
+        elif self.config.output_filter == 'newline':
+            stdout_handle = OutputVerboseFilter(stdout_handle, self.event_callback)
 
         if not isinstance(self.config.expect_passwords, collections.OrderedDict):
             # We iterate over `expect_passwords.keys()` and

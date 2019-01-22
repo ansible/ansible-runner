@@ -92,6 +92,7 @@ class RunnerConfig(object):
         self.verbosity = verbosity
         self.quiet = quiet
         self.suppress_ansible_output = suppress_ansible_output
+        self.has_raw_args = False
         self.loader = ArtifactLoader(self.private_data_dir)
 
     def prepare(self):
@@ -110,8 +111,6 @@ class RunnerConfig(object):
         #     raise ConfigurationError("Ansible not found. Make sure that it is installed.")
         if self.private_data_dir is None:
             raise ConfigurationError("Runner Base Directory is not defined")
-        if self.module is None and self.playbook is None: # TODO: ad-hoc mode, module and args
-            raise ConfigurationError("Runner playbook or module is not defined")
         if self.module and self.playbook:
             raise ConfigurationError("Only one of playbook and module options are allowed")
         if not os.path.exists(self.artifact_dir):
@@ -120,6 +119,9 @@ class RunnerConfig(object):
         self.prepare_inventory()
         self.prepare_env()
         self.prepare_command()
+
+        if self.has_raw_args is False and self.module is None and self.playbook is None: # TODO: ad-hoc mode, module and args
+            raise ConfigurationError("Runner playbook or module is not defined")
 
         # write the SSH key data into a fifo read by ssh-agent
         if self.ssh_key_data:
@@ -220,7 +222,9 @@ class RunnerConfig(object):
         and if not calls :py:meth:`ansible_runner.runner_config.RunnerConfig.generate_ansible_command`
         """
         try:
-            self.command = self.loader.load_file('args', string_types)
+            cmdline_args = self.loader.load_file('args', string_types)
+            self.command = shlex.split(cmdline_args.decode('utf-8'))
+            self.has_raw_args = True
         except ConfigurationError:
             self.command = self.generate_ansible_command()
 

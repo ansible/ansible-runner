@@ -10,6 +10,7 @@ import hashlib
 import tempfile
 import subprocess
 import base64
+import uuid
 
 from collections import Iterable, Mapping
 from io import StringIO
@@ -288,6 +289,12 @@ class OutputEventFilter(object):
             stdout_chunks = []
 
         for stdout_chunk in stdout_chunks:
+            '''
+            stdout, aka verbose events, a broken up into multiple chunks.
+            Since they are separate events to the "outside" they each must
+            have a unique id.
+            '''
+            event_data['uuid'] = str(uuid.uuid4())
             self._counter += 1
             event_data['counter'] = self._counter
             event_data['stdout'] = stdout_chunk[:-2] if len(stdout_chunk) > 2 else ""

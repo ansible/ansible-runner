@@ -10,6 +10,7 @@ import hashlib
 import tempfile
 import subprocess
 import base64
+import uuid
 
 from collections import Iterable, Mapping
 try:
@@ -291,6 +292,8 @@ class OutputEventFilter(object):
             stdout_chunks = []
 
         for stdout_chunk in stdout_chunks:
+            if event_data.get('event') == 'verbose':
+                event_data['uuid'] = str(uuid.uuid4())
             self._counter += 1
             event_data['counter'] = self._counter
             event_data['stdout'] = stdout_chunk[:-2] if len(stdout_chunk) > 2 else ""

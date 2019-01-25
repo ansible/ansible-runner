@@ -42,8 +42,6 @@ class Runner(object):
         later use
         '''
         self.last_stdout_update = time.time()
-        if 'uuid' not in event_data:
-            event_data['uuid'] = str(uuid.uuid4())
         if 'uuid' in event_data:
             filename = '{}-partial.json'.format(event_data['uuid'])
             partial_filename = os.path.join(self.config.artifact_dir,

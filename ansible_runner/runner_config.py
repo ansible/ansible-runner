@@ -135,13 +135,13 @@ class RunnerConfig(object):
             self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path)
 
         # Use local callback directory
-        callback_dir = os.getenv('AWX_LIB_DIRECTORY')
+        callback_dir = self.env.get('AWX_LIB_DIRECTORY', os.getenv('AWX_LIB_DIRECTORY'))
         if callback_dir is None:
             callback_dir = os.path.join(os.path.split(os.path.abspath(__file__))[0],
                                         "callbacks")
-        python_path = os.getenv('PYTHONPATH', '')
-        if python_path:
-            python_path += ":"
+        python_path = self.env.get('PYTHONPATH', os.getenv('PYTHONPATH', ''))
+        if python_path and not python_path.endswith(':'):
+            python_path += ':'
         self.env['ANSIBLE_CALLBACK_PLUGINS'] = callback_dir
         if 'AD_HOC_COMMAND_ID' in self.env:
             self.env['ANSIBLE_STDOUT_CALLBACK'] = 'minimal'
@@ -151,7 +151,7 @@ class RunnerConfig(object):
         self.env['ANSIBLE_HOST_KEY_CHECKING'] = 'False'
         self.env['AWX_ISOLATED_DATA_DIR'] = self.artifact_dir
 
-        self.env['PYTHONPATH'] = python_path + callback_dir + ':'
+        self.env['PYTHONPATH'] = python_path + callback_dir
         if self.roles_path:
             self.env['ANSIBLE_ROLES_PATH'] = ':'.join(self.roles_path)
 

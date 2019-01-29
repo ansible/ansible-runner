@@ -289,7 +289,8 @@ def test_prepare():
     rc.env = {}
     rc.playbook = 'main.yaml'
 
-    os.environ['AWX_LIB_DIRECTORY'] = '/'
+    os.environ['PYTHONPATH'] = '/python_path_via_environ'
+    os.environ['AWX_LIB_DIRECTORY'] = '/awx_lib_directory_via_environ'
 
     rc.prepare()
 
@@ -304,11 +305,14 @@ def test_prepare():
     assert rc.env['ANSIBLE_RETRY_FILES_ENABLED'] == 'False'
     assert rc.env['ANSIBLE_HOST_KEY_CHECKING'] == 'False'
     assert rc.env['AWX_ISOLATED_DATA_DIR'] == '/'
-    assert rc.env['PYTHONPATH'] == '/:'
+    assert rc.env['PYTHONPATH'] == '/python_path_via_environ:/awx_lib_directory_via_environ', \
+        "PYTHONPATH is the union of the env PYTHONPATH and AWX_LIB_DIRECTORY"
 
-    os.environ['PYTHONPATH'] = "/foo/bar"
+    del rc.env['PYTHONPATH']
+    os.environ['PYTHONPATH'] = "/foo/bar/python_path_via_environ"
     rc.prepare()
-    assert rc.env['PYTHONPATH'] == "/foo/bar:/:"
+    assert rc.env['PYTHONPATH'] == "/foo/bar/python_path_via_environ:/awx_lib_directory_via_environ", \
+        "PYTHONPATH is the union of the explicit env['PYTHONPATH'] override and AWX_LIB_DIRECTORY"
 
 
 @patch('ansible_runner.runner_config.open_fifo_write')

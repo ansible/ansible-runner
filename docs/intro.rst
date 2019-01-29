@@ -132,16 +132,16 @@ This file should contain the ssh private key used to connect to the host(s). **R
 ``env/settings`` - Settings for Runner itself
 ---------------------------------------------
 
-The **settings** file is a little different than the other files provided in this section in that its contents are meant to control **Runner** directly::
+The **settings** file is a little different than the other files provided in this section in that its contents are meant to control **Runner** directly.
 
-  ---
-  idle_timeout: 600 # If no output is detected from ansible in this number of seconds the execution will be terminated.
-  job_timeout: 3600 # The maximum amount of time to allow the job to run for, exceeding this and the execution will be terminated.
-  pexpect_timeout: 10 # Number of seconds for the internal pexpect command to wait to block on input before continuing
-  pexpect_use_poll: True # Use poll() function for communication with child processes instead of select(). select() is used when
-                         # the value is set to ``False``. select() has a known limitation of using only up to 1024 file descriptors.
+* ``idle_timeout``: ``600`` If no output is detected from ansible in this number of seconds the execution will be terminated.
+* ``job_timeout``: ``3600`` The maximum amount of time to allow the job to run for, exceeding this and the execution will be terminated.
+* ``pexpect_timeout``: ``10`` Number of seconds for the internal pexpect command to wait to block on input before continuing
+* ``pexpect_use_poll``: ``True`` Use ``poll()`` function for communication with child processes instead of ``select()``. ``select()`` is used when the value is set to ``False``. ``select()`` has a known limitation of using only up to 1024 file descriptors.
 
-  suppress_ansible_output: False # Allow output from ansible to not be printed to the screen
+* ``suppress_ansible_output``: ``False`` Allow output from ansible to not be printed to the screen
+* ``fact_cache``: ``'fact_cache'`` The directory relative to ``artifacts`` where ``jsonfile`` fact caching will be stored.  Defaults to ``fact_cache``.  This is ignored if ``fact_cache_type`` is different than ``jsonfile``.
+* ``fact_cache_type``: ``'jsonfile'`` The type of fact cache to use.  Defaults to ``jsonfile``.
 
 Inventory
 ---------

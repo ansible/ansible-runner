@@ -116,6 +116,9 @@ def run(**kwargs):
     :param process_isolation_hide_paths: A path or list of paths on the system that should be hidden from the playbook run.
     :param process_isolation_show_paths: A path or list of paths on the system that should be exposed to the playbook run.
     :param process_isolation_ro_paths: A path or list of paths on the system that should be exposed to the playbook run as read-only.
+    :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
+                       This is only used for 'jsonfile' type fact caches.
+    :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
     :type private_data_dir: str
     :type ident: str
     :type json_mode: bool
@@ -141,6 +144,8 @@ def run(**kwargs):
     :type process_isolation_hide_paths: str or list
     :type process_isolation_show_paths: str or list
     :type process_isolation_ro_paths: str or list
+    :type fact_cache: str
+    :type fact_cache_type: str
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object
     '''

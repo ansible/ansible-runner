@@ -193,3 +193,37 @@ def test_run_command_ansible_rotate_artifacts(rc):
     status, exitcode = runner.run()
     assert status == 'successful'
     assert exitcode == 0
+
+
+def test_get_fact_cache(rc):
+    assert os.path.basename(rc.fact_cache) == 'fact_cache'
+    rc.module = "setup"
+    rc.host_pattern = "localhost"
+    rc.prepare()
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
+    assert status == 'successful'
+    assert exitcode == 0
+    print(rc.cwd)
+    assert os.path.exists(os.path.join(rc.artifact_dir, 'fact_cache'))
+    assert os.path.exists(os.path.join(rc.artifact_dir, 'fact_cache', 'localhost'))
+    data = runner.get_fact_cache('localhost')
+    assert data
+
+
+def test_set_fact_cache(rc):
+    assert os.path.basename(rc.fact_cache) == 'fact_cache'
+    rc.module = "debug"
+    rc.module_args = "var=message"
+    rc.host_pattern = "localhost"
+    rc.prepare()
+    runner = Runner(config=rc)
+    runner.set_fact_cache('localhost', dict(message='hello there'))
+    status, exitcode = runner.run()
+    assert status == 'successful'
+    assert exitcode == 0
+    print(rc.cwd)
+    assert os.path.exists(os.path.join(rc.artifact_dir, 'fact_cache'))
+    assert os.path.exists(os.path.join(rc.artifact_dir, 'fact_cache', 'localhost'))
+    data = runner.get_fact_cache('localhost')
+    assert data['message'] == 'hello there'

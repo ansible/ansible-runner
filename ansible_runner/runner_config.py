@@ -64,7 +64,7 @@ class RunnerConfig(object):
                  rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, suppress_ansible_output=False,
                  process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None,
-                 tags=None, skip_tags=None):
+                 tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.json_mode = json_mode
@@ -96,6 +96,8 @@ class RunnerConfig(object):
         self.loader = ArtifactLoader(self.private_data_dir)
         self.tags = tags
         self.skip_tags = skip_tags
+        self.fact_cache_type = fact_cache_type
+        self.fact_cache = os.path.join(self.artifact_dir, fact_cache or 'fact_cache') if self.fact_cache_type == 'jsonfile' else None
 
     def prepare(self):
         """
@@ -153,6 +155,10 @@ class RunnerConfig(object):
 
         if self.process_isolation:
             self.command = self.wrap_args_with_process_isolation(self.command)
+
+        if self.fact_cache_type == 'jsonfile':
+            self.env['ANSIBLE_CACHE_PLUGIN'] = 'jsonfile'
+            self.env['ANSIBLE_CACHE_PLUGIN_CONNECTION'] = self.fact_cache
 
     def prepare_inventory(self):
         """
@@ -216,6 +222,13 @@ class RunnerConfig(object):
             self.cwd = self.private_data_dir
         else:
             self.cwd = os.path.join(self.private_data_dir, 'project')
+
+        if 'fact_cache' in self.settings:
+            if 'fact_cache_type' in self.settings:
+                if self.settings['fact_cache_type'] == 'jsonfile':
+                    self.fact_cache = os.path.join(self.artifact_dir, self.settings['fact_cache'])
+            else:
+                self.fact_cache = os.path.join(self.artifact_dir, self.settings['fact_cache'])
 
     def prepare_command(self):
         """

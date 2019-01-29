@@ -157,6 +157,9 @@ class Runner(object):
                 child.close(True)
                 self.timed_out = True
 
+        stdout_handle.flush()
+        stdout_handle.close()
+
         if self.canceled:
             self.status_callback('canceled')
         elif child.exitstatus == 0 and not self.timed_out:

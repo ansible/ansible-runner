@@ -5,8 +5,12 @@ import tempfile
 from pytest import raises
 from mock import patch
 
-from ansible_runner.utils import isplaybook, isinventory
-from ansible_runner.utils import dump_artifacts
+from ansible_runner.utils import (
+    isplaybook,
+    isinventory,
+    dump_artifacts,
+    args2cmdline,
+)
 
 
 def test_isplaybook():
@@ -199,3 +203,13 @@ def test_dump_artifacts_cmdline():
         assert fp == '/tmp/env'
         assert fn == 'cmdline'
         assert 'cmdline' not in kwargs
+
+
+def test_fifo_write():
+    pass
+
+
+def test_args2cmdline():
+    res = args2cmdline('ansible', '-m', 'setup', 'localhost')
+    assert res == 'ansible -m setup localhost'
+

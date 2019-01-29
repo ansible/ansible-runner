@@ -311,7 +311,8 @@ def test_prepare():
     assert rc.env['PYTHONPATH'] == "/foo/bar:/:"
 
 
-def test_prepare_with_ssh_key():
+@patch('ansible_runner.runner_config.open_fifo_write')
+def test_prepare_with_ssh_key(open_fifo_write_mock):
     rc = RunnerConfig('/')
 
     rc.prepare_inventory = Mock()
@@ -319,7 +320,6 @@ def test_prepare_with_ssh_key():
     rc.prepare_command = Mock()
 
     rc.wrap_args_with_ssh_agent = Mock()
-    rc.open_fifo_write = Mock()
 
     rc.ssh_key_data = None
     rc.artifact_dir = '/'
@@ -334,7 +334,7 @@ def test_prepare_with_ssh_key():
 
     assert rc.ssh_key_path == '/ssh_key_data'
     assert rc.wrap_args_with_ssh_agent.called
-    assert rc.open_fifo_write.called
+    assert open_fifo_write_mock.called
 
 
 def test_wrap_args_with_ssh_agent_defaults():
@@ -353,16 +353,6 @@ def test_wrap_args_with_ssh_agent_silent():
     rc = RunnerConfig('/')
     res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], '/tmp/sshkey', silence_ssh_add=True)
     assert res == ['ssh-agent', 'sh', '-c', 'ssh-add /tmp/sshkey 2>/dev/null && rm -f /tmp/sshkey && ansible-playbook main.yaml']
-
-
-def test_fifo_write():
-    pass
-
-
-def test_args2cmdline():
-    rc = RunnerConfig('/')
-    res = rc.args2cmdline('ansible', '-m', 'setup', 'localhost')
-    assert res == 'ansible -m setup localhost'
 
 
 def test_process_isolation_defaults():

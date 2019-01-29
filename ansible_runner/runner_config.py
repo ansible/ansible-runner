@@ -18,8 +18,6 @@
 #
 import os
 import re
-import pipes
-import threading
 import pexpect
 import stat
 import shlex
@@ -35,6 +33,10 @@ from six import iteritems, string_types
 from ansible_runner import output
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.loader import ArtifactLoader
+from ansible_runner.utils import (
+    open_fifo_write,
+    args2cmdline,
+)
 
 logger = logging.getLogger('ansible-runner')
 
@@ -129,7 +131,7 @@ class RunnerConfig(object):
         # write the SSH key data into a fifo read by ssh-agent
         if self.ssh_key_data:
             self.ssh_key_path = os.path.join(self.artifact_dir, 'ssh_key_data')
-            self.open_fifo_write(self.ssh_key_path, self.ssh_key_data)
+            open_fifo_write(self.ssh_key_path, self.ssh_key_data)
             self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path)
 
         # Use local callback directory
@@ -374,29 +376,15 @@ class RunnerConfig(object):
         necessary calls to ``ssh-agent``
         """
         if ssh_key_path:
-            ssh_add_command = self.args2cmdline('ssh-add', ssh_key_path)
+            ssh_add_command = args2cmdline('ssh-add', ssh_key_path)
             if silence_ssh_add:
                 ssh_add_command = ' '.join([ssh_add_command, '2>/dev/null'])
             cmd = ' && '.join([ssh_add_command,
-                               self.args2cmdline('rm', '-f', ssh_key_path),
-                               self.args2cmdline(*args)])
+                               args2cmdline('rm', '-f', ssh_key_path),
+                               args2cmdline(*args)])
             args = ['ssh-agent']
             if ssh_auth_sock:
                 args.extend(['-a', ssh_auth_sock])
             args.extend(['sh', '-c', cmd])
         return args
 
-
-    def open_fifo_write(self, path, data):
-        # TODO: Switch to utility function
-        '''open_fifo_write opens the fifo named pipe in a new thread.
-        This blocks the thread until an external process (such as ssh-agent)
-        reads data from the pipe.
-        '''
-        os.mkfifo(path, stat.S_IRUSR | stat.S_IWUSR)
-        threading.Thread(target=lambda p, d: open(p, 'wb').write(d),
-                         args=(path, data)).start()
-
-    def args2cmdline(self, *args):
-        # TODO: switch to utility function
-        return ' '.join([pipes.quote(a) for a in args])

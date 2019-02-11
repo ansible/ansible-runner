@@ -188,14 +188,14 @@ def dump_artifacts(kwargs):
 
     for key in ('envvars', 'extravars', 'passwords', 'settings'):
         obj = kwargs.get(key)
-        if obj:
+        if obj and not os.path.exists(os.path.join(private_data_dir, 'env', key)):
             path = os.path.join(private_data_dir, 'env')
             dump_artifact(json.dumps(obj), path, key)
             kwargs.pop(key)
 
     for key in ('ssh_key', 'cmdline'):
         obj = kwargs.get(key)
-        if obj:
+        if obj and not os.path.exists(os.path.join(private_data_dir, 'env', key)):
             path = os.path.join(private_data_dir, 'env')
             dump_artifact(str(kwargs[key]), path, key)
             kwargs.pop(key)

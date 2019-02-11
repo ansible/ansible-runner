@@ -25,8 +25,10 @@ import tempfile
 import logging
 
 from uuid import uuid4
-from collections import Mapping
-#from distutils.spawn import find_executable
+try:
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping
 
 from six import iteritems, string_types
 

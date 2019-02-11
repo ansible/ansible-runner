@@ -14,7 +14,10 @@ import threading
 import pipes
 import uuid
 
-from collections import Iterable, Mapping
+try:
+    from collections.abc import Iterable, Mapping
+except ImportError:
+    from collections import Iterable, Mapping
 from io import StringIO
 from six import string_types
 

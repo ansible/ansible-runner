@@ -1,6 +1,11 @@
 import os
 import re
 
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 from functools import partial
 
 from six import string_types, b
@@ -241,23 +246,12 @@ def test_prepare_command_defaults():
     cmd_side_effect = partial(load_file_side_effect, 'args')
 
     def generate_side_effect():
-        return 'test string'
+        return StringIO('test "string with spaces"')
 
     with patch.object(rc.loader, 'load_file', side_effect=cmd_side_effect):
         with patch.object(rc, 'generate_ansible_command', side_effect=generate_side_effect):
             rc.prepare_command()
-            rc.command == 'test string'
-
-
-def test_prepare_command_with_args():
-    rc = RunnerConfig('/')
-
-    value = 'test string'
-    args_side_effect = partial(load_file_side_effect, 'args', value)
-
-    with patch.object(rc.loader, 'load_file', side_effect=args_side_effect):
-        rc.prepare_command()
-        assert rc.command == value
+            rc.command == ['test', '"string with spaces"']
 
 
 def test_prepare_with_defaults():

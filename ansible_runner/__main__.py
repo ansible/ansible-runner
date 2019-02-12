@@ -281,11 +281,6 @@ def main(sys_args=None):
 
         with context:
             with role_manager(args) as args:
-                if args.inventory:
-                    with open(args.inventory) as f:
-                        inventory_data = f.read()
-                else:
-                    inventory_data = None
                 run_options = dict(private_data_dir=args.private_data_dir,
                                    ident=args.ident,
                                    binary=args.binary,
@@ -298,7 +293,7 @@ def main(sys_args=None):
                                    rotate_artifacts=args.rotate_artifacts,
                                    ignore_logging=False,
                                    json_mode=args.json,
-                                   inventory=inventory_data,
+                                   inventory=args.inventory,
                                    roles_path=[args.roles_path] if args.roles_path else None,
                                    process_isolation=args.process_isolation,
                                    process_isolation_executable=args.process_isolation_executable,

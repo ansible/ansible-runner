@@ -199,10 +199,6 @@ class RunnerConfig(object):
             # Still need to pass default environment to pexpect
             self.env = os.environ.copy()
 
-        # extravars dict passed in via the interface API takes precedence over on-disk
-        if not self.extra_vars and self.loader.isfile('env/extravars'):
-            self.extra_vars = self.loader.abspath('env/extravars')
-
         try:
             self.settings = self.loader.load_file('env/settings', Mapping)
         except ConfigurationError:
@@ -273,6 +269,8 @@ class RunnerConfig(object):
             exec_list.append("--limit")
             exec_list.append(self.limit)
 
+        if self.loader.isfile('env/extravars'):
+            exec_list.extend(['-e', '@{}'.format(self.loader.abspath('env/extravars'))])
         if isinstance(self.extra_vars, dict) and self.extra_vars:
             exec_list.extend(
                 [
@@ -282,8 +280,6 @@ class RunnerConfig(object):
                     )
                 ]
             )
-        elif self.extra_vars:
-            exec_list.extend(['-e', '@%s' % self.extra_vars])
         if self.verbosity:
             v = 'v' * self.verbosity
             exec_list.append('-%s' % v)

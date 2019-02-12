@@ -119,14 +119,6 @@ def test_prepare_env_extra_vars_defaults():
     assert rc.extra_vars is None
 
 
-def test_prepare_env_extra_vars():
-    rc = RunnerConfig('/')
-
-    with patch.object(rc.loader, 'isfile', side_effect=lambda x: True):
-        rc.prepare_env()
-        assert rc.extra_vars == '/env/extravars'
-
-
 def test_prepare_env_settings_defaults():
     rc = RunnerConfig('/')
     rc.prepare_env()
@@ -189,9 +181,16 @@ def test_generate_ansible_command():
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', '/inventory', 'main.yaml']
 
-    rc.extra_vars = '/env/extravars'
+    rc.extra_vars = dict(test="key")
     cmd = rc.generate_ansible_command()
-    assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '@/env/extravars', 'main.yaml']
+    assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '\'test="key"\'', 'main.yaml']
+
+    with patch.object(rc.loader, 'isfile', side_effect=lambda x: True):
+        cmd = rc.generate_ansible_command()
+        assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '@/env/extravars', '-e', '\'test="key"\'', 'main.yaml']
+        rc.extra_vars = None
+        cmd = rc.generate_ansible_command()
+        assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '@/env/extravars', 'main.yaml']
     rc.extra_vars = None
 
     rc.verbosity = 3

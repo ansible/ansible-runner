@@ -266,8 +266,13 @@ class RunnerConfig(object):
         except ConfigurationError:
             pass
 
-        exec_list.append("-i")
-        exec_list.append(self.inventory)
+        if isinstance(self.inventory, list):
+            for i in self.inventory:
+                exec_list.append("-i")
+                exec_list.append(i)
+        else:
+            exec_list.append("-i")
+            exec_list.append(self.inventory)
 
         if self.limit is not None:
             exec_list.append("--limit")

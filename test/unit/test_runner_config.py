@@ -176,6 +176,9 @@ def test_prepare_inventory():
     rc.inventory = '/tmp/inventory'
     rc.prepare_inventory()
     assert rc.inventory == '/tmp/inventory'
+    rc.inventory = 'localhost,anotherhost,'
+    rc.prepare_inventory()
+    assert rc.inventory == 'localhost,anotherhost,'
 
 
 def test_generate_ansible_command():
@@ -198,7 +201,21 @@ def test_generate_ansible_command():
         assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '@/env/extravars', 'main.yaml']
     rc.extra_vars = None
 
+    rc.inventory = "localhost,"
+    cmd = rc.generate_ansible_command()
+    assert cmd == ['ansible-playbook', '-i', 'localhost,', 'main.yaml']
+
+    rc.inventory = ['thing1', 'thing2']
+    cmd = rc.generate_ansible_command()
+    assert cmd == ['ansible-playbook', '-i', 'thing1', '-i', 'thing2', 'main.yaml']
+
+    rc.inventory = []
+    cmd = rc.generate_ansible_command()
+    assert cmd == ['ansible-playbook', 'main.yaml']
+    rc.inventory = None
+
     rc.verbosity = 3
+    rc.prepare_inventory()
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', '/inventory', '-vvv', 'main.yaml']
     rc.verbosity = None

@@ -52,11 +52,14 @@ class Runner(object):
                                                              event_data['uuid']))
             try:
                 event_data.update(dict(runner_ident=str(self.config.ident)))
-                with codecs.open(partial_filename, 'r', encoding='utf-8') as read_file:
-                    partial_event_data = json.load(read_file)
-                event_data.update(partial_event_data)
-                if self.remove_partials:
-                    os.remove(partial_filename)
+                try:
+                    with codecs.open(partial_filename, 'r', encoding='utf-8') as read_file:
+                        partial_event_data = json.load(read_file)
+                    event_data.update(partial_event_data)
+                    if self.remove_partials:
+                        os.remove(partial_filename)
+                except IOError as e:
+                    debug("Failed to open ansible stdout callback plugin partial data file {}".format(partial_filename))
                 if self.event_handler is not None:
                     should_write = self.event_handler(event_data)
                 else:

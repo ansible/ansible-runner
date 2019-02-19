@@ -81,7 +81,7 @@ class RunnerConfig(object):
         self.host_pattern = host_pattern
         self.binary = binary
         self.rotate_artifacts = rotate_artifacts
-        self.artifact_dir = artifact_dir or self.private_data_dir
+        self.artifact_dir = os.path.abspath(artifact_dir or self.private_data_dir)
         if self.ident is None:
             self.artifact_dir = os.path.join(self.artifact_dir, "artifacts")
         else:

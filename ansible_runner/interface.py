@@ -105,7 +105,8 @@ def run(**kwargs):
     :param limit: Matches ansible's ``--limit`` parameter to further constrain the inventory to be used
     :param verbosity: Control how verbose the output of ansible-playbook is
     :param quiet: Disable all output
-    :param artifact_dir: The path to the directory where artifacts should live
+    :param artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
+    :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
     :param event_handler: An optional callback that will be invoked any time an event is received by Runner itself
     :param cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
@@ -117,6 +118,8 @@ def run(**kwargs):
     :param process_isolation_hide_paths: A path or list of paths on the system that should be hidden from the playbook run.
     :param process_isolation_show_paths: A path or list of paths on the system that should be exposed to the playbook run.
     :param process_isolation_ro_paths: A path or list of paths on the system that should be exposed to the playbook run as read-only.
+    :param directory_isolation_base_path: An optional path will be used as the base path to create a temp directory, the project contents will be
+                                          copied to this location which will then be used as the working directory during playbook execution.
     :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
                        This is only used for 'jsonfile' type fact caches.
     :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
@@ -131,6 +134,7 @@ def run(**kwargs):
     :type settings: dict
     :type ssh_key: str
     :type artifact_dir: str
+    :type project_dir: str
     :type rotate_artifacts: int
     :type cmdline: str
     :type quiet: bool
@@ -145,6 +149,7 @@ def run(**kwargs):
     :type process_isolation_hide_paths: str or list
     :type process_isolation_show_paths: str or list
     :type process_isolation_ro_paths: str or list
+    :type directory_isolation_base_path: str
     :type fact_cache: str
     :type fact_cache_type: str
 

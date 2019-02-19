@@ -72,7 +72,10 @@ def role_manager(args):
         if args.artifact_dir:
             kwargs.artifact_dir = args.artifact_dir
 
-        project_path = os.path.join(args.private_data_dir, 'project')
+        if args.project_dir:
+            project_path = kwargs.project_dir = args.project_dir
+        else:
+            project_path = os.path.join(args.private_data_dir, 'project')
         project_exists = os.path.exists(project_path)
 
         env_path = os.path.join(args.private_data_dir, 'env')
@@ -191,8 +194,12 @@ def main(sys_args=None):
 
     parser.add_argument("--role-skip-facts", action="store_true", default=False,
                         help="Disable fact collection when executing a role directly")
+
     parser.add_argument("--artifact-dir",
                         help="Optional Path for the artifact root directory, by default it is located inside the private data dir")
+
+    parser.add_argument("--project-dir",
+                        help="Optional Path for the location of the playbook content directory, by default this is 'project' inside the private data dir")
 
     parser.add_argument("--inventory",
                         help="Override the default inventory location in private_data_dir")
@@ -234,6 +241,9 @@ def main(sys_args=None):
 
     parser.add_argument("--process-isolation-ro-paths", dest='process_isolation_ro_paths',
                         help="List of paths on the system that should be exposed to the playbook run as read-only")
+
+    parser.add_argument("--directory-isolation-base-path", dest='directory_isolation_base_path',
+                        help="Copies the project directory to a location in this directory to prevent multiple simultaneous executions from conflicting")
 
     args = parser.parse_args(sys_args)
 
@@ -300,7 +310,8 @@ def main(sys_args=None):
                                    process_isolation_path=args.process_isolation_path,
                                    process_isolation_hide_paths=args.process_isolation_hide_paths,
                                    process_isolation_show_paths=args.process_isolation_show_paths,
-                                   process_isolation_ro_paths=args.process_isolation_ro_paths)
+                                   process_isolation_ro_paths=args.process_isolation_ro_paths,
+                                   directory_isolation_base_path=args.directory_isolation_base_path)
                 if args.cmdline:
                     run_options['cmdline'] = args.cmdline
 

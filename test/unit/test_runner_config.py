@@ -65,6 +65,13 @@ def test_runner_config_init_with_ident():
     assert isinstance(rc.loader, ArtifactLoader)
 
 
+def test_runner_config_project_dir():
+    rc = RunnerConfig('/', project_dir='/another/path')
+    assert rc.project_dir == '/another/path'
+    rc = RunnerConfig('/')
+    assert rc.project_dir == '/project'
+
+
 def test_prepare_environment_vars_only_strings():
     rc = RunnerConfig(private_data_dir="/")
 
@@ -167,6 +174,15 @@ def test_prepare_env_defaults():
         assert rc.job_timeout is None
         assert rc.pexpect_timeout == 5
         assert rc.cwd == '/project'
+
+
+def test_prepare_env_directory_isolation():
+    with patch('os.path.exists') as path_exists:
+        path_exists.return_value=True
+        rc = RunnerConfig('/')
+        rc.directory_isolation_path = '/tmp/foo'
+        rc.prepare_env()
+        assert rc.cwd == '/tmp/foo'
 
 
 def test_prepare_inventory():
@@ -388,6 +404,30 @@ def test_process_isolation_defaults():
     ]
 
 
+@patch('os.makedirs', return_value=True)
+@patch('shutil.copytree', return_value=True)
+@patch('tempfile.mkdtemp', return_value="/tmp/dirisolation/foo")
+@patch('os.chmod', return_value=True)
+def test_process_isolation_and_directory_isolation(mock_makedirs, mock_copytree, mock_mkdtemp, mock_chmod):
+    rc = RunnerConfig('/')
+    rc.artifact_dir = '/tmp/artifacts'
+    rc.directory_isolation_path = '/tmp/dirisolation'
+    rc.playbook = 'main.yaml'
+    rc.command = 'ansible-playbook'
+    rc.process_isolation = True
+    rc.prepare()
+
+    assert rc.command == [
+        'bwrap',
+        '--unshare-pid',
+        '--dev-bind', '/', '/',
+        '--proc', '/proc',
+        '--bind', '/', '/',
+        '--chdir', '/tmp/dirisolation/foo',
+        'ansible-playbook', '-i', '/inventory', 'main.yaml',
+    ]
+
+
 def test_process_isolation_settings():
     rc = RunnerConfig('/')
     rc.artifact_dir = '/tmp/artifacts'
@@ -401,8 +441,8 @@ def test_process_isolation_settings():
     rc.process_isolation_path = '/tmp'
 
     with patch('os.path.exists') as path_exists:
-        rc.prepare()
         path_exists.return_value=True
+        rc.prepare()
 
     assert rc.command[0:7] == [
         'not_bwrap',

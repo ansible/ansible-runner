@@ -30,10 +30,7 @@ try:
 except ImportError:
     from collections import Mapping
 
-try:
-    from distutils import copy_tree
-except ImportError:
-    from distutils.dir_util import copy_tree
+from distutils.dir_util import copy_tree
 
 from six import iteritems, string_types
 
@@ -140,7 +137,7 @@ class RunnerConfig(object):
             if os.path.exists(self.project_dir):
                 output.debug("Copying directory tree from {} to {} for working directory isolation".format(self.project_dir,
                                                                                                            self.directory_isolation_path))
-                copy_tree(self.project_dir, self.directory_isolation_path)
+                copy_tree(self.project_dir, self.directory_isolation_path, preserve_symlinks=True)
 
         self.prepare_inventory()
         self.prepare_env()

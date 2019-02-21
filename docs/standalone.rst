@@ -85,6 +85,17 @@ list of arguments accepted by ``ansible-runner``::
 
   $ ansible-runner --help
 
+Running with Directory Isolation
+--------------------------------
+
+If you need to be able to execute multiple tasks in parallel that might conflict with each other or if you want to make sure a single invocation of
+Ansible/Runner doesn't pollute or overwrite the playbook content you can give a base path::
+
+  $ ansible-runner --directory-isoltaion-base-path /tmp/runner
+
+**Runner** will copy the project directory to a temporary directory created under that path, set it as the working directory, and execute from that location.
+After running that temp directory will be cleaned up and removed.
+
 Outputting json (raw event data) to the console instead of normal output
 ------------------------------------------------------------------------
 

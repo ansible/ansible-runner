@@ -30,6 +30,8 @@ try:
 except ImportError:
     from collections import Mapping
 
+from distutils.dir_util import copy_tree
+
 from six import iteritems, string_types
 
 from ansible_runner import output
@@ -68,7 +70,8 @@ class RunnerConfig(object):
                  rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, suppress_ansible_output=False,
                  process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None,
-                 tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None):
+                 tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None, project_dir=None,
+                 directory_isolation_base_path=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.json_mode = json_mode
@@ -94,6 +97,11 @@ class RunnerConfig(object):
         self.process_isolation_hide_paths = process_isolation_hide_paths
         self.process_isolation_show_paths = process_isolation_show_paths
         self.process_isolation_ro_paths = process_isolation_ro_paths
+        self.directory_isolation_path = directory_isolation_base_path
+        if not project_dir:
+            self.project_dir = os.path.join(self.private_data_dir, 'project')
+        else:
+            self.project_dir = project_dir
         self.verbosity = verbosity
         self.quiet = quiet
         self.suppress_ansible_output = suppress_ansible_output
@@ -124,6 +132,12 @@ class RunnerConfig(object):
             raise ConfigurationError("Only one of playbook and module options are allowed")
         if not os.path.exists(self.artifact_dir):
             os.makedirs(self.artifact_dir)
+        if self.directory_isolation_path is not None:
+            self.directory_isolation_path = tempfile.mkdtemp(prefix='runner_di_', dir=self.directory_isolation_path)
+            if os.path.exists(self.project_dir):
+                output.debug("Copying directory tree from {} to {} for working directory isolation".format(self.project_dir,
+                                                                                                           self.directory_isolation_path))
+                copy_tree(self.project_dir, self.directory_isolation_path, preserve_symlinks=True)
 
         self.prepare_inventory()
         self.prepare_env()
@@ -219,11 +233,15 @@ class RunnerConfig(object):
 
         self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
+        self.directory_isolation_cleanup = bool(self.settings.get('directory_isolation_cleanup', True))
 
-        if 'AD_HOC_COMMAND_ID' in self.env or not os.path.exists(os.path.join(self.private_data_dir, 'project')):
+        if 'AD_HOC_COMMAND_ID' in self.env or not os.path.exists(self.project_dir):
             self.cwd = self.private_data_dir
         else:
-            self.cwd = os.path.join(self.private_data_dir, 'project')
+            if self.directory_isolation_path is not None:
+                self.cwd = self.directory_isolation_path
+            else:
+                self.cwd = self.project_dir
 
         if 'fact_cache' in self.settings:
             if 'fact_cache_type' in self.settings:
@@ -369,7 +387,10 @@ class RunnerConfig(object):
 
         if 'ansible-playbook' in args[0]:
             # playbook runs should cwd to the SCM checkout dir
-            new_args.extend(['--chdir', os.path.join(self.private_data_dir, 'project')])
+            if self.directory_isolation_path is not None:
+                new_args.extend(['--chdir', self.directory_isolation_path])
+            else:
+                new_args.extend(['--chdir', self.project_dir])
         else:
             # ad-hoc runs should cwd to the root of the private data dir
             new_args.extend(['--chdir', self.private_data_dir])

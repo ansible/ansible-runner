@@ -183,7 +183,7 @@ class Runner(object):
                 os.close(os.open(artifact_path, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
             with open(artifact_path, 'w') as f:
                 f.write(str(data))
-        if self.config.directory_isolation_path:
+        if self.config.directory_isolation_path and self.config.directory_isolation_cleanup:
             shutil.rmtree(self.config.directory_isolation_path)
         if self.finished_callback is not None:
             try:

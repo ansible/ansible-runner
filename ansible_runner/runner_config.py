@@ -233,6 +233,7 @@ class RunnerConfig(object):
 
         self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
+        self.directory_isolation_cleanup = bool(self.settings.get('directory_isolation_cleanup', True))
 
         if 'AD_HOC_COMMAND_ID' in self.env or not os.path.exists(self.project_dir):
             self.cwd = self.private_data_dir

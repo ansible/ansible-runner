@@ -68,6 +68,7 @@ def role_manager(args):
         kwargs.update(private_data_dir=args.private_data_dir,
                       json_mode=args.json,
                       ignore_logging=False,
+                      project_dir=args.project_dir,
                       rotate_artifacts=args.rotate_artifacts)
         if args.artifact_dir:
             kwargs.artifact_dir = args.artifact_dir
@@ -76,6 +77,7 @@ def role_manager(args):
             project_path = kwargs.project_dir = args.project_dir
         else:
             project_path = os.path.join(args.private_data_dir, 'project')
+
         project_exists = os.path.exists(project_path)
 
         env_path = os.path.join(args.private_data_dir, 'env')
@@ -304,6 +306,7 @@ def main(sys_args=None):
                                    ignore_logging=False,
                                    json_mode=args.json,
                                    inventory=args.inventory,
+                                   project_dir=args.project_dir,
                                    roles_path=[args.roles_path] if args.roles_path else None,
                                    process_isolation=args.process_isolation,
                                    process_isolation_executable=args.process_isolation_executable,

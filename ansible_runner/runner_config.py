@@ -45,6 +45,13 @@ from ansible_runner.utils import (
 logger = logging.getLogger('ansible-runner')
 
 
+class BinaryWrap():
+    NONE = 0
+    ANSIBLE = 1
+    ANSIBLE_PLAYBOOK = 2
+    RAW = 3
+
+
 class RunnerConfig(object):
     """
     A ``Runner`` configuration object that's meant to encapsulate the configuration used by the
@@ -105,12 +112,12 @@ class RunnerConfig(object):
         self.verbosity = verbosity
         self.quiet = quiet
         self.suppress_ansible_output = suppress_ansible_output
-        self.has_raw_args = False
         self.loader = ArtifactLoader(self.private_data_dir)
         self.tags = tags
         self.skip_tags = skip_tags
         self.fact_cache_type = fact_cache_type
         self.fact_cache = os.path.join(self.artifact_dir, fact_cache or 'fact_cache') if self.fact_cache_type == 'jsonfile' else None
+        self.binary_wrap = BinaryWrap.NONE
 
     def prepare(self):
         """
@@ -143,8 +150,12 @@ class RunnerConfig(object):
         self.prepare_env()
         self.prepare_command()
 
-        if self.has_raw_args is False and self.module is None and self.playbook is None: # TODO: ad-hoc mode, module and args
-            raise ConfigurationError("Runner playbook or module is not defined")
+        if self.binary_wrap == BinaryWrap.ANSIBLE_PLAYBOOK and self.playbook is None:
+            raise ConfigurationError("Runner playbook required when running ansible-playbook")
+        elif self.binary_wrap == BinaryWrap.ANSIBLE and self.module is None:
+            raise ConfigurationError("Runner module required when running ansible")
+        elif self.binary_wrap == BinaryWrap.NONE:
+            raise ConfigurationError("No executable for runner to run")
 
         # write the SSH key data into a fifo read by ssh-agent
         if self.ssh_key_data:
@@ -258,7 +269,7 @@ class RunnerConfig(object):
         try:
             cmdline_args = self.loader.load_file('args', string_types)
             self.command = shlex.split(cmdline_args.decode('utf-8'))
-            self.has_raw_args = True
+            self.binary_wrap = BinaryWrap.RAW
         except ConfigurationError:
             self.command = self.generate_ansible_command()
 
@@ -270,10 +281,13 @@ class RunnerConfig(object):
         """
         if self.binary is not None:
             base_command = self.binary
+            self.binary_wrap = BinaryWrap.RAW
         elif self.module is not None:
             base_command = 'ansible'
+            self.binary_wrap = BinaryWrap.ANSIBLE
         else:
             base_command = 'ansible-playbook'
+            self.binary_wrap = BinaryWrap.ANSIBLE_PLAYBOOK
 
         exec_list = [base_command]
 
@@ -318,10 +332,9 @@ class RunnerConfig(object):
             exec_list.extend(['--skip-tags', '%s' % self.skip_tags])
 
         # Other parameters
-        if base_command.endswith('ansible-playbook'):
+        if self.binary_wrap == BinaryWrap.ANSIBLE_PLAYBOOK:
             exec_list.append(self.playbook)
-
-        elif base_command.endswith('ansible'):
+        elif self.binary_wrap == BinaryWrap.ANSIBLE:
             exec_list.append("-m")
             exec_list.append(self.module)
 
@@ -385,13 +398,13 @@ class RunnerConfig(object):
             path = os.path.realpath(path)
             new_args.extend(['--bind', '{0}'.format(path), '{0}'.format(path)])
 
-        if 'ansible-playbook' in args[0]:
+        if self.binary_wrap == BinaryWrap.ANSIBLE_PLAYBOOK:
             # playbook runs should cwd to the SCM checkout dir
             if self.directory_isolation_path is not None:
                 new_args.extend(['--chdir', self.directory_isolation_path])
             else:
                 new_args.extend(['--chdir', self.project_dir])
-        else:
+        elif self.binary_wrap == BinaryWrap.ANSIBLE:
             # ad-hoc runs should cwd to the root of the private data dir
             new_args.extend(['--chdir', self.private_data_dir])
 

@@ -300,7 +300,8 @@ def test_prepare_with_defaults():
 
     with raises(ConfigurationError) as exc:
         rc.prepare()
-        assert str(exc) == 'Runner playbook is not defined'
+
+    assert str(exc.value) == 'No executable for runner to run'
 
 
 def test_prepare():

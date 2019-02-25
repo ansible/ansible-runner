@@ -15,7 +15,7 @@ from pytest import raises
 from mock import patch
 from mock import Mock
 
-from ansible_runner.runner_config import RunnerConfig
+from ansible_runner.runner_config import RunnerConfig, BinaryWrap
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError
 
@@ -314,6 +314,7 @@ def test_prepare():
     rc.ssh_key_data = None
     rc.artifact_dir = '/'
     rc.env = {}
+    rc.binary_wrap = BinaryWrap.ANSIBLE_PLAYBOOK
     rc.playbook = 'main.yaml'
 
     os.environ['PYTHONPATH'] = '/python_path_via_environ'
@@ -355,6 +356,7 @@ def test_prepare_with_ssh_key(open_fifo_write_mock):
     rc.ssh_key_data = None
     rc.artifact_dir = '/'
     rc.env = {}
+    rc.binary_wrap = BinaryWrap.ANSIBLE_PLAYBOOK
     rc.playbook = 'main.yaml'
     rc.ssh_key_data = '01234567890'
     rc.command = 'ansible-playbook'

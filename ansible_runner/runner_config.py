@@ -401,12 +401,12 @@ class RunnerConfig(object):
         if self.execution_mode == ExecutionMode.ANSIBLE_PLAYBOOK:
             # playbook runs should cwd to the SCM checkout dir
             if self.directory_isolation_path is not None:
-                new_args.extend(['--chdir', self.directory_isolation_path])
+                new_args.extend(['--chdir', os.path.realpath(self.directory_isolation_path)])
             else:
                 new_args.extend(['--chdir', self.project_dir])
         elif self.execution_mode == ExecutionMode.ANSIBLE:
             # ad-hoc runs should cwd to the root of the private data dir
-            new_args.extend(['--chdir', self.private_data_dir])
+            new_args.extend(['--chdir', os.path.realpath(self.private_data_dir)])
 
         new_args.extend(args)
         return new_args

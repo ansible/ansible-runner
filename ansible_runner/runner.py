@@ -59,7 +59,7 @@ class Runner(object):
                     event_data.update(partial_event_data)
                     if self.remove_partials:
                         os.remove(partial_filename)
-                except IOError as e:
+                except IOError:
                     debug("Failed to open ansible stdout callback plugin partial data file {}".format(partial_filename))
                 if self.event_handler is not None:
                     should_write = self.event_handler(event_data)
@@ -248,7 +248,7 @@ class Runner(object):
         dir_events = os.listdir(event_path)
         dir_events_actual = []
         for each_file in dir_events:
-            if re.match("^[0-9]+\-.+json$", each_file):
+            if re.match("^[0-9]+-.+json$", each_file):
                 dir_events_actual.append(each_file)
         dir_events_actual.sort(key=lambda filenm: int(filenm.split("-", 1)[0]))
         for event_file in dir_events_actual:

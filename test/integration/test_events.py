@@ -47,6 +47,7 @@ def test_runner_on_start(rc):
                                       r.events)]
     assert len(start_events) == 1
 
+
 def test_playbook_on_stats_summary_fields(rc):
     tdir = tempfile.mkdtemp()
     r = run(private_data_dir=tdir,

@@ -166,7 +166,7 @@ class ArtifactLoader(object):
         except ConfigurationError as exc:
             debug(exc)
             raise
-        except UnicodeEncodeError as exc:
+        except UnicodeEncodeError:
             raise ConfigurationError('unable to encode file contents')
 
         if objtype is not string_types:

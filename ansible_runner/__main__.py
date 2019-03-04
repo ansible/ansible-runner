@@ -247,6 +247,9 @@ def main(sys_args=None):
     parser.add_argument("--directory-isolation-base-path", dest='directory_isolation_base_path',
                         help="Copies the project directory to a location in this directory to prevent multiple simultaneous executions from conflicting")
 
+    parser.add_argument("--limit",
+                        help="Matches ansible's ``--limit`` parameter to further constrain the inventory to be used")
+
     args = parser.parse_args(sys_args)
 
     output.configure()
@@ -314,7 +317,8 @@ def main(sys_args=None):
                                    process_isolation_hide_paths=args.process_isolation_hide_paths,
                                    process_isolation_show_paths=args.process_isolation_show_paths,
                                    process_isolation_ro_paths=args.process_isolation_ro_paths,
-                                   directory_isolation_base_path=args.directory_isolation_base_path)
+                                   directory_isolation_base_path=args.directory_isolation_base_path,
+                                   limit=args.limit)
                 if args.cmdline:
                     run_options['cmdline'] = args.cmdline
 

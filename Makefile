@@ -118,7 +118,6 @@ deb:
 mock-deb: deb-build/$(DEB_NVRA).deb
 
 deb-build/$(DEB_NVRA).deb: deb-build
-	apt-get install -y debhelper dh-python python-all python-setuptools python3-all python3-setuptools
 	cd deb-build && tar -xf $(NAME)_$(VERSION)-$(RELEASE).orig.tar.gz
 	cp -a packaging/debian deb-build/$(DEB_TAR_NAME)/
 	cd deb-build/$(DEB_TAR_NAME) && dpkg-buildpackage -us -uc

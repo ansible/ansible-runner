@@ -2,7 +2,7 @@ Source: ansible-runner
 Section: admin
 Priority: optional
 Maintainer: Ansible <info@ansible.com>
-Build-Depends: debhelper (>= 11), dh-python, python-all, python-setuptools, python3-all, python3-setuptools, python-pytest, python3-pytest, python-pexpect, python3-pexpect, python-mock, python3-mock, python-psutil, python3-psutil, python3-yaml
+Build-Depends: debhelper (>= 11), dh-python, python-all, python-setuptools, python3-all, python3-setuptools, python-pytest, python3-pytest, python-pexpect (>= 4.5), python3-pexpect (>= 4.5), python-mock, python3-mock, python-psutil, python3-psutil, python3-yaml
 Standards-Version: 4.1.3
 Homepage: https://www.ansible.com
 X-Python-Version: >= 2.7

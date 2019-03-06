@@ -12,7 +12,7 @@ Vcs-Git: https://github.com/ansible/ansible-runner.git
 Package: python-ansible-runner
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}
-Suggests: python-ansible-runner-doc
+Conflicts: python3-ansible-runner
 Description: A CLI and Python library that helps interfacing with Ansible from other systems (Python 2)
  A tool and python library that helps when interfacing with Ansible
  directly or as part of another system whether that be through a
@@ -25,7 +25,7 @@ Description: A CLI and Python library that helps interfacing with Ansible from o
 Package: python3-ansible-runner
 Architecture: all
 Depends: ${python3:Depends}, ${misc:Depends}
-Suggests: python-ansible-runner-doc
+Conflicts: python-ansible-runner
 Description: A CLI and Python library that helps interfacing with Ansible from other systems (Python 3)
  A tool and python library that helps when interfacing with Ansible
  directly or as part of another system whether that be through a

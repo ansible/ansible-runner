@@ -36,7 +36,7 @@ DEB_NVRA = $(DEB_NVR)_$(DEB_ARCH)
 DEB_TAR_NAME=$(NAME)-$(VERSION)
 DEB_TAR_FILE=$(NAME)_$(VERSION).orig.tar.gz
 DEBUILD_BIN ?= debuild
-DEBUILD_OPTS =
+DEBUILD_OPTS ?= -us -uc
 DEBUILD = $(DEBUILD_BIN) $(DEBUILD_OPTS)
 
 
@@ -119,7 +119,7 @@ mock-deb: deb-build/$(DEB_NVRA).deb
 deb-build/$(DEB_NVRA).deb: deb-build
 	cd deb-build && tar -xf $(NAME)_$(VERSION).orig.tar.gz
 	cp -a packaging/debian deb-build/$(DEB_TAR_NAME)/
-	cd deb-build/$(DEB_TAR_NAME) && debuild -us -uc
+	cd deb-build/$(DEB_TAR_NAME) && $(DEBUILD)
 	rm -rf deb-build/$(DEB_TAR_NAME)
 
 deb-build: sdist

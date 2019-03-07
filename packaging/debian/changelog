@@ -1,5 +1,5 @@
-ansible-runner (1.2.0-0) unstable; urgency=low
+ansible-runner (1.2.0-1) unstable; urgency=low
 
   * 1.2.0 release
 
- -- Jeff Bradberry <jbradber@redhat.com>  Tue, 5 Mar 2019 00:00:00 -0500
+ -- Ansible <info@ansible.com>  Thu, 7 Mar 2019 00:00:00 -0500

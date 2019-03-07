@@ -117,10 +117,11 @@ deb:
 mock-deb: deb-build/$(DEB_NVRA).deb
 
 deb-build/$(DEB_NVRA).deb: deb-build
-	cd deb-build && tar -xf $(NAME)_$(VERSION)-$(RELEASE).orig.tar.gz
+	cd deb-build && tar -xf $(NAME)_$(VERSION).orig.tar.gz
 	cp -a packaging/debian deb-build/$(DEB_TAR_NAME)/
-	cd deb-build/$(DEB_TAR_NAME) && dpkg-buildpackage -us -uc
+	cd deb-build/$(DEB_TAR_NAME) && debuild -us -uc
+	rm -rf deb-build/$(DEB_TAR_NAME)
 
 deb-build: sdist
 	mkdir -p $@
-	cp dist/$(NAME)-$(VERSION).tar.gz deb-build/$(NAME)_$(VERSION)-$(RELEASE).orig.tar.gz
+	cp dist/$(NAME)-$(VERSION).tar.gz deb-build/$(NAME)_$(VERSION).orig.tar.gz

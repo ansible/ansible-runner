@@ -118,5 +118,5 @@ def test_status_callback_interface(rc):
     runner.status_handler = mock.Mock()
     runner.status_callback("running")
     assert runner.status_handler.call_count == 1
-    runner.status_handler.assert_called_with(dict(status='running', runner_ident=str(rc.ident)))
+    runner.status_handler.assert_called_with(dict(status='running', runner_ident=str(rc.ident)), runner_config=runner.config)
     assert runner.status == 'running'

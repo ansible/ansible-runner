@@ -79,7 +79,7 @@ class Runner(object):
         for plugin in ansible_runner.plugins:
             ansible_runner.plugins[plugin].status_handler(self.config, status_data)
         if self.status_handler is not None:
-            self.status_handler(status_data)
+            self.status_handler(status_data, runner_config=self.config)
 
     def run(self):
         '''

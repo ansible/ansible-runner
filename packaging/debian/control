@@ -2,33 +2,17 @@ Source: ansible-runner
 Section: admin
 Priority: optional
 Maintainer: Ansible <info@ansible.com>
-Build-Depends: debhelper (>= 11), dh-python, python-all, python-setuptools, python3-all, python3-setuptools, python-pytest, python3-pytest, python-pexpect (>= 4.5), python3-pexpect (>= 4.5), python-mock, python3-mock, python-psutil, python3-psutil, python3-yaml
+Build-Depends: debhelper (>= 11), dh-python, python3-all, python3-setuptools, python3-pytest, python3-pexpect (>= 4.5), python3-mock, python3-psutil, python3-yaml
 Standards-Version: 4.1.3
 Homepage: https://www.ansible.com
-X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.5
 Vcs-Git: https://github.com/ansible/ansible-runner.git
 
-Package: python-ansible-runner
-Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}
-Recommends: ansible (>= 2.1)
-Conflicts: python3-ansible-runner
-Description: interfaces with Ansible from other systems (Python 2)
- A tool and python library that helps when interfacing with Ansible
- directly or as part of another system whether that be through a
- container image interface, as a standalone tool, or as a Python
- module that can be imported. The goal is to provide a stable and
- consistent interface abstraction to Ansible.
- .
- This package installs the library for Python 2.
-
-Package: python3-ansible-runner
+Package: ansible-runner
 Architecture: all
 Depends: ${python3:Depends}, ${misc:Depends}
 Recommends: ansible (>= 2.1)
-Conflicts: python-ansible-runner
-Description: interfaces with Ansible from other systems (Python 3)
+Description: interfaces with Ansible from other systems
  A tool and python library that helps when interfacing with Ansible
  directly or as part of another system whether that be through a
  container image interface, as a standalone tool, or as a Python

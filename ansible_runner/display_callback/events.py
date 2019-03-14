@@ -122,6 +122,7 @@ class EventContext(object):
 
     def get_begin_dict(self):
         event_data = self.get()
+        # TODO: Need to rework these values
         if os.getenv('JOB_ID', ''):
             event_data['job_id'] = int(os.getenv('JOB_ID', '0'))
         if os.getenv('AD_HOC_COMMAND_ID', ''):
@@ -131,7 +132,7 @@ class EventContext(object):
         event_data.setdefault('pid', os.getpid())
         event_data.setdefault('uuid', str(uuid.uuid4()))
         event_data.setdefault('created', datetime.datetime.utcnow().isoformat())
-        if not event_data.get('parent_uuid', None) and event_data.get('job_id', None):
+        if not event_data.get('parent_uuid', None):
             for key in ('task_uuid', 'play_uuid', 'playbook_uuid'):
                 parent_uuid = event_data.get(key, None)
                 if parent_uuid and parent_uuid != event_data.get('uuid', None):

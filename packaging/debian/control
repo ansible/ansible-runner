@@ -12,11 +12,11 @@ Package: ansible-runner
 Architecture: all
 Depends: ${python3:Depends}, ${misc:Depends}
 Recommends: ansible (>= 2.1)
-Description: interfaces with Ansible from other systems
- A tool and python library that helps when interfacing with Ansible
- directly or as part of another system whether that be through a
- container image interface, as a standalone tool, or as a Python
- module that can be imported. The goal is to provide a stable and
- consistent interface abstraction to Ansible.
+Description: provides a common interface to Ansible from other platforms
+ This tool and python library helps interface with Ansible directly,
+ or as part of another system whether via a container image interface,
+ as a standalone tool, or as a Python module that can be imported.
+ This allows Ansible to be embedded into other systems that don’t want
+ to manage the complexities of the interface on their own.
  .
  This package installs the library for Python 3.

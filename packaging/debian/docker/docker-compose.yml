@@ -1,0 +1,13 @@
+---
+version: '3'
+services:
+  deb-builder:
+    build: .
+    environment:
+      RELEASE:
+      OFFICIAL:
+    volumes:
+      - ../../../:/ansible-runner
+    entrypoint: ["/bin/bash", "-c"]
+    working_dir: /ansible-runner
+    privileged: true

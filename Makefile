@@ -28,11 +28,24 @@ ifeq ($(RPM_ARCH),)
     RPM_ARCH = $(shell uname -m)
 endif
 
+# DEB build variables
+DEB_DIST ?=
+DEB_ARCH ?= amd64
+DEB_NVR = $(NAME)_$(VERSION)-$(RELEASE)~$(DEB_DIST)
+DEB_NVRA = $(DEB_NVR)_$(DEB_ARCH)
+DEB_TAR_NAME=$(NAME)-$(VERSION)
+DEB_TAR_FILE=$(NAME)_$(VERSION).orig.tar.gz
+DEBUILD_BIN ?= debuild
+DEBUILD_OPTS ?= -us -uc
+DEBUILD = $(DEBUILD_BIN) $(DEBUILD_OPTS)
+
+
 .PHONY: clean dist sdist dev shell image devimage rpm srpm docs
 
 clean:
 	rm -rf dist
 	rm -rf rpm-build
+	rm -rf deb-build
 
 dist:
 	$(DIST_PYTHON) setup.py bdist_wheel --universal
@@ -97,3 +110,18 @@ rpm-build: sdist
 	mkdir -p $@
 	cp dist/$(NAME)-$(VERSION).tar.gz rpm-build/$(NAME)-$(VERSION)-$(RELEASE).tar.gz
 
+deb:
+	docker-compose -f packaging/debian/docker/docker-compose.yml \
+          run --rm deb-builder "make mock-deb"
+
+mock-deb: deb-build/$(DEB_NVRA).deb
+
+deb-build/$(DEB_NVRA).deb: deb-build
+	cd deb-build && tar -xf $(NAME)_$(VERSION).orig.tar.gz
+	cp -a packaging/debian deb-build/$(DEB_TAR_NAME)/
+	cd deb-build/$(DEB_TAR_NAME) && $(DEBUILD)
+	rm -rf deb-build/$(DEB_TAR_NAME)
+
+deb-build: sdist
+	mkdir -p $@
+	cp dist/$(NAME)-$(VERSION).tar.gz deb-build/$(NAME)_$(VERSION).orig.tar.gz

@@ -7,4 +7,4 @@ export PYBUILD_NAME=ansible-runner
 export PYBUILD_TEST_PYTEST = 1
 
 %:
-	dh $@ --with python3 --buildsystem=pybuild
+	dh $@ --with python2 --buildsystem=pybuild

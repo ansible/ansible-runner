@@ -143,6 +143,18 @@ The **settings** file is a little different than the other files provided in thi
 * ``fact_cache``: ``'fact_cache'`` The directory relative to ``artifacts`` where ``jsonfile`` fact caching will be stored.  Defaults to ``fact_cache``.  This is ignored if ``fact_cache_type`` is different than ``jsonfile``.
 * ``fact_cache_type``: ``'jsonfile'`` The type of fact cache to use.  Defaults to ``jsonfile``.
 
+Process Isolatiton Settings for Runner
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The process isolation settings are meant to control the process isolation feature of **Runner**.
+
+* ``process_isolation``: ``False`` Enable limiting what directories on the filesystem the playbook run has access to.
+* ``process_isolation_executable``: ``bwrap`` Path to the executable that will be used to provide filesystem isolation.
+* ``process_isolation_path``: ``/tmp`` Path that an isolated playbook run will use for staging.
+* ``process_isolation_hide_paths``: ``None`` Path or list of paths on the system that should be hidden from the playbook run.
+* ``process_isolation_show_paths``: ``None`` Path or list of paths on the system that should be exposed to the playbook run.
+* ``process_isolation_ro_paths``: ``None`` Path or list of paths on the system that should be exposed to the playbook run as read-only.
+
 Inventory
 ---------
 

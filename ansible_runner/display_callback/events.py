@@ -27,23 +27,20 @@ import os
 import stat
 import threading
 import uuid
-# TODO: Solve to Tower/AWX
-# import memcache
 
 __all__ = ['event_context']
 
 
 class IsolatedFileWrite:
     '''
-    Stand-in class that will write partial event data to a file as a
-    replacement for memcache when a job is running on an isolated host.
+    Class that will write partial event data to a file
     '''
 
     def __init__(self):
         self.private_data_dir = os.getenv('AWX_ISOLATED_DATA_DIR')
 
     def set(self, key, value):
-        # Strip off the leading memcache key identifying characters :1:ev-
+        # Strip off the leading key identifying characters :1:ev-
         event_uuid = key[len(':1:ev-'):]
         # Write data in a staging area and then atomic move to pickup directory
         filename = '{}-partial.json'.format(event_uuid)
@@ -68,10 +65,6 @@ class EventContext(object):
         self._local = threading.local()
         if os.getenv('AWX_ISOLATED_DATA_DIR', False):
             self.cache = IsolatedFileWrite()
-        # TODO: Solve for Tower
-        # else:
-        #     cache_actual = os.getenv('CACHE', '127.0.0.1:11211')
-        #     self.cache = memcache.Client([cache_actual], debug=0)
 
     def add_local(self, **kwargs):
         tls = vars(self._local)

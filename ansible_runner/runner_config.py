@@ -242,6 +242,13 @@ class RunnerConfig(object):
         self.job_timeout = self.settings.get('job_timeout', None)
         self.pexpect_timeout = self.settings.get('pexpect_timeout', 5)
 
+        self.process_isolation = self.settings.get('process_isolation', self.process_isolation)
+        self.process_isolation_executable = self.settings.get('process_isolation_executable', self.process_isolation_executable)
+        self.process_isolation_path = self.settings.get('process_isolation_path', self.process_isolation_path)
+        self.process_isolation_hide_paths = self.settings.get('process_isolation_hide_paths', self.process_isolation_hide_paths)
+        self.process_isolation_show_paths = self.settings.get('process_isolation_show_paths', self.process_isolation_show_paths)
+        self.process_isolation_ro_paths = self.settings.get('process_isolation_ro_paths', self.process_isolation_ro_paths)
+
         self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
         self.directory_isolation_cleanup = bool(self.settings.get('directory_isolation_cleanup', True))

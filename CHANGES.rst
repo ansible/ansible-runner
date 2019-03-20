@@ -3,6 +3,29 @@
 Changelog
 ---------
 
+1.3.0 (2019-03-20)
+++++++++++++++++++
+
+- Add support for directory isolation
+- Add Debian packaging support
+- Add fact caching support
+- Add process isolation configuration in the settings file
+- Fix event and display issues related to alternative Ansible strategies
+- Add Runner config reference to status handler callback
+- Add some more direct access to various ansible command line arguments
+- Adding playbook stats for "ignored" and "rescued"
+- Fix loading of some ansible resources from outside of the private data
+  directory (such as projects/playbooks)
+- Fix handling of artifact dir when specified outside of the private data
+  directory
+- Fix an issue where the stdout handle wasn't closed and not all data
+  would be flushed
+- Fixed extravar loading behavior
+- Added support for resolving parent events by associating their event uuid
+  as parent_uuid
+- Allow PYTHONPATH to be overridden
+- Expand support for executing non-ansible tools
+
 1.2.0 (2018-12-19)
 ++++++++++++++++++
 

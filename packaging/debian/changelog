@@ -1,5 +1,6 @@
-ansible-runner (1.2.0-1) unstable; urgency=low
+ansible-runner (%VERSION%-%RELEASE%~%DEB_DIST%) %DEB_DIST%; urgency=low
 
-  * 1.2.0 release
+  * %VERSION% release
 
- -- Ansible <info@ansible.com>  Wed, 13 Mar 2019 00:00:00 -0500
+ -- Ansible, Inc. <info@ansible.com>  %DATE%
+

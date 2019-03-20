@@ -108,5 +108,5 @@ is to supply the ``-j`` argument on the command line::
 Cleaning up artifact directories
 --------------------------------
 
-Using the command line argument ``--runner-artifacts`` allows you to control the number of artifact directories that are present. Given a number as the parameter
+Using the command line argument ``--rotate-artifacts`` allows you to control the number of artifact directories that are present. Given a number as the parameter
 for this argument will cause **Runner** to clean up old artifact directories. The default value of ``0`` disables artifact directory cleanup.

@@ -8,6 +8,7 @@ services:
       OFFICIAL:
     volumes:
       - ../../../:/ansible-runner
+      - ${GPG_SIGNING_KEY}:/signing_key.asc
     entrypoint: ["/bin/bash", "-c"]
     working_dir: /ansible-runner
     privileged: true

@@ -11,6 +11,7 @@
 /dist
 /build
 /rpm-build
+/deb-build
 /*.egg-info
 *.py[c,o]
 .pytest_cache

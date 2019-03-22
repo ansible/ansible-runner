@@ -14,7 +14,8 @@ process/store it for use later.
 Helper Interfaces
 -----------------
 
-The helper :mod:`interfaces <ansible_runner.interface>` provides a quick way of supplying the recommended inputs in order to launch a **Runner** process.
+The helper :mod:`interfaces <ansible_runner.interface>` provides a quick way of supplying the recommended inputs in order to launch a **Runner** process. These interfaces also allow overriding and providing inputs beyond the scope of what the standalone or container interfaces
+support. You can see a full list of the inputs in the linked module documentation.
 
 ``run()`` helper function
 -------------------------
@@ -63,6 +64,11 @@ handle containing the ``stdout`` of the **Ansible** process.
 
 ``Runner.host_events``
 :meth:`ansible_runner.runner.Runner.host_events` is a method that, given a hostname, will return a list of only **Ansible** event data executed on that Host.
+
+``Runner.get_fact_cache``
+-------------------------
+
+:meth:`ansible_runner.runner.Runner.get_fact_cache` is a method that, given a hostname, will return a dictionary containing the `Facts <https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#variables-discovered-from-systems-facts>`_ stored for that host during execution.
 
 ``Runner.event_handler``
 ------------------------

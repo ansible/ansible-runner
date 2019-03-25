@@ -144,7 +144,7 @@ The **settings** file is a little different than the other files provided in thi
 * ``fact_cache_type``: ``'jsonfile'`` The type of fact cache to use.  Defaults to ``jsonfile``.
 
 Process Isolatiton Settings for Runner
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The process isolation settings are meant to control the process isolation feature of **Runner**.
 
@@ -202,6 +202,8 @@ The artifact directory itself contains a particular structure that provides a lo
     .
     ├── artifacts
     │   └── 37f639a3-1f4f-4acb-abee-ea1898013a25
+    │       ├── fact_cache
+    │       │   └── localhost
     │       ├── job_events
     │       │   ├── 1-34437b34-addd-45ae-819a-4d8c9711e191.json
     │       │   ├── 2-8c164553-8573-b1e0-76e1-000000000006.json
@@ -238,6 +240,7 @@ event data (along with stdout line numbers). It also generates dummy events for 
 
     {
       "uuid": "8c164553-8573-b1e0-76e1-000000000008",
+      "parent_uuid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
       "counter": 5,
       "stdout": "\r\nTASK [debug] *******************************************************************",
       "start_line": 5,

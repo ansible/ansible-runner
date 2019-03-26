@@ -90,13 +90,13 @@ class Runner(object):
         stdout_filename = os.path.join(self.config.artifact_dir, 'stdout')
 
         try:
-            os.makedirs(self.config.artifact_dir)
-            os.close(os.open(stdout_filename, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
+            os.makedirs(self.config.artifact_dir, mode=0o700)
         except OSError as exc:
             if exc.errno == errno.EEXIST and os.path.isdir(self.config.artifact_dir):
                 pass
             else:
                 raise
+        os.close(os.open(stdout_filename, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
 
         if self.config.ident is not None:
             cleanup_artifact_dir(os.path.join(self.config.artifact_dir, ".."), self.config.rotate_artifacts)
@@ -327,6 +327,6 @@ class Runner(object):
             raise Exception('Unsupported fact cache type.  Only "jsonfile" is supported for reading and writing facts from ansible-runner')
         fact_cache = os.path.join(self.config.fact_cache, host)
         if not os.path.exists(os.path.dirname(fact_cache)):
-            os.makedirs(os.path.dirname(fact_cache))
+            os.makedirs(os.path.dirname(fact_cache), mode=0o700)
         with open(fact_cache, 'w') as f:
             return f.write(json.dumps(data))

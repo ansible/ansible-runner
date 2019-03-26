@@ -269,7 +269,7 @@ def main(sys_args=None):
     pidfile = os.path.join(args.private_data_dir, 'pid')
 
     try:
-        os.makedirs(args.private_data_dir)
+        os.makedirs(args.private_data_dir, mode=0o700)
     except OSError as exc:
         if exc.errno == errno.EEXIST and os.path.isdir(args.private_data_dir):
             pass

@@ -69,6 +69,7 @@ class Runner(object):
                     ansible_runner.plugins[plugin].event_handler(self.config, event_data)
                 if should_write:
                     with codecs.open(full_filename, 'w', encoding='utf-8') as write_file:
+                        os.chmod(full_filename, stat.S_IRUSR | stat.S_IWUSR)
                         json.dump(event_data, write_file)
             except IOError as e:
                 debug("Failed writing event data: {}".format(e))

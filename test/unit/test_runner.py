@@ -97,9 +97,11 @@ def test_event_callback_interface_has_ident(rc):
     runner = Runner(config=rc, remove_partials=False)
     runner.event_handler = mock.Mock()
     with mock.patch('codecs.open', mock.mock_open(read_data=json.dumps(dict(event="test")))):
-        runner.event_callback(dict(uuid="testuuid", counter=0))
-        assert runner.event_handler.call_count == 1
-        runner.event_handler.assert_called_with(dict(runner_ident='testident', counter=0, uuid='testuuid', event='test'))
+        with mock.patch('os.chmod', mock.Mock()) as chmod:
+            runner.event_callback(dict(uuid="testuuid", counter=0))
+            assert runner.event_handler.call_count == 1
+            runner.event_handler.assert_called_with(dict(runner_ident='testident', counter=0, uuid='testuuid', event='test'))
+            chmod.assert_called_once()
     runner.status_callback("running")
 
 

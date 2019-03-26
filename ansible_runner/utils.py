@@ -97,7 +97,7 @@ def dump_artifact(obj, path, filename=None):
     p_sha1 = None
 
     if not os.path.exists(path):
-        os.makedirs(path)
+        os.makedirs(path, mode=0o700)
     else:
         p_sha1 = hashlib.sha1()
         p_sha1.update(obj.encode(encoding='UTF-8'))

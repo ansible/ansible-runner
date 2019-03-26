@@ -138,7 +138,7 @@ class RunnerConfig(object):
         if self.module and self.playbook:
             raise ConfigurationError("Only one of playbook and module options are allowed")
         if not os.path.exists(self.artifact_dir):
-            os.makedirs(self.artifact_dir)
+            os.makedirs(self.artifact_dir, mode=0o700)
         if self.directory_isolation_path is not None:
             self.directory_isolation_path = tempfile.mkdtemp(prefix='runner_di_', dir=self.directory_isolation_path)
             if os.path.exists(self.project_dir):

@@ -3,6 +3,12 @@
 Changelog
 ---------
 
+1.3.1 (2019-03-27)
+++++++++++++++++++
+
+- Fixes to make default file permissions much more secure (0600)
+- Adding git to the reference container image to support galaxy requests
+
 1.3.0 (2019-03-20)
 ++++++++++++++++++
 

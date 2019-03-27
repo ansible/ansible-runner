@@ -73,7 +73,7 @@ def test_runner_config_project_dir():
 
 
 def test_prepare_environment_vars_only_strings():
-    rc = RunnerConfig(private_data_dir="/")
+    rc = RunnerConfig(private_data_dir="/", envvars=dict(D='D'))
 
     value = dict(A=1, B=True, C="foo")
     envvar_side_effect = partial(load_file_side_effect, 'env/envvars', value)
@@ -86,6 +86,8 @@ def test_prepare_environment_vars_only_strings():
         assert isinstance(rc.env['B'], string_types)
         assert 'C' in rc.env
         assert isinstance(rc.env['C'], string_types)
+        assert 'D' in rc.env
+        assert rc.env['D'] == 'D'
 
 
 def test_prepare_env_ad_hoc_command():
@@ -251,6 +253,11 @@ def test_generate_ansible_command():
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible', '-i', '/inventory', '-m', 'setup', '-a', 'test=string']
     rc.module_args = None
+    rc.module = None
+
+    rc.forks = 5
+    cmd = rc.generate_ansible_command()
+    assert cmd == ['ansible-playbook', '-i', '/inventory', '--forks', '5', 'main.yaml']
 
 
 def test_generate_ansible_command_with_api_extravars():

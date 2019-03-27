@@ -103,6 +103,7 @@ def run(**kwargs):
     :param ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
     :param cmdline: Commnad line options passed to Ansible read from ``env/cmdline`` in ``private_data_dir``
     :param limit: Matches ansible's ``--limit`` parameter to further constrain the inventory to be used
+    :param forks: Control Ansible parallel concurrency
     :param verbosity: Control how verbose the output of ansible-playbook is
     :param quiet: Disable all output
     :param artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
@@ -137,6 +138,8 @@ def run(**kwargs):
     :type project_dir: str
     :type rotate_artifacts: int
     :type cmdline: str
+    :type limit: str
+    :type forks: int
     :type quiet: bool
     :type verbosity: int
     :type event_handler: function

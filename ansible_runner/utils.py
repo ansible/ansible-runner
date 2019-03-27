@@ -19,7 +19,7 @@ try:
 except ImportError:
     from collections import Iterable, Mapping
 from io import StringIO
-from six import string_types
+from six import string_types, PY2
 
 
 class Bunch(object):
@@ -263,7 +263,10 @@ class OutputEventFilter(object):
 
             if stdout_actual and stdout_actual != "{}":
                 if not self.suppress_ansible_output:
-                    sys.stdout.write(stdout_actual + "\n")
+                    sys.stdout.write(
+                        stdout_actual.encode('utf-8') if PY2 else stdout_actual
+                    )
+                    sys.stdout.write("\n")
                     sys.stdout.flush()
                 self._handle.write(stdout_actual + "\n")
                 self._handle.flush()
@@ -271,7 +274,10 @@ class OutputEventFilter(object):
             self._last_chunk = remainder
         else:
             if not self.suppress_ansible_output:
-                sys.stdout.write(data + '\n')
+                sys.stdout.write(
+                    data.encode('utf-8') if PY2 else data
+                )
+                sys.stdout.write("\n")
             self._handle.write(data + '\n')
             self._handle.flush()
 

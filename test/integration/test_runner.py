@@ -26,6 +26,8 @@ def test_run_command(rc):
     status, exitcode = Runner(config=rc).run()
     assert status == 'successful'
     assert exitcode == 0
+    with open(os.path.join(rc.artifact_dir, 'command')) as f:
+        assert '["pwd"]' in f.read()
 
 
 def test_run_command_finished_callback(rc):

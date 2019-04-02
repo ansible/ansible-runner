@@ -89,6 +89,7 @@ class Runner(object):
         '''
         self.status_callback('starting')
         stdout_filename = os.path.join(self.config.artifact_dir, 'stdout')
+        command_filename = os.path.join(self.config.artifact_dir, 'command')
 
         try:
             os.makedirs(self.config.artifact_dir, mode=0o700)
@@ -98,6 +99,10 @@ class Runner(object):
             else:
                 raise
         os.close(os.open(stdout_filename, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
+
+        with codecs.open(command_filename, 'w', encoding='utf-8') as f:
+            os.chmod(command_filename, stat.S_IRUSR | stat.S_IWUSR)
+            json.dump(self.config.command, f)
 
         if self.config.ident is not None:
             cleanup_artifact_dir(os.path.join(self.config.artifact_dir, ".."), self.config.rotate_artifacts)

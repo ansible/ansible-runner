@@ -206,6 +206,9 @@ def main(sys_args=None):
     parser.add_argument("--inventory",
                         help="Override the default inventory location in private_data_dir")
 
+    parser.add_argument("--forks",
+                        help="Set Ansible concurrency via Forks")
+
     parser.add_argument("-j", "--json", action="store_true",
                         help="Output the json event structure to stdout instead of Ansible output")
 
@@ -309,6 +312,7 @@ def main(sys_args=None):
                                    ignore_logging=False,
                                    json_mode=args.json,
                                    inventory=args.inventory,
+                                   forks=args.forks,
                                    project_dir=args.project_dir,
                                    roles_path=[args.roles_path] if args.roles_path else None,
                                    process_isolation=args.process_isolation,

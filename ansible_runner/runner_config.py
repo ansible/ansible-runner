@@ -78,7 +78,7 @@ class RunnerConfig(object):
                  process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None,
                  tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None, project_dir=None,
-                 directory_isolation_base_path=None):
+                 directory_isolation_base_path=None, envvars=None, forks=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.json_mode = json_mode
@@ -118,6 +118,8 @@ class RunnerConfig(object):
         self.fact_cache_type = fact_cache_type
         self.fact_cache = os.path.join(self.artifact_dir, fact_cache or 'fact_cache') if self.fact_cache_type == 'jsonfile' else None
         self.execution_mode = ExecutionMode.NONE
+        self.envvars = envvars
+        self.forks = forks
 
     def prepare(self):
         """
@@ -221,6 +223,8 @@ class RunnerConfig(object):
             envvars = self.loader.load_file('env/envvars', Mapping)
             if envvars:
                 self.env.update({k:str(v) for k, v in envvars.items()})
+            if self.envvars and isinstance(self.envvars, dict):
+                self.env.update({k:str(v) for k, v in self.envvars.items()})
         except ConfigurationError:
             output.debug("Not loading environment vars")
             # Still need to pass default environment to pexpect
@@ -330,13 +334,16 @@ class RunnerConfig(object):
             )
         if self.verbosity:
             v = 'v' * self.verbosity
-            exec_list.append('-%s' % v)
+            exec_list.append('-{}'.format(v))
 
         if self.tags:
-            exec_list.extend(['--tags', '%s' % self.tags])
+            exec_list.extend(['--tags', '{}'.format(self.tags)])
 
         if self.skip_tags:
-            exec_list.extend(['--skip-tags', '%s' % self.skip_tags])
+            exec_list.extend(['--skip-tags', '{}'.format(self.skip_tags)])
+
+        if self.forks:
+            exec_list.extend(['--forks', '{}'.format(self.forks)])
 
         # Other parameters
         if self.execution_mode == ExecutionMode.ANSIBLE_PLAYBOOK:

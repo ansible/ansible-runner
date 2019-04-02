@@ -15,7 +15,7 @@ import psutil
 
 import ansible_runner.plugins
 
-from .utils import OutputEventFilter, cleanup_artifact_dir
+from .utils import OutputEventFilter, cleanup_artifact_dir, build_safe_env
 from .exceptions import CallbackError, AnsibleRunnerException
 from ansible_runner.output import debug
 
@@ -102,7 +102,11 @@ class Runner(object):
 
         with codecs.open(command_filename, 'w', encoding='utf-8') as f:
             os.chmod(command_filename, stat.S_IRUSR | stat.S_IWUSR)
-            json.dump({'command': self.config.command, 'cwd': self.config.cwd}, f)
+            json.dump(
+                {'command': self.config.command,
+                 'cwd': self.config.cwd,
+                 'env': build_safe_env(self.config.env)}, f
+            )
 
         if self.config.ident is not None:
             cleanup_artifact_dir(os.path.join(self.config.artifact_dir, ".."), self.config.rotate_artifacts)

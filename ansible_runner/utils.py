@@ -78,6 +78,27 @@ def check_isolation_executable_installed(isolation_executable):
         return False
 
 
+def build_safe_env(env):
+    '''
+    Build environment dictionary, hiding potentially sensitive information
+    such as passwords or keys.
+    '''
+    HIDDEN_PASSWORD = '**********'
+    hidden_re = re.compile(r'API|TOKEN|KEY|SECRET|PASS', re.I)
+    urlpass_re = re.compile(r'^.*?://[^:]+:(.*?)@.*?$')
+    safe_env = dict(env)
+    for k, v in safe_env.items():
+        if k == 'AWS_ACCESS_KEY_ID':
+            continue
+        elif k.startswith('ANSIBLE_') and not k.startswith('ANSIBLE_NET'):
+            continue
+        elif hidden_re.search(k):
+            safe_env[k] = HIDDEN_PASSWORD
+        elif type(v) == str and urlpass_re.match(v):
+            safe_env[k] = urlpass_re.sub(HIDDEN_PASSWORD, v)
+    return safe_env
+
+
 def dump_artifact(obj, path, filename=None):
     '''
     Write the artifact to disk at the specified path

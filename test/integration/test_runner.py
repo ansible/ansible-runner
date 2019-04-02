@@ -1,4 +1,5 @@
 
+import json
 import os
 import re
 import pytest
@@ -27,10 +28,10 @@ def test_run_command(rc):
     assert status == 'successful'
     assert exitcode == 0
     with open(os.path.join(rc.artifact_dir, 'command')) as f:
-        data = f.read()
-        assert '"command": ["pwd"]' in data
-        assert '"cwd":' in data
-        assert '/tmp/' in data
+        data = json.load(f)
+        assert data.get('command') == ['pwd']
+        assert 'cwd' in data
+        assert isinstance(data.get('env'), dict)
 
 
 def test_run_command_finished_callback(rc):

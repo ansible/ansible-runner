@@ -102,7 +102,7 @@ class Runner(object):
 
         with codecs.open(command_filename, 'w', encoding='utf-8') as f:
             os.chmod(command_filename, stat.S_IRUSR | stat.S_IWUSR)
-            json.dump(self.config.command, f)
+            json.dump({'command': self.config.command, 'cwd': self.config.cwd}, f)
 
         if self.config.ident is not None:
             cleanup_artifact_dir(os.path.join(self.config.artifact_dir, ".."), self.config.rotate_artifacts)

@@ -89,6 +89,7 @@ class Runner(object):
         '''
         self.status_callback('starting')
         stdout_filename = os.path.join(self.config.artifact_dir, 'stdout')
+        command_filename = os.path.join(self.config.artifact_dir, 'command')
 
         try:
             os.makedirs(self.config.artifact_dir, mode=0o700)
@@ -98,6 +99,14 @@ class Runner(object):
             else:
                 raise
         os.close(os.open(stdout_filename, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
+
+        with codecs.open(command_filename, 'w', encoding='utf-8') as f:
+            os.chmod(command_filename, stat.S_IRUSR | stat.S_IWUSR)
+            json.dump(
+                {'command': self.config.command,
+                 'cwd': self.config.cwd,
+                 'env': self.config.env}, f, ensure_ascii=False
+            )
 
         if self.config.ident is not None:
             cleanup_artifact_dir(os.path.join(self.config.artifact_dir, ".."), self.config.rotate_artifacts)
@@ -115,18 +124,21 @@ class Runner(object):
         password_patterns = list(expect_passwords.keys())
         password_values = list(expect_passwords.values())
 
-        # pexpect needs all env vars to be utf-8 encoded strings
+        # pexpect needs all env vars to be utf-8 encoded bytes
         # https://github.com/pexpect/pexpect/issues/512
-        for k, v in self.config.env.items():
-            if k != 'PATH' and isinstance(v, six.text_type):
-                self.config.env[k] = v.encode('utf-8')
+
+        # Use a copy so as not to cause problems when serializing the job_env.
+        env = {
+            k: v.encode('utf-8') if k != 'PATH' and isinstance(v, six.text_type) else v
+            for k, v in self.config.env.items()
+        }
 
         self.status_callback('running')
         child = pexpect.spawn(
             self.config.command[0],
             self.config.command[1:],
             cwd=self.config.cwd,
-            env=self.config.env,
+            env=env,
             ignore_sighup=True,
             encoding='utf-8',
             echo=False,

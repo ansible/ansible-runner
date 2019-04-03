@@ -105,7 +105,7 @@ class Runner(object):
             json.dump(
                 {'command': self.config.command,
                  'cwd': self.config.cwd,
-                 'env': build_safe_env(self.config.env)}, f
+                 'env': build_safe_env(self.config.env)}, f, ensure_ascii=False
             )
 
         if self.config.ident is not None:
@@ -124,18 +124,21 @@ class Runner(object):
         password_patterns = list(expect_passwords.keys())
         password_values = list(expect_passwords.values())
 
-        # pexpect needs all env vars to be utf-8 encoded strings
+        # pexpect needs all env vars to be utf-8 encoded bytes
         # https://github.com/pexpect/pexpect/issues/512
-        for k, v in self.config.env.items():
-            if k != 'PATH' and isinstance(v, six.text_type):
-                self.config.env[k] = v.encode('utf-8')
+
+        # Use a copy so as not to cause problems when serializing the job_env.
+        env = {
+            k: v.encode('utf-8') if k != 'PATH' and isinstance(v, six.text_type) else v
+            for k, v in self.config.env.items()
+        }
 
         self.status_callback('running')
         child = pexpect.spawn(
             self.config.command[0],
             self.config.command[1:],
             cwd=self.config.cwd,
-            env=self.config.env,
+            env=env,
             ignore_sighup=True,
             encoding='utf-8',
             echo=False,

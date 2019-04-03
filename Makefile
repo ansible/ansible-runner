@@ -32,10 +32,12 @@ endif
 
 # Debian Packaging
 DEBUILD_BIN ?= debuild
-DEBUILD_OPTS = --source-option="-I"
+DEBUILD_OPTS ?=
 DPUT_BIN ?= dput
 DPUT_OPTS ?=
 DEB_DIST ?= xenial
+
+GPG_KEY_ID ?=
 
 ifeq ($(origin GPG_SIGNING_KEY), undefined)
     GPG_SIGNING_KEY = /dev/null
@@ -131,9 +133,11 @@ rpm-build: sdist
 	cp dist/$(NAME)-$(VERSION).tar.gz rpm-build/$(NAME)-$(VERSION)-$(RELEASE).tar.gz
 
 deb:
-	GPG_SIGNING_KEY=$(GPG_SIGNING_KEY) docker-compose -f \
-	  packaging/debian/docker/docker-compose.yml run --rm deb-builder \
-	  "DEB_DIST=$(DEB_DIST) OFFICIAL=$(OFFICIAL) GPG_KEY_ID=$(GPG_KEY_ID) make debian"
+	docker-compose -f packaging/debian/docker/docker-compose.yml \
+		run --rm \
+		-e OFFICIAL=$(OFFICIAL) -e DEB_DIST=$(DEB_DIST) -e RELEASE=$(RELEASE) \
+		-e GPG_KEY_ID=$(GPG_KEY_ID) -e GPG_SIGNING_KEY=$(GPG_SIGNING_KEY) \
+		deb-builder "make debian"
 
 ifeq ($(OFFICIAL),yes)
 debian: gpg-import deb-build/$(DEB_NVRA).deb
@@ -161,23 +165,5 @@ deb-build/$(NAME)-$(VERSION): dist/$(NAME)-$(VERSION).tar.gz
 	fi
 	cd deb-build && tar -xf $(DEB_TAR_FILE)
 	cp -a packaging/debian deb-build/$(NAME)-$(VERSION)/
-	sed -ie "s|%VERSION%|$(VERSION)|g;s|%RELEASE%|$(RELEASE)|;s|%DEB_DIST%|$${DEB_DIST}|g;s|%DATE%|$(DEB_DATE)|g" deb-build/$${DIST}/$(NAME)-$(VERSION)/debian/changelog ; \
+	sed -ie "s|%VERSION%|$(VERSION)|g;s|%RELEASE%|$(RELEASE)|;s|%DEB_DIST%|$(DEB_DIST)|g;s|%DATE%|$(DEB_DATE)|g" $@/debian/changelog
 
-#deb-upload: deb-build/$(DEB_NVRA).changes
-#	$(DPUT_BIN) $(DPUT_OPTS) $(DEB_PPA) deb-build/$(DEB_NVRA).changes
-
-#dput: deb-build/$(DEB_NVRA).changes
-#	$(DPUT_BIN) $(DPUT_OPTS) $(DEB_PPA) deb-build/$(DEB_NVRA).changes
-
-#deb-src-upload: deb-build/$(DEB_NVRS).changes
-#	$(DPUT_BIN) $(DPUT_OPTS) $(DEB_PPA) deb-build/$(DEB_NVRS).changes
-
-#debsign: deb-build/$(DEB_NVRS).changes debian deb-build/$(DEB_NVR).dsc
-#	debsign -k$(GPG_KEY_ID) deb-build/$(DEB_NVRS).changes deb-build/$(DEB_NVR).dsc
-
-#reprepro/conf:
-#	mkdir -p $@
-#	cp -a packaging/reprepro/* $@/
-#	if [ "$(OFFICIAL)" = "yes" ] ; then \
-#	    sed -i -e 's|^\(Codename:\)|SignWith: $(GPG_KEY_ID)\n\1|' $@/distributions ; \
-#	fi

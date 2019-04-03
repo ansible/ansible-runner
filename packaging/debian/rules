@@ -4,7 +4,7 @@
 #export DH_VERBOSE = 1
 
 export PYBUILD_NAME=ansible-runner
-export PYBUILD_TEST_PYTEST = 1
+export DEB_BUILD_OPTIONS=nocheck
 
 %:
 	dh $@ --with python2 --buildsystem=pybuild

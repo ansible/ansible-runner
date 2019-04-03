@@ -1,7 +1,8 @@
-FROM debian:testing
+FROM ubuntu:xenial
 
 RUN apt-get update
-RUN apt-get install -y make python-pip debhelper devscripts dh-python python-all python-setuptools python-setuptools git python-pytest python-pexpect python-mock python-psutil python-yaml
+RUN apt-get install -y \
+  make debhelper dh-python devscripts python-all python-setuptools python-pip
 
 RUN pip install -IU pip setuptools
 RUN pip install -IU pipenv ansible

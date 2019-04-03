@@ -15,7 +15,7 @@ import psutil
 
 import ansible_runner.plugins
 
-from .utils import OutputEventFilter, cleanup_artifact_dir, build_safe_env
+from .utils import OutputEventFilter, cleanup_artifact_dir
 from .exceptions import CallbackError, AnsibleRunnerException
 from ansible_runner.output import debug
 
@@ -105,7 +105,7 @@ class Runner(object):
             json.dump(
                 {'command': self.config.command,
                  'cwd': self.config.cwd,
-                 'env': build_safe_env(self.config.env)}, f, ensure_ascii=False
+                 'env': self.config.env}, f, ensure_ascii=False
             )
 
         if self.config.ident is not None:

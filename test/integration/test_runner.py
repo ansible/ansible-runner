@@ -233,3 +233,16 @@ def test_set_fact_cache(rc):
     assert os.path.exists(os.path.join(rc.artifact_dir, 'fact_cache', 'localhost'))
     data = runner.get_fact_cache('localhost')
     assert data['message'] == 'hello there'
+
+
+def test_set_extra_vars(rc):
+    rc.module = "debug"
+    rc.module_args = "var=test_extra_vars"
+    rc.host_pattern = "localhost"
+    rc.extra_vars = dict(test_extra_vars='hello there')
+    rc.prepare()
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
+    with open(os.path.join(rc.artifact_dir, 'stdout')) as f:
+        assert 'hello there' in f.read()
+

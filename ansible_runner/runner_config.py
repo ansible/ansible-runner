@@ -327,7 +327,7 @@ class RunnerConfig(object):
             exec_list.extend(
                 [
                     '-e',
-                    '\'%s\'' % ' '.join(
+                    '%s' % ' '.join(
                         ["{}=\"{}\"".format(k, self.extra_vars[k]) for k in self.extra_vars]
                     )
                 ]

@@ -16,11 +16,13 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+import atexit
 import os
 import re
 import pexpect
 import stat
 import shlex
+import shutil
 import tempfile
 import logging
 
@@ -367,6 +369,7 @@ class RunnerConfig(object):
         '''
         path = tempfile.mkdtemp(prefix='ansible_runner_pi_', dir=self.process_isolation_path)
         os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+        atexit.register(shutil.rmtree, path)
         return path
 
     def wrap_args_with_process_isolation(self, args):

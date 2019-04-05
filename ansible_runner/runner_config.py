@@ -26,6 +26,7 @@ import shutil
 import tempfile
 import logging
 
+import six
 from uuid import uuid4
 try:
     from collections.abc import Mapping
@@ -224,9 +225,9 @@ class RunnerConfig(object):
             self.env = os.environ.copy()
             envvars = self.loader.load_file('env/envvars', Mapping)
             if envvars:
-                self.env.update({k:str(v) for k, v in envvars.items()})
+                self.env.update({k:six.text_type(v) for k, v in envvars.items()})
             if self.envvars and isinstance(self.envvars, dict):
-                self.env.update({k:str(v) for k, v in self.envvars.items()})
+                self.env.update({k:six.text_type(v) for k, v in self.envvars.items()})
         except ConfigurationError:
             output.debug("Not loading environment vars")
             # Still need to pass default environment to pexpect

@@ -8,7 +8,7 @@ import yaml
 import tempfile
 import time
 from contextlib import contextmanager
-from pytest import raises
+import pytest
 
 
 from ansible_runner.exceptions import AnsibleRunnerException
@@ -59,7 +59,7 @@ def test_temp_directory():
             context['saved_temp_dir'] = temp_dir
             assert True
 
-    with raises(AssertionError):
+    with pytest.raises(AssertionError):
         will_fail()
     assert os.path.exists(context['saved_temp_dir'])
     shutil.rmtree(context['saved_temp_dir'])
@@ -69,7 +69,7 @@ def test_temp_directory():
 
 
 def test_help():
-    with raises(SystemExit) as exc:
+    with pytest.raises(SystemExit) as exc:
         main([])
     assert exc.value.code == 2, 'Should raise SystemExit with return code 2'
 
@@ -151,7 +151,7 @@ def test_role_bad_project_dir():
         f.write('not a directory')
 
     try:
-        with raises(OSError):
+        with pytest.raises(OSError):
             main(['-r', 'benthomasson.hello_role',
                   '--hosts', 'localhost',
                   '--roles-path', os.path.join(HERE, 'project/roles'),
@@ -204,12 +204,16 @@ def test_role_run_artifacts_dir_abs():
     assert rc == 0
 
 
-def test_role_run_env_vars():
+@pytest.mark.parametrize('envvars', [
+    {'msg': 'hi'},
+    {'msg': b'\xf0\x98\x90\x9d\xe5\x83\xac\xe2\xb2\x82\xeb\x8d\xb6'.decode('utf-8')}
+])
+def test_role_run_env_vars(envvars):
 
     with temp_directory() as temp_dir:
         ensure_directory(os.path.join(temp_dir, 'env'))
         with open(os.path.join(temp_dir, 'env/envvars'), 'w') as f:
-            f.write(yaml.dump(dict(msg='hi')))
+            f.write(yaml.dump(envvars))
 
         rc = main(['-r', 'benthomasson.hello_role',
                    '--hosts', 'localhost',
@@ -252,7 +256,7 @@ def test_role_run_inventory_missing():
         ensure_directory(os.path.join(temp_dir, 'inventory'))
         shutil.copy(os.path.join(HERE, 'inventories/localhost'), os.path.join(temp_dir, 'inventory/localhost'))
 
-        with raises(AnsibleRunnerException):
+        with pytest.raises(AnsibleRunnerException):
             main(['-r', 'benthomasson.hello_role',
                   '--hosts', 'localhost',
                   '--roles-path', os.path.join(HERE, 'project/roles'),

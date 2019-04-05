@@ -98,6 +98,17 @@ def test_run_command_failed(rc):
     assert exitcode == 1
 
 
+def test_executable_not_found(rc):
+    rc.command = ['supercalifragilistic']
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
+    assert status == 'failed'
+    assert exitcode == 127
+    events = list(runner.events)
+    assert len(events) == 1
+    assert 'The command was not found or was not executable: supercalifragilistic' in events[0]['stdout']  # noqa
+
+
 def test_run_command_long_running(rc):
     rc.command = ['yes']
     runner = Runner(config=rc)

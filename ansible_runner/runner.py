@@ -134,18 +134,37 @@ class Runner(object):
         }
 
         self.status_callback('running')
-        child = pexpect.spawn(
-            self.config.command[0],
-            self.config.command[1:],
-            cwd=self.config.cwd,
-            env=env,
-            ignore_sighup=True,
-            encoding='utf-8',
-            echo=False,
-            use_poll=self.config.pexpect_use_poll,
-        )
-        child.logfile_read = stdout_handle
         self.last_stdout_update = time.time()
+        try:
+            child = pexpect.spawn(
+                self.config.command[0],
+                self.config.command[1:],
+                cwd=self.config.cwd,
+                env=env,
+                ignore_sighup=True,
+                encoding='utf-8',
+                echo=False,
+                use_poll=self.config.pexpect_use_poll,
+            )
+            child.logfile_read = stdout_handle
+        except pexpect.exceptions.ExceptionPexpect as e:
+            child = collections.namedtuple(
+                'MissingProcess', 'exitstatus isalive'
+            )(
+                exitstatus=127,
+                isalive=lambda: False
+            )
+
+            def _decode(x):
+                return x.decode('utf-8') if six.PY2 else x
+
+            # create the events directory (the callback plugin won't run, so it
+            # won't get created)
+            events_directory = os.path.join(self.config.artifact_dir, 'job_events')
+            if not os.path.exists(events_directory):
+                os.mkdir(events_directory, 0o700)
+            stdout_handle.write(_decode(str(e)))
+            stdout_handle.write(_decode('\n'))
 
         job_start = time.time()
         while child.isalive():

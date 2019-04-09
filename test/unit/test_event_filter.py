@@ -56,8 +56,8 @@ def test_event_recomb(fake_callback, fake_cache, wrapped_handle):
     write_encoded_event_data(wrapped_handle, {
         'uuid': EXAMPLE_UUID
     })
-    wrapped_handle.write('\r\nTASK [Gathering Facts] *********************************************************\n')
-    wrapped_handle.write('\u001b[0;33mchanged: [localhost]\u001b[0m\n')
+    wrapped_handle.write(u'\r\nTASK [Gathering Facts] *********************************************************\n')
+    wrapped_handle.write(u'\u001b[0;33mchanged: [localhost]\u001b[0m\n')
     write_encoded_event_data(wrapped_handle, {})
     # stop pretending
 
@@ -69,8 +69,8 @@ def test_event_recomb(fake_callback, fake_cache, wrapped_handle):
 
 def test_separate_verbose_events(fake_callback, wrapped_handle):
     # Pretend that this is done by the Ansible callback module
-    wrapped_handle.write('Using /etc/ansible/ansible.cfg as config file\n')
-    wrapped_handle.write('SSH password: \n')
+    wrapped_handle.write(u'Using /etc/ansible/ansible.cfg as config file\n')
+    wrapped_handle.write(u'SSH password: \n')
     write_encoded_event_data(wrapped_handle, {  # associated with _next_ event
         'uuid': EXAMPLE_UUID
     })
@@ -92,8 +92,8 @@ def test_large_data_payload(fake_callback, fake_cache, wrapped_handle):
     }
     assert len(json.dumps(event_data_to_encode)) > MAX_WIDTH
     write_encoded_event_data(wrapped_handle, event_data_to_encode)
-    wrapped_handle.write('\r\nTASK [Gathering Facts] *********************************************************\n')
-    wrapped_handle.write('\u001b[0;33mchanged: [localhost]\u001b[0m\n')
+    wrapped_handle.write(u'\r\nTASK [Gathering Facts] *********************************************************\n')
+    wrapped_handle.write(u'\u001b[0;33mchanged: [localhost]\u001b[0m\n')
     write_encoded_event_data(wrapped_handle, {})
     # stop pretending
 
@@ -125,8 +125,8 @@ def test_event_lazy_parsing(fake_callback, fake_cache, wrapped_handle):
     for chunk in (start_token_chunk, start_token_remainder, body, remainder):
         wrapped_handle.write(chunk)
 
-    wrapped_handle.write('\r\nTASK [Gathering Facts] *********************************************************\n')
-    wrapped_handle.write('\u001b[0;33mchanged: [localhost]\u001b[0m\n')
+    wrapped_handle.write(u'\r\nTASK [Gathering Facts] *********************************************************\n')
+    wrapped_handle.write(u'\u001b[0;33mchanged: [localhost]\u001b[0m\n')
     write_encoded_event_data(wrapped_handle, {})
     # stop pretending
 
@@ -145,7 +145,7 @@ def test_large_stdout_blob():
 
     f = OutputEventFilter(StringIO(), _callback)
     for x in range(1024 * 10):
-        f.write('x' * 1024)
+        f.write(u'x' * 1024)
 
 
 def test_verbose_line_buffering():
@@ -155,7 +155,7 @@ def test_verbose_line_buffering():
         events.append(event_data)
 
     f = OutputEventFilter(StringIO(), _callback)
-    f.write('one two\r\n\r\n')
+    f.write(u'one two\r\n\r\n')
 
     assert len(events) == 2
     assert events[0]['start_line'] == 0
@@ -166,9 +166,9 @@ def test_verbose_line_buffering():
     assert events[1]['end_line'] == 2
     assert events[1]['stdout'] == ''
 
-    f.write('three')
+    f.write(u'three')
     assert len(events) == 2
-    f.write('\r\nfou')
+    f.write(u'\r\nfou')
 
     # three is not pushed to buffer until its line completes
     assert len(events) == 3
@@ -176,15 +176,15 @@ def test_verbose_line_buffering():
     assert events[2]['end_line'] == 3
     assert events[2]['stdout'] == 'three'
 
-    f.write('r\r')
-    f.write('\nfi')
+    f.write(u'r\r')
+    f.write(u'\nfi')
 
     assert events[3]['start_line'] == 3
     assert events[3]['end_line'] == 4
     assert events[3]['stdout'] == 'four'
 
-    f.write('ve')
-    f.write('\r\n')
+    f.write(u've')
+    f.write(u'\r\n')
 
     assert len(events) == 5
     assert events[4]['start_line'] == 4

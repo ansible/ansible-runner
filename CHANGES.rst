@@ -3,6 +3,17 @@
 Changelog
 ---------
 
+1.3.2 (2019-04-10)
+++++++++++++++++++
+
+- Add direct support for forks and environment variable in parameterization
+- Fix a bug where unicode in playbooks would cause a crash
+- Fix a bug where unicode in environment variables would cause a crash
+- Capture command and cwd as part of the artifacts delivered for the job
+- Automatically remove process isolation temp directories
+- Fail more gracefully if ansible and/or bubblewrap isn't available at startup
+- Fix an issue where `verbose` events would be delayed until the end of execution
+
 1.3.1 (2019-03-27)
 ++++++++++++++++++
 

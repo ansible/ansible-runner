@@ -73,7 +73,7 @@ def test_run_command_cancel_callback(rc):
 
 
 def test_run_command_job_timeout(rc):
-    rc.command = ['pwd']
+    rc.command = ['sleep', '1']
     rc.job_timeout = 0.0000001
     runner = Runner(config=rc)
     status, exitcode = runner.run()
@@ -82,7 +82,7 @@ def test_run_command_job_timeout(rc):
 
 
 def test_run_command_idle_timeout(rc):
-    rc.command = ['pwd']
+    rc.command = ['sleep', '1']
     rc.idle_timeout = 0.0000001
     runner = Runner(config=rc)
     status, exitcode = runner.run()

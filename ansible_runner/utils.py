@@ -277,9 +277,24 @@ class OutputEventFilter(object):
                 sys.stdout.write(
                     data.encode('utf-8') if PY2 else data
                 )
-                sys.stdout.write("\n")
-            self._handle.write(data + '\n')
+            self._handle.write(data)
             self._handle.flush()
+
+            # Verbose stdout outside of event data context
+            if data and '\n' in data and self._current_event_data is None:
+                # emit events for all complete lines we know about
+                lines = self._buffer.getvalue().splitlines(True)  # keep ends
+                remainder = None
+                # if last line is not a complete line, then exclude it
+                if '\n' not in lines[-1]:
+                    remainder = lines.pop()
+                # emit all complete lines
+                for line in lines:
+                    self._emit_event(line)
+                self._buffer = StringIO()
+                # put final partial line back on buffer
+                if remainder:
+                    self._buffer.write(remainder)
 
     def close(self):
         value = self._buffer.getvalue()

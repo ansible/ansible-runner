@@ -4,6 +4,7 @@ verify_ssl = false
 name = "pypi"
 
 [dev-packages]
+more-itertools = "==5.0.0"
 pytest = "*"
 "flake8" = "*"
 funcsigs = "*"
@@ -13,7 +14,7 @@ scandir = "*"
 
 [packages]
 psutil = "*"
-pexpect = ">=4.5"
+pexpect = "==4.6"
 python-daemon = "*"
 pyyaml = "*"
 six = "*"

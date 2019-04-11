@@ -190,7 +190,7 @@ class Runner(object):
             if self.canceled or self.timed_out or self.errored:
                 Runner.handle_termination(child.pid, is_cancel=self.canceled)
             if self.config.idle_timeout and (time.time() - self.last_stdout_update) > self.config.idle_timeout:
-                child.close(True)
+                Runner.handle_termination(child.pid, is_cancel=False)
                 self.timed_out = True
 
         stdout_handle.flush()
@@ -204,8 +204,7 @@ class Runner(object):
             self.status_callback('timeout')
         else:
             self.status_callback('failed')
-        self.rc = child.exitstatus if not self.timed_out else 254
-
+        self.rc = child.exitstatus if not (self.timed_out or self.canceled) else 254
         for filename, data in [
             ('status', self.status),
             ('rc', self.rc),

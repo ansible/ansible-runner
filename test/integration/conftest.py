@@ -13,7 +13,7 @@ def rc(request, tmpdir):
     }
     rc.cwd = str(tmpdir)
     rc.env = {}
-    rc.job_timeout = .1
+    rc.job_timeout = 2
     rc.idle_timeout = 0
     rc.pexpect_timeout = .1
     rc.pexpect_use_poll = True

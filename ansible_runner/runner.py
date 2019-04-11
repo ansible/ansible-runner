@@ -189,6 +189,7 @@ class Runner(object):
                 #     extra_update_fields['job_explanation'] = "Job terminated due to timeout"
             if self.canceled or self.timed_out or self.errored:
                 Runner.handle_termination(child.pid, is_cancel=self.canceled)
+                child.close(True)
             if self.config.idle_timeout and (time.time() - self.last_stdout_update) > self.config.idle_timeout:
                 child.close(True)
                 self.timed_out = True
@@ -204,8 +205,7 @@ class Runner(object):
             self.status_callback('timeout')
         else:
             self.status_callback('failed')
-        self.rc = child.exitstatus if not self.timed_out else 254
-
+        self.rc = child.exitstatus if not (self.timed_out or self.canceled) else 254
         for filename, data in [
             ('status', self.status),
             ('rc', self.rc),

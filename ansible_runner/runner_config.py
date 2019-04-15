@@ -282,7 +282,7 @@ class RunnerConfig(object):
         """
         try:
             cmdline_args = self.loader.load_file('args', string_types)
-            self.command = shlex.split(cmdline_args.decode('utf-8'))
+            self.command = shlex.split(cmdline_args)
             self.execution_mode = ExecutionMode.RAW
         except ConfigurationError:
             self.command = self.generate_ansible_command()
@@ -307,7 +307,7 @@ class RunnerConfig(object):
 
         try:
             cmdline_args = self.loader.load_file('env/cmdline', string_types)
-            args = shlex.split(cmdline_args.decode('utf-8'))
+            args = shlex.split(cmdline_args)
             exec_list.extend(args)
         except ConfigurationError:
             pass

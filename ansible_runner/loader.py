@@ -161,8 +161,7 @@ class ArtifactLoader(object):
 
         try:
             debug('cache miss, attempting to load file from disk: %s' % path)
-            contents = self.get_contents(path)
-            parsed_data = contents.encode(encoding)
+            contents = parsed_data = self.get_contents(path)
         except ConfigurationError as exc:
             debug(exc)
             raise
@@ -170,6 +169,7 @@ class ArtifactLoader(object):
             raise ConfigurationError('unable to encode file contents')
 
         if objtype is not string_types:
+            parsed_data = contents.encode(encoding)
             for deserializer in (self._load_json, self._load_yaml):
                 parsed_data = deserializer(contents)
                 if parsed_data:

@@ -19,9 +19,11 @@
 import ast
 import pkg_resources
 import threading
+import traceback
 import argparse
 import logging
 import signal
+import sys
 import errno
 import json
 import stat
@@ -279,21 +281,18 @@ def main(sys_args=None):
         else:
             raise
 
+    stderr_path = None
     if args.command != 'run':
         stderr_path = os.path.join(args.private_data_dir, 'daemon.log')
         if not os.path.exists(stderr_path):
             os.close(os.open(stderr_path, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
-        stderr = open(stderr_path, 'w+')
 
     if args.command in ('start', 'run'):
 
         if args.command == 'start':
             import daemon
             from daemon.pidfile import TimeoutPIDLockFile
-            context = daemon.DaemonContext(
-                pidfile=TimeoutPIDLockFile(pidfile),
-                stderr=stderr
-            )
+            context = daemon.DaemonContext(pidfile=TimeoutPIDLockFile(pidfile))
         else:
             context = threading.Lock()
 
@@ -326,7 +325,15 @@ def main(sys_args=None):
                 if args.cmdline:
                     run_options['cmdline'] = args.cmdline
 
-                res = run(**run_options)
+                try:
+                    res = run(**run_options)
+                except Exception:
+                    exc = traceback.format_exc()
+                    if stderr_path:
+                        open(stderr_path, 'w+').write(exc)
+                    else:
+                        sys.stderr.write(exc)
+                    return 1
             return(res.rc)
 
     try:

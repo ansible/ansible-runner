@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
 
 import json
 import os
 import re
 import pytest
+import six
 try:
     from unittest.mock import MagicMock
 except ImportError:
@@ -30,6 +32,21 @@ def test_run_command(rc):
     with open(os.path.join(rc.artifact_dir, 'command')) as f:
         data = json.load(f)
         assert data.get('command') == ['sleep','1']
+        assert 'cwd' in data
+        assert isinstance(data.get('env'), dict)
+
+
+def test_run_command_with_unicode(rc):
+    expected = '"utf-8-䉪ቒ칸ⱷ?噂폄蔆㪗輥"'
+    if six.PY2:
+        expected = expected.decode('utf-8')
+    rc.command = ['echo', '"utf-8-䉪ቒ칸ⱷ?噂폄蔆㪗輥"']
+    status, exitcode = Runner(config=rc).run()
+    assert status == 'successful'
+    assert exitcode == 0
+    with open(os.path.join(rc.artifact_dir, 'command')) as f:
+        data = json.load(f)
+        assert data.get('command') == ['echo', expected]
         assert 'cwd' in data
         assert isinstance(data.get('env'), dict)
 

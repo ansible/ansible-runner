@@ -100,10 +100,11 @@ class Runner(object):
                 raise
         os.close(os.open(stdout_filename, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
 
+        command = [a.decode('utf-8') if six.PY2 else a for a in self.config.command]
         with codecs.open(command_filename, 'w', encoding='utf-8') as f:
             os.chmod(command_filename, stat.S_IRUSR | stat.S_IWUSR)
             json.dump(
-                {'command': self.config.command,
+                {'command': command,
                  'cwd': self.config.cwd,
                  'env': self.config.env}, f, ensure_ascii=False
             )
@@ -137,8 +138,8 @@ class Runner(object):
         self.last_stdout_update = time.time()
         try:
             child = pexpect.spawn(
-                self.config.command[0],
-                self.config.command[1:],
+                command[0],
+                command[1:],
                 cwd=self.config.cwd,
                 env=env,
                 ignore_sighup=True,

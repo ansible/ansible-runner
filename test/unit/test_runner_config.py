@@ -418,7 +418,8 @@ def test_process_isolation_defaults():
 @patch('shutil.copytree', return_value=True)
 @patch('tempfile.mkdtemp', return_value="/tmp/dirisolation/foo")
 @patch('os.chmod', return_value=True)
-def test_process_isolation_and_directory_isolation(mock_makedirs, mock_copytree, mock_mkdtemp, mock_chmod):
+@patch('shutil.rmtree', return_value=True)
+def test_process_isolation_and_directory_isolation(mock_makedirs, mock_copytree, mock_mkdtemp, mock_chmod, mock_rmtree):
     rc = RunnerConfig('/')
     rc.artifact_dir = '/tmp/artifacts'
     rc.directory_isolation_path = '/tmp/dirisolation'
@@ -433,7 +434,7 @@ def test_process_isolation_and_directory_isolation(mock_makedirs, mock_copytree,
         '--dev-bind', '/', '/',
         '--proc', '/proc',
         '--bind', '/', '/',
-        '--chdir', '/tmp/dirisolation/foo',
+        '--chdir', os.path.realpath(rc.directory_isolation_path),
         'ansible-playbook', '-i', '/inventory', 'main.yaml',
     ]
 

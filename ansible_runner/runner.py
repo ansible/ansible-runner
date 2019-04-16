@@ -25,7 +25,7 @@ logger = logging.getLogger('ansible-runner')
 
 class Runner(object):
 
-    def __init__(self, config, cancel_callback=None, remove_partials=True, event_handler=None,
+    def __init__(self, config, cancel_callback=None, event_handler=None,
                  artifacts_handler=None, finished_callback=None, status_handler=None):
         self.config = config
         self.cancel_callback = cancel_callback
@@ -38,7 +38,6 @@ class Runner(object):
         self.errored = False
         self.status = "unstarted"
         self.rc = None
-        self.remove_partials = remove_partials
 
         # default runner mode to pexpect
         self.runner_mode = self.config.runner_mode if hasattr(self.config, 'runner_mode') else 'pexpect'
@@ -55,33 +54,11 @@ class Runner(object):
         '''
         self.last_stdout_update = time.time()
         if 'uuid' in event_data:
-            filename = '{}-partial.json'.format(event_data['uuid'])
-            partial_filename = os.path.join(self.config.artifact_dir,
-                                            'job_events',
-                                            filename)
-            full_filename = os.path.join(self.config.artifact_dir,
-                                         'job_events',
+            full_filename = os.path.join(job_events_path,
                                          '{}-{}.json'.format(event_data['counter'],
                                                              event_data['uuid']))
             try:
                 event_data.update(dict(runner_ident=str(self.config.ident)))
-                try:
-                    with codecs.open(partial_filename, 'r', encoding='utf-8') as read_file:
-                        partial_event_data = json.load(read_file)
-                    event_data.update(partial_event_data)
-                    if self.remove_partials:
-                        os.remove(partial_filename)
-                except IOError as e:
-                    msg = "Failed to open ansible stdout callback plugin partial data" \
-                          " file {} with error {}".format(partial_filename, str(e))
-                    debug(msg)
-                    if self.config.check_job_event_data:
-                        raise AnsibleRunnerException(msg)
-
-                # prefer 'created' from partial data, but verbose events set time here
-                if 'created' not in event_data:
-                    event_data['created'] = datetime.datetime.utcnow().isoformat()
-
                 if self.event_handler is not None:
                     should_write = self.event_handler(event_data)
                 else:

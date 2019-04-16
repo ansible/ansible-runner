@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-
 import os
 import re
-import shlex
 
 try:
     from StringIO import StringIO
@@ -11,10 +8,10 @@ except ImportError:
 
 from functools import partial
 
-from six import string_types
+from six import string_types, b
 from pexpect import TIMEOUT, EOF
 
-import pytest
+from pytest import raises
 from mock import patch
 from mock import Mock
 
@@ -271,20 +268,16 @@ def test_generate_ansible_command_with_api_extravars():
     assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', 'foo="bar"', 'main.yaml']
 
 
-@pytest.mark.parametrize('cmdline', [
-    '--tags foo --skip-tags'
-    '--limit "䉪ቒ칸ⱷ?噂폄蔆㪗輥"'
-])
-def test_generate_ansible_command_with_cmdline_args(cmdline):
+def test_generate_ansible_command_with_cmdline_args():
     rc = RunnerConfig(private_data_dir='/', playbook='main.yaml')
     rc.prepare_inventory()
     rc.extra_vars = {}
 
-    cmdline_side_effect = partial(load_file_side_effect, 'env/cmdline', cmdline)
+    cmdline_side_effect = partial(load_file_side_effect, 'env/cmdline', b('--tags foo --skip-tags'))
 
     with patch.object(rc.loader, 'load_file', side_effect=cmdline_side_effect):
         cmd = rc.generate_ansible_command()
-        assert cmd == ['ansible-playbook'] + shlex.split(cmdline) + ['-i', '/inventory', 'main.yaml']
+        assert cmd == ['ansible-playbook', '--tags', 'foo', '--skip-tags', '-i', '/inventory', 'main.yaml']
 
 
 def test_prepare_command_defaults():
@@ -312,7 +305,7 @@ def test_prepare_with_defaults():
     rc.artifact_dir = '/'
     rc.env = {}
 
-    with pytest.raises(ConfigurationError) as exc:
+    with raises(ConfigurationError) as exc:
         rc.prepare()
 
     assert str(exc.value) == 'No executable for runner to run'

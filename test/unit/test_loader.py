@@ -64,7 +64,7 @@ def test_load_file_text(loader):
         res = loader.load_file('/tmp/test', string_types)
         assert mock_get_contents.called
         assert mock_get_contents.called_with_args('/tmp/test')
-        assert res == 'test\nstring'
+        assert res == b'test\nstring'
         assert '/tmp/test' in loader._cache
 
         mock_get_contents.reset_mock()
@@ -72,7 +72,7 @@ def test_load_file_text(loader):
         # cache hit
         res = loader.load_file('/tmp/test', string_types)
         assert not mock_get_contents.called
-        assert res == 'test\nstring'
+        assert res == b'test\nstring'
         assert '/tmp/test' in loader._cache
 
 

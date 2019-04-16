@@ -22,8 +22,8 @@ from ansible_runner.output import debug
 
 class Runner(object):
 
-    def __init__(self, config, cancel_callback=None, remove_partials=True,
-                 event_handler=None, finished_callback=None, status_handler=None):
+    def __init__(self, config, cancel_callback=None, event_handler=None,
+                 finished_callback=None, status_handler=None):
         self.config = config
         self.cancel_callback = cancel_callback
         self.event_handler = event_handler
@@ -34,7 +34,6 @@ class Runner(object):
         self.errored = False
         self.status = "unstarted"
         self.rc = None
-        self.remove_partials = remove_partials
 
     def event_callback(self, event_data):
         '''
@@ -46,24 +45,11 @@ class Runner(object):
         if not os.path.exists(job_events_path):
             os.mkdir(job_events_path, 0o700)
         if 'uuid' in event_data:
-            filename = '{}-partial.json'.format(event_data['uuid'])
-            partial_filename = os.path.join(self.config.artifact_dir,
-                                            'job_events',
-                                            filename)
-            full_filename = os.path.join(self.config.artifact_dir,
-                                         'job_events',
+            full_filename = os.path.join(job_events_path,
                                          '{}-{}.json'.format(event_data['counter'],
                                                              event_data['uuid']))
             try:
                 event_data.update(dict(runner_ident=str(self.config.ident)))
-                try:
-                    with codecs.open(partial_filename, 'r', encoding='utf-8') as read_file:
-                        partial_event_data = json.load(read_file)
-                    event_data.update(partial_event_data)
-                    if self.remove_partials:
-                        os.remove(partial_filename)
-                except IOError:
-                    debug("Failed to open ansible stdout callback plugin partial data file {}".format(partial_filename))
                 if self.event_handler is not None:
                     should_write = self.event_handler(event_data)
                 else:

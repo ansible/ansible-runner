@@ -346,7 +346,6 @@ def test_prepare():
     assert rc.env['ANSIBLE_STDOUT_CALLBACK'] == 'awx_display'
     assert rc.env['ANSIBLE_RETRY_FILES_ENABLED'] == 'False'
     assert rc.env['ANSIBLE_HOST_KEY_CHECKING'] == 'False'
-    assert rc.env['AWX_ISOLATED_DATA_DIR'] == '/'
     assert rc.env['PYTHONPATH'] == '/python_path_via_environ:/awx_lib_directory_via_environ', \
         "PYTHONPATH is the union of the env PYTHONPATH and AWX_LIB_DIRECTORY"
 

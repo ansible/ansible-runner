@@ -23,35 +23,13 @@ import contextlib
 import datetime
 import json
 import multiprocessing
+import io
 import os
 import stat
 import threading
 import uuid
 
 __all__ = ['event_context']
-
-
-class IsolatedFileWrite:
-    '''
-    Class that will write partial event data to a file
-    '''
-
-    def __init__(self):
-        self.private_data_dir = os.getenv('AWX_ISOLATED_DATA_DIR')
-
-    def set(self, key, value):
-        # Strip off the leading key identifying characters :1:ev-
-        event_uuid = key[len(':1:ev-'):]
-        # Write data in a staging area and then atomic move to pickup directory
-        filename = '{}-partial.json'.format(event_uuid)
-        if not os.path.exists(os.path.join(self.private_data_dir, 'job_events')):
-            os.mkdir(os.path.join(self.private_data_dir, 'job_events'), 0o700)
-        dropoff_location = os.path.join(self.private_data_dir, 'job_events', filename)
-        write_location = '.'.join([dropoff_location, 'tmp'])
-        partial_data = json.dumps(value)
-        with os.fdopen(os.open(write_location, os.O_WRONLY | os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR), 'w') as f:
-            f.write(partial_data)
-        os.rename(write_location, dropoff_location)
 
 
 class EventContext(object):
@@ -63,8 +41,6 @@ class EventContext(object):
     def __init__(self):
         self.display_lock = multiprocessing.RLock()
         self._local = threading.local()
-        if os.getenv('AWX_ISOLATED_DATA_DIR', False):
-            self.cache = IsolatedFileWrite()
 
     def add_local(self, **kwargs):
         tls = vars(self._local)
@@ -153,7 +129,7 @@ class EventContext(object):
     def get_end_dict(self):
         return {}
 
-    def dump(self, fileobj, data, max_width=78, flush=False):
+    def dump(self, fileobj, data, max_width=1024):
         b64data = base64.b64encode(json.dumps(data).encode('utf-8')).decode()
         with self.display_lock:
             # pattern corresponding to OutputEventFilter expectation
@@ -163,16 +139,13 @@ class EventContext(object):
                 escaped_chunk = u'{}\x1b[{}D'.format(chunk, len(chunk))
                 fileobj.write(escaped_chunk)
             fileobj.write(u'\x1b[K')
-            if flush:
-                fileobj.flush()
+            fileobj.flush()
 
     def dump_begin(self, fileobj):
-        begin_dict = self.get_begin_dict()
-        self.cache.set(":1:ev-{}".format(begin_dict['uuid']), begin_dict)
-        self.dump(fileobj, {'uuid': begin_dict['uuid']})
+        self.dump(fileobj, self.get_begin_dict())
 
     def dump_end(self, fileobj):
-        self.dump(fileobj, self.get_end_dict(), flush=True)
+        self.dump(fileobj, self.get_end_dict())
 
 
 event_context = EventContext()

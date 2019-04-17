@@ -148,8 +148,7 @@ def test_run_command_events_missing(rc):
     status, exitcode = runner.run()
     assert status == 'successful'
     assert exitcode == 0
-    with pytest.raises(AnsibleRunnerException):
-        list(runner.events)
+    assert list(runner.events) == []
 
 
 def test_run_command_stdout_missing(rc):
@@ -169,8 +168,7 @@ def test_run_command_no_stats(rc):
     status, exitcode = runner.run()
     assert status == 'successful'
     assert exitcode == 0
-    with pytest.raises(AnsibleRunnerException):
-        runner.stats
+    assert runner.stats is None
 
 
 def test_run_command_ansible(rc):

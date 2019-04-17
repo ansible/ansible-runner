@@ -133,7 +133,7 @@ class Runner(object):
 
         # Use a copy so as not to cause problems when serializing the job_env.
         env = {
-            k: v.encode('utf-8') if k != 'PATH' and isinstance(v, six.text_type) else v
+            six.ensure_str(k): six.ensure_str(v) if k != 'PATH' and isinstance(v, six.text_type) else v
             for k, v in self.config.env.items()
         }
 

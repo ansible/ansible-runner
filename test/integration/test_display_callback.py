@@ -5,10 +5,7 @@ from __future__ import absolute_import
 
 import json
 import os
-import shutil
-import tempfile
 import yaml
-from unittest import mock
 
 from ansible import __version__ as ANSIBLE_VERSION
 

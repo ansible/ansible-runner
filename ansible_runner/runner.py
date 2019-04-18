@@ -42,6 +42,9 @@ class Runner(object):
         later use
         '''
         self.last_stdout_update = time.time()
+        job_events_path = os.path.join(self.config.artifact_dir, 'job_events')
+        if not os.path.exists(job_events_path):
+            os.mkdir(job_events_path, 0o700)
         if 'uuid' in event_data:
             filename = '{}-partial.json'.format(event_data['uuid'])
             partial_filename = os.path.join(self.config.artifact_dir,
@@ -130,7 +133,7 @@ class Runner(object):
 
         # Use a copy so as not to cause problems when serializing the job_env.
         env = {
-            k: v.encode('utf-8') if k != 'PATH' and isinstance(v, six.text_type) else v
+            six.ensure_str(k): six.ensure_str(v) if k != 'PATH' and isinstance(v, six.text_type) else v
             for k, v in self.config.env.items()
         }
 

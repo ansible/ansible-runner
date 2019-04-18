@@ -98,10 +98,11 @@ def test_event_callback_interface_has_ident(rc):
     runner.event_handler = mock.Mock()
     with mock.patch('codecs.open', mock.mock_open(read_data=json.dumps(dict(event="test")))):
         with mock.patch('os.chmod', mock.Mock()) as chmod:
-            runner.event_callback(dict(uuid="testuuid", counter=0))
-            assert runner.event_handler.call_count == 1
-            runner.event_handler.assert_called_with(dict(runner_ident='testident', counter=0, uuid='testuuid', event='test'))
-            chmod.assert_called_once()
+            with mock.patch('os.mkdir', mock.Mock()):
+                runner.event_callback(dict(uuid="testuuid", counter=0))
+    assert runner.event_handler.call_count == 1
+    runner.event_handler.assert_called_with(dict(runner_ident='testident', counter=0, uuid='testuuid', event='test'))
+    chmod.assert_called_once()
     runner.status_callback("running")
 
 
@@ -109,7 +110,8 @@ def test_event_callback_interface_calls_event_handler_for_verbose_event(rc):
     rc.ident = "testident"
     event_handler = mock.Mock()
     runner = Runner(config=rc, event_handler=event_handler)
-    runner.event_callback(dict(uuid="testuuid", event='verbose', counter=0))
+    with mock.patch('os.mkdir', mock.Mock()):
+        runner.event_callback(dict(uuid="testuuid", event='verbose', counter=0))
     assert event_handler.call_count == 1
     event_handler.assert_called_with(dict(runner_ident='testident', counter=0, uuid='testuuid', event='verbose'))
 

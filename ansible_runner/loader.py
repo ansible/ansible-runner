@@ -161,8 +161,9 @@ class ArtifactLoader(object):
 
         try:
             debug('cache miss, attempting to load file from disk: %s' % path)
-            contents = self.get_contents(path)
-            parsed_data = contents.encode(encoding)
+            contents = parsed_data = self.get_contents(path)
+            if encoding:
+                parsed_data = contents.encode(encoding)
         except ConfigurationError as exc:
             debug(exc)
             raise

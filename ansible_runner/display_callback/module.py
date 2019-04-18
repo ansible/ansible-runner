@@ -22,12 +22,23 @@ import collections
 import contextlib
 import sys
 import uuid
+import six
 from copy import copy
+from os import environ
+try:
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping
+
+
+# Ansible Runner
+from ansible_runner.loader import ArtifactLoader
 
 # Ansible
 from ansible import constants as C
 from ansible.plugins.callback import CallbackBase
 from ansible.plugins.callback.default import CallbackModule as DefaultCallbackModule
+from ansible.playbook.task import Task
 
 # AWX Display Callback
 from .events import event_context
@@ -80,11 +91,18 @@ class BaseCallbackModule(CallbackBase):
         if event_data.get('res'):
             if event_data['res'].get('_ansible_no_log', False):
                 event_data['res'] = {'censored': CENSORED}
+            else:
+                self.look_for_pass(event_data['res'])
             if event_data['res'].get('results', []):
                 event_data['res']['results'] = copy(event_data['res']['results'])
             for i, item in enumerate(event_data['res'].get('results', [])):
                 if isinstance(item, dict) and item.get('_ansible_no_log', False):
                     event_data['res']['results'][i] = {'censored': CENSORED}
+                else:
+                    self.look_for_pass(event_data['res']['results'][i])
+
+        event_data = self.scrub(event_data)
+        task = self.scrub(task)
 
         with event_context.display_lock:
             try:
@@ -500,6 +518,12 @@ class BaseCallbackModule(CallbackBase):
         with self.capture_event_data('runner_on_start', **event_data):
             super(BaseCallbackModule, self).v2_runner_on_start(host, task)
 
+    def scrub(self, data):
+        return data
+
+    def look_for_pass(self, data):
+        return data
+
 
 class AWXDefaultCallbackModule(BaseCallbackModule, DefaultCallbackModule):
 
@@ -515,3 +539,106 @@ class AWXMinimalCallbackModule(BaseCallbackModule, MinimalCallbackModule):
 
     def v2_playbook_on_task_start(self, task, is_conditional):
         self.set_task(task)
+
+
+class AWXScrubberCallbackModule(BaseCallbackModule, DefaultCallbackModule):
+
+    CALLBACK_NAME = 'scrubber'
+
+    SCRUB_STRING = '******'
+    SCRUB_TERMS = []
+
+    # This list was generated via: grep -r env_fallback * | grep fallback= | sed 's:.*\[::' | sed 's:\].*$::' > fallback.txt
+    SCRUB_ENV_VARS = [
+        'ANSIBLE_NET_AUTHORIZE', 'ANSIBLE_NET_AUTH_PASS', 'ANSIBLE_NET_PASSWORD', 'ANSIBLE_NET_SSH_KEYFILE',
+        'AWS_ACCESS_KEY_ID', 'AWS_SECURITY_TOKEN',
+        'AZURE_PASSWORD', 'AZURE_SECRET',
+        'CLOUDSCALE_API_TOKEN',
+        'DO_API_KEY', 'DO_API_TOKEN', 'DO_OAUTH_TOKEN',
+        'F5_PASSWORD',
+        'HEROKU_API_KEY',
+        'MERAKI_KEY',
+        'NETSCALER_NITRO_PASS',
+        'OAUTH_TOKEN',
+        'ONLINE_API_KEY', 'ONLINE_API_TOKEN', 'ONLINE_OAUTH_TOKEN', 'ONLINE_TOKEN',
+        'SCW_API_KEY', 'SCW_API_TOKEN', 'SCW_OAUTH_TOKEN', 'SCW_TOKEN',
+        'TF_VAR_HEROKU_API_KEY',
+        'VDIRECT_PASSWORD',
+        'VMWARE_PASSWORD',
+    ]
+
+    # extra vars we might care about
+    EV_SCRUB_TERM = 'ar_scrub_terms'
+    EV_SCRUB_ENV_VARS = 'ar_scrub_additional_env'
+    EV_SCRUB_VARS = 'ar_scrub_additional_vars'
+
+    def __init__(self):
+        super(AWXScrubberCallbackModule, self).__init__()
+
+        # Can we get the config (RunnerConfig) here?
+        # That should have both env and passwords in it
+
+        loader = ArtifactLoader(".")
+
+        # First we will load the extravars file because there are things we care about in there.
+        if loader.isfile('env/extravars'):
+            extra_vars = loader.load_file('env/extravars', Mapping)
+
+            # If EV_SCRUB_TERM is in extra_vars we will want to scrub any term that is in that list
+            if self.EV_SCRUB_TERM in extra_vars:
+                for password in extra_vars[self.EV_SCRUB_TERM]:
+                    self.SCRUB_TERMS.append(password)
+
+            # In addition, we will add any variables from EV_SCRUB_ENV_VARS to the list of env vars to go after
+            if self.EV_SCRUB_ENV_VARS in extra_vars:
+                for env_var_name in extra_vars[self.EV_SCRUB_ENV_VARS]:
+                    self.SCRUB_ENV_VARS.append(env_var_name)
+
+            # Finally, if ar_scrub_vars is in extra_vars we will pull any value from a variable of that name
+            if self.EV_SCRUB_VARS in extra_vars:
+                for var_name in extra_vars[self.EV_SCRUB_VARS]:
+                    if var_name in extra_vars:
+                        self.SCRUB_TERMS.append(extra_vars[var_name])
+
+        # From the passwords file, we will mark any value
+        if loader.isfile('env/passwords'):
+            passwords = loader.load_file('env/passwords', Mapping)
+            for prompt in passwords:
+                self.SCRUB_TERMS.append(passwords[prompt])
+
+        # From the envvars file we will grab any of our known offensive env vars
+        if loader.isfile('env/envars'):
+            env_vars = loader.load_file('env/envvars', Mapping)
+            for env_var in env_vars:
+                if env_var in self.SCRUB_ENV_VARS:
+                    self.SCRUB_TERMS.append(env_vars[env_var])
+
+        # Finally lets get any terms out of our actual environment for any offensive vars
+        for env_var in self.SCRUB_ENV_VARS:
+            if env_var in environ:
+                self.SCRUB_TERMS.append(environ[env_var])
+
+    def scrub(self, data):
+        if isinstance(data, dict):
+            for item in data:
+                data[item] = self.scrub(data[item])
+        elif isinstance(data, list):
+            for index in range(len(data)):
+                data[index] = self.scrub(data[index])
+        elif isinstance(data, six.string_types):
+            for secret in self.SCRUB_TERMS:
+                data = data.replace(secret, self.SCRUB_STRING)
+        elif isinstance(data, Task):
+            data.name = self.scrub(data.get_name())
+        else:
+            # There are some types we don't need to try and mask (like a bool, None, etc)
+            # If something isn't being masked, try seeing if it ends up in here
+            pass
+
+        return data
+
+    def look_for_pass(self, data):
+        # We can pull additional passwords out of add_hosts
+        if data.get('add_host', False):
+            if 'ansible_ssh_pass' in data.get('add_host', {}).get('host_vars', {}):
+                self.SCRUB_TERMS.append(data['add_host']['host_vars']['ansible_ssh_pass'])

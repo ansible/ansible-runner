@@ -124,6 +124,7 @@ def run(**kwargs):
     :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
                        This is only used for 'jsonfile' type fact caches.
     :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
+    :param display_callback: Which display callback to use
     :type private_data_dir: str
     :type ident: str
     :type json_mode: bool
@@ -155,6 +156,7 @@ def run(**kwargs):
     :type directory_isolation_base_path: str
     :type fact_cache: str
     :type fact_cache_type: str
+    :type display_callback: str
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object
     '''

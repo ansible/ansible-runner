@@ -40,6 +40,7 @@ from ansible_runner import output
 from ansible_runner.utils import dump_artifact, Bunch
 from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
+from ansible_runner import display_callback
 
 VERSION = pkg_resources.require("ansible_runner")[0].version
 
@@ -255,6 +256,13 @@ def main(sys_args=None):
     parser.add_argument("--limit",
                         help="Matches ansible's ``--limit`` parameter to further constrain the inventory to be used")
 
+    valid_callbacks = []
+    for cls_name in display_callback.__all__:
+        valid_callbacks.append(getattr(display_callback, cls_name).CALLBACK_NAME)
+    parser.add_argument('--display-callback', dest='display_callback',
+                        choices=valid_callbacks,
+                        help="Specify a display callback to use. Defaults to minimal for ad-hoc or default for anything else")
+
     args = parser.parse_args(sys_args)
 
     output.configure()
@@ -321,7 +329,9 @@ def main(sys_args=None):
                                    process_isolation_show_paths=args.process_isolation_show_paths,
                                    process_isolation_ro_paths=args.process_isolation_ro_paths,
                                    directory_isolation_base_path=args.directory_isolation_base_path,
-                                   limit=args.limit)
+                                   limit=args.limit,
+                                   display_callback=args.display_callback
+                                   )
                 if args.cmdline:
                     run_options['cmdline'] = args.cmdline
 

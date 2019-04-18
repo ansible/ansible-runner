@@ -81,7 +81,7 @@ class RunnerConfig(object):
                  process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None,
                  tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None, project_dir=None,
-                 directory_isolation_base_path=None, envvars=None, forks=None):
+                 directory_isolation_base_path=None, envvars=None, forks=None, display_callback=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.json_mode = json_mode
@@ -123,6 +123,7 @@ class RunnerConfig(object):
         self.execution_mode = ExecutionMode.NONE
         self.envvars = envvars
         self.forks = forks
+        self.display_callback = display_callback
 
     def prepare(self):
         """
@@ -177,7 +178,9 @@ class RunnerConfig(object):
         if python_path and not python_path.endswith(':'):
             python_path += ':'
         self.env['ANSIBLE_CALLBACK_PLUGINS'] = callback_dir
-        if 'AD_HOC_COMMAND_ID' in self.env:
+        if self.display_callback:
+            self.env['ANSIBLE_STDOUT_CALLBACK'] = self.display_callback
+        elif 'AD_HOC_COMMAND_ID' in self.env:
             self.env['ANSIBLE_STDOUT_CALLBACK'] = 'minimal'
         else:
             self.env['ANSIBLE_STDOUT_CALLBACK'] = 'awx_display'
@@ -259,6 +262,7 @@ class RunnerConfig(object):
         self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
         self.directory_isolation_cleanup = bool(self.settings.get('directory_isolation_cleanup', True))
+        self.display_callback = self.settings.get('display_callback', self.display_callback)
 
         if 'AD_HOC_COMMAND_ID' in self.env or not os.path.exists(self.project_dir):
             self.cwd = self.private_data_dir

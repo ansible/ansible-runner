@@ -3,6 +3,17 @@
 Changelog
 ---------
 
+1.3.3 (2019-04-22)
+++++++++++++++++++
+
+- Fix various issues involving unicode input and output
+- Fix an issue where cancelling execution could cause an error rather
+  than assigning the proper return code and exiting cleanly
+- Fix various errors that would cause Runner to silently exit if some
+  dependencies weren't met or some commands weren't available
+- Fix an issue where the job_events directory wasn't created and would result
+  in no output for non-ansible commands
+
 1.3.2 (2019-04-10)
 ++++++++++++++++++
 

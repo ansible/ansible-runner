@@ -63,6 +63,7 @@ handle containing the ``stdout`` of the **Ansible** process.
 :attr:`ansible_runner.runner.Runner.stats` is a property that will return the final ``playbook stats`` event from **Ansible** in the form of a Python ``dict``
 
 ``Runner.host_events``
+----------------------
 :meth:`ansible_runner.runner.Runner.host_events` is a method that, given a hostname, will return a list of only **Ansible** event data executed on that Host.
 
 ``Runner.get_fact_cache``

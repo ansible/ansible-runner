@@ -49,11 +49,13 @@ Requires:       pexpect >= 4.6
 Requires:       python-psutil
 Requires:       PyYAML
 Requires:       python-six
+Requires:       python-lockfile
 %else
 Requires:       %{py2_dist pexpect} >= 4.6
 Requires:       %{py2_dist psutil}
 Requires:       %{py2_dist PyYAML}
 Requires:       %{py2_dist six}
+Requires:       %{py2_dist lockfile}
 %endif
 
 %description -n python2-%{pypi_name}
@@ -70,6 +72,7 @@ Summary:        %{summary}
 Requires:       python3-daemon
 Requires:       python3dist(pexpect) >= 4.6
 Requires:       python3dist(psutil)
+Requires:       python3dist(lockfile)
 
 %description -n python3-%{pypi_name}
 Ansible Runner is a tool and python library that helps when interfacing with

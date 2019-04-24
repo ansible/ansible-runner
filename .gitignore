@@ -18,3 +18,7 @@
 .coverage
 *,cover
 /test/integration/artifacts
+
+# ansible-runner
+artifacts/
+new_logfile

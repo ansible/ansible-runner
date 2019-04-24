@@ -3,6 +3,12 @@
 Changelog
 ---------
 
+1.3.4 (2019-04-25)
+++++++++++++++++++
+- Removed an explicit version pin of the six library (which is unavailable in
+  certain Linux distributions).
+- Fixed an event handling bug in the callback plugin in Ansible2.9+
+
 1.3.3 (2019-04-22)
 ++++++++++++++++++
 

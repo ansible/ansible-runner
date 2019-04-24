@@ -22,7 +22,7 @@ setup(
         'pexpect>=4.5',
         'python-daemon',
         'PyYAML',
-        'six>=1.12',  # introduced six.ensure_str
+        'six',
     ],
     zip_safe=False,
     entry_points={

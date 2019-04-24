@@ -19,7 +19,7 @@ try:
 except ImportError:
     from collections import Iterable, Mapping
 from io import StringIO
-from six import string_types, PY2
+from six import string_types, PY2, PY3, text_type, binary_type
 
 
 class Bunch(object):
@@ -346,3 +346,24 @@ def open_fifo_write(path, data):
 
 def args2cmdline(*args):
     return ' '.join([pipes.quote(a) for a in args])
+
+
+def ensure_str(s, encoding='utf-8', errors='strict'):
+    """
+    Copied from six==1.12
+
+    Coerce *s* to `str`.
+    For Python 2:
+      - `unicode` -> encoded to `str`
+      - `str` -> `str`
+    For Python 3:
+      - `str` -> `str`
+      - `bytes` -> decoded to `str`
+    """
+    if not isinstance(s, (text_type, binary_type)):
+        raise TypeError("not expecting type '%s'" % type(s))
+    if PY2 and isinstance(s, text_type):
+        s = s.encode(encoding, errors)
+    elif PY3 and isinstance(s, binary_type):
+        s = s.decode(encoding, errors)
+    return s

@@ -15,7 +15,7 @@ import psutil
 
 import ansible_runner.plugins
 
-from .utils import OutputEventFilter, cleanup_artifact_dir
+from .utils import OutputEventFilter, cleanup_artifact_dir, ensure_str
 from .exceptions import CallbackError, AnsibleRunnerException
 from ansible_runner.output import debug
 
@@ -133,7 +133,7 @@ class Runner(object):
 
         # Use a copy so as not to cause problems when serializing the job_env.
         env = {
-            six.ensure_str(k): six.ensure_str(v) if k != 'PATH' and isinstance(v, six.text_type) else v
+            ensure_str(k): ensure_str(v) if k != 'PATH' and isinstance(v, six.text_type) else v
             for k, v in self.config.env.items()
         }
 

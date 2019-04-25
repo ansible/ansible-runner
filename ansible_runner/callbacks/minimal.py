@@ -17,9 +17,23 @@
 
 from __future__ import (absolute_import, division, print_function)
 
+
+DOCUMENTATION = '''
+    callback: minimal
+    short_description: Ad hoc event dispatcher for ansible-runner
+    version_added: "2.0"
+    description:
+        - This callback is necessary for ansible-runner to work
+    type: stdout
+    extends_documentation_fragment:
+      - default_callback
+    requirements:
+      - Set as stdout in config
+'''
+
 # Python
-import os
-import sys
+import os  # noqa
+import sys  # noqa
 
 # Add awx/lib to sys.path.
 awx_lib_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -27,4 +41,10 @@ if awx_lib_path not in sys.path:
     sys.path.insert(0, awx_lib_path)
 
 # Tower Display Callback
-from display_callback import AWXMinimalCallbackModule as CallbackModule  # noqa
+from display_callback import AWXMinimalCallbackModule  # noqa
+
+
+# In order to be recognized correctly, self.__class__.__name__ needs to
+# match "CallbackModule"
+class CallbackModule(AWXMinimalCallbackModule):
+    pass

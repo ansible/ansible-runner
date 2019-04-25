@@ -3,6 +3,7 @@ import tempfile
 from distutils.version import LooseVersion
 import pkg_resources
 import json
+import os
 
 from ansible_runner import run
 
@@ -60,3 +61,17 @@ def test_playbook_on_stats_summary_fields(rc):
     EXPECTED_SUMMARY_FIELDS = ('changed', 'dark', 'failures', 'ignored', 'ok', 'rescued', 'skipped')
     fields = stats_events[0]['event_data'].keys()
     assert set(fields) >= set(EXPECTED_SUMMARY_FIELDS)
+
+
+def test_include_role_events():
+    r = run(
+        private_data_dir=os.path.abspath('test/integration'),
+        playbook='use_role.yml'
+    )
+    role_events = [event for event in r.events if event.get('event_data', {}).get('role', '') == "benthomasson.hello_role"]
+    assert 'runner_on_ok' in [event['event'] for event in role_events]
+    for event in role_events:
+        event_data = event['event_data']
+        assert not event_data.get('warning', False)  # role use should not contain warnings
+        if event['event'] == 'runner_on_ok':
+            assert event_data['res']['msg'] == 'Hello world!'

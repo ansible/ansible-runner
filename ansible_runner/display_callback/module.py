@@ -164,13 +164,6 @@ class BaseCallbackModule(CallbackBase):
         event_data = dict(
             uuid=self.playbook_uuid,
         )
-        # NOTE: This works around an issue where Ansible core doesn't pick up options
-        # from a base class and doesn't seem to obey a DOCUMENTATION assignment
-        # at the top of this module.
-        # Normally calling self.set_options() would do this from init but it:
-        # * Fails to find the aforementioned documentation reference
-        # * Doesn't seem to work from this derived class's init even with the following arguments
-        self._plugin_options = C.config.get_plugin_options("callback", "default")
         with self.capture_event_data('playbook_on_start', **event_data):
             super(BaseCallbackModule, self).v2_playbook_on_start(playbook)
 

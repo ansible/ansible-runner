@@ -242,7 +242,7 @@ def test_role_run_inventory():
 
     with temp_directory() as temp_dir:
         ensure_directory(os.path.join(temp_dir, 'inventory'))
-        shutil.copy(os.path.join(HERE, 'inventories/localhost'), os.path.join(temp_dir, 'inventory/localhost'))
+        shutil.copy(os.path.join(HERE, 'inventory/localhost'), os.path.join(temp_dir, 'inventory/localhost'))
 
         rc = main(['-r', 'benthomasson.hello_role',
                    '--hosts', 'localhost',
@@ -257,7 +257,7 @@ def test_role_run_inventory_missing():
 
     with temp_directory() as temp_dir:
         ensure_directory(os.path.join(temp_dir, 'inventory'))
-        shutil.copy(os.path.join(HERE, 'inventories/localhost'), os.path.join(temp_dir, 'inventory/localhost'))
+        shutil.copy(os.path.join(HERE, 'inventory/localhost'), os.path.join(temp_dir, 'inventory/localhost'))
 
         with pytest.raises(AnsibleRunnerException):
             main(['-r', 'benthomasson.hello_role',
@@ -289,12 +289,12 @@ def test_playbook_start():
         ensure_directory(project_dir)
         shutil.copy(os.path.join(HERE, 'project/hello.yml'), project_dir)
         ensure_directory(os.path.join(temp_dir, 'inventory'))
-        shutil.copy(os.path.join(HERE, 'inventories/localhost'), os.path.join(temp_dir, 'inventory/localhost'))
+        shutil.copy(os.path.join(HERE, 'inventory/localhost'), os.path.join(temp_dir, 'inventory/localhost'))
 
 
         p = multiprocessing.Process(target=main,
                                     args=[['-p', 'hello.yml',
-                                           '--inventory', os.path.join(HERE, 'inventories/localhost'),
+                                           '--inventory', os.path.join(HERE, 'inventory/localhost'),
                                            '--hosts', 'localhost',
                                            'start',
                                            temp_dir]])

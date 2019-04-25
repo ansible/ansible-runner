@@ -34,17 +34,14 @@ DOCUMENTATION = '''
 # Python
 import os  # noqa
 import sys  # noqa
+import imp  # noqa
 
-# Add awx/lib to sys.path.
-awx_lib_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if awx_lib_path not in sys.path:
-    sys.path.insert(0, awx_lib_path)
 
-# Tower Display Callback
-from display_callback import AWXMinimalCallbackModule  # noqa
+awx_lib_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'display_callback', '__init__.py'))
+display_callback = imp.load_source('display_callback', awx_lib_path)
 
 
 # In order to be recognized correctly, self.__class__.__name__ needs to
 # match "CallbackModule"
-class CallbackModule(AWXMinimalCallbackModule):
+class CallbackModule(display_callback.AWXMinimalCallbackModule):
     pass

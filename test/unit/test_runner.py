@@ -8,6 +8,7 @@ import mock
 import pexpect
 import pytest
 import six
+import sys
 
 from ansible_runner import Runner
 from ansible_runner.exceptions import CallbackError
@@ -59,7 +60,7 @@ def test_error_code(rc):
 
 # TODO: matt does not like this test
 def test_job_timeout(rc):
-    rc.command = ['python', '-c', 'import time; time.sleep(5)']
+    rc.command = [sys.executable, '-c', 'import time; time.sleep(5)']
     runner = Runner(config=rc)
     status, exitcode = runner.run()
     assert status == 'timeout'
@@ -67,7 +68,7 @@ def test_job_timeout(rc):
 
 
 def test_cancel_callback(rc):
-    rc.command = ['python', '-c', 'print(input("Password: "))']
+    rc.command = [sys.executable, '-c', 'print(input("Password: "))']
     status, exitcode = Runner(config=rc, cancel_callback=lambda: True).run()
     assert status == 'canceled'
 
@@ -76,14 +77,14 @@ def test_cancel_callback_error(rc):
     def kaboom():
         raise Exception('kaboom')
 
-    rc.command = ['python', '-c', 'print(input("Password: "))']
+    rc.command = [sys.executable, '-c', 'print(input("Password: "))']
     with pytest.raises(CallbackError):
         Runner(config=rc, cancel_callback=kaboom).run()
 
 
 @pytest.mark.parametrize('value', ['abc123', six.u('Iñtërnâtiônàlizætiøn')])
 def test_env_vars(rc, value):
-    rc.command = ['python', '-c', 'import os; print(os.getenv("X_MY_ENV"))']
+    rc.command = [sys.executable, '-c', 'import os; print(os.getenv("X_MY_ENV"))']
     rc.env = {'X_MY_ENV': value}
     status, exitcode = Runner(config=rc).run()
     assert status == 'successful'

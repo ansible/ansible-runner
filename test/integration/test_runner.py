@@ -5,6 +5,7 @@ import os
 import re
 import pytest
 import six
+import sys
 try:
     from unittest.mock import MagicMock
 except ImportError:
@@ -15,7 +16,7 @@ from ansible_runner.exceptions import AnsibleRunnerException
 
 
 def test_password_prompt(rc):
-    rc.command = ['python', '-c' 'from __future__ import print_function; import time; print(input("Password: "))']
+    rc.command = [sys.executable, '-c' 'import time; print(input("Password: "))']
     rc.expect_passwords[re.compile(r'Password:\s*?$', re.M)] = '1234'
     status, exitcode = Runner(config=rc).run()
     assert status == 'successful'

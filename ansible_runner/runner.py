@@ -304,11 +304,13 @@ class Runner(object):
         if not last_event:
             return None
         last_event = last_event[0]['event_data']
-        return dict(skipped=last_event['skipped'],
-                    ok=last_event['ok'],
-                    dark=last_event['dark'],
-                    failures=last_event['failures'],
-                    processed=last_event['processed'])
+        return dict(skipped=last_event.get('skipped',{}),
+                    ok=last_event.get('ok',{}),
+                    dark=last_event.get('dark',{}),
+                    failures=last_event.get('failures',{}),
+                    processed=last_event.get('processed',{}),
+                    changed=last_event.get('changed',{}))
+
 
     def host_events(self, host):
         '''

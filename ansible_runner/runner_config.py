@@ -81,7 +81,7 @@ class RunnerConfig(object):
                  process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None,
                  tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None, project_dir=None,
-                 directory_isolation_base_path=None, envvars=None, forks=None):
+                 directory_isolation_base_path=None, envvars=None, forks=None, cmdline=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.json_mode = json_mode
@@ -123,6 +123,7 @@ class RunnerConfig(object):
         self.execution_mode = ExecutionMode.NONE
         self.envvars = envvars
         self.forks = forks
+        self.cmdline_args = cmdline
 
     def prepare(self):
         """
@@ -306,7 +307,10 @@ class RunnerConfig(object):
         exec_list = [base_command]
 
         try:
-            cmdline_args = self.loader.load_file('env/cmdline', string_types, encoding=None)
+            if self.cmdline_args:
+                cmdline_args = self.cmdline_args
+            else:
+                cmdline_args = self.loader.load_file('env/cmdline', string_types, encoding=None)
             args = shlex.split(cmdline_args)
             exec_list.extend(args)
         except ConfigurationError:

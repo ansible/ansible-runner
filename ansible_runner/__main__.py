@@ -222,6 +222,7 @@ def main(sys_args=None):
 
     parser.add_argument("--cmdline",
                         help="Command line options to pass to ansible-playbook at execution time")
+
     parser.add_argument("--debug", action="store_true",
                         help="Enable Runner debug output logging")
 

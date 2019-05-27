@@ -214,9 +214,6 @@ def main(sys_args=None):
     parser.add_argument("-j", "--json", action="store_true",
                         help="Output the json event structure to stdout instead of Ansible output")
 
-    parser.add_argument("-k", "--ask-pass", action="store_true",
-                        help="Ask for connection password")
-
     parser.add_argument("-v", action="count",
                         help="Increase the verbosity with multiple v's (up to 5) of the ansible-playbook output")
 
@@ -315,7 +312,6 @@ def main(sys_args=None):
                                    json_mode=args.json,
                                    inventory=args.inventory,
                                    forks=args.forks,
-                                   ask_pass=args.ask_pass,
                                    project_dir=args.project_dir,
                                    roles_path=[args.roles_path] if args.roles_path else None,
                                    process_isolation=args.process_isolation,

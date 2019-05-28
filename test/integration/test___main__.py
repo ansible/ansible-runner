@@ -220,3 +220,24 @@ def test_cmdline_playbook_hosts():
         shutil.rmtree(private_data_dir)
 
 
+def test_cmdline_cmdline_override():
+    try:
+        private_data_dir = tempfile.mkdtemp()
+        play = [{'hosts': 'all', 'tasks': [{'debug': {'msg': random_string()}}]}]
+
+        path = os.path.join(private_data_dir, 'project')
+        os.makedirs(path)
+
+        playbook = os.path.join(path, 'main.yaml')
+        with open(playbook, 'w') as f:
+            f.write(json.dumps(play))
+        path = os.path.join(private_data_dir, 'inventory')
+        os.makedirs(path)
+
+        inventory = os.path.join(path, 'hosts')
+        with open(inventory, 'w') as f:
+            f.write('[all]\nlocalhost ansible_connection=local')
+        cmdline('run', private_data_dir, '-p', playbook, '--hosts', 'all', '--cmdline', '-e foo=bar')
+        assert main() == 0
+    finally:
+        shutil.rmtree(private_data_dir)

@@ -81,7 +81,7 @@ class RunnerConfig(object):
                  process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None,
                  tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None, project_dir=None,
-                 directory_isolation_base_path=None, envvars=None, forks=None, ask_pass=False):
+                 directory_isolation_base_path=None, envvars=None, forks=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.json_mode = json_mode
@@ -123,7 +123,6 @@ class RunnerConfig(object):
         self.execution_mode = ExecutionMode.NONE
         self.envvars = envvars
         self.forks = forks
-        self.ask_pass = ask_pass
 
     def prepare(self):
         """
@@ -349,7 +348,7 @@ class RunnerConfig(object):
         if self.forks:
             exec_list.extend(['--forks', '{}'.format(self.forks)])
 
-        if self.ask_pass:
+        if len(self.expect_passwords) > 2:
             exec_list.append('-k')
 
         # Other parameters

@@ -19,22 +19,22 @@ class RunnerMessageIter(asyncio.Queue):
         return await self.get()
 
     def event_handler(self, event):
-        self.loop.create_task(self.put(json.dumps(event)))
+        self._loop.create_task(self.put(json.dumps(event)))
 
-    def status_handler(self, status):
-        self.loop.create_task(self.put(json.dumps(status)))
+    def status_handler(self, status, runner_config):
+        self._loop.create_task(self.put(json.dumps(status)))
 
     def finished_callback(self, runner_obj):
         self.done = True
-        self.loop.create_task(self.put(json.dumps(dict(status="exiting"))))
+        self._loop.create_task(self.put(json.dumps(dict(status="exiting"))))
 
 
 def execute(message):
-    print("Runner Receptor: {}".format(message))
+    print("Runner Receptor: {}".format(message.raw_payload))
     loop = asyncio.get_event_loop()
     message_iter = RunnerMessageIter(loop=loop)
     loop.call_soon(functools.partial(run,
                                      event_handler=message_iter.event_handler,
                                      status_handler=message_iter.status_handler,
-                                     **message))
+                                     **json.loads(message.raw_payload)))
     return message_iter

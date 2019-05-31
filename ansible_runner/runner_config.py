@@ -201,7 +201,7 @@ class RunnerConfig(object):
         """
         Prepares the inventory default under ``private_data_dir`` if it's not overridden by the constructor.
         """
-        if self.inventory is None:
+        if self.inventory is None and os.path.exists(os.path.join(self.private_data_dir, "inventory")):
             self.inventory  = os.path.join(self.private_data_dir, "inventory")
 
     def prepare_env(self):
@@ -316,7 +316,9 @@ class RunnerConfig(object):
         except ConfigurationError:
             pass
 
-        if isinstance(self.inventory, list):
+        if self.inventory is None:
+            pass
+        elif isinstance(self.inventory, list):
             for i in self.inventory:
                 exec_list.append("-i")
                 exec_list.append(i)

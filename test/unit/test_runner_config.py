@@ -22,7 +22,6 @@ from ansible_runner.runner_config import RunnerConfig, ExecutionMode
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError
 
-
 try:
     Pattern = re._pattern_type
 except AttributeError:
@@ -190,7 +189,8 @@ def test_prepare_env_directory_isolation():
         assert rc.cwd == '/tmp/foo'
 
 
-def test_prepare_inventory():
+@patch('os.path.exists', return_value=True)
+def test_prepare_inventory(path_exists):
     rc = RunnerConfig(private_data_dir='/')
     rc.prepare_inventory()
     assert rc.inventory == '/inventory'
@@ -200,11 +200,17 @@ def test_prepare_inventory():
     rc.inventory = 'localhost,anotherhost,'
     rc.prepare_inventory()
     assert rc.inventory == 'localhost,anotherhost,'
+    path_exists.return_value = False
+    rc.inventory = None
+    rc.prepare_inventory()
+    assert rc.inventory is None
 
 
 def test_generate_ansible_command():
     rc = RunnerConfig(private_data_dir='/', playbook='main.yaml')
-    rc.prepare_inventory()
+    with patch('os.path.exists') as path_exists:
+        path_exists.return_value=True
+        rc.prepare_inventory()
     rc.extra_vars = None
 
     cmd = rc.generate_ansible_command()
@@ -235,8 +241,14 @@ def test_generate_ansible_command():
     assert cmd == ['ansible-playbook', 'main.yaml']
     rc.inventory = None
 
+    with patch('os.path.exists', return_value=False) as path_exists:
+        rc.prepare_inventory()
+        cmd = rc.generate_ansible_command()
+    assert cmd == ['ansible-playbook', 'main.yaml']
+
     rc.verbosity = 3
-    rc.prepare_inventory()
+    with patch('os.path.exists', return_value=True) as path_exists:
+        rc.prepare_inventory()
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', '/inventory', '-vvv', 'main.yaml']
     rc.verbosity = None
@@ -265,7 +277,9 @@ def test_generate_ansible_command():
 
 def test_generate_ansible_command_with_api_extravars():
     rc = RunnerConfig(private_data_dir='/', playbook='main.yaml', extravars={"foo":"bar"})
-    rc.prepare_inventory()
+    with patch('os.path.exists') as path_exists:
+        path_exists.return_value=True
+        rc.prepare_inventory()
 
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', 'foo="bar"', 'main.yaml']
@@ -277,7 +291,9 @@ def test_generate_ansible_command_with_api_extravars():
 ])
 def test_generate_ansible_command_with_cmdline_args(cmdline):
     rc = RunnerConfig(private_data_dir='/', playbook='main.yaml')
-    rc.prepare_inventory()
+    with patch('os.path.exists') as path_exists:
+        path_exists.return_value=True
+        rc.prepare_inventory()
     rc.extra_vars = {}
 
     cmdline_side_effect = partial(load_file_side_effect, 'env/cmdline', cmdline)
@@ -408,7 +424,9 @@ def test_process_isolation_defaults():
     rc.playbook = 'main.yaml'
     rc.command = 'ansible-playbook'
     rc.process_isolation = True
-    rc.prepare()
+    with patch('os.path.exists') as path_exists:
+        path_exists.return_value=True
+        rc.prepare()
 
     assert rc.command == [
         'bwrap',
@@ -426,14 +444,20 @@ def test_process_isolation_defaults():
 @patch('tempfile.mkdtemp', return_value="/tmp/dirisolation/foo")
 @patch('os.chmod', return_value=True)
 @patch('shutil.rmtree', return_value=True)
-def test_process_isolation_and_directory_isolation(mock_makedirs, mock_copytree, mock_mkdtemp, mock_chmod, mock_rmtree):
+def test_process_isolation_and_directory_isolation(mock_makedirs, mock_copytree, mock_mkdtemp,
+                                                   mock_chmod, mock_rmtree):
+    def new_exists(path):
+        if path == "/project":
+            return False
+        return True
     rc = RunnerConfig('/')
     rc.artifact_dir = '/tmp/artifacts'
     rc.directory_isolation_path = '/tmp/dirisolation'
     rc.playbook = 'main.yaml'
     rc.command = 'ansible-playbook'
     rc.process_isolation = True
-    rc.prepare()
+    with patch('os.path.exists', new=new_exists):
+        rc.prepare()
 
     assert rc.command == [
         'bwrap',

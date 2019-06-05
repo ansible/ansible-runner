@@ -220,6 +220,8 @@ class Runner(object):
                 f.write(str(data))
         if self.config.directory_isolation_path and self.config.directory_isolation_cleanup:
             shutil.rmtree(self.config.directory_isolation_path)
+        if self.config.process_isolation and self.config.process_isolation_path_actual:
+            shutil.rmtree(self.config.process_isolation_path_actual)
         if self.finished_callback is not None:
             try:
                 self.finished_callback(self)

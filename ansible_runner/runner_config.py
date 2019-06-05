@@ -16,13 +16,11 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import atexit
 import os
 import re
 import pexpect
 import stat
 import shlex
-import shutil
 import tempfile
 import logging
 
@@ -104,6 +102,7 @@ class RunnerConfig(object):
         self.process_isolation = process_isolation
         self.process_isolation_executable = process_isolation_executable
         self.process_isolation_path = process_isolation_path
+        self.process_isolation_path_actual = None
         self.process_isolation_hide_paths = process_isolation_hide_paths
         self.process_isolation_show_paths = process_isolation_show_paths
         self.process_isolation_ro_paths = process_isolation_ro_paths
@@ -376,7 +375,6 @@ class RunnerConfig(object):
         '''
         path = tempfile.mkdtemp(prefix='ansible_runner_pi_', dir=self.process_isolation_path)
         os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-        atexit.register(shutil.rmtree, path)
         return path
 
     def wrap_args_with_process_isolation(self, args):
@@ -385,7 +383,7 @@ class RunnerConfig(object):
          - self.process_isolation_path (generally, /tmp) (except for own /tmp files)
         '''
         cwd = os.path.realpath(self.cwd)
-        pi_temp_dir = self.build_process_isolation_temp_dir()
+        self.process_isolation_path_actual = self.build_process_isolation_temp_dir()
         new_args = [self.process_isolation_executable or 'bwrap', '--unshare-pid', '--dev-bind', '/', '/', '--proc', '/proc']
 
         for path in sorted(set(self.process_isolation_hide_paths or [])):
@@ -394,10 +392,10 @@ class RunnerConfig(object):
                 continue
             path = os.path.realpath(path)
             if os.path.isdir(path):
-                new_path = tempfile.mkdtemp(dir=pi_temp_dir)
+                new_path = tempfile.mkdtemp(dir=self.process_isolation_path_actual)
                 os.chmod(new_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
             else:
-                handle, new_path = tempfile.mkstemp(dir=pi_temp_dir)
+                handle, new_path = tempfile.mkstemp(dir=self.process_isolation_path_actual)
                 os.close(handle)
                 os.chmod(new_path, stat.S_IRUSR | stat.S_IWUSR)
             new_args.extend(['--bind', '{0}'.format(new_path), '{0}'.format(path)])

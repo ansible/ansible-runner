@@ -332,15 +332,20 @@ class RunnerConfig(object):
 
         if self.loader.isfile('env/extravars'):
             exec_list.extend(['-e', '@{}'.format(self.loader.abspath('env/extravars'))])
-        if isinstance(self.extra_vars, dict) and self.extra_vars:
-            exec_list.extend(
-                [
-                    '-e',
-                    '%s' % ' '.join(
-                        ["{}=\"{}\"".format(k, self.extra_vars[k]) for k in self.extra_vars]
-                    )
-                ]
-            )
+
+        if self.extra_vars:
+            if isinstance(self.extra_vars, dict) and self.extra_vars:
+                exec_list.extend(
+                    [
+                        '-e',
+                        '%s' % ' '.join(
+                            ["{}=\"{}\"".format(k, self.extra_vars[k]) for k in self.extra_vars]
+                        )
+                    ]
+                )
+            elif self.loader.isfile(self.extra_vars):
+                exec_list.extend(['-e', '@{}'.format(self.loader.abspath(self.extra_vars))])
+
         if self.verbosity:
             v = 'v' * self.verbosity
             exec_list.append('-{}'.format(v))

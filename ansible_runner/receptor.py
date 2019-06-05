@@ -1,7 +1,7 @@
 import asyncio
 import functools
 import json
-from .interface import run
+from .interface import run_async
 
 
 class RunnerMessageIter(asyncio.Queue):
@@ -33,7 +33,7 @@ def execute(message):
     print("Runner Receptor: {}".format(message.raw_payload))
     loop = asyncio.get_event_loop()
     message_iter = RunnerMessageIter(loop=loop)
-    loop.call_soon(functools.partial(run,
+    loop.call_soon(functools.partial(run_async,
                                      event_handler=message_iter.event_handler,
                                      status_handler=message_iter.status_handler,
                                      **json.loads(message.raw_payload)))

@@ -223,6 +223,9 @@ def test_generate_ansible_command():
     with patch.object(rc.loader, 'isfile', side_effect=lambda x: True):
         cmd = rc.generate_ansible_command()
         assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '@/env/extravars', '-e', 'test="key"', 'main.yaml']
+        rc.extra_vars = '/tmp/extravars.yml'
+        cmd = rc.generate_ansible_command()
+        assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '@/env/extravars', '-e', '@/tmp/extravars.yml', 'main.yaml']
         rc.extra_vars = None
         cmd = rc.generate_ansible_command()
         assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '@/env/extravars', 'main.yaml']

@@ -3,6 +3,11 @@
 Changelog
 ---------
 
+1.3.5 (2019-06-06)
+++++++++++++++++++
+- Fixed a bug which prevented process isolation directories from being cleaned
+  up when using Runner's Python module interface.
+
 1.3.4 (2019-04-25)
 ++++++++++++++++++
 - Removed an explicit version pin of the six library (which is unavailable in

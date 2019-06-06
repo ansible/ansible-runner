@@ -22,6 +22,7 @@ def executor(tmpdir, request):
     r = init_runner(
         private_data_dir=private_data_dir,
         inventory="localhost ansible_connection=local",
+        envvars={"ANSIBLE_DEPRECATION_WARNINGS": "False"},
         playbook=yaml.safe_load(playbook)
     )
 
@@ -170,11 +171,13 @@ def test_callback_plugin_task_args_leak(executor, playbook):
 
     # task 1
     assert events[2]['event'] == 'playbook_on_task_start'
-    assert events[3]['event'] == 'runner_on_ok'
+    assert events[3]['event'] == 'runner_on_start'
+    assert events[4]['event'] == 'runner_on_ok'
 
     # task 2 no_log=True
-    assert events[4]['event'] == 'playbook_on_task_start'
-    assert events[5]['event'] == 'runner_on_ok'
+    assert events[5]['event'] == 'playbook_on_task_start'
+    assert events[6]['event'] == 'runner_on_start'
+    assert events[7]['event'] == 'runner_on_ok'
     assert 'PUBLIC' in json.dumps(events)
     assert 'PRIVATE' not in json.dumps(events)
     # make sure playbook was successful, so all tasks were hit
@@ -205,12 +208,13 @@ def test_callback_plugin_censoring_does_not_overwrite(executor, playbook):
     # task 1
     assert events[2]['event'] == 'playbook_on_task_start'
     # Ordering of task and item events may differ randomly
-    assert set(['runner_on_ok', 'runner_item_on_ok']) == set([data['event'] for data in events[3:5]])
+    assert set(['runner_on_start', 'runner_item_on_ok', 'runner_on_ok']) == set([data['event'] for data in events[3:6]])
 
     # task 2 no_log=True
-    assert events[5]['event'] == 'playbook_on_task_start'
-    assert events[6]['event'] == 'runner_on_ok'
-    assert 'helloworld!' in events[6]['event_data']['res']['msg']
+    assert events[6]['event'] == 'playbook_on_task_start'
+    assert events[7]['event'] == 'runner_on_start'
+    assert events[8]['event'] == 'runner_on_ok'
+    assert 'helloworld!' in events[8]['event_data']['res']['msg']
 
 
 @pytest.mark.parametrize('playbook', [

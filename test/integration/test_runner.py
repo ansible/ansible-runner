@@ -42,6 +42,7 @@ def test_run_command_with_unicode(rc):
     if six.PY2:
         expected = expected.decode('utf-8')
     rc.command = ['echo', '"utf-8-䉪ቒ칸ⱷ?噂폄蔆㪗輥"']
+    rc.env = {"䉪ቒ칸": "蔆㪗輥"}
     status, exitcode = Runner(config=rc).run()
     assert status == 'successful'
     assert exitcode == 0

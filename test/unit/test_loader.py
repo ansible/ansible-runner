@@ -112,7 +112,7 @@ def test_load_file_type_check(loader):
 
 
 def test_get_contents_ok(loader):
-    with patch('ansible_runner.loader.open') as mock_open:
+    with patch('codecs.open') as mock_open:
         handler = BytesIO()
         handler.write(b"test string")
         handler.seek(0)

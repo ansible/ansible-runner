@@ -42,7 +42,8 @@ def test_run_command_with_unicode(rc):
     if six.PY2:
         expected = expected.decode('utf-8')
     rc.command = ['echo', '"utf-8-䉪ቒ칸ⱷ?噂폄蔆㪗輥"']
-    rc.env = {"䉪ቒ칸": "蔆㪗輥"}
+    rc.envvars = {"䉪ቒ칸": "蔆㪗輥"}
+    rc.prepare_env()
     status, exitcode = Runner(config=rc).run()
     assert status == 'successful'
     assert exitcode == 0
@@ -51,6 +52,7 @@ def test_run_command_with_unicode(rc):
         assert data.get('command') == ['echo', expected]
         assert 'cwd' in data
         assert isinstance(data.get('env'), dict)
+        assert u"䉪ቒ칸" in data.get('env')
 
 
 def test_run_command_finished_callback(rc):

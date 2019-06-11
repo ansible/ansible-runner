@@ -18,6 +18,7 @@
 #
 import os
 import json
+import codecs
 
 from yaml import safe_load, YAMLError
 from six import string_types
@@ -95,8 +96,7 @@ class ArtifactLoader(object):
         try:
             if not os.path.exists(path):
                 raise ConfigurationError('specified path does not exist %s' % path)
-
-            with open(path) as f:
+            with codecs.open(path, encoding='utf-8') as f:
                 data = f.read()
 
             return data

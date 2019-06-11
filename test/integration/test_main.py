@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
 from __future__ import print_function
 from ansible_runner.__main__ import main
 
 import os
+import codecs
 import multiprocessing
 import shutil
 import yaml
@@ -207,15 +209,15 @@ def test_role_run_artifacts_dir_abs():
 @pytest.mark.parametrize('envvars', [
     {'msg': 'hi'},
     {
-        'msg': b'\xf0\x98\x90\x9d\xe5\x83\xac\xe2\xb2\x82\xeb\x8d\xb6'.decode('utf-8'),
-        b'\xf0\x98\x90\x9d\xe5\x83\xac\xe2\xb2\x82\xeb\x8d\xb6'.decode('utf-8'): b'\xf0\x98\x90\x9d\xe5\x83\xac\xe2\xb2\x82\xeb\x8d\xb6'.decode('utf-8')
+        'msg': u'utf-8-䉪ቒ칸ⱷ?噂폄蔆㪗輥',
+        u'蔆㪗輥': u'䉪ቒ칸'
     }
 ])
 def test_role_run_env_vars(envvars):
 
     with temp_directory() as temp_dir:
         ensure_directory(os.path.join(temp_dir, 'env'))
-        with open(os.path.join(temp_dir, 'env/envvars'), 'w') as f:
+        with codecs.open(os.path.join(temp_dir, 'env/envvars'), 'w', encoding='utf-8') as f:
             f.write(yaml.dump(envvars))
 
         rc = main(['-r', 'benthomasson.hello_role',

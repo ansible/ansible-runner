@@ -169,7 +169,7 @@ class BaseCallbackModule(CallbackBase):
 
     def v2_playbook_on_vars_prompt(self, varname, private=True, prompt=None,
                                    encrypt=None, confirm=False, salt_size=None,
-                                   salt=None, default=None):
+                                   salt=None, default=None, unsafe=None):
         event_data = dict(
             varname=varname,
             private=private,
@@ -179,6 +179,7 @@ class BaseCallbackModule(CallbackBase):
             salt_size=salt_size,
             salt=salt,
             default=default,
+            unsafe=unsafe,
         )
         with self.capture_event_data('playbook_on_vars_prompt', **event_data):
             super(BaseCallbackModule, self).v2_playbook_on_vars_prompt(

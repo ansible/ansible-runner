@@ -225,11 +225,7 @@ class OutputEventFilter(object):
         self.suppress_ansible_output = suppress_ansible_output
 
     def flush(self):
-        # pexpect wants to flush the file it writes to, but we're not
-        # actually capturing stdout to a raw file; we're just
-        # implementing a custom `write` method to discover and emit events from
-        # the stdout stream
-        pass
+        self._handle.flush()
 
     def write(self, data):
         self._buffer.write(data)
@@ -302,6 +298,7 @@ class OutputEventFilter(object):
             self._emit_event(value)
             self._buffer = StringIO()
         self._event_callback(dict(event='EOF'))
+        self._handle.close()
 
     def _emit_event(self, buffered_stdout, next_event_data=None):
         next_event_data = next_event_data or {}

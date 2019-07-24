@@ -81,7 +81,7 @@ class RunnerConfig(object):
                  process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None,
                  tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None, project_dir=None,
-                 directory_isolation_base_path=None, envvars=None, forks=None):
+                 directory_isolation_base_path=None, ansible_options=None, envvars=None, forks=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = ident
         self.json_mode = json_mode
@@ -121,6 +121,7 @@ class RunnerConfig(object):
         self.fact_cache_type = fact_cache_type
         self.fact_cache = os.path.join(self.artifact_dir, fact_cache or 'fact_cache') if self.fact_cache_type == 'jsonfile' else None
         self.execution_mode = ExecutionMode.NONE
+        self.ansible_options = ansible_options
         self.envvars = envvars
         self.forks = forks
 
@@ -348,8 +349,8 @@ class RunnerConfig(object):
         if self.forks:
             exec_list.extend(['--forks', '{}'.format(self.forks)])
 
-        if len(self.expect_passwords) > 2:
-            exec_list.append('-k')
+        if self.ansible_options:
+            exec_list.append(self.ansible_options)
 
         # Other parameters
         if self.execution_mode == ExecutionMode.ANSIBLE_PLAYBOOK:

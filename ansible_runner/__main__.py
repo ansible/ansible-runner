@@ -255,6 +255,10 @@ def main(sys_args=None):
     parser.add_argument("--limit",
                         help="Matches ansible's ``--limit`` parameter to further constrain the inventory to be used")
 
+    parser.add_argument("--ansible-options", dest='ansible_options',
+                        help="List of additional options to be provided to ansible for the playbook run")
+
+
     args = parser.parse_args(sys_args)
 
     output.configure()
@@ -321,7 +325,8 @@ def main(sys_args=None):
                                    process_isolation_show_paths=args.process_isolation_show_paths,
                                    process_isolation_ro_paths=args.process_isolation_ro_paths,
                                    directory_isolation_base_path=args.directory_isolation_base_path,
-                                   limit=args.limit)
+                                   limit=args.limit,
+                                   ansible_options=args.ansible_options)
                 if args.cmdline:
                     run_options['cmdline'] = args.cmdline
 

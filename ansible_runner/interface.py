@@ -121,6 +121,7 @@ def run(**kwargs):
     :param process_isolation_ro_paths: A path or list of paths on the system that should be exposed to the playbook run as read-only.
     :param directory_isolation_base_path: An optional path will be used as the base path to create a temp directory, the project contents will be
                                           copied to this location which will then be used as the working directory during playbook execution.
+    :param ansible_options: A list of additional options to be provided to ansible for the playbook run
     :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
                        This is only used for 'jsonfile' type fact caches.
     :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
@@ -153,6 +154,7 @@ def run(**kwargs):
     :type process_isolation_show_paths: str or list
     :type process_isolation_ro_paths: str or list
     :type directory_isolation_base_path: str
+    :type ansible_options: str
     :type fact_cache: str
     :type fact_cache_type: str
 

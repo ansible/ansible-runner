@@ -176,7 +176,7 @@ class RunnerConfig(object):
         python_path = self.env.get('PYTHONPATH', os.getenv('PYTHONPATH', ''))
         if python_path and not python_path.endswith(':'):
             python_path += ':'
-        self.env['ANSIBLE_CALLBACK_PLUGINS'] = callback_dir
+        self.env['ANSIBLE_CALLBACK_PLUGINS'] = ':'.join(filter(None,(self.env.get('ANSIBLE_CALLBACK_PLUGINS'), callback_dir)))
         if 'AD_HOC_COMMAND_ID' in self.env:
             self.env['ANSIBLE_STDOUT_CALLBACK'] = 'minimal'
         else:

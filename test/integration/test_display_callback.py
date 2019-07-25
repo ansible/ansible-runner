@@ -11,8 +11,8 @@ from ansible_runner.interface import init_runner
 
 import pytest
 
-
 HERE = os.path.abspath(os.path.dirname(__file__))
+
 
 @pytest.fixture()
 def executor(tmpdir, request):

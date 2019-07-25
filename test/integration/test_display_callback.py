@@ -20,7 +20,7 @@ def executor(tmpdir, request):
     playbooks = request.node.callspec.params.get('playbook')
     playbook = list(playbooks.values())[0]
     envvars = request.node.callspec.params.get('envvars')
-    envvars.update({"ANSIBLE_DEPRECATION_WARNINGS": "False"})
+    envvars = envvars.update({"ANSIBLE_DEPRECATION_WARNINGS": "False"}) if envvars is not None else {"ANSIBLE_DEPRECATION_WARNINGS": "False"}
 
     r = init_runner(
         private_data_dir=private_data_dir,

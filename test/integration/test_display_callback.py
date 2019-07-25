@@ -11,6 +11,7 @@ from ansible_runner.interface import init_runner
 
 import pytest
 
+HERE = os.path.abspath(os.path.dirname(__file__))
 
 @pytest.fixture()
 def executor(tmpdir, request):
@@ -18,11 +19,13 @@ def executor(tmpdir, request):
 
     playbooks = request.node.callspec.params.get('playbook')
     playbook = list(playbooks.values())[0]
+    envvars = request.node.callspec.params.get('envvars')
+    envvars.update({"ANSIBLE_DEPRECATION_WARNINGS": "False"})
 
     r = init_runner(
         private_data_dir=private_data_dir,
         inventory="localhost ansible_connection=local",
-        envvars={"ANSIBLE_DEPRECATION_WARNINGS": "False"},
+        envvars=envvars,
         playbook=yaml.safe_load(playbook)
     )
 
@@ -57,7 +60,11 @@ def executor(tmpdir, request):
         var: results
 '''},  # noqa
 ])
-def test_callback_plugin_receives_events(executor, event, playbook):
+@pytest.mark.parametrize('envvars', [
+{'ANSIBLE_CALLBACK_PLUGINS': os.path.join(HERE, 'callback')},
+{'ANSIBLE_CALLBACK_PLUGINS': ''}
+])
+def test_callback_plugin_receives_events(executor, event, playbook, envvars):
     executor.run()
     assert len(list(executor.events))
     assert event in [task['event'] for task in executor.events]

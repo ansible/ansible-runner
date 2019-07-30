@@ -5,14 +5,22 @@ import pkg_resources
 import json
 import os
 
-from ansible_runner import run
+from ansible_runner import run, run_async
 
 
-def test_basic_events():
+def test_basic_events(is_run_async=False,g_facts=False):
     tdir = tempfile.mkdtemp()
-    r = run(private_data_dir=tdir,
-            inventory="localhost ansible_connection=local",
-            playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
+    inventory = "localhost ansible_connection=local"
+    playbook = [{'hosts': 'all', 'gather_facts': g_facts, 'tasks': [{'debug': {'msg': "test"}}]}]
+    if not is_run_async:
+        r = run(private_data_dir=tdir,
+                inventory=inventory,
+                playbook=playbook)
+    else:
+        _, r = run_async(private_data_dir=tdir,
+                         inventory=inventory,
+                         playbook=playbook)
+
     event_types = [x['event'] for x in r.events]
     okay_events = [x for x in filter(lambda x: 'event' in x and x['event'] == 'runner_on_ok',
                                      r.events)]
@@ -21,11 +29,19 @@ def test_basic_events():
     assert "runner_on_ok" in event_types
     assert "playbook_on_stats" in event_types
     assert r.rc == 0
-    assert len(okay_events) == 1
+    if not is_run_async:
+        assert len(okay_events) == 1
+    else:
+        assert len(okay_events) == 2
+
     okay_event = okay_events[0]
     assert "uuid" in okay_event and len(okay_event['uuid']) == 36
     assert "stdout" in okay_event and len(okay_event['stdout']) > 0
     assert "event_data" in okay_event and len(okay_event['event_data']) > 0
+
+
+def test_async_events():
+    test_basic_events(is_run_async=True,g_facts=True)
 
 
 def test_basic_serializeable():

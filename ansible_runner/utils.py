@@ -13,6 +13,7 @@ import base64
 import threading
 import pipes
 import uuid
+import codecs
 
 try:
     from collections.abc import Iterable, Mapping
@@ -203,6 +204,28 @@ def dump_artifacts(kwargs):
             path = os.path.join(private_data_dir, 'env')
             dump_artifact(str(kwargs[key]), path, key)
             kwargs.pop(key)
+
+
+def collect_new_events(event_path,old_events):
+    '''
+    Collect new events for the 'events' generator property
+    '''
+    dir_events = os.listdir(event_path)
+    dir_events_actual = []
+    for each_file in dir_events:
+        if re.match("^[0-9]+-.+json$", each_file):
+            if '-partial' not in each_file and each_file not in old_events.keys() :
+                dir_events_actual.append(each_file)
+    dir_events_actual.sort(key=lambda filenm: int(filenm.split("-", 1)[0]))
+    for event_file in dir_events_actual:
+        with codecs.open(os.path.join(event_path, event_file), 'r', encoding='utf-8') as event_file_actual:
+            try:
+                event = json.load(event_file_actual)
+            except ValueError:
+                break
+
+        old_events[event_file] = True
+        yield event, old_events
 
 
 class OutputEventFilter(object):

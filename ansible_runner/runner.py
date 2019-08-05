@@ -103,7 +103,10 @@ class Runner(object):
                 raise
         os.close(os.open(stdout_filename, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
 
-        command = [a.decode('utf-8') if six.PY2 else a for a in self.config.command]
+        if six.PY2:
+            command = [a.decode('utf-8') for a in self.config.command]
+        else:
+            command = self.config.command
         with codecs.open(command_filename, 'w', encoding='utf-8') as f:
             os.chmod(command_filename, stat.S_IRUSR | stat.S_IWUSR)
             json.dump(

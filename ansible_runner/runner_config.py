@@ -220,18 +220,20 @@ class RunnerConfig(object):
         self.expect_passwords[pexpect.TIMEOUT] = None
         self.expect_passwords[pexpect.EOF] = None
 
+        # seed env with existing shell env
+        self.env = os.environ.copy()
+        if self.envvars and isinstance(self.envvars, dict):
+            if six.PY2:
+                self.env.update({k.decode('utf-8'):v.decode('utf-8') for k, v in self.envvars.items()})
+            else:
+                self.env.update({k:v for k, v in self.envvars.items()})
         try:
-            # seed env with existing shell env
-            self.env = os.environ.copy()
             envvars = self.loader.load_file('env/envvars', Mapping)
             if envvars:
-                self.env.update({k:six.text_type(v) for k, v in envvars.items()})
-            if self.envvars and isinstance(self.envvars, dict):
-                self.env.update({k:six.text_type(v) for k, v in self.envvars.items()})
+                self.env.update({six.text_type(k):six.text_type(v) for k, v in envvars.items()})
         except ConfigurationError:
             output.debug("Not loading environment vars")
             # Still need to pass default environment to pexpect
-            self.env = os.environ.copy()
 
         try:
             self.settings = self.loader.load_file('env/settings', Mapping)

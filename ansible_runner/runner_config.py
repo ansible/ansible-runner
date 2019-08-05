@@ -223,7 +223,10 @@ class RunnerConfig(object):
         # seed env with existing shell env
         self.env = os.environ.copy()
         if self.envvars and isinstance(self.envvars, dict):
-            self.env.update({k.decode('utf-8') if six.PY2 else k:v.decode('utf-8') if six.PY2 else v for k, v in self.envvars.items()})
+            if six.PY2:
+                self.env.update({k.decode('utf-8'):v.decode('utf-8') for k, v in self.envvars.items()})
+            else:
+                self.env.update({k:v for k, v in self.envvars.items()})
         try:
             envvars = self.loader.load_file('env/envvars', Mapping)
             if envvars:

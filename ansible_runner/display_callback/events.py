@@ -43,6 +43,8 @@ class AnsibleJSONEncoderLocal(json.JSONEncoder):
     def default(self, o):
         if getattr(o, 'yaml_tag', None) == '!vault':
             return o.data
+        elif isinstance(o, (datetime.date, datetime.datetime)):
+            return o.isoformat()
         return super(AnsibleJSONEncoderLocal, self).default(o)
 
 

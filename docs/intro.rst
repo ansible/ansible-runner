@@ -155,6 +155,16 @@ The process isolation settings are meant to control the process isolation featur
 * ``process_isolation_show_paths``: ``None`` Path or list of paths on the system that should be exposed to the playbook run.
 * ``process_isolation_ro_paths``: ``None`` Path or list of paths on the system that should be exposed to the playbook run as read-only.
 
+Performance Data Collection Settings for Runner
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Runner** is capable of collecting performance data (namely, cpu usage, memory usage, and pid count) during the execution of a playbook run.
+
+* ``performance_data``: ``False`` Enable performance data collection.
+* ``performance_data_cpu_interval``: ``10`` Polling interval in seconds for collecting cpu usage.
+* ``performance_data_memory_interval``: ``10`` Polling interval in seconds for collecting memory usage.
+* ``performance_data_pid_interval``: ``10`` Polling interval in seconds for measuring PID count.
+
 Inventory
 ---------
 

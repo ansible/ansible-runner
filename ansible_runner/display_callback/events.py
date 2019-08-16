@@ -42,7 +42,10 @@ class AnsibleJSONEncoderLocal(json.JSONEncoder):
 
     def default(self, o):
         if getattr(o, 'yaml_tag', None) == '!vault':
-            return o.data
+            encrypted_form = o._ciphertext
+            if isinstance(encrypted_form, bytes):
+                encrypted_form = encrypted_form.decode('utf-8')
+            return {'__ansible_vault': encrypted_form}
         elif isinstance(o, (datetime.date, datetime.datetime)):
             return o.isoformat()
         return super(AnsibleJSONEncoderLocal, self).default(o)

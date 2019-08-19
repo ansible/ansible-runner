@@ -31,6 +31,26 @@ import uuid
 __all__ = ['event_context']
 
 
+# use a custom JSON serializer so we can properly handle !unsafe and !vault
+# objects that may exist in events emitted by the callback plugin
+# see: https://github.com/ansible/ansible/pull/38759
+class AnsibleJSONEncoderLocal(json.JSONEncoder):
+    '''
+    The class AnsibleJSONEncoder exists in Ansible core for this function
+    this performs a mostly identical function via duck typing
+    '''
+
+    def default(self, o):
+        if getattr(o, 'yaml_tag', None) == '!vault':
+            encrypted_form = o._ciphertext
+            if isinstance(encrypted_form, bytes):
+                encrypted_form = encrypted_form.decode('utf-8')
+            return {'__ansible_vault': encrypted_form}
+        elif isinstance(o, (datetime.date, datetime.datetime)):
+            return o.isoformat()
+        return super(AnsibleJSONEncoderLocal, self).default(o)
+
+
 class IsolatedFileWrite:
     '''
     Class that will write partial event data to a file
@@ -48,7 +68,7 @@ class IsolatedFileWrite:
             os.mkdir(os.path.join(self.private_data_dir, 'job_events'), 0o700)
         dropoff_location = os.path.join(self.private_data_dir, 'job_events', filename)
         write_location = '.'.join([dropoff_location, 'tmp'])
-        partial_data = json.dumps(value)
+        partial_data = json.dumps(value, cls=AnsibleJSONEncoderLocal)
         with os.fdopen(os.open(write_location, os.O_WRONLY | os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR), 'w') as f:
             f.write(partial_data)
         os.rename(write_location, dropoff_location)

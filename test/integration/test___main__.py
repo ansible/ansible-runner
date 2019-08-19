@@ -159,6 +159,14 @@ def test_cmdline_roles_path():
     result.called_with_args([run_options])
 
 
+def test_cmdline_role_with_playbook_option():
+    """Test error is raised with invalid command line option '-p'
+    """
+    cmdline('run', 'private_data_dir', '-r', 'fake', '-p', 'fake')
+    with raises(SystemExit) as exc:
+        main()
+        assert exc == 1
+
 
 def test_cmdline_playbook():
     try:
@@ -191,36 +199,21 @@ def test_cmdline_playbook():
 
 
 def test_cmdline_playbook_hosts():
-    try:
-        private_data_dir = tempfile.mkdtemp()
-        play = [{'hosts': 'all', 'tasks': [{'debug': {'msg': random_string()}}]}]
+    """Test error is raised with trying to pass '--hosts' with '-p'
+    """
+    cmdline('run', 'private_data_dir', '-p', 'fake', '--hosts', 'all')
+    with raises(SystemExit) as exc:
+        main()
+        assert exc == 1
 
-        path = os.path.join(private_data_dir, 'project')
-        os.makedirs(path)
 
-        playbook = os.path.join(path, 'main.yaml')
-        with open(playbook, 'w') as f:
-            f.write(json.dumps(play))
-
-        path = os.path.join(private_data_dir, 'inventory')
-        os.makedirs(path)
-
-        inventory = os.path.join(path, 'hosts')
-        with open(inventory, 'w') as f:
-            f.write('[all]\nlocalhost ansible_connection=local')
-
-        # privateip: removed --hosts command line option from test beause it is
-        # not a supported combination of cli options
-        #cmdline('run', private_data_dir, '-p', playbook, '--hosts', 'all')
-        cmdline('run', private_data_dir, '-p', playbook)
-
-        assert main() == 0
-
-        with open(playbook) as f:
-            assert json.loads(f.read()) == play
-
-    finally:
-        shutil.rmtree(private_data_dir)
+def test_cmdline_includes_one_option():
+    """Test error is raised if not '-p', '-m' or '-r'
+    """
+    cmdline('run', 'private_data_dir')
+    with raises(SystemExit) as exc:
+        main()
+        assert exc == 1
 
 
 def test_cmdline_cmdline_override():

@@ -258,10 +258,9 @@ def main(sys_args=None):
 
     args = parser.parse_args(sys_args)
 
-    if args.hosts and not (args.module or args.role):
-        parser.exit(status=1, message="The --hosts option can only be used with -m or -r\n")
-
     if args.command in ('start', 'run'):
+        if args.hosts and not (args.module or args.role):
+            parser.exit(status=1, message="The --hosts option can only be used with -m or -r\n")
         if not (args.module or args.role) and not args.playbook:
             parser.exit(status=1, message="The -p option must be specified when not using -m or -r\n")
 

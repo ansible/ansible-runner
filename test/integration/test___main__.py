@@ -39,7 +39,7 @@ def test_main_bad_private_data_dir():
     tmpfile = os.path.join('/tmp', str(uuid.uuid4().hex))
     open(tmpfile, 'w').write(random_string())
 
-    cmdline('run', tmpfile)
+    cmdline('run', tmpfile, '-p', 'fake')
 
     try:
         with raises(OSError):
@@ -209,7 +209,10 @@ def test_cmdline_playbook_hosts():
         with open(inventory, 'w') as f:
             f.write('[all]\nlocalhost ansible_connection=local')
 
-        cmdline('run', private_data_dir, '-p', playbook, '--hosts', 'all')
+        # privateip: removed --hosts command line option from test beause it is
+        # not a supported combination of cli options
+        #cmdline('run', private_data_dir, '-p', playbook, '--hosts', 'all')
+        cmdline('run', private_data_dir, '-p', playbook)
 
         assert main() == 0
 
@@ -237,7 +240,11 @@ def test_cmdline_cmdline_override():
         inventory = os.path.join(path, 'hosts')
         with open(inventory, 'w') as f:
             f.write('[all]\nlocalhost ansible_connection=local')
-        cmdline('run', private_data_dir, '-p', playbook, '--hosts', 'all', '--cmdline', '-e foo=bar')
+
+        # privateip: removed --hosts command line option from test beause it is
+        # not a supported combination of cli options
+        #cmdline('run', private_data_dir, '-p', playbook, '--hosts', 'all', '--cmdline', '-e foo=bar')
+        cmdline('run', private_data_dir, '-p', playbook, '--cmdline', '-e foo=bar')
         assert main() == 0
     finally:
         shutil.rmtree(private_data_dir)

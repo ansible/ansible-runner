@@ -178,7 +178,7 @@ def main(sys_args=None):
                         help="The full path to ansible[-playbook] binary")
 
     parser.add_argument("--hosts",
-                        help="Define the set of hosts to execute against")
+                        help="Define the set of hosts to execute against (only works with -m or -r)")
 
     parser.add_argument("-i", "--ident",
                         default=uuid4(),
@@ -257,6 +257,12 @@ def main(sys_args=None):
                         help="Matches ansible's ``--limit`` parameter to further constrain the inventory to be used")
 
     args = parser.parse_args(sys_args)
+
+    if args.hosts and not (args.module or args.role):
+        parser.exit(status=1, message="The --hosts option can only be used with -m or -r\n")
+
+    if not (args.module or args.role):
+        parser.exit(status=1, message="The -p option must be specified with not using -m or -r\n")
 
     output.configure()
 

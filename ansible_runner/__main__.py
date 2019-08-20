@@ -29,8 +29,9 @@ import json
 import stat
 import os
 import shutil
-from contextlib import contextmanager
+import textwrap
 
+from contextlib import contextmanager
 from uuid import uuid4
 
 from yaml import safe_load
@@ -48,6 +49,7 @@ DEFAULT_RUNNER_BINARY = os.getenv('RUNNER_BINARY', None)
 DEFAULT_RUNNER_PLAYBOOK = os.getenv('RUNNER_PLAYBOOK', None)
 DEFAULT_RUNNER_ROLE = os.getenv('RUNNER_ROLE', None)
 DEFAULT_RUNNER_MODULE = os.getenv('RUNNER_MODULE', None)
+DEFAULT_UUID = uuid4()
 
 logger = logging.getLogger('ansible-runner')
 
@@ -153,108 +155,303 @@ def role_manager(args):
             shutil.rmtree(env_path)
 
 
+def print_common_usage():
+    print(textwrap.dedent("""
+        These are common Ansible Runner subcommands:
+
+            execute a playbook contained in an ansible-runner project:
+
+                playbook run        Run a playbook from the ansible-runner metadata
+                playbook start      Run a playbook in the background
+                playbook stop       Stop an existing playbook that was started
+                playbook is-alive   Check if a playbook is still running
+
+            directly execute ansible primitives:
+
+                role run            Directly execute an Ansible role
+                module run          Directly execute an Ansible module
+
+        `ansible-runner --help` list of optional command line arguments
+    """))
+
+
 def main(sys_args=None):
-    parser = argparse.ArgumentParser(description='manage ansible execution')
+    """Main entry point for ansible-runner executable
 
-    parser.add_argument('--version', action='version', version=VERSION)
+    When the ```ansible-runner``` command is executed, this function
+    is the main entry point that is called and executed.
 
-    parser.add_argument('command', choices=['run', 'start', 'stop', 'is-alive'])
+    :param sys_args: List of arguments to be parsed by the parser
+    :type sys_args: list
 
-    parser.add_argument('private_data_dir',
-                        help='Base directory containing Runner metadata (project, inventory, etc')
+    :returns: an instance of SystemExit
+    :rtype: SystemExit
+    """
+    parser = argparse.ArgumentParser(
+        description="Use 'ansible-runner' (with no arguments) to see basic usage"
+    )
+
+    parser.add_argument(
+        '--version',
+        action='version',
+        version="ansible-runner v{}".format(VERSION)
+    )
+
+    # positional options
+
+    parser.add_argument(
+        "command",
+        choices=["run", "start", "stop", "is-alive"],
+        metavar="COMMAND",
+        help="command directive for controlling ansible-runner execution "
+             "(one of 'run', 'start', 'stop', 'is-alive')"
+        #help="command directive controlling ansible-runner execution"
+    )
+
+    parser.add_argument(
+        'private_data_dir',
+        help="base directory cotnaining the ansible-runner metadata "
+             "(project, inventory, env, etc)"
+    )
+
+    # mutually exclusive group
 
     group = parser.add_mutually_exclusive_group()
 
-    group.add_argument("-m", "--module", default=DEFAULT_RUNNER_MODULE,
-                       help="Invoke an Ansible module directly without a playbook")
+    group.add_argument(
+        "-p", "--playbook",
+        default=DEFAULT_RUNNER_PLAYBOOK,
+        help="invoke an Ansible playbook from the ansible-runner project "
+             "(See Ansible Playbook Options below)"
+    )
 
-    group.add_argument("-p", "--playbook", default=DEFAULT_RUNNER_PLAYBOOK,
-                       help="The name of the playbook to execute")
+    group.add_argument(
+        "-m", "--module",
+        default=DEFAULT_RUNNER_MODULE,
+        help="invoke an Ansible module directly without a playbook "
+             "(See Ansible Runner Options below)"
+    )
 
-    group.add_argument("-r", "--role", default=DEFAULT_RUNNER_ROLE,
-                       help="Invoke an Ansible role directly without a playbook")
+    group.add_argument(
+        "-r", "--role",
+        default=DEFAULT_RUNNER_ROLE,
+        help="invoke an Ansible role directly without a playbook "
+             "(See Ansible Role Options below)"
+    )
 
-    parser.add_argument("-b", "--binary", default=DEFAULT_RUNNER_BINARY,
-                        help="The full path to ansible[-playbook] binary")
+    # ansible-runner options
 
-    parser.add_argument("--hosts",
-                        help="Define the set of hosts to execute against (only works with -m or -r)")
+    runner_group = parser.add_argument_group(
+        "Ansible Runner Options",
+        "configuration options for controlling the ansible-runner "
+        "runtime environment."
+    )
 
-    parser.add_argument("-i", "--ident",
-                        default=uuid4(),
-                        help="An identifier that will be used when generating the"
-                             "artifacts directory and can be used to uniquely identify a playbook run")
+    runner_group.add_argument(
+        "--debug",
+        action="store_true",
+        help="enable ansible-runner debug output logging (default=False)"
+    )
 
-    parser.add_argument("--rotate-artifacts",
-                        default=0,
-                        type=int,
-                        help="Automatically clean up old artifact directories after a given number has been created, the default is 0 which disables rotation")
+    runner_group.add_argument(
+        "--logfile",
+        help="log output messages to a file (default=None)"
+    )
 
-    parser.add_argument("--roles-path", default=DEFAULT_ROLES_PATH,
-                        help="Path to the Ansible roles directory")
+    runner_group.add_argument(
+        "-b", "--binary",
+        default=DEFAULT_RUNNER_BINARY,
+        help="specifies the full path pointing to the Ansible binaries "
+              "(default={})".format(DEFAULT_RUNNER_BINARY)
+    )
 
-    parser.add_argument("--role-vars",
-                        help="Variables to pass to the role at runtime")
+    runner_group.add_argument(
+        "-i", "--ident",
+        default=DEFAULT_UUID,
+        help="an identifier that will be used when generating the artifacts "
+             "directory and can be used to uniquely identify a playbook run "
+             "(default={})".format(DEFAULT_UUID)
+    )
 
-    parser.add_argument("--role-skip-facts", action="store_true", default=False,
-                        help="Disable fact collection when executing a role directly")
+    runner_group.add_argument(
+        "--rotate-artifacts",
+        default=0,
+        type=int,
+        help="automatically clean up old artifact directories after a given "
+             "number have been created (default=0, disabled)"
+    )
 
-    parser.add_argument("--artifact-dir",
-                        help="Optional Path for the artifact root directory, by default it is located inside the private data dir")
+    runner_group.add_argument(
+        "--artifact-dir",
+        help="optional path for the artifact root directory "
+             "(default=<private_data_dir>/artifacts)"
+    )
 
-    parser.add_argument("--project-dir",
-                        help="Optional Path for the location of the playbook content directory, by default this is 'project' inside the private data dir")
+    runner_group.add_argument(
+        "--project-dir",
+        help="optional path for the location of the playbook content directory "
+             "(default=<private_data_dir/project)"
+    )
 
-    parser.add_argument("--inventory",
-                        help="Override the default inventory location in private_data_dir")
+    runner_group.add_argument(
+        "--inventory",
+        help="optional path for the location of the inventory content directory "
+             "(default=<private_data_dir>/inventory)"
+    )
 
-    parser.add_argument("--forks",
-                        help="Set Ansible concurrency via Forks")
+    runner_group.add_argument(
+        "-j", "--json",
+        action="store_true",
+        help="output the JSON event structure to stdout instead of "
+             "Ansible output (default=False)"
+    )
 
-    parser.add_argument("-j", "--json", action="store_true",
-                        help="Output the json event structure to stdout instead of Ansible output")
+    runner_group.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="disable all messages sent to stdout/stderr (default=False)"
+    )
 
-    parser.add_argument("-v", action="count",
-                        help="Increase the verbosity with multiple v's (up to 5) of the ansible-playbook output")
+    runner_group.add_argument(
+        "-v",
+        action="count",
+        help="increase the verbosity with multiple v's (up to 5) of the "
+             "ansible-playbook output (default=None)"
+    )
 
-    parser.add_argument("-q", "--quiet", action="store_true",
-                        help="Disable all output")
+    # ansible options
 
-    parser.add_argument("--cmdline",
-                        help="Command line options to pass to ansible-playbook at execution time")
+    ansible_group = parser.add_argument_group(
+        "Ansible Options",
+        "control the ansible[-playbook] execution environment"
+    )
 
-    parser.add_argument("--debug", action="store_true",
-                        help="Enable Runner debug output logging")
+    ansible_group.add_argument(
+        "--limit",
+        help="matches Ansible's ```--limit``` parameter to further constrain "
+             "the inventory to be used (default=None)"
+    )
 
-    parser.add_argument("--logfile",
-                        help="Log output messages to a file")
+    ansible_group.add_argument(
+        "--cmdline",
+        help="command line options to pass to ansible-playbook at "
+             "execution time (default=None)"
+    )
 
-    parser.add_argument("-a", "--args", dest='module_args',
-                        help="Module arguments")
+    ansible_group.add_argument(
+        "--hosts",
+        help="define the set of hosts to execute against (default=None) "
+             "Note: this parameter only works with -m or -r"
+    )
 
-    parser.add_argument("--process-isolation", dest='process_isolation', action="store_true",
-                        help="Limits what directories on the filesystem the playbook run has access to, defaults to /tmp")
+    ansible_group.add_argument(
+        "--forks",
+        help="matches Ansible's ```--forks``` parameter to set the number "
+             "of conconurent processes (default=None)"
+    )
 
-    parser.add_argument("--process-isolation-executable", dest='process_isolation_executable', default="bwrap",
-                        help="Process isolation executable that will be used. Defaults to bwrap")
+    # roles group
 
-    parser.add_argument("--process-isolation-path", dest='process_isolation_path', default="/tmp",
-                        help="Path that an isolated playbook run will use for staging. Defaults to /tmp")
+    roles_group = parser.add_argument_group(
+        "Ansible Role Options",
+        "configuration options for directly executing Ansible roles"
+    )
 
-    parser.add_argument("--process-isolation-hide-paths", dest='process_isolation_hide_paths',
-                        help="List of paths on the system that should be hidden from the playbook run")
+    roles_group.add_argument(
+        "--roles-path",
+        default=DEFAULT_ROLES_PATH,
+        help="path used to locate the role to be executed (default=None)"
+    )
 
-    parser.add_argument("--process-isolation-show-paths", dest='process_isolation_show_paths',
-                        help="List of paths on the system that should be exposed to the playbook run")
+    roles_group.add_argument(
+        "--role-vars",
+        help="set of variables to be passed to the role at run time in the "
+             "form of 'key1=value1 key2=value2 keyN=valueN'(default=None)"
+    )
 
-    parser.add_argument("--process-isolation-ro-paths", dest='process_isolation_ro_paths',
-                        help="List of paths on the system that should be exposed to the playbook run as read-only")
+    roles_group.add_argument(
+        "--role-skip-facts",
+        action="store_true",
+        default=False,
+        help="disable fact collection when the role is executed (default=False)"
+    )
 
-    parser.add_argument("--directory-isolation-base-path", dest='directory_isolation_base_path',
-                        help="Copies the project directory to a location in this directory to prevent multiple simultaneous executions from conflicting")
+    # modules groups
 
-    parser.add_argument("--limit",
-                        help="Matches ansible's ``--limit`` parameter to further constrain the inventory to be used")
+    modules_group = parser.add_argument_group(
+        "Ansible Module Options",
+        "configuration options for directly executing Ansible modules"
+    )
+
+    modules_group.add_argument(
+        "-a", "--args",
+        dest='module_args',
+        help="set of arguments to be passed to the module at run time in the "
+             "form of 'key1=value1 key2=value2 keyN=valueN'(default=None)"
+    )
+
+    # playbook options
+    playbook_group = parser.add_argument_group(
+        "Ansible Playbook Options",
+        "configuation options for executing Ansible playbooks"
+    )
+
+    playbook_group.add_argument(
+        "--process-isolation",
+        dest="process_isolation",
+        action="store_true",
+        help="limits what directories on the filesystem the playbook run "
+             "has access to, defaults to /tmp (default=False)"
+    )
+
+    playbook_group.add_argument(
+        "--process-isolation-executable",
+        dest="process_isolation_executable",
+        default="bwrap",
+        help="process isolation executable that will be used. (default=bwrap)"
+    )
+
+    playbook_group.add_argument(
+        "--process-isolation-path",
+        dest="process_isolation_path",
+        default="/tmp",
+        help="path that an isolated playbook run will use for staging. "
+             "(default=/tmp)"
+    )
+
+    playbook_group.add_argument(
+        "--process-isolation-hide-paths",
+        dest="process_isolation_hide_paths",
+        help="list of paths on the system that should be hidden from the "
+             "playbook run (default=None)"
+    )
+
+    playbook_group.add_argument(
+        "--process-isolation-show-paths",
+        dest="process_isolation_show_paths",
+        help="list of paths on the system that should be exposed to the "
+             "playbook run (default=None)"
+    )
+
+    playbook_group.add_argument(
+        "--process-isolation-ro-paths",
+        dest="process_isolation_ro_paths",
+        help="list of paths on the system that should be exposed to the "
+             "playbook run as read-only (default=None)"
+    )
+
+    playbook_group.add_argument(
+        "--directory-isolation-base-path",
+        dest="directory_isolation_base_path",
+        help="copies the project directory to a location in this directory "
+             "to prevent multiple simultaneous executions from conflicting "
+             "(default=None)"
+    )
+
+    if len(sys.argv) == 1:
+        parser.print_usage()
+        print_common_usage()
+        parser.exit(status=0)
 
     args = parser.parse_args(sys_args)
 

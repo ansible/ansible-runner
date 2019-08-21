@@ -229,7 +229,7 @@ def main(sys_args=None):
         "-m", "--module",
         default=DEFAULT_RUNNER_MODULE,
         help="invoke an Ansible module directly without a playbook "
-             "(See Ansible Runner Options below)"
+             "(See Ansible Module Options below)"
     )
 
     group.add_argument(

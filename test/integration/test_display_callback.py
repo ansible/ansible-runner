@@ -18,6 +18,9 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 def executor(tmpdir, request, is_pre_ansible28):
     private_data_dir = six.text_type(tmpdir.mkdir('foo'))
 
+
+@pytest.fixture()
+def executor(request, private_data_dir):
     playbooks = request.node.callspec.params.get('playbook')
     playbook = list(playbooks.values())[0]
     envvars = request.node.callspec.params.get('envvars')
@@ -323,3 +326,28 @@ def test_module_level_no_log(executor, playbook, skipif_pre_ansible28):
     assert len(list(executor.events))
     assert 'john-jacob-jingleheimer-schmidt' in json.dumps(list(executor.events))
     assert 'SENSITIVE' not in json.dumps(list(executor.events))
+
+
+def test_output_when_given_invalid_playbook(tmpdir):
+    # As shown in the following issue:
+    #
+    #   https://github.com/ansible/ansible-runner/issues/29
+    #
+    # There was a lack of output by runner when a playbook that doesn't exist
+    # is provided.  This was fixed in this PR:
+    #
+    #   https://github.com/ansible/ansible-runner/pull/34
+    #
+    # But no test validated it.  This does that.
+    private_data_dir = str(tmpdir)
+    executor = init_runner(
+        private_data_dir=private_data_dir,
+        inventory="localhost ansible_connection=local",
+        envvars={"ANSIBLE_DEPRECATION_WARNINGS": "False"},
+        playbook=os.path.join(private_data_dir, 'fake_playbook.yml')
+    )
+
+    executor.run()
+    stdout = executor.stdout.read()
+    assert "ERROR! the playbook:" in stdout
+    assert "could not be found" in stdout

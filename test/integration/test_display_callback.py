@@ -5,6 +5,8 @@ import os
 import yaml
 import six
 
+from sys import executable as ANSIBLE_PYTHON_INTERPRETER
+
 from ansible import __version__ as ANSIBLE_VERSION
 
 from ansible_runner.interface import init_runner
@@ -15,13 +17,21 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.fixture()
-def executor(tmpdir, request):
+def default_envvars():
+    return {
+        "ANSIBLE_PYTHON_INTERPRETER": ANSIBLE_PYTHON_INTERPRETER,
+        "ANSIBLE_DEPRECATION_WARNINGS": "False"
+    }
+
+
+@pytest.fixture()
+def executor(tmpdir, request, default_envvars):
     private_data_dir = six.text_type(tmpdir.mkdir('foo'))
 
     playbooks = request.node.callspec.params.get('playbook')
     playbook = list(playbooks.values())[0]
     envvars = request.node.callspec.params.get('envvars')
-    envvars = envvars.update({"ANSIBLE_DEPRECATION_WARNINGS": "False"}) if envvars is not None else {"ANSIBLE_DEPRECATION_WARNINGS": "False"}
+    envvars = envvars.update(default_envvars) if envvars is not None else default_envvars
 
     r = init_runner(
         private_data_dir=private_data_dir,
@@ -167,7 +177,7 @@ def test_callback_plugin_no_log_filters(executor, playbook):
     - shell: echo "PUBLIC"
     - shell: echo "PRIVATE"
       no_log: true
-    - uri: url=https://example.org username="PUBLIC" password="PRIVATE"
+    - uri: url=https://example.org user="PUBLIC" password="PRIVATE"
     - copy: content="PRIVATE" dest="/tmp/tmp_no_log"
 '''},  # noqa
 ])

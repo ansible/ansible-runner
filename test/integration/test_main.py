@@ -293,11 +293,12 @@ def test_playbook_start():
         ensure_directory(os.path.join(temp_dir, 'inventory'))
         shutil.copy(os.path.join(HERE, 'inventory/localhost'), os.path.join(temp_dir, 'inventory/localhost'))
 
-
+        # privateip: removed --hosts command line option from test beause it is
+        # not a supported combination of cli options
         p = multiprocessing.Process(target=main,
                                     args=[['-p', 'hello.yml',
                                            '--inventory', os.path.join(HERE, 'inventory/localhost'),
-                                           '--hosts', 'localhost',
+                                           #'--hosts', 'localhost',
                                            'start',
                                            temp_dir]])
         p.start()

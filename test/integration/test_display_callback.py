@@ -25,12 +25,15 @@ def executor(request, private_data_dir):
     playbook = list(playbooks.values())[0]
     envvars = request.node.callspec.params.get('envvars')
     envvars = envvars.update({"ANSIBLE_DEPRECATION_WARNINGS": "False"}) if envvars is not None else {"ANSIBLE_DEPRECATION_WARNINGS": "False"}
+    json_mode = request.node.callspec.params.get('json_mode')
+    json_mode = json_mode if json_mode is not None else False
 
     r = init_runner(
         private_data_dir=private_data_dir,
         inventory="localhost ansible_connection=local",
         envvars=envvars,
-        playbook=yaml.safe_load(playbook)
+        playbook=yaml.safe_load(playbook),
+        json_mode=json_mode
     )
 
     return r
@@ -381,3 +384,28 @@ def test_output_when_given_non_playbook_script(private_data_dir):
     assert events[0]['stdout'] == 'hi world'
     assert events[1]['event'] == 'verbose'
     assert events[1]['stdout'] == 'goodbye world'
+
+
+@pytest.mark.parametrize('json_mode', [True])
+@pytest.mark.parametrize('playbook', [
+{'listvars.yml': '''
+- name: List Variables
+  connection: local
+  hosts: all
+  tasks:
+    - name: Display all variables/facts known for a host
+      debug:
+        var: hostvars[inventory_hostname]
+'''},  # noqa
+])
+def test_large_stdout_parsing_when_using_json_output(executor, playbook, json_mode):
+    # When the json flag is used, it is possible to output more data than
+    # pexpect's maxread default of 2000 characters.  As a result, if not
+    # handled properly, the stdout can end up being corrupted with partial
+    # non-event matches with raw "non-json" lines being intermixed with json
+    # ones.
+    #
+    # This tests to confirm we don't polute the stdout output with non-json
+    # lines when a single event has a lot of output.
+    executor.run()
+    assert all(line[0] == "{" for line in executor.stdout.readlines())

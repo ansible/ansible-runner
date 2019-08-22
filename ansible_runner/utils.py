@@ -292,13 +292,6 @@ class OutputEventFilter(object):
 
             self._last_chunk = remainder
         else:
-            if not self.suppress_ansible_output:
-                sys.stdout.write(
-                    data.encode('utf-8') if PY2 else data
-                )
-            self._handle.write(data)
-            self._handle.flush()
-
             # Verbose stdout outside of event data context
             if data and '\n' in data and self._current_event_data is None:
                 # emit events for all complete lines we know about
@@ -310,6 +303,12 @@ class OutputEventFilter(object):
                 # emit all complete lines
                 for line in lines:
                     self._emit_event(line)
+                    if not self.suppress_ansible_output:
+                        sys.stdout.write(
+                            line.encode('utf-8') if PY2 else line
+                        )
+                    self._handle.write(line)
+                    self._handle.flush()
                 self._buffer = StringIO()
                 # put final partial line back on buffer
                 if remainder:

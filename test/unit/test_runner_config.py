@@ -41,7 +41,7 @@ def test_runner_config_init_defaults():
     assert rc.private_data_dir == '/'
     assert rc.ident is not None
     assert rc.playbook is None
-    assert rc.inventory is None
+    assert rc.inventory_dir is None
     assert rc.limit is None
     assert rc.module is None
     assert rc.module_args is None
@@ -59,7 +59,7 @@ def test_runner_config_init_with_ident():
     assert rc.private_data_dir == '/'
     assert rc.ident == 'test'
     assert rc.playbook is None
-    assert rc.inventory is None
+    assert rc.inventory_dir is None
     assert rc.limit is None
     assert rc.module is None
     assert rc.module_args is None
@@ -193,17 +193,17 @@ def test_prepare_env_directory_isolation():
 def test_prepare_inventory(path_exists):
     rc = RunnerConfig(private_data_dir='/')
     rc.prepare_inventory()
-    assert rc.inventory == '/inventory'
-    rc.inventory = '/tmp/inventory'
+    assert rc.inventory_dir == '/inventory'
+    rc.inventory_dir = '/tmp/inventory'
     rc.prepare_inventory()
-    assert rc.inventory == '/tmp/inventory'
-    rc.inventory = 'localhost,anotherhost,'
+    assert rc.inventory_dir == '/tmp/inventory'
+    rc.inventory_dir = 'localhost,anotherhost,'
     rc.prepare_inventory()
-    assert rc.inventory == 'localhost,anotherhost,'
+    assert rc.inventory_dir == 'localhost,anotherhost,'
     path_exists.return_value = False
-    rc.inventory = None
+    rc.inventory_dir = None
     rc.prepare_inventory()
-    assert rc.inventory is None
+    assert rc.inventory_dir is None
 
 
 def test_generate_ansible_command():
@@ -231,18 +231,18 @@ def test_generate_ansible_command():
         assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '@/env/extravars', 'main.yaml']
     rc.extra_vars = None
 
-    rc.inventory = "localhost,"
+    rc.inventory_dir = "localhost,"
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', 'localhost,', 'main.yaml']
 
-    rc.inventory = ['thing1', 'thing2']
+    rc.inventory_dir = ['thing1', 'thing2']
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', 'thing1', '-i', 'thing2', 'main.yaml']
 
-    rc.inventory = []
+    rc.inventory_dir = []
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', 'main.yaml']
-    rc.inventory = None
+    rc.inventory_dir = None
 
     with patch('os.path.exists', return_value=False) as path_exists:
         rc.prepare_inventory()

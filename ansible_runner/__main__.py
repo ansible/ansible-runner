@@ -295,9 +295,15 @@ def main(sys_args=None):
     )
 
     runner_group.add_argument(
-        "--inventory",
+        "--inventory-dir",
         help="optional path for the location of the inventory content directory "
              "(default=<private_data_dir>/inventory)"
+    )
+
+    # TODO: deprecated int 1.3.6, to be removed in 2.0
+    runner_group.add_argument(
+        "--inventory",
+        help="DEPRECATED: please use ```--inventory-dir``` instead"
     )
 
     runner_group.add_argument(
@@ -462,7 +468,14 @@ def main(sys_args=None):
         if not (args.module or args.role) and not args.playbook:
             parser.exit(status=1, message="The -p option must be specified when not using -m or -r\n")
 
+
     output.configure()
+
+    if args.inventory is not None:
+        output.warn("The --inventory option is depreciated and will be removed "
+                    "in a future release.  Please use --inventory-dir instead")
+        if not args.inventory_dir:
+            args.inventory_dir = args.inventory
 
     # enable or disable debug mode
     output.set_debug('enable' if args.debug else 'disable')
@@ -515,7 +528,7 @@ def main(sys_args=None):
                                    rotate_artifacts=args.rotate_artifacts,
                                    ignore_logging=False,
                                    json_mode=args.json,
-                                   inventory=args.inventory,
+                                   inventory_dir=args.inventory_dir,
                                    forks=args.forks,
                                    project_dir=args.project_dir,
                                    artifact_dir=args.artifact_dir,

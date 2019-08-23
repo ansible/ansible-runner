@@ -73,7 +73,7 @@ class RunnerConfig(object):
 
     def __init__(self,
                  private_data_dir=None, playbook=None, ident=uuid4(),
-                 inventory=None, roles_path=None, limit=None, module=None, module_args=None,
+                 inventory_dir=None, roles_path=None, limit=None, module=None, module_args=None,
                  verbosity=None, quiet=False, json_mode=False, artifact_dir=None,
                  rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, suppress_ansible_output=False,
                  process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
@@ -84,7 +84,12 @@ class RunnerConfig(object):
         self.ident = str(ident)
         self.json_mode = json_mode
         self.playbook = playbook
-        self.inventory = inventory
+
+        if inventory_dir is not None:
+            self.inventory_dir = os.path.join(self.private_data_dir, inventory_dir)
+        else:
+            self.inventory_dir = inventory_dir
+
         self.roles_path = roles_path
         self.limit = limit
         self.module = module
@@ -204,8 +209,8 @@ class RunnerConfig(object):
         """
         Prepares the inventory default under ``private_data_dir`` if it's not overridden by the constructor.
         """
-        if self.inventory is None and os.path.exists(os.path.join(self.private_data_dir, "inventory")):
-            self.inventory  = os.path.join(self.private_data_dir, "inventory")
+        if self.inventory_dir is None and os.path.exists(os.path.join(self.private_data_dir, "inventory")):
+            self.inventory_dir  = os.path.join(self.private_data_dir, "inventory")
 
     def prepare_env(self):
         """
@@ -321,15 +326,15 @@ class RunnerConfig(object):
         except ConfigurationError:
             pass
 
-        if self.inventory is None:
+        if self.inventory_dir is None:
             pass
-        elif isinstance(self.inventory, list):
-            for i in self.inventory:
+        elif isinstance(self.inventory_dir, list):
+            for i in self.inventory_dir:
                 exec_list.append("-i")
                 exec_list.append(i)
         else:
             exec_list.append("-i")
-            exec_list.append(self.inventory)
+            exec_list.append(self.inventory_dir)
 
         if self.limit is not None:
             exec_list.append("--limit")

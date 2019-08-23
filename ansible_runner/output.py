@@ -40,6 +40,10 @@ def debug(msg):
         display(msg)
 
 
+def warn(msg):
+    display("\033[93mWARNING: {}\033[0m".format(msg))
+
+
 def set_logfile(filename):
     handlers = [h.get_name() for h in _debug_logger.handlers]
     if 'logfile' not in handlers:

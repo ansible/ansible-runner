@@ -75,85 +75,156 @@ def run(**kwargs):
     '''
     Run an Ansible Runner task in the foreground and return a Runner object when complete.
 
-    :param private_data_dir: The directory containing all runner metadata needed to invoke the runner
-                             module. Output artifacts will also be stored here for later consumption.
-    :param ident: The run identifier for this invocation of Runner. Will be used to create and name
-                  the artifact directory holding the results of the invocation.
-    :param json_mode: Store event data in place of stdout on the console and in the stdout file
-    :param playbook: The playbook (either supplied here as a list or string... or as a path relative to
-                     ``private_data_dir/project``) that will be invoked by runner when executing Ansible.
-    :param module: The module that will be invoked in ad-hoc mode by runner when executing Ansible.
-    :param module_args: The module arguments that will be supplied to ad-hoc mode.
-    :param host_pattern: The host pattern to match when running in ad-hoc mode.
-    :param inventory: Overridees the inventory directory/file (supplied at ``private_data_dir/inventory``) with
-                      a specific host or list of hosts. This can take the form of
-      - Path to the inventory file in the ``private_data_dir``
-      - Native python dict supporting the YAML/json inventory structure
-      - A text INI formatted string
-      - A list of inventory sources, or an empty list to disable passing inventory
-    :param roles_path: Directory or list of directories to assign to ANSIBLE_ROLES_PATH
-    :param envvars: Environment variables to be used when running Ansible. Environment variables will also be
-                    read from ``env/envvars`` in ``private_data_dir``
-    :param extravars: Extra variables to be passed to Ansible at runtime using ``-e``. Extra vars will also be
-                      read from ``env/extravars`` in ``private_data_dir``.
-    :param passwords: A dictionary containing password prompt patterns and response values used when processing output from
-                      Ansible. Passwords will also be read from ``env/passwords`` in ``private_data_dir``.
-    :param settings: A dictionary containing settings values for the ``ansible-runner`` runtime environment. These will also
-                     be read from ``env/settings`` in ``private_data_dir``.
-    :param ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
-    :param cmdline: Commnad line options passed to Ansible read from ``env/cmdline`` in ``private_data_dir``
-    :param limit: Matches ansible's ``--limit`` parameter to further constrain the inventory to be used
-    :param forks: Control Ansible parallel concurrency
-    :param verbosity: Control how verbose the output of ansible-playbook is
-    :param quiet: Disable all output
-    :param artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
-    :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
-    :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
-    :param event_handler: An optional callback that will be invoked any time an event is received by Runner itself
-    :param cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
-    :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
-    :param status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
-    :param process_isolation: Enable limiting what directories on the filesystem the playbook run has access to.
-    :param process_isolation_executable: Path to the executable that will be used to provide filesystem isolation (default: bwrap)
-    :param process_isolation_path: Path that an isolated playbook run will use for staging. (default: /tmp)
-    :param process_isolation_hide_paths: A path or list of paths on the system that should be hidden from the playbook run.
-    :param process_isolation_show_paths: A path or list of paths on the system that should be exposed to the playbook run.
-    :param process_isolation_ro_paths: A path or list of paths on the system that should be exposed to the playbook run as read-only.
-    :param directory_isolation_base_path: An optional path will be used as the base path to create a temp directory, the project contents will be
-                                          copied to this location which will then be used as the working directory during playbook execution.
-    :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
-                       This is only used for 'jsonfile' type fact caches.
-    :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
+    :param private_data_dir: The directory containing all runner metadata
+        needed to invoke the runner module. Output artifacts will also be
+        stored here for later consumption.
     :type private_data_dir: str
+
+    :param ident: The run identifier for this invocation of Runner. Will be
+        used to create and name the artifact directory holding the results of
+        the invocation.
     :type ident: str
+
+    :param json_mode: Store event data in place of stdout on the console and
+        in the stdout file
     :type json_mode: bool
+
+    :param playbook: The playbook (either supplied here as a list or
+        string... or as a path relative to ``private_data_dir/project``) that
+        will be invoked by runner when executing Ansible.
     :type playbook: str or filename or list
-    :type inventory: str or dict or list
-    :type envvars: dict
-    :type extravars: dict
+
+    :param module: The module that will be invoked in ad-hoc mode by runner
+        when executing Ansible.
+    :type module: str
+
+    :param module_args: The module arguments that will be supplied to ad-hoc mode.
+    :type module_args: str
+
+    :param host_pattern: The host pattern to match when running in ad-hoc mode.
+    :type host_pattern: str
+
+    :param inventory: Data structure used to create an inventory source along
+        side the project.  The data structure provided will be dumped to disk
+        and used as the source for providing inventory to the playbook.
+    :type inventory: dict
+
+    :param roles_path: Directory or list of directories to assign to the
+        value of ANSIBLE_ROLES_PATH environment
+    :type roles_path: str
+
+    :param envvars: Environment variables to be used when running Ansible.
+        Environment variables will also be read from ``env/envvars`` in
+        ``private_data_dir``
+    :type envvars: str
+
+    :param extravars: Extra variables to be passed to Ansible at runtime
+        using ``-e``. Extra vars will also be read from ``env/extravars``
+        in ``private_data_dir``.
+    :type extravars: str
+
+    :param passwords: A dictionary containing password prompt patterns
+        and response values used when processing output from Ansible.
+        Passwords will also be read from ``env/passwords`` in
+        ``private_data_dir``.
     :type passwords: dict
+
+    :param settings: A dictionary containing settings values for the
+        ``ansible-runner`` runtime environment. These will also be read
+        from ``env/settings`` in ``private_data_dir``.
     :type settings: dict
+
+    :param ssh_key: The ssh private key passed to ``ssh-agent`` as part
+        of the ansible-playbook run.
     :type ssh_key: str
-    :type artifact_dir: str
-    :type project_dir: str
-    :type rotate_artifacts: int
+
+    :param cmdline: Commnad line options passed to Ansible read from
+        ``env/cmdline`` in ``private_data_dir``
     :type cmdline: str
+
+    :param limit: Matches ansible's ``--limit`` parameter to further
+        constrain the inventory to be used
     :type limit: str
+
+    :param forks: Control Ansible parallel concurrency
     :type forks: int
-    :type quiet: bool
+
+    :param verbosity: Control how verbose the output of ansible-playbook is
     :type verbosity: int
+
+    :param quiet: Disable all output
+    :type quiet: bool
+
+    :param artifact_dir: The path to the directory where artifacts should
+        live, this defaults to 'artifacts' under the private data dir
+    :type artifact_dir: str
+
+    :param project_dir: The path to the playbook content, this defaults
+        to 'project' within the private data dir
+    :type project_dir: str
+
+    :param inventory_dir: The path to the inventory content, this defaults
+        to 'inventory' within the private_data_dir
+    :type inventory_dir: str
+
+    :param rotate_artifacts: Keep at most n artifact directories, disable
+        with a value of 0 which is the default
+    :type rotate_artifacts: int
+
+    :param event_handler: An optional callback that will be invoked any
+        time an event is received by Runner itself
     :type event_handler: function
+
+    :param cancel_callback: An optional callback that can inform runner to
+        cancel (returning True) or not (returning False)
     :type cancel_callback: function
+
+    :param finished_callback: An optional callback that will be invoked at
+        shutdown after process cleanup.
     :type finished_callback: function
+
+    :param status_handler: An optional callback that will be invoked any
+        time the status changes (e.g...started, running, failed, successful,
+        timeout)
     :type status_handler: function
+
+    :param process_isolation: Enable limiting what directories on the
+        filesystem the playbook run has access to.
     :type process_isolation: bool
+
+    :param process_isolation_executable: Path to the executable that will be
+        used to provide filesystem isolation (default: bwrap)
     :type process_isolation_executable: str
+
+    :param process_isolation_path: Path that an isolated playbook run will
+        use for staging. (default: /tmp)
     :type process_isolation_path: str
+
+    :param process_isolation_hide_paths: A path or list of paths on the
+        system that should be hidden from the playbook run.
     :type process_isolation_hide_paths: str or list
+
+    :param process_isolation_show_paths: A path or list of paths on the
+        system that should be exposed to the playbook run.
     :type process_isolation_show_paths: str or list
-    :type process_isolation_ro_paths: str or list
-    :type directory_isolation_base_path: str
+
+    :param process_isolation_ro_paths: A path or list of paths on the system
+        that should be exposed to the playbook run as read-only.
+    :type process_isolation_show_paths:
+
+    :param directory_isolation_base_path: An optional path will be used as
+        the base path to create a temp directory, the project contents will
+        be copied to this location which will then be used as the working
+        directory during playbook execution.
+    :type directory_isolation_base_path:
+
+    :param fact_cache: A string that will be used as the name for the
+        subdirectory of the fact cache in artifacts directory.  This is only
+        used for 'jsonfile' type fact caches.
     :type fact_cache: str
+
+    :param fact_cache_type: A string of the type of fact cache to use.
+        Defaults to 'jsonfile'.
     :type fact_cache_type: str
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object

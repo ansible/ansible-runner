@@ -187,7 +187,7 @@ def test_cmdline_playbook():
         with open(inventory, 'w') as f:
             f.write('[all]\nlocalhost ansible_connection=local')
 
-        cmdline('run', private_data_dir, '-p', playbook, '--inventory', inventory)
+        cmdline('run', private_data_dir, '-p', playbook, '--inventory-dir', 'inventory')
 
         assert main() == 0
 

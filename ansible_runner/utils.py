@@ -182,14 +182,14 @@ def dump_artifacts(kwargs):
         path = os.path.join(private_data_dir, 'project')
         kwargs['playbook'] = dump_artifact(json.dumps(obj), path, 'main.json')
 
-    obj = kwargs.get('inventory')
+    obj = kwargs.pop('inventory', None)
     if obj and isinventory(obj):
         path = os.path.join(private_data_dir, 'inventory')
         if isinstance(obj, Mapping):
-            kwargs['inventory'] = dump_artifact(json.dumps(obj), path, 'hosts.json')
+            kwargs['inventory_dir'] = dump_artifact(json.dumps(obj), path, 'hosts.json')
         elif isinstance(obj, string_types):
             if not os.path.exists(obj):
-                kwargs['inventory'] = dump_artifact(obj, path, 'hosts')
+                kwargs['inventory_dir'] = dump_artifact(obj, path, 'hosts')
 
     for key in ('envvars', 'extravars', 'passwords', 'settings'):
         obj = kwargs.get(key)

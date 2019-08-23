@@ -157,19 +157,19 @@ def role_manager(args):
 
 def print_common_usage():
     print(textwrap.dedent("""
-        These are common Ansible Runner subcommands:
+        These are common Ansible Runner commands:
 
-            execute a playbook contained in an ansible-runner project:
+            execute a playbook contained in an ansible-runner directory:
 
-                playbook run        Run a playbook from the ansible-runner metadata
-                playbook start      Run a playbook in the background
-                playbook stop       Stop an existing playbook that was started
-                playbook is-alive   Check if a playbook is still running
+                ansible-runner run /tmp/private -p playbook.yml
+                ansible-runner start /tmp/private -p playbook.yml
+                ansible-runner stop /tmp/private
+                ansible-runner is-alive /tmp/private
 
             directly execute ansible primitives:
 
-                role run            Directly execute an Ansible role
-                module run          Directly execute an Ansible module
+                ansible-runner run . -r role_name --hosts myhost
+                ansible-runner run . -m command -a "ls -l" --hosts myhost
 
         `ansible-runner --help` list of optional command line arguments
     """))

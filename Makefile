@@ -65,9 +65,11 @@ DEB_DATE := $(shell LC_TIME=C date +"%a, %d %b %Y %T %z")
 
 clean:
 	rm -rf dist
+	rm -rf build
 	rm -rf ansible-runner.egg-info
 	rm -rf rpm-build
 	rm -rf deb-build
+	find . -type f -regex ".*\py[co]$$" -delete
 
 dist:
 	$(DIST_PYTHON) setup.py bdist_wheel --universal

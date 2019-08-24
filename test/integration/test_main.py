@@ -141,6 +141,21 @@ def test_role_logfile():
                    '--logfile', 'new_logfile',
                    'run',
                    'test/integration'])
+        assert os.path.exists('./new_logfile')
+        assert rc == 0
+    finally:
+        os.remove('./new_logfile')
+
+
+
+def test_role_logfile_abs():
+    with temp_directory() as temp_dir:
+        rc = main(['-r', 'benthomasson.hello_role',
+                   '--hosts', 'localhost',
+                   '--roles-path', 'test/integration/project/roles',
+                   '--logfile', 'new_logfile',
+                   'run',
+                   'test/integration'])
         assert os.path.exists('new_logfile')
         assert rc == 0
     finally:
@@ -163,7 +178,6 @@ def test_role_logfile_abs():
 
 
 def test_role_bad_project_dir():
-
     with open("bad_project_dir", 'w') as f:
         f.write('not a directory')
 

@@ -17,9 +17,4 @@
 .pytest_cache
 .coverage
 *,cover
-/test/integration/artifacts
 .venv
-
-# ansible-runner
-artifacts/
-new_logfile

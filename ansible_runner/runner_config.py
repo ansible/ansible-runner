@@ -81,7 +81,7 @@ class RunnerConfig(object):
                  tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None, project_dir=None,
                  directory_isolation_base_path=None, envvars=None, forks=None, cmdline=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
-        self.ident = ident
+        self.ident = str(ident)
         self.json_mode = json_mode
         self.playbook = playbook
         self.inventory = inventory
@@ -93,10 +93,14 @@ class RunnerConfig(object):
         self.binary = binary
         self.rotate_artifacts = rotate_artifacts
         self.artifact_dir = os.path.abspath(artifact_dir or self.private_data_dir)
-        if self.ident is None:
-            self.artifact_dir = os.path.join(self.artifact_dir, "artifacts")
+
+        if artifact_dir is None:
+            self.artifact_dir = os.path.join(self.private_data_dir, 'artifacts')
         else:
-            self.artifact_dir = os.path.join(self.artifact_dir, "artifacts", "{}".format(self.ident))
+            self.artifact_dir = os.path.abspath(artifact_dir)
+
+        if self.ident is not None:
+            self.artifact_dir = os.path.join(self.artifact_dir, "{}".format(self.ident))
 
         self.extra_vars = extravars
         self.process_isolation = process_isolation

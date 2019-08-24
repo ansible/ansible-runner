@@ -74,6 +74,7 @@ def role_manager(args):
                       ignore_logging=False,
                       project_dir=args.project_dir,
                       rotate_artifacts=args.rotate_artifacts)
+
         if args.artifact_dir:
             kwargs.artifact_dir = args.artifact_dir
 
@@ -517,6 +518,7 @@ def main(sys_args=None):
                                    inventory=args.inventory,
                                    forks=args.forks,
                                    project_dir=args.project_dir,
+                                   artifact_dir=args.artifact_dir,
                                    roles_path=[args.roles_path] if args.roles_path else None,
                                    process_isolation=args.process_isolation,
                                    process_isolation_executable=args.process_isolation_executable,

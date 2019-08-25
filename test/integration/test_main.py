@@ -12,23 +12,11 @@ import time
 from contextlib import contextmanager
 import pytest
 
-
 from ansible_runner.exceptions import AnsibleRunnerException
 
+from .helpers import ensure_removed, ensure_directory
+
 HERE = os.path.abspath(os.path.dirname(__file__))
-
-
-def ensure_directory(directory):
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-
-def ensure_removed(path):
-    if os.path.exists(path):
-        if os.path.isfile(path):
-            os.unlink(path)
-        elif os.path.isdir(path):
-            shutil.rmtree(path)
 
 
 @contextmanager

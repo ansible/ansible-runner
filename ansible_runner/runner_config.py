@@ -73,7 +73,7 @@ class RunnerConfig(object):
 
     def __init__(self,
                  private_data_dir=None, playbook=None, ident=uuid4(),
-                 inventory=None, roles_path=None, limit=None, module=None, module_args=None,
+                 inventory=None, roles_path=None, limit=None, connection=None, module=None, module_args=None,
                  verbosity=None, quiet=False, json_mode=False, artifact_dir=None,
                  rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, suppress_ansible_output=False,
                  process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
@@ -91,6 +91,7 @@ class RunnerConfig(object):
         self.inventory = inventory
         self.roles_path = roles_path
         self.limit = limit
+        self.connection = connection
         self.module = module
         self.module_args = module_args
         self.host_pattern = host_pattern
@@ -390,6 +391,9 @@ class RunnerConfig(object):
         if self.limit is not None:
             exec_list.append("--limit")
             exec_list.append(self.limit)
+
+        if self.connection is not None:
+            exec_list.extend(['--connection', self.connection])
 
         if self.loader.isfile('env/extravars'):
             exec_list.extend(['-e', '@{}'.format(self.loader.abspath('env/extravars'))])

@@ -17,25 +17,18 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+import os
+import shutil
 
 
-class AnsibleRunnerException(Exception):
-    """ Generic Runner Error """
+def ensure_removed(path):
+    if os.path.exists(path):
+        if os.path.isfile(path):
+            os.unlink(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
 
 
-class ConfigurationError(AnsibleRunnerException):
-    """ Misconfiguration of Runner """
-
-
-class CallbackError(AnsibleRunnerException):
-    """ Exception occurred in Callback """
-
-
-class AnsibleRunnerCliError(AnsibleRunnerException):
-    """Exception raised by CLI command"""
-
-    def __init__(self, subcommand, msg=None):
-        self.subcommand = subcommand
-        if msg is None:
-            msg="ansible-runner module generated an error"
-        super(AnsibleRunnerCliError, self).__init__(msg)
+def ensure_directory(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)

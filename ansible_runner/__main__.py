@@ -38,6 +38,7 @@ from yaml import safe_load
 
 from ansible_runner import run
 from ansible_runner import output
+from ansible_runner import cli
 from ansible_runner.utils import dump_artifact, Bunch
 from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
@@ -176,18 +177,8 @@ def print_common_usage():
     """))
 
 
-def main(sys_args=None):
-    """Main entry point for ansible-runner executable
+def legacy_cli(sys_args=None):
 
-    When the ```ansible-runner``` command is executed, this function
-    is the main entry point that is called and executed.
-
-    :param sys_args: List of arguments to be parsed by the parser
-    :type sys_args: list
-
-    :returns: an instance of SystemExit
-    :rtype: SystemExit
-    """
     parser = argparse.ArgumentParser(
         description="Use 'ansible-runner' (with no arguments) to see basic usage"
     )
@@ -618,3 +609,23 @@ def main(sys_args=None):
             return(0)
         except OSError:
             return(1)
+
+
+def main(sys_args=None):
+    """Main entry point for ansible-runner executable
+
+    When the ```ansible-runner``` command is executed, this function
+    is the main entry point that is called and executed.
+
+    :param sys_args: List of arguments to be parsed by the parser
+    :type sys_args: list
+
+    :returns: an instance of SystemExit
+    :rtype: SystemExit
+    """
+
+    if os.getenv('ANSIBLE_RUNNER_USE_NEW_CLI'):
+        return cli.main(sys_args)
+    return legacy_cli(sys_args)
+
+

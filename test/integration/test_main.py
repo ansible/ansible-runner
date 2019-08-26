@@ -116,7 +116,7 @@ def test_module_run_clean():
 def test_role_run():
     rc = main(['-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
-               '--roles-path', 'test/integration/roles',
+               '--roles-path', 'test/integration/project/roles',
                'run',
                "test/integration"])
     assert rc == 0
@@ -184,11 +184,21 @@ def test_role_run_clean():
 
     rc = main(['-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
-               '--roles-path', 'test/integration/roles',
+               '--roles-path', 'test/integration/project/roles',
                'run',
                "test/integration"])
     assert rc == 0
     ensure_removed("test/integration/artifacts")
+
+
+def test_role_raises_exception():
+    with temp_directory() as tmpdir:
+        with pytest.raises(AnsibleRunnerException):
+            main(['-r', 'benthomasson.hello_role',
+                  '--roles-path', os.path.join(HERE, 'project/roles'),
+                  'run',
+                  tmpdir])
+
 
 
 def test_role_run_cmd_line_abs():
@@ -202,14 +212,18 @@ def test_role_run_cmd_line_abs():
 
 
 def test_role_run_artifacts_dir():
-    rc = main(['-r', 'benthomasson.hello_role',
-               '--hosts', 'localhost',
-               '--roles-path', 'test/integration/roles',
-               '--artifact-dir', 'otherartifacts',
-               'run',
-               "test/integration"])
-    assert rc == 0
-    ensure_removed("test/integration/artifacts")
+    try:
+        tmpdir = tempfile.mkdtemp()
+        rc = main(['-r', 'benthomasson.hello_role',
+                   '--hosts', 'localhost',
+                   '--roles-path', 'test/integration/project/roles',
+                   '--artifact-dir', os.path.join(tmpdir, 'otherartifacts'),
+                   'run',
+                   "test/integration"])
+        assert os.path.exists(os.path.join(tmpdir, 'otherartifacts'))
+        assert rc == 0
+    finally:
+        shutil.rmtree(tmpdir)
 
 
 def test_role_run_artifacts_dir_abs():
@@ -261,23 +275,7 @@ def test_role_run_args():
     assert rc == 0
 
 
-def test_role_run_inventory():
-
-    with temp_directory() as temp_dir:
-        ensure_directory(os.path.join(temp_dir, 'inventory'))
-        shutil.copy(os.path.join(HERE, 'inventory/localhost'), os.path.join(temp_dir, 'inventory/localhost'))
-
-        rc = main(['-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', os.path.join(HERE, 'project/roles'),
-                   '--inventory', 'localhost',
-                   'run',
-                   temp_dir])
-    assert rc == 0
-
-
-def test_role_run_inventory_missing():
-
+def test_role_run_inventory_raises_exception():
     with temp_directory() as temp_dir:
         ensure_directory(os.path.join(temp_dir, 'inventory'))
         shutil.copy(os.path.join(HERE, 'inventory/localhost'), os.path.join(temp_dir, 'inventory/localhost'))

@@ -138,7 +138,7 @@ def run(**kwargs):
         of the ansible-playbook run.
     :type ssh_key: str
 
-    :param cmdline: Commnad line options passed to Ansible read from
+    :param cmdline: Command line options passed to Ansible read from
         ``env/cmdline`` in ``private_data_dir``
     :type cmdline: str
 

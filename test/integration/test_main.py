@@ -23,15 +23,16 @@ def ensure_directory(directory):
         os.makedirs(directory)
 
 
-def ensure_removed(file_path):
-
-    if os.path.exists(file_path):
-        os.unlink(file_path)
+def ensure_removed(path):
+    if os.path.exists(path):
+        if os.path.isfile(path):
+            os.unlink(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
 
 
 @contextmanager
 def temp_directory(files=None):
-
     temp_dir = tempfile.mkdtemp()
     print(temp_dir)
     try:
@@ -77,26 +78,33 @@ def test_help():
 
 
 def test_module_run():
-
-    rc = main(['-m', 'ping',
-               '--hosts', 'localhost',
-               'run',
-               'ping'])
-    assert rc == 0
+    try:
+        rc = main(['-m', 'ping',
+                   '--hosts', 'localhost',
+                   'run',
+                   'ping'])
+        assert os.path.exists('./ping')
+        assert os.path.exists('./ping/artifacts')
+        assert rc == 0
+    finally:
+        shutil.rmtree('./ping')
 
 
 def test_module_run_debug():
-
-    rc = main(['-m', 'ping',
-               '--hosts', 'localhost',
-               '--debug',
-               'run',
-               'ping'])
-    assert rc == 0
+    try:
+        rc = main(['-m', 'ping',
+                   '--hosts', 'localhost',
+                   '--debug',
+                   'run',
+                   'ping'])
+        assert os.path.exists('./ping')
+        assert os.path.exists('./ping/artifacts')
+        assert rc == 0
+    finally:
+        shutil.rmtree('./ping')
 
 
 def test_module_run_clean():
-
     with temp_directory() as temp_dir:
         rc = main(['-m', 'ping',
                    '--hosts', 'localhost',
@@ -106,13 +114,13 @@ def test_module_run_clean():
 
 
 def test_role_run():
-
     rc = main(['-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
                '--roles-path', 'test/integration/roles',
                'run',
                "test/integration"])
     assert rc == 0
+    ensure_removed("test/integration/artifacts")
 
 
 def test_role_run_abs():
@@ -126,25 +134,32 @@ def test_role_run_abs():
 
 
 def test_role_logfile():
-
-    rc = main(['-r', 'benthomasson.hello_role',
-               '--hosts', 'localhost',
-               '--roles-path', 'test/integration/project/roles',
-               '--logfile', 'new_logfile',
-               'run',
-               'test/integration'])
-    assert rc == 0
+    try:
+        rc = main(['-r', 'benthomasson.hello_role',
+                   '--hosts', 'localhost',
+                   '--roles-path', 'test/integration/project/roles',
+                   '--logfile', 'new_logfile',
+                   'run',
+                   'test/integration'])
+        assert os.path.exists('new_logfile')
+        assert rc == 0
+    finally:
+        ensure_removed("test/integration/artifacts")
 
 
 def test_role_logfile_abs():
-    with temp_directory() as temp_dir:
-        rc = main(['-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', os.path.join(HERE, 'project/roles'),
-                   '--logfile', 'new_logfile',
-                   'run',
-                   temp_dir])
-    assert rc == 0
+    try:
+        with temp_directory() as temp_dir:
+            rc = main(['-r', 'benthomasson.hello_role',
+                       '--hosts', 'localhost',
+                       '--roles-path', os.path.join(HERE, 'project/roles'),
+                       '--logfile', 'new_logfile',
+                       'run',
+                       temp_dir])
+        assert os.path.exists('new_logfile')
+        assert rc == 0
+    finally:
+        ensure_removed("new_logfile")
 
 
 def test_role_bad_project_dir():
@@ -162,6 +177,7 @@ def test_role_bad_project_dir():
                   'bad_project_dir'])
     finally:
         os.unlink('bad_project_dir')
+        ensure_removed("new_logfile")
 
 
 def test_role_run_clean():
@@ -172,6 +188,7 @@ def test_role_run_clean():
                'run',
                "test/integration"])
     assert rc == 0
+    ensure_removed("test/integration/artifacts")
 
 
 def test_role_run_cmd_line_abs():
@@ -185,19 +202,14 @@ def test_role_run_cmd_line_abs():
 
 
 def test_role_run_artifacts_dir():
-
-    try:
-        tmpdir = tempfile.mkdtemp()
-        rc = main(['-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', 'test/integration/roles',
-                   '--artifact-dir', os.path.join(tmpdir, 'otherartifacts'),
-                   'run',
-                   "test/integration"])
-        assert os.path.exists(os.path.join(tmpdir, 'otherartifacts'))
-        assert rc == 0
-    finally:
-        shutil.rmtree(tmpdir)
+    rc = main(['-r', 'benthomasson.hello_role',
+               '--hosts', 'localhost',
+               '--roles-path', 'test/integration/roles',
+               '--artifact-dir', 'otherartifacts',
+               'run',
+               "test/integration"])
+    assert rc == 0
+    ensure_removed("test/integration/artifacts")
 
 
 def test_role_run_artifacts_dir_abs():
@@ -331,4 +343,3 @@ def test_playbook_start():
 
         rc = main(['stop', temp_dir])
     assert rc == 1
-

@@ -186,24 +186,33 @@ def test_role_run_cmd_line_abs():
 
 def test_role_run_artifacts_dir():
 
-    rc = main(['-r', 'benthomasson.hello_role',
-               '--hosts', 'localhost',
-               '--roles-path', 'test/integration/roles',
-               '--artifact-dir', 'otherartifacts',
-               'run',
-               "test/integration"])
-    assert rc == 0
+    try:
+        tmpdir = tempfile.mkdtemp()
+        rc = main(['-r', 'benthomasson.hello_role',
+                   '--hosts', 'localhost',
+                   '--roles-path', 'test/integration/roles',
+                   '--artifact-dir', os.path.join(tmpdir, 'otherartifacts'),
+                   'run',
+                   "test/integration"])
+        assert os.path.exists(os.path.join(tmpdir, 'otherartifacts'))
+        assert rc == 0
+    finally:
+        shutil.rmtree(tmpdir)
 
 
 def test_role_run_artifacts_dir_abs():
-    with temp_directory() as temp_dir:
-        rc = main(['-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', os.path.join(HERE, 'project/roles'),
-                   '--artifact-dir', 'otherartifacts',
-                   'run',
-                   temp_dir])
-    assert rc == 0
+    try:
+        with temp_directory() as temp_dir:
+            rc = main(['-r', 'benthomasson.hello_role',
+                       '--hosts', 'localhost',
+                       '--roles-path', os.path.join(HERE, 'project/roles'),
+                       '--artifact-dir', 'otherartifacts',
+                       'run',
+                       temp_dir])
+        assert os.path.exists(os.path.join('.', 'otherartifacts'))
+        assert rc == 0
+    finally:
+        shutil.rmtree(os.path.join('.', 'otherartifacts'))
 
 
 @pytest.mark.parametrize('envvars', [

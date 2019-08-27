@@ -33,7 +33,6 @@ def ensure_removed(path):
 
 @contextmanager
 def temp_directory(files=None):
-
     temp_dir = tempfile.mkdtemp()
     print(temp_dir)
     try:
@@ -135,26 +134,32 @@ def test_role_run_abs():
 
 
 def test_role_logfile():
-
-    rc = main(['-r', 'benthomasson.hello_role',
-               '--hosts', 'localhost',
-               '--roles-path', 'test/integration/project/roles',
-               '--logfile', 'new_logfile',
-               'run',
-               'test/integration'])
-    assert rc == 0
-    ensure_removed("test/integration/artifacts")
+    try:
+        rc = main(['-r', 'benthomasson.hello_role',
+                   '--hosts', 'localhost',
+                   '--roles-path', 'test/integration/project/roles',
+                   '--logfile', 'new_logfile',
+                   'run',
+                   'test/integration'])
+        assert os.path.exists('new_logfile')
+        assert rc == 0
+    finally:
+        ensure_removed("test/integration/artifacts")
 
 
 def test_role_logfile_abs():
-    with temp_directory() as temp_dir:
-        rc = main(['-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', os.path.join(HERE, 'project/roles'),
-                   '--logfile', 'new_logfile',
-                   'run',
-                   temp_dir])
-    assert rc == 0
+    try:
+        with temp_directory() as temp_dir:
+            rc = main(['-r', 'benthomasson.hello_role',
+                       '--hosts', 'localhost',
+                       '--roles-path', os.path.join(HERE, 'project/roles'),
+                       '--logfile', 'new_logfile',
+                       'run',
+                       temp_dir])
+        assert os.path.exists('new_logfile')
+        assert rc == 0
+    finally:
+        ensure_removed("new_logfile")
 
 
 def test_role_bad_project_dir():
@@ -172,6 +177,7 @@ def test_role_bad_project_dir():
                   'bad_project_dir'])
     finally:
         os.unlink('bad_project_dir')
+        ensure_removed("new_logfile")
 
 
 def test_role_run_clean():
@@ -204,20 +210,6 @@ def test_role_run_artifacts_dir():
                "test/integration"])
     assert rc == 0
     ensure_removed("test/integration/artifacts")
-
-
-def test_role_run_artifacts_dir_abs():
-    with temp_directory() as temp_dir:
-        rc = main(['-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', 'test/integration/roles',
-                   '--artifact-dir', os.path.join(tmpdir, 'otherartifacts'),
-                   'run',
-                   "test/integration"])
-        assert os.path.exists(os.path.join(tmpdir, 'otherartifacts'))
-        assert rc == 0
-    finally:
-        shutil.rmtree(tmpdir)
 
 
 def test_role_run_artifacts_dir_abs():

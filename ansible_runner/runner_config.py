@@ -78,9 +78,13 @@ class RunnerConfig(object):
                  rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, suppress_ansible_output=False,
                  process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None,
-                 tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None, project_dir=None,
-                 directory_isolation_base_path=None, envvars=None, forks=None, cmdline=None, omit_event_data=False,
+                 resource_profiling=False, resource_profiling_base_cgroup='ansible-runner', resource_profiling_cpu_poll_interval=0.25,
+                 resource_profiling_memory_poll_interval=0.25, resource_profiling_pid_poll_interval=0.25,
+                 resource_profiling_results_dir=None,
+                 tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None,
+                 project_dir=None, directory_isolation_base_path=None, envvars=None, forks=None, cmdline=None, omit_event_data=False,
                  only_failed_event_data=False):
+        # TKTK: Update w/ options for memory and pid count
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = str(ident)
         self.json_mode = json_mode
@@ -111,6 +115,11 @@ class RunnerConfig(object):
         self.process_isolation_hide_paths = process_isolation_hide_paths
         self.process_isolation_show_paths = process_isolation_show_paths
         self.process_isolation_ro_paths = process_isolation_ro_paths
+        self.resource_profiling = resource_profiling
+        self.resource_profiling_base_cgroup = resource_profiling_base_cgroup
+        self.resource_profiling_cpu_poll_interval = resource_profiling_cpu_poll_interval
+        #TKTK: Update with options for mem, pid count
+
         self.directory_isolation_path = directory_isolation_base_path
         if not project_dir:
             self.project_dir = os.path.join(self.private_data_dir, 'project')
@@ -192,6 +201,28 @@ class RunnerConfig(object):
         self.env['ANSIBLE_HOST_KEY_CHECKING'] = 'False'
         self.env['AWX_ISOLATED_DATA_DIR'] = self.artifact_dir
 
+        if self.resource_profiling:
+            callback_whitelist = os.environ.get('ANSIBLE_CALLBACK_WHITELIST', '').strip()
+            self.env['ANSIBLE_CALLBACK_WHITELIST'] = ','.join(filter(None, [callback_whitelist, 'cgroup_perf_recap']))
+            self.env['CGROUP_CONTROL_GROUP'] = '{}/{}'.format(self.resource_profiling_base_cgroup, self.ident)
+            if self.resource_profiling_results_dir:
+                cgroup_output_dir = self.resource_profiling_results_dir
+            else:
+                cgroup_output_dir = os.path.normpath(os.path.join(self.private_data_dir, 'profiling_data'))
+
+            # Create results directory if it does not exist
+            if not os.path.isdir(cgroup_output_dir):
+                os.mkdir(cgroup_output_dir, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)
+
+            self.env['CGROUP_OUTPUT_DIR'] = cgroup_output_dir
+            self.env['CGROUP_OUTPUT_FORMAT'] = 'json'
+            self.env['CGROUP_CPU_POLL_INTERVAL'] = str(self.resource_profiling_cpu_poll_interval)
+            self.env['CGROUP_MEMORY_POLL_INTERVAL'] = str(self.resource_profiling_memory_poll_interval)
+            self.env['CGROUP_PID_POLL_INTERVAL'] = str(self.resource_profiling_pid_poll_interval)
+            self.env['CGROUP_FILE_PER_TASK'] = 'True'
+            self.env['CGROUP_WRITE_FILES'] = 'True'
+            self.env['CGROUP_DISPLAY_RECAP'] = 'False'
+
         self.env['PYTHONPATH'] = python_path + callback_dir
         if self.roles_path:
             self.env['ANSIBLE_ROLES_PATH'] = ':'.join(self.roles_path)
@@ -267,7 +298,10 @@ class RunnerConfig(object):
         self.process_isolation_hide_paths = self.settings.get('process_isolation_hide_paths', self.process_isolation_hide_paths)
         self.process_isolation_show_paths = self.settings.get('process_isolation_show_paths', self.process_isolation_show_paths)
         self.process_isolation_ro_paths = self.settings.get('process_isolation_ro_paths', self.process_isolation_ro_paths)
-
+        self.resource_profiling = self.settings.get('resource_profiling', self.resource_profiling)
+        self.resource_profiling_base_cgroup = self.settings.get('resource_profiling_base_cgroup', self.resource_profiling_base_cgroup)
+        self.resource_profiling_cpu_poll_interval = self.settings.get('resource_profiling_cpu_poll_interval', self.resource_profiling_cpu_poll_interval)
+        # TKTK: add options for mem, pid count
         self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
         self.directory_isolation_cleanup = bool(self.settings.get('directory_isolation_cleanup', True))

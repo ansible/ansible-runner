@@ -119,6 +119,12 @@ def run(**kwargs):
     :param process_isolation_hide_paths: A path or list of paths on the system that should be hidden from the playbook run.
     :param process_isolation_show_paths: A path or list of paths on the system that should be exposed to the playbook run.
     :param process_isolation_ro_paths: A path or list of paths on the system that should be exposed to the playbook run as read-only.
+    :param resource_profiling: Enable collection of resource utilization data during playbook execution.
+    :param resource_profiling_base_cgroup: Name of existing cgroup which will be sub-grouped in order to measure resource utilization (default: ansible-runner)
+    :param resource_profiling_cpu_poll_interval: Interval (in seconds) between CPU polling for determining CPU usage (default: 0.25)
+    :param resource_profiling_memory_poll_interval: Interval (in seconds) between memory polling for determining memory usage (default: 0.25)
+    :param resource_profiling_pid_poll_interval: Interval (in seconds) between polling PID count for determining number of processes used (default: 0.25)
+    :param resource_profiling_results_dir: Directory where profiling data files should be saved (defaults to profiling_data folder inside private data dir)
     :param directory_isolation_base_path: An optional path will be used as the base path to create a temp directory, the project contents will be
                                           copied to this location which will then be used as the working directory during playbook execution.
     :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
@@ -154,6 +160,12 @@ def run(**kwargs):
     :type process_isolation_hide_paths: str or list
     :type process_isolation_show_paths: str or list
     :type process_isolation_ro_paths: str or list
+    :type resource_profiling: bool
+    :type resource_profiling_base_cgroup: str
+    :type resource_profiling_cpu_poll_interval: float
+    :type resource_profiling_memory_poll_interval: float
+    :type resource_profiling_pid_poll_interval: float
+    :type resource_profiling_results_dir: str
     :type directory_isolation_base_path: str
     :type fact_cache: str
     :type fact_cache_type: str
@@ -162,6 +174,7 @@ def run(**kwargs):
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object
     '''
+    # TKTK: Update param/type sections with info on mem, pid count flags
     r = init_runner(**kwargs)
     r.run()
     return r

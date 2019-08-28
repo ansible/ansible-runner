@@ -230,6 +230,9 @@ class RunnerConfig(object):
         if self.process_isolation:
             self.command = self.wrap_args_with_process_isolation(self.command)
 
+        if self.resource_profiling and self.execution_mode == ExecutionMode.ANSIBLE_PLAYBOOK:
+            self.command = self.wrap_args_with_cgexec(self.command)
+
         if self.fact_cache_type == 'jsonfile':
             self.env['ANSIBLE_CACHE_PLUGIN'] = 'jsonfile'
             self.env['ANSIBLE_CACHE_PLUGIN_CONNECTION'] = self.fact_cache
@@ -427,6 +430,15 @@ class RunnerConfig(object):
         path = tempfile.mkdtemp(prefix='ansible_runner_pi_', dir=self.process_isolation_path)
         os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
         return path
+
+    def wrap_args_with_cgexec(self, args):
+        '''
+        Wrap existing command line with cgexec in order to profile resource usage
+        '''
+        new_args = ['cgexec', '--sticky', '-g', 'cpuacct,memory,pids:{}/{}'.format(self.resource_profiling_base_cgroup, self.ident)]
+        new_args.extend(args)
+        return new_args
+
 
     def wrap_args_with_process_isolation(self, args):
         '''

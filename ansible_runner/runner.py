@@ -4,10 +4,12 @@ import time
 import json
 import errno
 import signal
+from subprocess import Popen, PIPE
 import shutil
 import codecs
 import collections
 import datetime
+import logging
 
 import six
 import pexpect
@@ -18,6 +20,8 @@ import ansible_runner.plugins
 from .utils import OutputEventFilter, cleanup_artifact_dir, ensure_str, collect_new_events
 from .exceptions import CallbackError, AnsibleRunnerException
 from ansible_runner.output import debug
+
+logger = logging.getLogger('ansible-runner')
 
 
 class Runner(object):
@@ -140,6 +144,26 @@ class Runner(object):
             for k, v in self.config.env.items()
         }
 
+        # Prepare to collect performance data
+        if self.config.resource_profiling:
+            cgroup_path = '{0}/{1}'.format(self.config.resource_profiling_base_cgroup, self.config.ident)
+
+            import getpass
+            import grp
+            user = getpass.getuser()
+            group = grp.getgrgid(os.getgid()).gr_name
+
+            cmd = 'cgcreate -a {user}:{group} -t {user}:{group} -g cpuacct,memory,pids:{}'.format(cgroup_path, user=user, group=group)
+            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+            _, stderr = proc.communicate()
+            if proc.returncode:
+                # Unable to create cgroup
+                logger.error('Unable to create cgroup: {}'.format(stderr))
+                raise RuntimeError('Unable to create cgroup: {}'.format(stderr))
+            else:
+                logger.info("Created cgroup '{}'".format(cgroup_path))
+
+
         self.status_callback('running')
         self.last_stdout_update = time.time()
         try:
@@ -236,6 +260,14 @@ class Runner(object):
                         raise
                 return True
             _delete()
+        if self.config.resource_profiling:
+            cmd = 'cgdelete -g cpuacct,memory,pids:{}'.format(cgroup_path)
+            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+            _, stderr = proc.communicate()
+            if proc.returncode:
+                logger.error('Failed to delete cgroup: {}'.format(stderr))
+                raise RuntimeError('Failed to delete cgroup: {}'.format(stderr))
+
         if self.finished_callback is not None:
             try:
                 self.finished_callback(self)

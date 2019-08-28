@@ -4,9 +4,15 @@
 # that doesn't exist in /etc/passwd, but Ansible module utils
 # require a named user. So if we're in OpenShift, we need to make
 # one before Ansible runs.
-if [ `id -u` -ge 500 ]; then
-    echo "runner:x:`id -u`:`id -g`:,,,:/runner:/bin/bash" > /tmp/passwd
-    cat /tmp/passwd >> /etc/passwd
-    rm /tmp/passwd
+if [ `id -u` -ge 500 ] || [ -z "${CURRENT_UID}" ]; then
+
+  cat << EOF > /tmp/passwd
+root:x:0:0:root:/root:/bin/bash
+runner:x:`id -u`:`id -g`:,,,:/runner:/bin/bash
+EOF
+
+  cat /tmp/passwd > /etc/passwd
+  rm /tmp/passwd
 fi
-ansible-runner run /runner
+
+exec tini -- "${@}"

@@ -308,6 +308,22 @@ def main(sys_args=None):
     )
 
     runner_group.add_argument(
+        "--omit-event-data",
+        action="store_true",
+        help="Omits including extra event data in the callback payloads "
+             "or the Runner payload data files "
+             "(status and stdout still included)"
+    )
+
+    runner_group.add_argument(
+        "--only-failed-event-data",
+        action="store_true",
+        help="Only adds extra event data for failed tasks in the callback "
+             "payloads or the Runner payload data files "
+             "(status and stdout still included for other events)"
+    )
+
+    runner_group.add_argument(
         "-q", "--quiet",
         action="store_true",
         help="disable all messages sent to stdout/stderr (default=False)"
@@ -515,6 +531,8 @@ def main(sys_args=None):
                                    rotate_artifacts=args.rotate_artifacts,
                                    ignore_logging=False,
                                    json_mode=args.json,
+                                   omit_event_data=args.omit_event_data,
+                                   only_failed_event_data=args.only_failed_event_data,
                                    inventory=args.inventory,
                                    forks=args.forks,
                                    project_dir=args.project_dir,

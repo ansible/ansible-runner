@@ -144,7 +144,7 @@ def test_role_logfile():
         assert os.path.exists('./new_logfile')
         assert rc == 0
     finally:
-        os.remove('./new_logfile')
+        ensure_removed("test/integration/artifacts")
 
 
 def test_role_logfile_abs():
@@ -159,7 +159,6 @@ def test_role_logfile_abs():
         assert os.path.exists('new_logfile')
         assert rc == 0
     finally:
-        ensure_removed("test/integration/artifacts")
         ensure_removed("new_logfile")
 
 

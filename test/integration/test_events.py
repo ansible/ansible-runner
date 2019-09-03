@@ -37,7 +37,10 @@ def test_basic_events(is_run_async=False,g_facts=False):
 
     okay_event = okay_events[0]
     assert "uuid" in okay_event and len(okay_event['uuid']) == 36
+    assert "parent_uuid" in okay_event and len(okay_event['parent_uuid']) == 36
     assert "stdout" in okay_event and len(okay_event['stdout']) > 0
+    assert "start_line" in okay_event and int(okay_event['start_line']) > 0
+    assert "end_line" in okay_event and int(okay_event['end_line']) > 0
     assert "event_data" in okay_event and len(okay_event['event_data']) > 0
 
 
@@ -53,6 +56,24 @@ def test_basic_serializeable():
     events = [x for x in r.events]
     json.dumps(events)
 
+
+def test_event_omission():
+    tdir = tempfile.mkdtemp()
+    r = run(private_data_dir=tdir,
+            inventory="localhost ansible_connection=local",
+            omit_event_data=True,
+            playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
+    assert not any([x['event_data'] for x in r.events])
+
+
+def test_event_omission_except_failed():
+    tdir = tempfile.mkdtemp()
+    r = run(private_data_dir=tdir,
+            inventory="localhost ansible_connection=local",
+            only_failed_event_data=True,
+            playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'fail': {'msg': "test"}}]}])
+    all_event_datas = [x['event_data'] for x in r.events if x['event_data']]
+    assert len(all_event_datas) == 1
 
 @pytest.mark.skipif(LooseVersion(pkg_resources.get_distribution('ansible').version) < LooseVersion('2.8'),
                     reason="Valid only on Ansible 2.8+")

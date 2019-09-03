@@ -134,24 +134,9 @@ class EventContext(object):
         return ctx
 
     def get_begin_dict(self):
+        omit_event_data = os.getenv("RUNNER_OMIT_EVENTS", "False").lower() == "true"
+        include_only_failed_event_data = os.getenv("RUNNER_ONLY_FAILED_EVENTS", "False").lower() == "true"
         event_data = self.get()
-        # TODO: Need to rework these values
-        if os.getenv('JOB_ID', ''):
-            event_data['job_id'] = int(os.getenv('JOB_ID', '0'))
-        if os.getenv('AD_HOC_COMMAND_ID', ''):
-            event_data['ad_hoc_command_id'] = int(os.getenv('AD_HOC_COMMAND_ID', '0'))
-        if os.getenv('PROJECT_UPDATE_ID', ''):
-            event_data['project_update_id'] = int(os.getenv('PROJECT_UPDATE_ID', '0'))
-        event_data.setdefault('pid', os.getpid())
-        event_data.setdefault('uuid', str(uuid.uuid4()))
-        event_data.setdefault('created', datetime.datetime.utcnow().isoformat())
-        if not event_data.get('parent_uuid', None):
-            for key in ('task_uuid', 'play_uuid', 'playbook_uuid'):
-                parent_uuid = event_data.get(key, None)
-                if parent_uuid and parent_uuid != event_data.get('uuid', None):
-                    event_data['parent_uuid'] = parent_uuid
-                    break
-
         event = event_data.pop('event', None)
         if not event:
             event = 'verbose'
@@ -159,15 +144,35 @@ class EventContext(object):
                 if event_data.get(key, False):
                     event = key
                     break
-        max_res = int(os.getenv("MAX_EVENT_RES", 700000))
-        if event not in ('playbook_on_stats',) and "res" in event_data and len(str(event_data['res'])) > max_res:
-            event_data['res'] = {}
-        event_dict = dict(event=event, event_data=event_data)
-        for key in list(event_data.keys()):
-            if key in ('job_id', 'ad_hoc_command_id', 'project_update_id', 'uuid', 'parent_uuid', 'created',):
-                event_dict[key] = event_data.pop(key)
-            elif key in ('verbosity', 'pid'):
-                event_dict[key] = event_data[key]
+        event_dict = dict(event=event)
+        should_process_event_data = (include_only_failed_event_data and event in ('runner_on_failed', 'runner_on_async_failed', 'runner_on_item_failed')) \
+            or not include_only_failed_event_data
+        if os.getenv('JOB_ID', ''):
+            event_dict['job_id'] = int(os.getenv('JOB_ID', '0'))
+        if os.getenv('AD_HOC_COMMAND_ID', ''):
+            event_dict['ad_hoc_command_id'] = int(os.getenv('AD_HOC_COMMAND_ID', '0'))
+        if os.getenv('PROJECT_UPDATE_ID', ''):
+            event_dict['project_update_id'] = int(os.getenv('PROJECT_UPDATE_ID', '0'))
+        event_dict['pid'] = event_data.get('pid', os.getpid())
+        event_dict['uuid'] = event_data.get('uuid', str(uuid.uuid4()))
+        event_dict['created'] = event_data.get('created', datetime.datetime.utcnow().isoformat())
+        if not event_data.get('parent_uuid', None):
+            for key in ('task_uuid', 'play_uuid', 'playbook_uuid'):
+                parent_uuid = event_data.get(key, None)
+                if parent_uuid and parent_uuid != event_data.get('uuid', None):
+                    event_dict['parent_uuid'] = parent_uuid
+                    break
+        else:
+            event_dict['parent_uuid'] = event_data.get('parent_uuid', None)
+        if "verbosity" in event_data.keys():
+            event_dict["verbosity"] = event_data.pop("verbosity")
+        if not omit_event_data and should_process_event_data:
+            max_res = int(os.getenv("MAX_EVENT_RES", 700000))
+            if event not in ('playbook_on_stats',) and "res" in event_data and len(str(event_data['res'])) > max_res:
+                event_data['res'] = {}
+        else:
+            event_data = dict()
+        event_dict['event_data'] = event_data
         return event_dict
 
     def get_end_dict(self):

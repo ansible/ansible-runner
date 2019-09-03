@@ -79,7 +79,8 @@ class RunnerConfig(object):
                  process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None,
                  tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None, project_dir=None,
-                 directory_isolation_base_path=None, envvars=None, forks=None, cmdline=None):
+                 directory_isolation_base_path=None, envvars=None, forks=None, cmdline=None, omit_event_data=False,
+                 only_failed_event_data=False):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = str(ident)
         self.json_mode = json_mode
@@ -127,6 +128,8 @@ class RunnerConfig(object):
         self.envvars = envvars
         self.forks = forks
         self.cmdline_args = cmdline
+        self.omit_event_data = omit_event_data
+        self.only_failed_event_data = only_failed_event_data
 
     def prepare(self):
         """
@@ -199,6 +202,9 @@ class RunnerConfig(object):
         if self.fact_cache_type == 'jsonfile':
             self.env['ANSIBLE_CACHE_PLUGIN'] = 'jsonfile'
             self.env['ANSIBLE_CACHE_PLUGIN_CONNECTION'] = self.fact_cache
+
+        self.env["RUNNER_OMIT_EVENTS"] = str(self.omit_event_data)
+        self.env["RUNNER_ONLY_FAILED_EVENTS"] = str(self.only_failed_event_data)
 
     def prepare_inventory(self):
         """

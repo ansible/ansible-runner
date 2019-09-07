@@ -338,3 +338,46 @@ def test_output_when_given_invalid_playbook(private_data_dir):
     stdout = executor.stdout.read()
     assert "ERROR! the playbook:" in stdout
     assert "could not be found" in stdout
+
+
+def test_output_when_given_non_playbook_script(private_data_dir):
+    # As shown in the following pull request:
+    #
+    #   https://github.com/ansible/ansible-runner/pull/256
+    #
+    # This ports some functionality that previously lived in awx and allows raw
+    # lines of stdout to be treated as event lines.
+    #
+    # As mentioned in the pull request as well, there were no specs added, and
+    # this is a retro-active test based on the sample repo provided in the PR:
+    #
+    #   https://github.com/AlanCoding/ansible-runner-examples/tree/master/non_playbook/sleep_with_writes
+
+    with open(os.path.join(private_data_dir, "args"), 'w') as args_file:
+        args_file.write("bash sleep_and_write.sh\n")
+    with open(os.path.join(private_data_dir, "sleep_and_write.sh"), 'w') as script_file:
+        script_file.write("echo 'hi world'\nsleep 0.5\necho 'goodbye world'\n")
+
+    # Update the settings to make this test a bit faster :)
+    os.mkdir(os.path.join(private_data_dir, "env"))
+    with open(os.path.join(private_data_dir, "env", "settings"), 'w') as settings_file:
+        settings_file.write("pexpect_timeout: 0.2")
+
+    executor = init_runner(
+        private_data_dir=private_data_dir,
+        inventory="localhost ansible_connection=local",
+        envvars={"ANSIBLE_DEPRECATION_WARNINGS": "False"}
+    )
+
+    executor.run()
+    stdout = executor.stdout.readlines()
+    assert stdout[0].strip() == "hi world"
+    assert stdout[1].strip() == "goodbye world"
+
+    events = list(executor.events)
+
+    assert len(events) == 2
+    assert events[0]['event'] == 'verbose'
+    assert events[0]['stdout'] == 'hi world'
+    assert events[1]['event'] == 'verbose'
+    assert events[1]['stdout'] == 'goodbye world'

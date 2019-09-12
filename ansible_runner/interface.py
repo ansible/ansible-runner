@@ -174,7 +174,6 @@ def run(**kwargs):
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object
     '''
-    # TKTK: Update param/type sections with info on mem, pid count flags
     r = init_runner(**kwargs)
     r.run()
     return r

@@ -583,6 +583,9 @@ def main(sys_args=None):
                                    resource_profiling=args.resource_profiling,
                                    resource_profiling_base_cgroup=args.resource_profiling_base_cgroup,
                                    resource_profiling_cpu_poll_interval=args.resource_profiling_cpu_poll_interval,
+                                   resource_profiling_memory_poll_interval=args.resource_profiling_memory_poll_interval,
+                                   resource_profiling_pid_poll_interval=args.resource_profiling_pid_poll_interval,
+                                   resource_profiling_results_dir=args.resource_profiling_results_dir,
                                    limit=args.limit)
                 if args.cmdline:
                     run_options['cmdline'] = args.cmdline

@@ -84,7 +84,6 @@ class RunnerConfig(object):
                  tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None,
                  project_dir=None, directory_isolation_base_path=None, envvars=None, forks=None, cmdline=None, omit_event_data=False,
                  only_failed_event_data=False):
-        # TKTK: Update w/ options for memory and pid count
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = str(ident)
         self.json_mode = json_mode
@@ -118,7 +117,9 @@ class RunnerConfig(object):
         self.resource_profiling = resource_profiling
         self.resource_profiling_base_cgroup = resource_profiling_base_cgroup
         self.resource_profiling_cpu_poll_interval = resource_profiling_cpu_poll_interval
-        #TKTK: Update with options for mem, pid count
+        self.resource_profiling_memory_poll_interval = resource_profiling_memory_poll_interval
+        self.resource_profiling_pid_poll_interval = resource_profiling_pid_poll_interval
+        self.resource_profiling_results_dir = resource_profiling_results_dir
 
         self.directory_isolation_path = directory_isolation_base_path
         if not project_dir:
@@ -304,7 +305,10 @@ class RunnerConfig(object):
         self.resource_profiling = self.settings.get('resource_profiling', self.resource_profiling)
         self.resource_profiling_base_cgroup = self.settings.get('resource_profiling_base_cgroup', self.resource_profiling_base_cgroup)
         self.resource_profiling_cpu_poll_interval = self.settings.get('resource_profiling_cpu_poll_interval', self.resource_profiling_cpu_poll_interval)
-        # TKTK: add options for mem, pid count
+        self.resource_profiling_memory_poll_interval = self.settings.get('resource_profiling_memory_poll_interval',
+                                                                         self.resource_profiling_memory_poll_interval)
+        self.resource_profiling_pid_poll_interval = self.settings.get('resource_profiling_pid_poll_interval', self.resource_profiling_pid_poll_interval)
+        self.resource_profiling_results_dir = self.settings.get('resource_profiling_results_dir', self.resource_profiling_results_dir)
         self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
         self.directory_isolation_cleanup = bool(self.settings.get('directory_isolation_cleanup', True))

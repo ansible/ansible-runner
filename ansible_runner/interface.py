@@ -87,7 +87,7 @@ def run(**kwargs):
     :param host_pattern: The host pattern to match when running in ad-hoc mode.
     :param inventory: Overridees the inventory directory/file (supplied at ``private_data_dir/inventory``) with
                       a specific host or list of hosts. This can take the form of
-      - Path to the inventory file in the ``private_data_dir``
+      - Path to the inventory file in the ``private_data_dir/inventories`` directory. Takes in a string for the relative location to the hosts file within the ``private_data_dir/inventories`` directory.
       - Native python dict supporting the YAML/json inventory structure
       - A text INI formatted string
       - A list of inventory sources, or an empty list to disable passing inventory

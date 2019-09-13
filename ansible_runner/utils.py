@@ -188,8 +188,10 @@ def dump_artifacts(kwargs):
         if isinstance(obj, Mapping):
             kwargs['inventory'] = dump_artifact(json.dumps(obj), path, 'hosts.json')
         elif isinstance(obj, string_types):
-            if not os.path.exists(obj):
+            if not os.path.exists(os.path.join(path,obj)):
                 kwargs['inventory'] = dump_artifact(obj, path, 'hosts')
+            else:
+                kwargs['inventory'] = os.path.join(path,obj)
 
     for key in ('envvars', 'extravars', 'passwords', 'settings'):
         obj = kwargs.get(key)

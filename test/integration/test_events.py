@@ -1,12 +1,14 @@
 import pytest
 import tempfile
 from distutils.version import LooseVersion
+from distutils.spawn import find_executable
 import pkg_resources
 import json
 import os
 import shutil
 
 from ansible_runner import run, run_async
+from ansible_runner.exceptions import AnsibleRunnerException
 
 
 def test_basic_events(is_run_async=False,g_facts=False):
@@ -116,3 +118,33 @@ def test_include_role_events():
                 assert event_data['res']['msg'] == 'Hello world!'
     finally:
         shutil.rmtree('test/integration/artifacts')
+
+@pytest.mark.skipif(find_executable('cgexec') is None,
+                    reason="cgexec not available")
+@pytest.mark.skipif(LooseVersion(pkg_resources.get_distribution('ansible').version) < LooseVersion('2.8'),
+                    reason="Valid only on Ansible 2.8+")
+def test_profile_data():
+    tdir = tempfile.mkdtemp()
+    r = run(private_data_dir=tdir,
+            inventory="localhost ansible_connection=local",
+            resource_profiling=True,
+            resource_profiling_base_cgroup='ansible-runner',
+            playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
+    try:
+        assert r.config.env['CGROUP_CONTROL_GROUP'].startswith('ansible-runner/')
+        assert r.config.env['CGROUP_CPU_POLL_INTERVAL'] == '0.25'
+        assert r.config.env['CGROUP_MEMORY_POLL_INTERVAL'] == '0.25'
+        assert r.config.env['CGROUP_PID_POLL_INTERVAL'] == '0.25'
+        assert r.config.env['CGROUP_OUTPUT_DIR'] == os.path.join(r.config.private_data_dir, 'profiling_data')
+        assert r.config.env['ANSIBLE_CALLBACK_WHITELIST'] == 'cgroup_perf_recap'
+        for event in r.events:
+            if event['event'] == 'runner_on_ok':
+                assert 'profiling_data' in event
+                assert 'cpu' in event['profiling_data']
+                assert 'memory' in event['profiling_data']
+                assert 'pids' in event['profiling_data']
+    except AnsibleRunnerException:
+        pytest.skip(
+            'this test requires a cgroup to run e.g., '
+            'sudo cgcreate -a `whoami` -t `whoami` -g cpuacct,memory,pids:ansible-runner'
+        )  # noqa

@@ -518,8 +518,9 @@ def test_process_isolation_settings():
     # chdir and ansible-playbook command
     assert rc.command[22:] == ['--chdir', '/project', 'ansible-playbook', '-i', '/inventory', 'main.yaml']
 
-@patch('os.makedirs', return_value=True)
-def test_profiling_plugin_settings(mock_makedirs):
+
+@patch('os.mkdir', return_value=True)
+def test_profiling_plugin_settings(mock_mkdir):
     rc = RunnerConfig('/')
     rc.playbook = 'main.yaml'
     rc.command = 'ansible-playbook'
@@ -527,25 +528,30 @@ def test_profiling_plugin_settings(mock_makedirs):
     rc.resource_profiling_base_cgroup = 'ansible-runner'
     rc.prepare()
 
-    assert rc.command == [
+    expected_command_start = [
         'cgexec',
         '--sticky',
         '-g',
         'cpuacct,memory,pids:ansible-runner/{}'.format(rc.ident),
-        'ansible-playbook',
-        '-i',
-        '/inventory',
-        'main.yaml'
+        'ansible-playbook'
     ]
+    for index, element in enumerate(expected_command_start):
+        assert rc.command[index] == element
+    assert 'main.yaml' in rc.command
     assert rc.env['ANSIBLE_CALLBACK_WHITELIST'] == 'cgroup_perf_recap'
     assert rc.env['CGROUP_CONTROL_GROUP'] == 'ansible-runner/{}'.format(rc.ident)
+    assert rc.env['CGROUP_OUTPUT_DIR'] == os.path.normpath(os.path.join(rc.private_data_dir, 'profiling_data'))
+    assert rc.env['CGROUP_OUTPUT_FORMAT'] == 'json'
     assert rc.env['CGROUP_CPU_POLL_INTERVAL'] == '0.25'
     assert rc.env['CGROUP_MEMORY_POLL_INTERVAL'] == '0.25'
     assert rc.env['CGROUP_PID_POLL_INTERVAL'] == '0.25'
+    assert rc.env['CGROUP_FILE_PER_TASK'] == 'True'
+    assert rc.env['CGROUP_WRITE_FILES'] == 'True'
+    assert rc.env['CGROUP_DISPLAY_RECAP'] == 'False'
 
 
-@patch('os.makedirs', return_value=True)
-def test_profiling_plugin_settings_with_custom_intervals(mock_makedirs):
+@patch('os.mkdir', return_value=True)
+def test_profiling_plugin_settings_with_custom_intervals(mock_mkdir):
     rc = RunnerConfig('/')
     rc.playbook = 'main.yaml'
     rc.command = 'ansible-playbook'

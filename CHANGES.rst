@@ -3,6 +3,26 @@
 Changelog
 ---------
 
+1.4.0 (2019-09-20)
+++++++++++++++++++
+- Added changed count to stats data
+- Added initial support for gathering performance statistics using
+  the system's cgroup interface
+- Fix command line args override missing from module run kwargs
+- Omit inventory argument entirely if no inventory content is supplied
+  this allows ansible to pick up inventory from implicit locations and
+  ansible.cfg
+- Fix an issue where Runner wouldn't properly clean up process isolation
+  temporary directories
+- Fix error generated if unsafe parameter is used on vars prompt tasks
+- Fix an issue where additional callback plugins weren't being used when
+  defined in the environment
+- Fix an issue where Runner would stop returning events after the playbook
+  finished when using run_async
+- Fix an issue where unicode in task data would cause Runner to fail
+- Fix issues using vaulted data that would cause Runner to fail
+- Fix an issue where artifact-dir was only allowed in ad-hoc mode
+
 1.3.4 (2019-04-25)
 ++++++++++++++++++
 - Removed an explicit version pin of the six library (which is unavailable in

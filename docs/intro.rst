@@ -158,12 +158,25 @@ The process isolation settings are meant to control the process isolation featur
 Performance Data Collection Settings for Runner
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**Runner** is capable of collecting performance data (namely, cpu usage, memory usage, and pid count) during the execution of a playbook run.
+**Runner** is capable of collecting performance data (namely cpu usage, memory usage, and pid count) during the execution of a playbook run.
 
-* ``performance_data``: ``False`` Enable performance data collection.
-* ``performance_data_cpu_interval``: ``10`` Polling interval in seconds for collecting cpu usage.
-* ``performance_data_memory_interval``: ``10`` Polling interval in seconds for collecting memory usage.
-* ``performance_data_pid_interval``: ``10`` Polling interval in seconds for measuring PID count.
+Resource profiling is made possible by the use of control groups (often referred to simply as cgroups). When a process runs inside of a cgroup, the resources used by that specific process can be measured.
+
+Before enabling Runner's resource profiling feature, users must create a cgroup that **Runner** can use. It is worth noting that only privileged users can create cgroups. The new cgroup should be associated with the same user (and related group) that will be invoking **Runner**. The following command accomplishes this on a RHEL system::
+
+    sudo yum install libcgroup-tools
+    sudo cgcreate -a `whoami` -t `whoami` -g cpuacct,memory,pids:ansible-runner
+
+In the above command, ``cpuacct``, ``memory``, and ``pids`` refer to kernel resource controllers, while ``ansible-runner`` refers to the name of the cgroup being created. More detailed information on the structure of cgroups can be found in the RHEL guide on `Managing, monitoring, and updating the kernel  <https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/managing_monitoring_and_updating_the_kernel/setting-limits-for-applications_managing-monitoring-and-updating-the-kernel>`_
+
+After a cgroup has been created, the following settings can be used to configure resource profiling. Note that ``resource_profiling_base_cgroup`` must match the name of the cgroup you create.
+
+* ``resource_profiling``: ``False`` Enable performance data collection.
+* ``resource_profiling_base_cgroup``: ``ansible-runner`` Top-level cgroup used to measure playbook resource utilization.
+* ``resource_profiling_cpu_poll_interval``: ``0.25`` Polling interval in seconds for collecting cpu usage.
+* ``resource_profiling_memory_poll_interval``: ``0.25`` Polling interval in seconds for collecting memory usage.
+* ``resource_profiling_pid_poll_interval``: ``0.25`` Polling interval in seconds for measuring PID count.
+* ``resource_profiling_results_dir``: ``None`` Directory where resource utilization data will be written (if not specified, will be placed in the ``profiling_data`` folder under the private data directory).
 
 Inventory
 ---------
@@ -204,6 +217,7 @@ from the top level::
     │   └── identifier
     ├── env
     ├── inventory
+    ├── profiling_data
     ├── project
     └── roles
 
@@ -317,3 +331,44 @@ If the playbook runs to completion without getting killed, the last event will a
 .. note::
 
    The **Runner module interface** presents a programmatic interface to these events that allow getting the final status and performing host filtering of task events.
+
+Runner Profiling Data Directory
+-------------------------------
+
+If resource profiling is enabled for **Runner** the ``profiling_data`` directory will be populated with a set of files containing the profiling data::
+
+    .
+    ├── profiling_data
+    │   ├── 0-34437b34-addd-45ae-819a-4d8c9711e191-cpu.json
+    │   ├── 0-34437b34-addd-45ae-819a-4d8c9711e191-memory.json
+    │   ├── 0-34437b34-addd-45ae-819a-4d8c9711e191-pids.json
+    │   ├── 1-8c164553-8573-b1e0-76e1-000000000006-cpu.json
+    │   ├── 1-8c164553-8573-b1e0-76e1-000000000006-memory.json
+    │   └── 1-8c164553-8573-b1e0-76e1-000000000006-pids.json
+
+Each file is in `JSON text format <https://tools.ietf.org/html/rfc7464#section-2.2>`_. Each line of the file will begin with a record separator (RS), continue with a JSON dictionary, and conclude with a line feed (LF) character. The following provides an example of what the resource files may look like. Note that that since the RS and LF are control characters, they are not actually printed below::
+
+    ==> 0-525400c9-c704-29a6-4107-00000000000c-cpu.json <==
+    {"timestamp": 1568977988.6844425, "task_name": "Gathering Facts", "task_uuid": "525400c9-c704-29a6-4107-00000000000c", "value": 97.12799768097156}
+    {"timestamp": 1568977988.9394386, "task_name": "Gathering Facts", "task_uuid": "525400c9-c704-29a6-4107-00000000000c", "value": 94.17538298892688}
+    {"timestamp": 1568977989.1901696, "task_name": "Gathering Facts", "task_uuid": "525400c9-c704-29a6-4107-00000000000c", "value": 64.38272588006255}
+    {"timestamp": 1568977989.4594045, "task_name": "Gathering Facts", "task_uuid": "525400c9-c704-29a6-4107-00000000000c", "value": 83.77387744259856}
+
+    ==> 0-525400c9-c704-29a6-4107-00000000000c-memory.json <==
+    {"timestamp": 1568977988.4281094, "task_name": "Gathering Facts", "task_uuid": "525400c9-c704-29a6-4107-00000000000c", "value": 36.21484375}
+    {"timestamp": 1568977988.6842303, "task_name": "Gathering Facts", "task_uuid": "525400c9-c704-29a6-4107-00000000000c", "value": 57.87109375}
+    {"timestamp": 1568977988.939303, "task_name": "Gathering Facts", "task_uuid": "525400c9-c704-29a6-4107-00000000000c", "value": 66.60546875}
+    {"timestamp": 1568977989.1900482, "task_name": "Gathering Facts", "task_uuid": "525400c9-c704-29a6-4107-00000000000c", "value": 71.4609375}
+    {"timestamp": 1568977989.4592078, "task_name": "Gathering Facts", "task_uuid": "525400c9-c704-29a6-4107-00000000000c", "value": 38.25390625}
+
+    ==> 0-525400c9-c704-29a6-4107-00000000000c-pids.json <==
+    {"timestamp": 1568977988.4284189, "task_name": "Gathering Facts", "task_uuid": "525400c9-c704-29a6-4107-00000000000c", "value": 5}
+    {"timestamp": 1568977988.6845856, "task_name": "Gathering Facts", "task_uuid": "525400c9-c704-29a6-4107-00000000000c", "value": 6}
+    {"timestamp": 1568977988.939547, "task_name": "Gathering Facts", "task_uuid": "525400c9-c704-29a6-4107-00000000000c", "value": 8}
+    {"timestamp": 1568977989.1902773, "task_name": "Gathering Facts", "task_uuid": "525400c9-c704-29a6-4107-00000000000c", "value": 13}
+    {"timestamp": 1568977989.4593227, "task_name": "Gathering Facts", "task_uuid": "525400c9-c704-29a6-4107-00000000000c", "value": 6}
+
+* Resource profiling data is grouped by playbook task.
+* For each task, there will be three files, corresponding to cpu, memory and pid count data.
+* Each file contains a set of data points collected over the course of a playbook task.
+* If a task executes quickly and the polling rate for a given metric is large enough, it is possible that no profiling data may be collected during the task's execution. If this is the case, no data file will be created.

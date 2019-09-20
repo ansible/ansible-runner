@@ -465,6 +465,41 @@ def main(sys_args=None):
              "(default=None)"
     )
 
+    playbook_group.add_argument(
+        "--resource-profiling",
+        dest='resource_profiling',
+        action="store_true",
+        help="Records resource utilization during playbook execution")
+
+    playbook_group.add_argument(
+        "--resource-profiling-base-cgroup",
+        dest='resource_profiling_base_cgroup',
+        default="ansible-runner",
+        help="Top-level cgroup used to collect information on resource utilization. Defaults to ansible-runner")
+
+    playbook_group.add_argument(
+        "--resource-profiling-cpu-poll-interval",
+        dest='resource_profiling_cpu_poll_interval',
+        default=0.25,
+        help="Interval (in seconds) between CPU polling for determining CPU usage. Defaults to 0.25")
+
+    playbook_group.add_argument(
+        "--resource-profiling-memory-poll-interval",
+        dest='resource_profiling_memory_poll_interval',
+        default=0.25,
+        help="Interval (in seconds) between memory polling for determining memory usage. Defaults to 0.25")
+
+    playbook_group.add_argument(
+        "--resource-profiling-pid-poll-interval",
+        dest='resource_profiling_pid_poll_interval',
+        default=0.25,
+        help="Interval (in seconds) between polling PID count for determining number of processes used. Defaults to 0.25")
+
+    playbook_group.add_argument(
+        "--resource-profiling-results-dir",
+        dest='resource_profiling_results_dir',
+        help="Directory where profiling data files should be saved. Defaults to None (profiling_data folder under private data dir is used in this case).")
+
     if len(sys.argv) == 1:
         parser.print_usage()
         print_common_usage()
@@ -545,6 +580,12 @@ def main(sys_args=None):
                                    process_isolation_show_paths=args.process_isolation_show_paths,
                                    process_isolation_ro_paths=args.process_isolation_ro_paths,
                                    directory_isolation_base_path=args.directory_isolation_base_path,
+                                   resource_profiling=args.resource_profiling,
+                                   resource_profiling_base_cgroup=args.resource_profiling_base_cgroup,
+                                   resource_profiling_cpu_poll_interval=args.resource_profiling_cpu_poll_interval,
+                                   resource_profiling_memory_poll_interval=args.resource_profiling_memory_poll_interval,
+                                   resource_profiling_pid_poll_interval=args.resource_profiling_pid_poll_interval,
+                                   resource_profiling_results_dir=args.resource_profiling_results_dir,
                                    limit=args.limit)
                 if args.cmdline:
                     run_options['cmdline'] = args.cmdline

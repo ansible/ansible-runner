@@ -1,6 +1,7 @@
 import pytest
 import tempfile
 from distutils.version import LooseVersion
+from distutils.spawn import find_executable
 import pkg_resources
 import json
 import os
@@ -116,3 +117,50 @@ def test_include_role_events():
                 assert event_data['res']['msg'] == 'Hello world!'
     finally:
         shutil.rmtree('test/integration/artifacts')
+
+@pytest.mark.skipif(find_executable('cgexec') is None,
+                    reason="cgexec not available")
+@pytest.mark.skipif(LooseVersion(pkg_resources.get_distribution('ansible').version) < LooseVersion('2.8'),
+                    reason="Valid only on Ansible 2.8+")
+def test_profile_data():
+    tdir = tempfile.mkdtemp()
+    try:
+        r = run(private_data_dir=tdir,
+                inventory="localhost ansible_connection=local",
+                resource_profiling=True,
+                resource_profiling_base_cgroup='ansible-runner',
+                playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
+        assert r.config.env['ANSIBLE_CALLBACK_WHITELIST'] == 'cgroup_perf_recap'
+        assert r.config.env['CGROUP_CONTROL_GROUP'].startswith('ansible-runner/')
+        expected_datadir = os.path.join(tdir, 'profiling_data')
+        assert r.config.env['CGROUP_OUTPUT_DIR'] == expected_datadir
+        assert r.config.env['CGROUP_OUTPUT_FORMAT'] == 'json'
+        assert r.config.env['CGROUP_CPU_POLL_INTERVAL'] == '0.25'
+        assert r.config.env['CGROUP_MEMORY_POLL_INTERVAL'] == '0.25'
+        assert r.config.env['CGROUP_PID_POLL_INTERVAL'] == '0.25'
+        assert r.config.env['CGROUP_FILE_PER_TASK'] == 'True'
+        assert r.config.env['CGROUP_WRITE_FILES'] == 'True'
+        assert r.config.env['CGROUP_DISPLAY_RECAP'] == 'False'
+
+        data_files = [f for f in os.listdir(expected_datadir)
+                      if os.path.isfile(os.path.join(expected_datadir, f))]
+        # Ensure each type of metric is represented in the results
+        for metric in ('cpu', 'memory', 'pids'):
+            assert len([f for f in data_files if '{}.json'.format(metric) in f]) == 1
+
+        # Ensure each file consists of a list of json dicts
+        for file in data_files:
+            with open(os.path.join(expected_datadir, file)) as f:
+                for line in f:
+                    line = line[1:-1]  # strip RS and LF (see https://tools.ietf.org/html/rfc7464#section-2.2)
+                    try:
+                        json.loads(line)
+                    except json.JSONDecodeError as e:
+                        pytest.fail("Failed to parse {}: '{}'"
+                                    .format(os.path.join(expected_datadir, file), e))
+
+    except RuntimeError:
+        pytest.skip(
+            'this test requires a cgroup to run e.g., '
+            'sudo cgcreate -a `whoami` -t `whoami` -g cpuacct,memory,pids:ansible-runner'
+        )  # noqa

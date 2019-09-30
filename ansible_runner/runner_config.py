@@ -199,7 +199,8 @@ class RunnerConfig(object):
         else:
             self.env['ANSIBLE_STDOUT_CALLBACK'] = 'awx_display'
         self.env['ANSIBLE_RETRY_FILES_ENABLED'] = 'False'
-        self.env['ANSIBLE_HOST_KEY_CHECKING'] = 'False'
+        if 'ANSIBLE_HOST_KEY_CHECKING' not in self.env:
+            self.env['ANSIBLE_HOST_KEY_CHECKING'] = 'False'
         self.env['AWX_ISOLATED_DATA_DIR'] = self.artifact_dir
 
         if self.resource_profiling:

@@ -3,6 +3,10 @@
 Changelog
 ---------
 
+1.4.1 (2019-10-03)
+++++++++++++++++++
+- Fixed a bug that prevented ANSIBLE_HOST_KEY_CHECKING from being respected
+
 1.4.0 (2019-09-20)
 ++++++++++++++++++
 - Added changed count to stats data

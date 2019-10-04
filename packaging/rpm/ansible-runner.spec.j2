@@ -2,8 +2,8 @@
 
 %global python3_sitelib /usr/lib/python3.6/site-packages/
 
-%if 0%{?fedora} || 0%{?rhel} > 7 || 0%{?python3_pkgversion:1}
-%bcond_without python2
+%if 0%{?fedora} || 0%{?rhel} > 7
+%bcond_with python2
 %bcond_without python3
 %else
 %bcond_without python2
@@ -22,12 +22,14 @@ BuildArch:      noarch
 
 %if %{with python2}
 BuildRequires: python-rpm-macros
-BuildRequires: python-setuptools
+BuildRequires: python2-setuptools
 Requires:      python2-%{pypi_name}
 %endif
 
 %if %{with python3}
-BuildRequires:  python3-setuptools
+BuildRequires: python3
+BuildRequires: python3-setuptools
+Requires:      python3-%{pypi_name}
 %endif
 
 %description
@@ -40,20 +42,13 @@ standalone tool, or imported into a python project.
 Summary:        %{summary}
 %{?python_provide:%python_provide python2-%{pypi_name}}
 
+Requires:       python-setuptools
 Requires:       python-daemon
-%if 0%{?el7}
 Requires:       pexpect >= 4.6
 Requires:       python-psutil
 Requires:       PyYAML
 Requires:       python-six
 Requires:       python-lockfile
-%else
-Requires:       %{py2_dist pexpect} >= 4.6
-Requires:       %{py2_dist psutil}
-Requires:       %{py2_dist PyYAML}
-Requires:       %{py2_dist six}
-Requires:       %{py2_dist lockfile}
-%endif
 
 %description -n python2-%{pypi_name}
 Ansible Runner is a tool and python library that helps when interfacing with
@@ -66,6 +61,8 @@ standalone tool, or imported into a python project.
 Summary:        %{summary}
 %{?python_provide:%python_provide python3-%{pypi_name}}
 
+Requires:       python3-pyyaml
+Requires:       python3-setuptools
 Requires:       python3-daemon
 Requires:       python3dist(pexpect) >= 4.6
 Requires:       python3dist(psutil)
@@ -86,7 +83,8 @@ rm -rf %{pypi_name}.egg-info
 
 %build
 %if %{with python2}
-%{__python} setup.py build
+export RHEL_ALLOW_PYTHON2_FOR_BUILD=1
+python2 setup.py build
 %endif
 %if %{with python3}
 python3 setup.py build
@@ -103,7 +101,8 @@ ln -s %{_bindir}/ansible-runner-%{python3_version} %{buildroot}/%{_bindir}/ansib
 %endif
 
 %if %{with python2}
-%{__python} setup.py install -O1 --skip-build --root %{buildroot}
+export RHEL_ALLOW_PYTHON2_FOR_BUILD=1
+python2 setup.py install -O1 --skip-build --root %{buildroot}
 cp %{buildroot}/%{_bindir}/ansible-runner %{buildroot}/%{_bindir}/ansible-runner-%{python2_version}
 ln -s %{_bindir}/ansible-runner-%{python2_version} %{buildroot}/%{_bindir}/ansible-runner-2
 %endif
@@ -113,15 +112,16 @@ ln -s %{_bindir}/ansible-runner-%{python2_version} %{buildroot}/%{_bindir}/ansib
 
 %if %{with python2}
 %files -n python2-%{pypi_name}
+%{_bindir}/ansible-runner
 %{_bindir}/ansible-runner-2
 %{_bindir}/ansible-runner-%{python2_version}
 %{python_sitelib}/*
-%{_bindir}/ansible-runner
 %endif
 
 %if %{with python3}
 %files -n python3-%{pypi_name}
 %{python3_sitelib}/*
+%{_bindir}/ansible-runner
 %{_bindir}/ansible-runner-3
 %{_bindir}/ansible-runner-%{python3_version}
 %endif

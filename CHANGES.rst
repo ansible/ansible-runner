@@ -3,6 +3,10 @@
 Changelog
 ---------
 
+1.4.2 (2019-10-04)
+++++++++++++++++++
+- Reverted ansible-runner --version to print a semantic version number
+
 1.4.1 (2019-10-03)
 ++++++++++++++++++
 - Fixed a bug that prevented ANSIBLE_HOST_KEY_CHECKING from being respected

@@ -195,7 +195,7 @@ def main(sys_args=None):
     parser.add_argument(
         '--version',
         action='version',
-        version="ansible-runner v{}".format(VERSION)
+        version=VERSION
     )
 
     # positional options

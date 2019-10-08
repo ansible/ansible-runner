@@ -181,9 +181,10 @@ class RunnerConfig(object):
 
         # write the SSH key data into a fifo read by ssh-agent
         if self.ssh_key_data:
-            self.ssh_key_path = os.path.join(self.artifact_dir, 'ssh_key_data')
-            open_fifo_write(self.ssh_key_path, self.ssh_key_data)
-            self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path)
+            for key, value in enumerate(self.ssh_key_data):
+                ssh_key_path = os.path.join(self.artifact_dir, 'ssh_key_data_{}'.format(key))
+                open_fifo_write(ssh_key_path, value)
+                self.command = self.wrap_args_with_ssh_agent(self.command, ssh_key_path)
 
         # Use local callback directory
         callback_dir = self.env.get('AWX_LIB_DIRECTORY', os.getenv('AWX_LIB_DIRECTORY'))
@@ -288,10 +289,16 @@ class RunnerConfig(object):
             self.settings = dict()
 
         try:
-            self.ssh_key_data = self.loader.load_file('env/ssh_key', string_types)
+            self.ssh_key_data = [self.loader.load_file('env/ssh_key', string_types)]
         except ConfigurationError:
-            output.debug("Not loading ssh key")
-            self.ssh_key_data = None
+            try:
+                key_list = os.listdir(self.loader.abspath('env/ssh_key'))
+                self.ssh_key_data = []
+                for key in key_list:
+                    self.ssh_key_data.append(self.loader.load_file('env/ssh_key/{}'.format(key), string_types))
+            except:
+                output.debug("Not loading ssh key")
+                self.ssh_key_data = None
 
         self.idle_timeout = self.settings.get('idle_timeout', None)
         self.job_timeout = self.settings.get('job_timeout', None)

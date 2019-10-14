@@ -16,13 +16,13 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import os
-import re
-import pexpect
-import stat
-import shlex
-import tempfile
 import logging
+import os
+import pexpect
+import re
+import shlex
+import stat
+import tempfile
 
 import six
 from uuid import uuid4
@@ -33,7 +33,7 @@ except ImportError:
 
 from distutils.dir_util import copy_tree
 
-from six import iteritems, string_types
+from six import iteritems, string_types, ensure_binary
 
 from ansible_runner import output
 from ansible_runner.exceptions import ConfigurationError
@@ -335,8 +335,10 @@ class RunnerConfig(object):
         and if not calls :py:meth:`ansible_runner.runner_config.RunnerConfig.generate_ansible_command`
         """
         try:
-            cmdline_args = self.loader.load_file('args', string_types)
-            self.command = shlex.split(cmdline_args.decode('utf-8'))
+            cmdline_args = self.loader.load_file('args', string_types, encoding=None)
+            if six.PY2:
+                cmdline_args = ensure_binary(cmdline_args, encoding='utf-8')
+            self.command = shlex.split(cmdline_args)
             self.execution_mode = ExecutionMode.RAW
         except ConfigurationError:
             self.command = self.generate_ansible_command()
@@ -364,6 +366,10 @@ class RunnerConfig(object):
                 cmdline_args = self.cmdline_args
             else:
                 cmdline_args = self.loader.load_file('env/cmdline', string_types, encoding=None)
+
+            if six.PY2:
+                cmdline_args = ensure_binary(cmdline_args, encoding='utf-8')
+
             args = shlex.split(cmdline_args)
             exec_list.extend(args)
         except ConfigurationError:

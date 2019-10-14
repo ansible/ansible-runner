@@ -1,17 +1,11 @@
 # -*- coding: utf-8 -*-
 
+from functools import partial
+from io import StringIO
 import os
 import re
-import shlex
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-from functools import partial
-
-from six import string_types
+import six
 from pexpect import TIMEOUT, EOF
 
 import pytest
@@ -83,11 +77,11 @@ def test_prepare_environment_vars_only_strings():
     with patch.object(rc.loader, 'load_file', side_effect=envvar_side_effect):
         rc.prepare_env()
         assert 'A' in rc.env
-        assert isinstance(rc.env['A'], string_types)
+        assert isinstance(rc.env['A'], six.string_types)
         assert 'B' in rc.env
-        assert isinstance(rc.env['B'], string_types)
+        assert isinstance(rc.env['B'], six.string_types)
         assert 'C' in rc.env
-        assert isinstance(rc.env['C'], string_types)
+        assert isinstance(rc.env['C'], six.string_types)
         assert 'D' in rc.env
         assert rc.env['D'] == 'D'
 
@@ -288,22 +282,21 @@ def test_generate_ansible_command_with_api_extravars():
     assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', 'foo="bar"', 'main.yaml']
 
 
-@pytest.mark.parametrize('cmdline', [
-    '--tags foo --skip-tags'
-    '--limit "䉪ቒ칸ⱷ?噂폄蔆㪗輥"'
+@pytest.mark.parametrize('cmdline,tokens', [
+    (u'--tags foo --skip-tags', ['--tags', 'foo', '--skip-tags']),
+    (u'--limit "䉪ቒ칸ⱷ?噂폄蔆㪗輥"', ['--limit', '䉪ቒ칸ⱷ?噂폄蔆㪗輥']),
 ])
-def test_generate_ansible_command_with_cmdline_args(cmdline):
+def test_generate_ansible_command_with_cmdline_args(cmdline, tokens):
     rc = RunnerConfig(private_data_dir='/', playbook='main.yaml')
     with patch('os.path.exists') as path_exists:
-        path_exists.return_value=True
+        path_exists.return_value = True
         rc.prepare_inventory()
     rc.extra_vars = {}
 
     cmdline_side_effect = partial(load_file_side_effect, 'env/cmdline', cmdline)
-
     with patch.object(rc.loader, 'load_file', side_effect=cmdline_side_effect):
         cmd = rc.generate_ansible_command()
-        assert cmd == ['ansible-playbook'] + shlex.split(cmdline) + ['-i', '/inventory', 'main.yaml']
+        assert cmd == ['ansible-playbook'] + tokens + ['-i', '/inventory', 'main.yaml']
 
 
 def test_prepare_command_defaults():
@@ -312,7 +305,7 @@ def test_prepare_command_defaults():
     cmd_side_effect = partial(load_file_side_effect, 'args')
 
     def generate_side_effect():
-        return StringIO('test "string with spaces"')
+        return StringIO(u'test "string with spaces"')
 
     with patch.object(rc.loader, 'load_file', side_effect=cmd_side_effect):
         with patch.object(rc, 'generate_ansible_command', side_effect=generate_side_effect):

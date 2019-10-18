@@ -180,10 +180,11 @@ class Runner(object):
             child.logfile_read = stdout_handle
         except pexpect.exceptions.ExceptionPexpect as e:
             child = collections.namedtuple(
-                'MissingProcess', 'exitstatus isalive'
+                'MissingProcess', 'exitstatus isalive close'
             )(
                 exitstatus=127,
-                isalive=lambda: False
+                isalive=lambda: False,
+                close=lambda: None,
             )
 
             def _decode(x):
@@ -226,6 +227,7 @@ class Runner(object):
 
         stdout_handle.flush()
         stdout_handle.close()
+        child.close()
 
         if self.canceled:
             self.status_callback('canceled')

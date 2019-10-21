@@ -38,16 +38,16 @@ Note that not everything is required. Defaults will be used or values will be om
     ├── inventory
     │   └── hosts
     ├── project
-    │   └── test.yml
-    └── roles
-        └── testrole
-            ├── defaults
-            ├── handlers
-            ├── meta
-            ├── README.md
-            ├── tasks
-            ├── tests
-            └── vars
+        ├── test.yml
+        └── roles
+            └── testrole
+                ├── defaults
+                ├── handlers
+                ├── meta
+                ├── README.md
+                ├── tasks
+                ├── tests
+                └── vars
 
 The ``env`` directory
 ---------------------

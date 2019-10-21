@@ -37,7 +37,7 @@ Note that not everything is required. Defaults will be used or values will be om
     │   └── ssh_key
     ├── inventory
     │   └── hosts
-    ├── project
+    └── project
         ├── test.yml
         └── roles
             └── testrole

@@ -81,7 +81,7 @@ class RunnerConfig(object):
                  resource_profiling=False, resource_profiling_base_cgroup='ansible-runner', resource_profiling_cpu_poll_interval=0.25,
                  resource_profiling_memory_poll_interval=0.25, resource_profiling_pid_poll_interval=0.25,
                  resource_profiling_results_dir=None,
-                 tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None,
+                 tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None, ssh_key=None,
                  project_dir=None, directory_isolation_base_path=None, envvars=None, forks=None, cmdline=None, omit_event_data=False,
                  only_failed_event_data=False):
         self.private_data_dir = os.path.abspath(private_data_dir)
@@ -134,6 +134,7 @@ class RunnerConfig(object):
         self.skip_tags = skip_tags
         self.fact_cache_type = fact_cache_type
         self.fact_cache = os.path.join(self.artifact_dir, fact_cache or 'fact_cache') if self.fact_cache_type == 'jsonfile' else None
+        self.ssh_key_data = ssh_key
         self.execution_mode = ExecutionMode.NONE
         self.envvars = envvars
         self.forks = forks
@@ -287,11 +288,12 @@ class RunnerConfig(object):
             output.debug("Not loading settings")
             self.settings = dict()
 
-        try:
-            self.ssh_key_data = self.loader.load_file('env/ssh_key', string_types)
-        except ConfigurationError:
-            output.debug("Not loading ssh key")
-            self.ssh_key_data = None
+            try:
+                if self.ssh_key_data is None:
+                    self.ssh_key_data = self.loader.load_file('env/ssh_key', string_types)
+            except ConfigurationError:
+                output.debug("Not loading ssh key")
+                self.ssh_key_data = None
 
         self.idle_timeout = self.settings.get('idle_timeout', None)
         self.job_timeout = self.settings.get('job_timeout', None)

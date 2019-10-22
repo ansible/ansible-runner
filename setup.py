@@ -22,7 +22,7 @@ def version(default):
                 return commit.group(1)
         else:
             return default
-    except (SystemError, OSError):
+    except (Exception):
         return default
 
 

@@ -13,7 +13,7 @@ with open('README.md', 'r') as f:
 
 def version(default):
     try:
-        process = subprocess.check_output(['git', 'describe', '--tags'], text=True)
+        process = subprocess.check_output(['git', 'describe', '--tags'], universal_newlines=True)
         commit = re.match(r'([\d\.]+)[\d-]*([a-g0-9-]*)', process)
         if commit:
             if len(commit.group(2)) > 0:

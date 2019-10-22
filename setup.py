@@ -2,11 +2,26 @@
 
 # Copyright (c) 2018 Red Hat, Inc.
 # All Rights Reserved.
+import re, subprocess
 
 from setuptools import setup, find_packages
 
 with open('README.md', 'r') as f:
     long_description = f.read()
+
+
+def version(default):
+    try:
+        process = subprocess.check_output(['git', 'describe', '--tags'], text=True)
+        commit = re.match(r'([\d\.]+)[\d-]*([a-g0-9-]*)', process)
+        if commit:
+            if len(commit.group(2)) > 0:
+                return commit.group(2)[1:]
+            else:
+                return commit.group(1)
+        else: return default
+    except:
+        return default
 
 setup(
     name="ansible-runner",

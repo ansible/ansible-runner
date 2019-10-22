@@ -17,6 +17,7 @@ ifeq ($(OFFICIAL),yes)
     RELEASE ?= 1
 else
     ifeq ($(origin RELEASE), undefined)
+        VERSION = $(shell git describe --tags)
         RELEASE := 0.git$(shell date -u +%Y%m%d%H).$(shell git rev-parse --short HEAD)
     endif
 endif

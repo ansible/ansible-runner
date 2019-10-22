@@ -2,7 +2,8 @@
 
 # Copyright (c) 2018 Red Hat, Inc.
 # All Rights Reserved.
-import re, subprocess
+import re
+import subprocess
 
 from setuptools import setup, find_packages
 
@@ -19,9 +20,11 @@ def version(default):
                 return commit.group(2)[1:]
             else:
                 return commit.group(1)
-        else: return default
-    except:
+        else:
+            return default
+    except (SystemError, OSError):
         return default
+
 
 setup(
     name="ansible-runner",

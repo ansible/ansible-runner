@@ -379,7 +379,7 @@ class Runner(object):
         return all_host_events
 
     @classmethod
-    def handle_termination(self, pid, pidfile=None, is_cancel=True):
+    def handle_termination(cls, pid, pidfile=None, is_cancel=True):
         '''
         Internal method to terminate a subprocess spawned by `pexpect` representing an invocation of runner.
 

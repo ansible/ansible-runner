@@ -609,7 +609,7 @@ def main(sys_args=None):
         return(1)
 
     if args.command == 'stop':
-        Runner.handle_termination(pid, pidfile)
+        Runner.handle_termination(pid, pidfile=pidfile)
         return (0)
 
     elif args.command == 'is-alive':

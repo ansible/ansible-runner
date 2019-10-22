@@ -379,7 +379,7 @@ class Runner(object):
         return all_host_events
 
     @classmethod
-    def handle_termination(self, pid, pidfile, is_cancel=True):
+    def handle_termination(self, pid, pidfile=None, is_cancel=True):
         '''
         Internal method to terminate a subprocess spawned by `pexpect` representing an invocation of runner.
 
@@ -398,7 +398,10 @@ class Runner(object):
                 except (TypeError, OSError):
                     pass
             os.kill(main_proc.pid, signal.SIGKILL)
-            os.remove(pidfile)
+            try:
+                os.remove(pidfile)
+            except (OSError):
+                pass
         except (TypeError, psutil.Error, OSError):
             try:
                 os.kill(pid, signal.SIGKILL)

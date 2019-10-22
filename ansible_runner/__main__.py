@@ -538,6 +538,7 @@ def main(sys_args=None):
             raise
 
     stderr_path = None
+    context = None
     if args.command != 'run':
         stderr_path = os.path.join(args.private_data_dir, 'daemon.log')
         if not os.path.exists(stderr_path):
@@ -608,7 +609,7 @@ def main(sys_args=None):
         return(1)
 
     if args.command == 'stop':
-        Runner.handle_termination(pid)
+        Runner.handle_termination(pid, pidfile)
         return (0)
 
     elif args.command == 'is-alive':

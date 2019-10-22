@@ -379,14 +379,16 @@ class Runner(object):
         return all_host_events
 
     @classmethod
-    def handle_termination(cls, pid, is_cancel=True):
+    def handle_termination(self, pid, pidfile, is_cancel=True):
         '''
         Internal method to terminate a subprocess spawned by `pexpect` representing an invocation of runner.
 
         :param pid:       the process id of the running the job.
+        :param pidfile:   the daemon's PID file
         :param is_cancel: flag showing whether this termination is caused by
                           instance's cancel_flag.
         '''
+
         try:
             main_proc = psutil.Process(pid=pid)
             child_procs = main_proc.children(recursive=True)
@@ -396,6 +398,7 @@ class Runner(object):
                 except (TypeError, OSError):
                     pass
             os.kill(main_proc.pid, signal.SIGKILL)
+            os.remove(pidfile)
         except (TypeError, psutil.Error, OSError):
             try:
                 os.kill(pid, signal.SIGKILL)

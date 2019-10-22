@@ -132,6 +132,7 @@ def run(**kwargs):
     :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
     :param omit_event_data: Omits extra ansible event data from event payload (stdout and event still included)
     :param only_failed_event_data: Omits extra ansible event data unless it's a failed event (stdout and event still included)
+    :param delete_sleep: Seconds to wait between attempts to remove temporary files
     :type private_data_dir: str
     :type ident: str
     :type json_mode: bool
@@ -171,6 +172,7 @@ def run(**kwargs):
     :type fact_cache_type: str
     :type omit_event_data: bool
     :type only_failed_event_data: bool
+    :type delete_sleep: float
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object
     '''

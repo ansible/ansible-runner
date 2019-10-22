@@ -336,6 +336,13 @@ def main(sys_args=None):
              "ansible-playbook output (default=None)"
     )
 
+    runner_group.add_argument(
+        "--delete-sleep",
+        default=1,
+        type=float,
+        help="Seconds to wait between attempts to remove temporary files (default=1)"
+    )
+
     # ansible options
 
     ansible_group = parser.add_argument_group(
@@ -568,6 +575,7 @@ def main(sys_args=None):
                                    json_mode=args.json,
                                    omit_event_data=args.omit_event_data,
                                    only_failed_event_data=args.only_failed_event_data,
+                                   delete_sleep=args.delete_sleep,
                                    inventory=args.inventory,
                                    forks=args.forks,
                                    project_dir=args.project_dir,

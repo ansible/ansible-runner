@@ -83,7 +83,7 @@ class RunnerConfig(object):
                  resource_profiling_results_dir=None,
                  tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None,
                  project_dir=None, directory_isolation_base_path=None, envvars=None, forks=None, cmdline=None, omit_event_data=False,
-                 only_failed_event_data=False):
+                 only_failed_event_data=False, delete_sleep=1):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = str(ident)
         self.json_mode = json_mode
@@ -140,6 +140,7 @@ class RunnerConfig(object):
         self.cmdline_args = cmdline
         self.omit_event_data = omit_event_data
         self.only_failed_event_data = only_failed_event_data
+        self.delete_sleep = delete_sleep
 
     def prepare(self):
         """

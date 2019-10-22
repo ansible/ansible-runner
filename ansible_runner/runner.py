@@ -250,18 +250,18 @@ class Runner(object):
         if self.config.directory_isolation_path and self.config.directory_isolation_cleanup:
             shutil.rmtree(self.config.directory_isolation_path)
         if self.config.process_isolation and self.config.process_isolation_path_actual:
-            def _delete(retries=15):
+            def _delete(retries=15, delete_sleep=1):
                 try:
                     shutil.rmtree(self.config.process_isolation_path_actual)
                 except OSError as e:
                     res = False
                     if e.errno == 16 and retries > 0:
-                        time.sleep(1)
-                        res = _delete(retries=retries - 1)
+                        time.sleep(delete_sleep)
+                        res = _delete(retries=retries - 1, delete_sleep=delete_sleep)
                     if not res:
                         raise
                 return True
-            _delete()
+            _delete(delete_sleep=self.config.delete_sleep)
         if self.config.resource_profiling:
             cmd = 'cgdelete -g cpuacct,memory,pids:{}'.format(cgroup_path)
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)

@@ -426,6 +426,7 @@ def test_process_isolation_defaults():
 
     assert rc.command == [
         'bwrap',
+        '--die-with-parent',
         '--unshare-pid',
         '--dev-bind', '/', '/',
         '--proc', '/proc',
@@ -457,6 +458,7 @@ def test_process_isolation_and_directory_isolation(mock_makedirs, mock_copytree,
 
     assert rc.command == [
         'bwrap',
+        '--die-with-parent',
         '--unshare-pid',
         '--dev-bind', '/', '/',
         '--proc', '/proc',
@@ -482,34 +484,35 @@ def test_process_isolation_settings():
         path_exists.return_value=True
         rc.prepare()
 
-    assert rc.command[0:7] == [
+    assert rc.command[0:8] == [
         'not_bwrap',
+        '--die-with-parent',
         '--unshare-pid',
         '--dev-bind', '/', '/',
         '--proc', '/proc',
     ]
 
     # hide /home
-    assert rc.command[7] == '--bind'
-    assert 'ansible_runner_pi' in rc.command[8]
-    assert rc.command[9] == '/home'
+    assert rc.command[8] == '--bind'
+    assert 'ansible_runner_pi' in rc.command[9]
+    assert rc.command[10] == '/home'
 
     # hide /var
-    assert rc.command[10] == '--bind'
-    assert 'ansible_runner_pi' in rc.command[11]
-    assert rc.command[12] == '/var' or rc.command[12] == '/private/var'
+    assert rc.command[11] == '--bind'
+    assert 'ansible_runner_pi' in rc.command[12]
+    assert rc.command[13] == '/var' or rc.command[13] == '/private/var'
 
     # read-only bind
-    assert rc.command[13:16] == ['--ro-bind', '/venv', '/venv']
+    assert rc.command[14:17] == ['--ro-bind', '/venv', '/venv']
 
     # root bind
-    assert rc.command[16:19] == ['--bind', '/', '/']
+    assert rc.command[17:20] == ['--bind', '/', '/']
 
     # show /usr
-    assert rc.command[19:22] == ['--bind', '/usr', '/usr']
+    assert rc.command[20:23] == ['--bind', '/usr', '/usr']
 
     # chdir and ansible-playbook command
-    assert rc.command[22:] == ['--chdir', '/project', 'ansible-playbook', '-i', '/inventory', 'main.yaml']
+    assert rc.command[23:] == ['--chdir', '/project', 'ansible-playbook', '-i', '/inventory', 'main.yaml']
 
 
 @patch('os.mkdir', return_value=True)

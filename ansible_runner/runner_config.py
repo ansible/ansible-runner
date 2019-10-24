@@ -288,12 +288,12 @@ class RunnerConfig(object):
             output.debug("Not loading settings")
             self.settings = dict()
 
-            try:
-                if self.ssh_key_data is None:
-                    self.ssh_key_data = self.loader.load_file('env/ssh_key', string_types)
-            except ConfigurationError:
-                output.debug("Not loading ssh key")
-                self.ssh_key_data = None
+        try:
+            if self.ssh_key_data is None:
+                self.ssh_key_data = self.loader.load_file('env/ssh_key', string_types)
+        except ConfigurationError:
+            output.debug("Not loading ssh key")
+            self.ssh_key_data = None
 
         self.idle_timeout = self.settings.get('idle_timeout', None)
         self.job_timeout = self.settings.get('job_timeout', None)

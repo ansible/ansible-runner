@@ -13,7 +13,7 @@ ifeq ($(OFFICIAL),yes)
     RELEASE ?= 1
 else
     ifeq ($(origin RELEASE), undefined)
-        RELEASE := 0.git$(shell date -u +%Y%m%d%H%M).$(shell git rev-parse --short HEAD)
+        RELEASE := 0.git$(shell date -u +%Y%m%d%H).$(shell git rev-parse --short HEAD)
     endif
 endif
 
@@ -169,3 +169,5 @@ deb-build/$(NAME)-$(VERSION): dist/$(NAME)-$(VERSION).tar.gz
 	cp -a packaging/debian deb-build/$(NAME)-$(VERSION)/
 	sed -ie "s|%VERSION%|$(VERSION)|g;s|%RELEASE%|$(RELEASE)|;s|%DEB_DIST%|$(DEB_DIST)|g;s|%DATE%|$(DEB_DATE)|g" $@/debian/changelog
 
+print-%:
+	@echo $($*)

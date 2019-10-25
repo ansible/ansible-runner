@@ -3,12 +3,12 @@
 Changelog
 ---------
 
-1.4.3 (2019-10-25)
+1.4.4 (2019-10-25)
 ++++++++++++++++++
 - Fix some unicode issues when using command line override on python 2.7
 - Fix an issue with file handles not closing on the pexpect pty
 - Fix missing ssh_key parameter from module interface
-- Fix a bug where the sshe agent process would hang around after process
+- Fix a bug where the ssh agent process would hang around after process
   isolation exit causing a failure to remove temporary directories
 
 1.4.2 (2019-10-04)

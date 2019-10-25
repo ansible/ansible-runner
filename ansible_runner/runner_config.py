@@ -33,7 +33,7 @@ except ImportError:
 
 from distutils.dir_util import copy_tree
 
-from six import iteritems, string_types, ensure_binary
+from six import iteritems, string_types, text_type
 
 from ansible_runner import output
 from ansible_runner.exceptions import ConfigurationError
@@ -338,8 +338,8 @@ class RunnerConfig(object):
         """
         try:
             cmdline_args = self.loader.load_file('args', string_types, encoding=None)
-            if six.PY2:
-                cmdline_args = ensure_binary(cmdline_args, encoding='utf-8')
+            if six.PY2 and isinstance(cmdline_args, text_type):
+                cmdline_args = cmdline_args.encode('utf-8')
             self.command = shlex.split(cmdline_args)
             self.execution_mode = ExecutionMode.RAW
         except ConfigurationError:
@@ -369,8 +369,8 @@ class RunnerConfig(object):
             else:
                 cmdline_args = self.loader.load_file('env/cmdline', string_types, encoding=None)
 
-            if six.PY2:
-                cmdline_args = ensure_binary(cmdline_args, encoding='utf-8')
+            if six.PY2 and isinstance(cmdline_args, text_type):
+                cmdline_args = cmdline_args.encode('utf-8')
 
             args = shlex.split(cmdline_args)
             exec_list.extend(args)

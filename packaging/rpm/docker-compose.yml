@@ -2,7 +2,10 @@
 version: '3'
 services:
   rpm-builder:
-    build: .
+    build:
+      dockerfile: Dockerfile.${MOCK_CONFIG}
+      context: .
+    image: runner-rpm-builder:${MOCK_CONFIG}
     environment:
       MOCK_BIN: "mock --old-chroot"
       MOCK_CONFIG:

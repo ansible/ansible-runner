@@ -29,7 +29,7 @@ class RunnerMessageIter(asyncio.Queue):
         self._loop.create_task(self.put(json.dumps(dict(status="exiting"))))
 
 
-def execute(message):
+def execute(message, config):
     print("Runner Receptor: {}".format(message.raw_payload))
     loop = asyncio.get_event_loop()
     message_iter = RunnerMessageIter(loop=loop)

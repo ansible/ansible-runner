@@ -72,12 +72,7 @@ def executor(tmpdir, request, is_pre_ansible28):
         var: results
 '''}  # noqa
 ], ids=['helloworld.yml', 'results_included.yml'])
-@pytest.mark.parametrize('envvars', [
-    {'ANSIBLE_CALLBACK_PLUGINS': os.path.join(HERE, 'callback')},
-    {'ANSIBLE_CALLBACK_PLUGINS': ''}],
-    ids=['local-callback-plugin', 'no-callback-plugin']
-)
-def test_callback_plugin_receives_events(executor, event, playbook, envvars):
+def test_callback_plugin_receives_events(executor, event, playbook):
     executor.run()
     assert len(list(executor.events))
     assert event in [task['event'] for task in executor.events]

@@ -17,20 +17,6 @@
 
 from __future__ import (absolute_import, division, print_function)
 
-
-DOCUMENTATION = '''
-    callback: minimal
-    short_description: Ad hoc event dispatcher for ansible-runner
-    version_added: "2.0"
-    description:
-        - This callback is necessary for ansible-runner to work
-    type: stdout
-    extends_documentation_fragment:
-      - default_callback
-    requirements:
-      - Set as stdout in config
-'''
-
 # Python
 import os  # noqa
 import sys  # noqa
@@ -48,3 +34,6 @@ from display_callback import AWXMinimalCallbackModule  # noqa
 # match "CallbackModule"
 class CallbackModule(AWXMinimalCallbackModule):
     pass
+
+
+DOCUMENTATION = CallbackModule.get_documentation()

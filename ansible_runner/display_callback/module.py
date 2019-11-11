@@ -21,17 +21,41 @@ from __future__ import (absolute_import, division, print_function)
 import collections
 import contextlib
 import sys
+import os
+import importlib
 import uuid
 from copy import copy
 
 # Ansible
 from ansible import constants as C
 from ansible.plugins.callback import CallbackBase
-from ansible.plugins.callback.default import CallbackModule as DefaultCallbackModule
 
 # AWX Display Callback
 from .events import event_context
 from .minimal import CallbackModule as MinimalCallbackModule
+
+
+BASE_DOCUMENTATION = '''
+    callback: %s
+    short_description: Playbook event dispatcher for ansible-runner
+    version_added: "2.0"
+    description:
+        - This callback is necessary for ansible-runner to work
+    type: stdout
+    extends_documentation_fragment:
+      - default_callback
+    requirements:
+      - Set as stdout in config
+'''
+
+
+if 'RUNNER_STDOUT_CALLBACK_PROXY' in os.environ:
+    from ansible.plugins.loader import callback_loader
+    DefaultCallbackModule = callback_loader.get(os.environ['RUNNER_STDOUT_CALLBACK_PROXY']).__class__
+    DefaultCallbackModule.PROXY_DOCUMENTATION = importlib.import_module(DefaultCallbackModule.__module__).DOCUMENTATION
+else:
+    from ansible.plugins.callback.default import CallbackModule as DefaultCallbackModule
+
 
 CENSORED = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"  # noqa
 
@@ -59,6 +83,12 @@ class BaseCallbackModule(CallbackBase):
         'playbook_on_no_hosts_matched',
         'playbook_on_no_hosts_remaining',
     ]
+
+    @classmethod
+    def get_documentation(cls):
+        if hasattr(cls, 'PROXY_DOCUMENTATION'):
+            return cls.PROXY_DOCUMENTATION
+        return BASE_DOCUMENTATION % cls.CALLBACK_NAME
 
     def __init__(self):
         super(BaseCallbackModule, self).__init__()
@@ -271,7 +301,7 @@ class BaseCallbackModule(CallbackBase):
             uuid=task_uuid,
         )
         with self.capture_event_data('playbook_on_task_start', **event_data):
-            super(BaseCallbackModule, self).v2_playbook_on_task_start(task, is_conditional)
+            super(BaseCallbackModule, self).v2_playbook_on_task_start(task, is_conditional=is_conditional)
 
     def v2_playbook_on_cleanup_task_start(self, task):
         # NOTE: Not used by Ansible 2.x.
@@ -374,7 +404,7 @@ class BaseCallbackModule(CallbackBase):
             event_loop=self._get_event_loop(result._task),
         )
         with self.capture_event_data('runner_on_failed', **event_data):
-            super(BaseCallbackModule, self).v2_runner_on_failed(result, ignore_errors)
+            super(BaseCallbackModule, self).v2_runner_on_failed(result, ignore_errors=ignore_errors)
 
     def v2_runner_on_skipped(self, result):
         event_data = dict(

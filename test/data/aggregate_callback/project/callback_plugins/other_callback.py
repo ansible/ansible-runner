@@ -7,8 +7,8 @@ class CallbackModule(CallbackBase):
     CALLBACK_NAME = 'other_callback'
 
     def v2_playbook_on_play_start(self, play):
-        pass
+        self._display.display(u"ready_set_play_start")
 
     def v2_runner_on_ok(self, result):
-        pass
+        self._display.display(u"ready_set_on_ok")
 

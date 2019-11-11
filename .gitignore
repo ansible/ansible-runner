@@ -18,3 +18,5 @@
 .coverage
 *,cover
 .venv
+
+__pycache__/

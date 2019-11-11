@@ -1,0 +1,2 @@
+---
+ANSIBLE_STDOUT_CALLBACK: selective

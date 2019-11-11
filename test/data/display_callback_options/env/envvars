@@ -1,0 +1,4 @@
+---
+ANSIBLE_STDOUT_CALLBACK: selective
+# Setting the nocolor option should control whether the output is colorized
+ANSIBLE_NOCOLOR: true

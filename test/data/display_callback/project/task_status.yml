@@ -1,0 +1,37 @@
+---
+- hosts: consolidated
+  gather_facts: false
+  connection: local
+  name: Use debug task to produce different status for several hosts
+  tasks:
+    - name: This task gives ok/changed/skipped/failed/ignored depending on host
+      debug:
+        msg: "Playing {{ ansible_host }}"
+      when: "'_skipped' not in ansible_host"
+      changed_when: "'_changed' in ansible_host"
+      failed_when: "('_failed' in ansible_host) or ('_ignored' in ansible_host)"
+      ignore_errors: "{{'_ignored' in ansible_host}}"
+
+- hosts: 6_rescued
+  gather_facts: false
+  connection: local
+  name: Target the rescue host in separate play in order to fail and rescue
+  tasks:
+
+    - name: Fail so that rescue task will be activated
+      block:
+        - fail:
+            msg: "HALP!!!"
+      rescue:
+        - name: This is the rescue task
+          debug: msg="ε-(´・｀) ﾌ"
+
+- hosts: 7_unreachable
+  gather_facts: false
+  name: Target unreachable hosts in order to get unreachable status
+  tasks:
+
+    - name: Reach out to the unreachable host
+      ping:
+      vars:
+        ansible_host: 'invalid.invalid'

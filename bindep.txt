@@ -5,3 +5,4 @@ gcc-c++ [test platform:rpm]
 python3-devel [test !platform:centos-7 platform:rpm]
 python3 [test !platform:centos-7 platform:rpm]
 python36 [test !platform:centos-7 !platform:fedora-28]
+

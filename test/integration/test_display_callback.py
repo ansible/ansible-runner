@@ -167,8 +167,7 @@ def test_callback_plugin_no_log_filters(executor, playbook):
     - shell: echo "PUBLIC"
     - shell: echo "PRIVATE"
       no_log: true
-    - uri: url=https://example.org username="PUBLIC" password="PRIVATE"
-    - copy: content="PRIVATE" dest="/tmp/tmp_no_log"
+    - uri: url=https://example.org url_username="PUBLIC" url_password="PRIVATE"
 '''},  # noqa
 ])
 def test_callback_plugin_task_args_leak(executor, playbook):
@@ -186,8 +185,9 @@ def test_callback_plugin_task_args_leak(executor, playbook):
     assert events[5]['event'] == 'playbook_on_task_start'
     assert events[6]['event'] == 'runner_on_start'
     assert events[7]['event'] == 'runner_on_ok'
-    assert 'PUBLIC' in json.dumps(events)
-    assert 'PRIVATE' not in json.dumps(events)
+    assert 'PUBLIC' in json.dumps(events), events
+    for event in events:
+        assert 'PRIVATE' not in json.dumps(event), event
     # make sure playbook was successful, so all tasks were hit
     assert not events[-1]['event_data']['failures'], 'Unexpected playbook execution failure'
 
@@ -299,8 +299,8 @@ def test_callback_plugin_records_notify_events(executor, playbook):
   tasks:
     - uri:
         url: https://example.org
-        user: john-jacob-jingleheimer-schmidt
-        password: "{{ pw }}"
+        url_username: john-jacob-jingleheimer-schmidt
+        url_password: "{{ pw }}"
 '''},  # noqa
 ])
 def test_module_level_no_log(executor, playbook):

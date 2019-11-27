@@ -17,9 +17,7 @@
 # under the License.
 #
 from copy import deepcopy
-from unicodedata import normalize
 
-from six import PY2
 from six import string_types
 
 from ansible_runner.types.containers import IndexContainer
@@ -28,6 +26,7 @@ from ansible_runner.types.validators import TypeValidator
 from ansible_runner.types.validators import RequiredValueValidator
 from ansible_runner.helpers import load_module
 from ansible_runner.helpers import to_list
+from ansible_runner.utils import ensure_str
 
 
 SERIALIZE_WHEN_ALWAYS = 0
@@ -131,8 +130,8 @@ class String(Attribute):
         super(String, self).__init__(str, *args, **kwargs)
 
     def __call__(self, value):
-        if PY2 and isinstance(value, unicode):
-            value = normalize('NFKD', value).encode('ascii', 'ignore')
+        if value:
+            value = ensure_str(value)
         return super(String, self).__call__(value)
 
 

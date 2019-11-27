@@ -15,13 +15,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 #
-import os
-import re
-
 import pytest
 
 from ansible_runner import helpers
-from ansible_runner.utils import ensure_str
 
 
 def test_isvalidattrname():
@@ -32,30 +28,6 @@ def test_isvalidattrname():
         helpers.isvalidattrname('0test')
 
     helpers.isvalidattrname('test')
-
-
-def test_get_ansible_role_paths():
-    resp = helpers.get_ansible_role_paths()
-    assert resp
-
-
-def test_ansible_version():
-    resp = helpers.get_ansible_version()
-    match = re.match(helpers.to_bytes("\\d+\\.\\d+\\.\\d+"), resp)
-    assert match is not None
-
-
-def test_get_role_path(datadir):
-    os.environ['ANSIBLE_ROLES_PATH'] = str(datadir)
-    resp = helpers.get_role_path('ansible_runner.test_role')
-    expected = str(datadir / 'ansible_runner.test_role')
-    assert ensure_str(resp) == expected
-
-
-def test_to_bytes():
-    assert helpers.to_bytes("test") == b"test"
-    assert helpers.to_bytes(u"test") == b"test"
-    assert helpers.to_bytes(b"test") == b"test"
 
 
 def test_to_list():

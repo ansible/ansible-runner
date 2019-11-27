@@ -16,14 +16,8 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import os
-import re
-import shlex
 import importlib
 
-from subprocess import Popen, PIPE
-
-from six import binary_type
 from six import string_types
 
 
@@ -33,20 +27,6 @@ PYTHON_RESERVED = frozenset([
     'elif', 'except', 'def', 'global', 'import', 'for', 'or', 'print',
     'lambda', 'with', 'class', 'try', 'exec'
 ])
-
-
-def to_bytes(o):
-    """Convert value to bytes
-
-    :param o: the value to be converted:
-    :type o: a string type
-
-    :returns: a bytes encoded object
-    :rtype: bytes
-    """
-    if isinstance(o, binary_type):
-        return o
-    return o.encode('utf-8')
 
 
 def to_list(o):
@@ -84,60 +64,6 @@ def isvalidattrname(v):
     if not v[0].isalpha():
         raise ValueError("name must start with an alpha character")
     return True
-
-
-def get_ansible_version():
-    """Returns the current version of Ansible
-
-    This function will extract the version of Ansible based on
-    the command `ansible --version` and return the version in
-    x.y.z format
-
-    :returns: string representation of the version
-    :rtype: str
-    """
-    p = Popen(shlex.split("ansible --version"),
-              stdin=PIPE, stdout=PIPE, stderr=PIPE)
-
-    out, err = p.communicate()
-    match = re.match(b"ansible (.+)", to_bytes(out))
-    return match.group(1)
-
-
-def get_ansible_role_paths():
-    """Retrieves the Ansible Roles path
-
-    This function will return the list of role paths to check for
-    roles to be installed into.  This is done using the command
-    `ansible-galaxy list`
-
-    :returns: a list of paths
-    :rtype: list
-    """
-    p = Popen(shlex.split("ansible-galaxy list"),
-              stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    out, err = p.communicate()
-    return re.findall(b"# (.+)", to_bytes(out))
-
-
-def get_role_path(name):
-    """Returns the full path to the role
-
-    This function will attempt to find the role provided by
-    name and return the full path.  If the role is not found
-    this function will return None
-
-    :param name: the name of the role to find
-    :type name: sti
-
-    :returns: the full path to the role
-    :rtype: str
-    """
-    name = to_bytes(name)
-    for item in get_ansible_role_paths():
-        for parent, children, _ in os.walk(item):
-            if name in children:
-                return os.path.join(parent, name)
 
 
 def load_module(name):

@@ -19,10 +19,10 @@ from ansible_runner.inventory.children import Child
 
 
 def test_serialization_deserialization():
-    serialized = {'ansible_connection': 'test'}
+    serialized = {'vars': {'ansible_connection': 'test'}}
 
     child = Child()
-    child.ansible_connection = 'test'
+    child.vars.ansible_connection = 'test'
     assert child.serialize() == serialized
 
     child1 = Child(**serialized)

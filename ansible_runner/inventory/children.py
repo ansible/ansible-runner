@@ -18,11 +18,23 @@
 # under the License.
 #
 from ansible_runner.types.objects import Object
+from ansible_runner.types.objects import MapObject
 from ansible_runner.helpers import make_attr
 from ansible_runner.inventory import AnsibleVars
 
 
-class Child(AnsibleVars, Object):
+class Vars(AnsibleVars, MapObject):
+    """Implements well-known Ansible varialbles for Child vars
+
+    An instance of this class provides access to the Ansible
+    well known Ansible inventory varialbles asl well as allows
+    for the assigning of arbitrary key / value pairs that will be
+    associated with the child instance.
+    """
+    pass
+
+
+class Child(Object):
     """Provides an implementation of a Child inventory object
 
     This class implements an Ansible child group in the inventory.
@@ -31,8 +43,7 @@ class Child(AnsibleVars, Object):
 
     >>> from ansible_runner.inventory.children import Child
     >>> child = Child()
-    >>> child.name = 'group_x'
-    >>> child.ansible_connection = 'local'
+    >>> child.vars.ansible_connection = 'local'
     >>> child.vars['key'] = 'value'
 
     Child objects can be added to Children on an Ansible inventory object.
@@ -45,7 +56,7 @@ class Child(AnsibleVars, Object):
     inventory object.
 
     >>> child_2 = inventory.children.new('group_y')
-    >>> child_2.ansible_user = 'admin'
+    >>> child_2.vars.ansible_user = 'admin'
 
     Children properties are fully recursive for building nested groups
     in the inventory.
@@ -64,9 +75,16 @@ class Child(AnsibleVars, Object):
     """
 
     hosts = make_attr('map', cls='ansible_runner.inventory.hosts:Host')
+    vars = make_attr('any', cls='ansible_runner.inventory.children:Vars')
     children = make_attr(
         'map',
         cls='ansible_runner.inventory.children:Child',
         lazy=True
     )
-    vars = make_attr('dict')
+
+    def __init__(self, **kwargs):
+        childvars = kwargs.pop('vars', None)
+        if childvars and isinstance(childvars, dict):
+            kwargs['vars'] = Vars(**childvars)
+        super(Child, self).__init__(**kwargs)
+

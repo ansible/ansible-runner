@@ -21,11 +21,12 @@ from ansible_runner.inventory import Inventory
 def test_serialization_deserialization():
     inv = Inventory()
     inv.hosts.new('test', ansible_host='testhost')
-    inv.children.new('test', ansible_connection='testchild')
+    inv.children.new('test', vars={'ansible_connection': 'testchild'})
     inv.vars['test'] = 'testvar'
 
     hosts = {'test': {'ansible_host': 'testhost'}}
-    children = {'test': {'ansible_connection': 'testchild'}}
+    children = {'test': {'vars': {'ansible_connection': 'testchild'}}}
+
     serialized = {'all': {'hosts': hosts,
                           'children': children,
                           'vars': {'test': 'testvar'}}}

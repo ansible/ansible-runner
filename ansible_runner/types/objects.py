@@ -190,7 +190,10 @@ class MapObject(Object):
         super(MapObject, self).__init__(**kwargs)
 
     def __getitem__(self, key):
-        return self._vars[key]
+        if key in self._attributes:
+            return getattr(self, key)
+        else:
+            return self._vars[key]
 
     def __setitem__(self, key, value):
         if key in self._attributes:

@@ -5,8 +5,9 @@ name = "pypi"
 
 [dev-packages]
 more-itertools = "==5.0.0"
-pytest = "*"
+pytest = "==4.4.0"
 "flake8" = "*"
+yamllint = "*"
 funcsigs = "*"
 mock = "*"
 pathlib2 = "*"

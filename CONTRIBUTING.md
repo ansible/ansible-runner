@@ -32,4 +32,4 @@ This will automatically setup the development environment under a virtualenv, wh
 
 ## Linting and Unit Tests
 
-`tox` is used to run `flake8` and unit tests on both Python 2 and 3. It uses pipenv to bootstrap these two environments.
+`tox` is used to run linters (`flake8` and `yamllint`) and unit tests on both Python 2 and 3. It uses pipenv to bootstrap these two environments.

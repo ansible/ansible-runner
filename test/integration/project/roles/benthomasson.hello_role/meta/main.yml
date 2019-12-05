@@ -1,3 +1,4 @@
+---
 galaxy_info:
   author: Ben Thomasson
   description: Hello World role
@@ -8,5 +9,5 @@ galaxy_info:
   min_ansible_version: 1.2
 
   galaxy_tags:
-      - hello
+    - hello
 dependencies: []

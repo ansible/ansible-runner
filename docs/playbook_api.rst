@@ -30,7 +30,47 @@ All objects built using this typed API provide a :meth:`serialize()
 <ansible_runner.types.objects.Object.deserialize>` method to transform the 
 Python object to and from a JSON data structure.  The JSON data structure can 
 be directly injected into the **Ansible Runner** Python interface for 
-consumption. 
+consumption.   The serialized JSON data structure can be direclty passed to 
+**Ansible Runner** :meth:`run() <ansible_runner.interface.run>` or 
+:meth:`run_async() <ansible_runner.interface.run_async>` methods.  
+
+Usage Example
+~~~~~~~~~~~~~
+
+The following code block demonstrates how pass :class:`Playbook
+<ansible_runner.playbook.Playbook>` and :class:`Inventory
+<ansible_runner.inventory.Inventory>` instance to **Ansible Runner**.
+
+.. code-block:: python
+
+    >>> from ansible_runner.playbook import Playbook
+    >>> from ansible_runner.inventory import Inventory
+    >>> from ansible_runner.interface import run
+    >>> inventory = Inventory()
+    >>> inventory.hosts.new('localhost', ansible_host='localhost')
+    {"ansible_host": "localhost"}
+    >>> inventory.hosts['localhost'].ansible_connection = 'local'
+    >>> playbook = Playbook()
+    >>> playbook.new()
+    {"hosts": "all"}
+    >>> playbook[0].tasks.new(action='debug', args={'msg': 'Hello world!'})
+    {"debug": {"msg": "Hello world!"}}
+    >>> run(playbook=playbook.serialize(), inventory=inventory.serialize())
+
+    PLAY [all] *********************************************************************
+
+    TASK [Gathering Facts] *********************************************************
+    ok: [localhost]
+
+    TASK [debug] *******************************************************************
+    ok: [localhost] => {
+        "msg": "Hello world!"
+    }
+
+    PLAY RECAP *********************************************************************
+    localhost                  : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+    <ansible_runner.runner.Runner object at 0x7f1d5f559b90>
 
 
 ``Playbook``
@@ -104,7 +144,7 @@ object.
 
 Task lists can also contain :class:`Block
 <ansible_runner.playbook.tasks.Block>` items.  To create a new task block
-simple omit the `action` keyword argument.
+simply omit the `action` keyword argument.
 
 .. code-block:: python
 

@@ -11,13 +11,10 @@ ADD demo/inventory /runner/inventory
 # Install Ansible Runner
 RUN yum-config-manager --add-repo https://releases.ansible.com/ansible-runner/ansible-runner.el7.repo && \
 	yum install -y epel-release && \
-	yum install -y python-pip ansible-runner bubblewrap sudo rsync openssh-clients sshpass \
-			gcc gcc-c++ make python-devel libffi-devel openssl-devel && \
-	pip install --upgrade pip && \
+	yum install -y python-pip python-cryptography ansible-runner bubblewrap sudo rsync openssh-clients sshpass && \
 	pip install --no-cache-dir ansible && \
 	localedef -c -i en_US -f UTF-8 en_US.UTF-8 && \
 	chmod +x /bin/tini /bin/entrypoint && \
-	yum remove -y --setopt=tsflags=noscripts gcc gcc-c++ make python-devel libffi-devel openssl-devel && \
 	rm -rf /var/cache/yum
 
 # In OpenShift, container will run as a random uid number and gid 0. Make sure things

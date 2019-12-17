@@ -195,10 +195,11 @@ class RunnerConfig(object):
         if python_path and not python_path.endswith(':'):
             python_path += ':'
         self.env['ANSIBLE_CALLBACK_PLUGINS'] = ':'.join(filter(None,(self.env.get('ANSIBLE_CALLBACK_PLUGINS'), callback_dir)))
-        if 'AD_HOC_COMMAND_ID' in self.env:
-            self.env['ANSIBLE_STDOUT_CALLBACK'] = 'minimal'
-        else:
-            self.env['ANSIBLE_STDOUT_CALLBACK'] = 'awx_display'
+        if 'ANSIBLE_STDOUT_CALLBACK' not in self.env:
+            if 'AD_HOC_COMMAND_ID' in self.env:
+                self.env['ANSIBLE_STDOUT_CALLBACK'] = 'minimal'
+            else:
+                self.env['ANSIBLE_STDOUT_CALLBACK'] = 'awx_display'
         self.env['ANSIBLE_RETRY_FILES_ENABLED'] = 'False'
         if 'ANSIBLE_HOST_KEY_CHECKING' not in self.env:
             self.env['ANSIBLE_HOST_KEY_CHECKING'] = 'False'

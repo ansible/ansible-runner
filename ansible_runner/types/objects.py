@@ -19,6 +19,7 @@
 import json
 
 from six import with_metaclass, iteritems
+from six import itervalues
 
 from ansible_runner.types.attrs import Attribute
 from ansible_runner.types.attrs import LazyAttribute
@@ -118,11 +119,6 @@ class Object(with_metaclass(BaseMeta)):
                 if item != key:
                     self.__dict__[item] = value
 
-            mutually_exclusive_with = attr.mutually_exclusive_with
-
-            if mutually_exclusive_with and value is not None:
-                delattr(self, mutually_exclusive_with)
-
         elif not key.startswith('_'):
             raise AttributeError("'{}' object has no attribute '{}'".format(
                 self.__class__.__name__, key))
@@ -149,18 +145,36 @@ class Object(with_metaclass(BaseMeta)):
     def serialize(self):
         obj = {}
 
+        mutually_exclusive_check = {}
+
         for item, attr in iteritems(self._attributes):
             value = getattr(self, item)
 
             if attr.type is bool and value in (True, False) and \
                attr.serialize_when < SERIALIZE_WHEN_NEVER:
                 obj[item] = value
+                if attr.mutually_exclusive_with is not None:
+                    priority = attr.mutually_exclusive_priority
+                    if priority not in mutually_exclusive_check:
+                        mutually_exclusive_check[priority] = set()
+                    mutually_exclusive_check[priority].add(attr)
 
             elif value and attr.serialize_when < SERIALIZE_WHEN_NEVER:
                 if hasattr(value, 'serialize'):
                     obj[item] = value.serialize()
                 else:
                     obj[item] = value
+
+                if attr.mutually_exclusive_with is not None:
+                    priority = attr.mutually_exclusive_priority
+                    if priority not in mutually_exclusive_check:
+                        mutually_exclusive_check[priority] = set()
+                    mutually_exclusive_check[priority].add(attr)
+
+        for value in itervalues(mutually_exclusive_check):
+            for item in value:
+                if item.name in obj:
+                    obj.pop(item.mutually_exclusive_with, None)
 
         return obj
 

@@ -36,12 +36,23 @@ def test_task_init_without_action():
 
 
 def test_task_action_mutually_exclusive():
-    t = Task(action='test')
-    assert t.action == 'test'
+    t = Task(action='action-test')
+
+    assert t.action == 'action-test'
     assert t.local_action is None
-    t.local_action = 'test'
-    assert t.action is None
-    assert t.local_action == 'test'
+
+    t.local_action = 'local_action-test'
+    assert t.local_action == 'local_action-test'
+
+    serialized = t.serialize()
+    assert 'action-test' in serialized
+    assert 'local_action-test' not in serialized
+
+    del t.action
+
+    serialized = t.serialize()
+    assert 'action-test' not in serialized
+    assert 'local_action-test' in serialized
 
 
 def test_task_action_is_required():

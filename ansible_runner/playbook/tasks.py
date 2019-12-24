@@ -76,12 +76,16 @@ class Task(Base, Delegate, Conditional, Object):
 
     :param action:
         The ‘action’ to execute for a task, it normally translates into
-        a C(module) or action plugin.
+        a module or action plugin.  This attribute is mutually exclusive
+        with :py:attr:`local_action`.  If both attributes are configured
+        then :py:attr:`action` is preferred.
     :type: action: str
 
     :param args:
         A secondary way to add arguments into a task. Takes a dictionary
-        in which keys map to options and values.
+        in which keys map to options and values.  This attribute is mutually
+        exclusive with :py:attr:`freeform`.  If both attributes are
+        configured on an instance, then :py:attr:`args` is preferred.
     :type args: dict
 
     :param changed_when:
@@ -98,6 +102,11 @@ class Task(Base, Delegate, Conditional, Object):
         Conditional expression that overrides the task’s normal
         ‘failed’ status.
     :type failed_when: str
+
+    :param freeform:
+        Single free form data value for this task.  This attribute
+        is mutually exclusive with :py:attr:`args`.  If both attributes
+        are provided, then :py:attr:`args` is preferred.
 
     :param local_action:
         Same as action but also implies delegate_to: localhost
@@ -139,9 +148,15 @@ class Task(Base, Delegate, Conditional, Object):
     action = make_attr(
         'string',
         require_one_of=('action', 'local_action'),
-        mutually_exclusive_with='local_action'
+        mutually_exclusive_with='local_action',
+        mutually_exclusive_priority=1
     )
-    args = make_attr('dict', mutually_exclusive_with='freeform')
+    args = make_attr(
+        'dict',
+        mutually_exclusive_with='freeform',
+        mutually_exclusive_priority=1
+
+    )
     freeform = make_attr('string', mutually_exclusive_with='args')
     changed_when = make_attr('string')
     delay = make_attr('integer')

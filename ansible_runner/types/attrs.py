@@ -74,7 +74,8 @@ class Attribute(object):
 
     def __init__(self, type, name=None, default=None, required=None,
                  validators=None, serialize_when=None, aliases=None,
-                 mutually_exclusive_with=None, require_one_of=None):
+                 mutually_exclusive_with=None, require_one_of=None,
+                 mutually_exclusive_priority=None):
 
         self.type = type
         self.name = name
@@ -83,6 +84,7 @@ class Attribute(object):
         self.aliases = aliases or ()
         self.serialize_when = serialize_when or SERIALIZE_WHEN_ALWAYS
         self.mutually_exclusive_with = mutually_exclusive_with
+        self.mutually_exclusive_priority = mutually_exclusive_priority or 255
         self.require_one_of = require_one_of
 
         try:

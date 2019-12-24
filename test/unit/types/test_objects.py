@@ -362,7 +362,7 @@ def test_mutually_exclusive_with():
 
     o.attr2 = 'test'
 
-    assert o.attr1 is None
+    assert o.attr1 == 'test'
     assert o.attr2 == 'test'
 
 

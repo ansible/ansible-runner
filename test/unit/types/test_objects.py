@@ -350,8 +350,9 @@ def test_require_one_of():
 
 
 class InstanceWithMutuallyExclusiveAttr(Object):
-    attr1 = String(mutually_exclusive_with=('attr2'))
-    attr2 = String(mutually_exclusive_with=('attr1'))
+    attr1 = String(mutually_exclusive_group = 'group1',
+                   mutually_exclusive_priority=1)
+    attr2 = String(mutually_exclusive_group = 'group1')
 
 
 def test_mutually_exclusive_with():
@@ -364,6 +365,10 @@ def test_mutually_exclusive_with():
 
     assert o.attr1 == 'test'
     assert o.attr2 == 'test'
+
+    serialized = o.serialize()
+    assert serialized.get('attr1') == 'test'
+    assert serialized.get('attr2') is None
 
 
 class MapInstance(MapObject):

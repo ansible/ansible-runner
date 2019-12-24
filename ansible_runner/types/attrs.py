@@ -41,41 +41,55 @@ class Attribute(object):
     The meta data that handles how a particular property is evaluated
     is based on an instance of Attribute
 
-    :param type: the Python object type for this attribute
+    :param type:
+        the Python object type for this attribute
     :type type: object
 
-    :param name: the name of the Object attribute
+    :param name:
+        the name of the Object attribute
     :type name: str
 
-    :param required: whether or not the attribute is required to be set
+    :param required:
+        whether or not the attribute is required to be set
     :type required: bool
 
-    :param validators: an interable list of validators for the value
+    :param validators:
+        an interable list of validators for the value
     :type validators: tuple
 
-    :param serialize_when: controls when an attribute should be serialized
+    :param serialize_when:
+        controls when an attribute should be serialized
     :type serialize_when: int
 
-    :param aliases: one or more alias attribute names
+    :param aliases:
+        one or more alias attribute names
     :type aliases: tuple
 
-    :param mutually_exclusive_with:
-        set of attributes this attribute is considered to be
-        mutually exclusive with
-    :type mutually_exclusive_with: tuple
+    :param mutually_exclusive_group:
+        assigns the named attribute to a mutally exclusive configuration
+        group where one and only one attribute will be used.  all attributes
+        with the same group name will be considered.
+    :type mutually_exclusive_group: str
+
+    :param mutually_exclusive_priority:
+        used to influence which attribute in a group is selected.  all
+        attributes are assigned a priority of 255 by default.  the lowest
+        priority attribute with a configured value wins.
+    :type mutually_exclusive_priority: int
 
     :param require_one_of:
         set of attribute names where at most one value must be set
     :type reuqired_one_of: tuple
 
-    :returns: an instance of Attribute
+    :returns:
+        an instance of Attribute
     :rtype: Attribute
     """
 
     def __init__(self, type, name=None, default=None, required=None,
                  validators=None, serialize_when=None, aliases=None,
-                 mutually_exclusive_with=None, require_one_of=None,
-                 mutually_exclusive_priority=None):
+                 mutually_exclusive_group=None, require_one_of=None,
+                 mutually_exclusive_priority=255):
 
         self.type = type
         self.name = name
@@ -83,8 +97,8 @@ class Attribute(object):
         self.validators = validators or set()
         self.aliases = aliases or ()
         self.serialize_when = serialize_when or SERIALIZE_WHEN_ALWAYS
-        self.mutually_exclusive_with = mutually_exclusive_with
-        self.mutually_exclusive_priority = mutually_exclusive_priority or 255
+        self.mutually_exclusive_group = mutually_exclusive_group
+        self.mutually_exclusive_priority = int(mutually_exclusive_priority)
         self.require_one_of = require_one_of
 
         try:

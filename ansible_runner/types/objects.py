@@ -153,11 +153,15 @@ class Object(with_metaclass(BaseMeta)):
             if attr.type is bool and value in (True, False) and \
                attr.serialize_when < SERIALIZE_WHEN_NEVER:
                 obj[item] = value
-                if attr.mutually_exclusive_with is not None:
+                group = attr.mutually_exclusive_group
+                if group is not None:
+                    if group not in mutually_exclusive_check:
+                        mutually_exclusive_check[group] = {}
+                    group = mutually_exclusive_check[group]
                     priority = attr.mutually_exclusive_priority
-                    if priority not in mutually_exclusive_check:
-                        mutually_exclusive_check[priority] = set()
-                    mutually_exclusive_check[priority].add(attr)
+                    if priority not in group:
+                        group[priority] = set()
+                    group[priority].add(attr)
 
             elif value and attr.serialize_when < SERIALIZE_WHEN_NEVER:
                 if hasattr(value, 'serialize'):
@@ -165,16 +169,24 @@ class Object(with_metaclass(BaseMeta)):
                 else:
                     obj[item] = value
 
-                if attr.mutually_exclusive_with is not None:
+                group = attr.mutually_exclusive_group
+                if group is not None:
+                    if group not in mutually_exclusive_check:
+                        mutually_exclusive_check[group] = {}
+                    group = mutually_exclusive_check[group]
                     priority = attr.mutually_exclusive_priority
-                    if priority not in mutually_exclusive_check:
-                        mutually_exclusive_check[priority] = set()
-                    mutually_exclusive_check[priority].add(attr)
+                    if priority not in group:
+                        group[priority] = set()
+                    group[priority].add(attr)
 
-        for value in itervalues(mutually_exclusive_check):
-            for item in value:
-                if item.name in obj:
-                    obj.pop(item.mutually_exclusive_with, None)
+        for group in itervalues(mutually_exclusive_check):
+            group_value = None
+            for value in itervalues(group):
+                for item in value:
+                    if not group_value and item.name in obj:
+                        group_value = item.name
+                    if group_value != item.name and item.name in obj:
+                        obj.pop(item.name, None)
 
         return obj
 

@@ -148,23 +148,23 @@ class Task(Base, Delegate, Conditional, Object):
     action = make_attr(
         'string',
         require_one_of=('action', 'local_action'),
-        mutually_exclusive_with='local_action',
+        mutually_exclusive_group='action_group',
         mutually_exclusive_priority=1
     )
     args = make_attr(
         'dict',
-        mutually_exclusive_with='freeform',
+        mutually_exclusive_group='arg_group',
         mutually_exclusive_priority=1
 
     )
-    freeform = make_attr('string', mutually_exclusive_with='args')
+    freeform = make_attr('string', mutually_exclusive_group='arg_group')
     changed_when = make_attr('string')
     delay = make_attr('integer')
     failed_when = make_attr('string')
     local_action = make_attr(
         'string',
         require_one_of=('action', 'local_action'),
-        mutually_exclusive_with='action'
+        mutually_exclusive_group='action_group'
     )
     loop = make_attr('string')
     loop_control = make_attr('dict')

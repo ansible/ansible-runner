@@ -21,7 +21,12 @@ def executor(tmpdir, request):
     playbooks = request.node.callspec.params.get('playbook')
     playbook = list(playbooks.values())[0]
     envvars = request.node.callspec.params.get('envvars')
-    envvars = envvars.update({"ANSIBLE_DEPRECATION_WARNINGS": "False"}) if envvars is not None else {"ANSIBLE_DEPRECATION_WARNINGS": "False"}
+    if envvars is None:
+        envvars = {}
+    # warning messages create verbose events and interfere with assertions
+    envvars["ANSIBLE_DEPRECATION_WARNINGS"] = "False"
+    # python interpreter used is not of much interest, we really want to silence warnings
+    envvars['ANSIBLE_PYTHON_INTERPRETER'] = 'auto_silent'
 
     r = init_runner(
         private_data_dir=private_data_dir,

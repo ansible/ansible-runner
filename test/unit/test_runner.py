@@ -82,7 +82,16 @@ def test_cancel_callback_error(rc):
         Runner(config=rc, cancel_callback=kaboom).run()
 
 
-@pytest.mark.serial
+def test_verbose_event_created_time(rc):
+    rc.command = ['echo', 'helloworld']
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
+    assert status == 'successful'
+    assert exitcode == 0
+    for event in runner.events:
+        assert 'created' in event, event
+
+
 @pytest.mark.parametrize('value', ['abc123', six.u('Iñtërnâtiônàlizætiøn')])
 def test_env_vars(rc, value):
     rc.command = [sys.executable, '-c', 'import os; print(os.getenv("X_MY_ENV"))']
@@ -103,7 +112,10 @@ def test_event_callback_interface_has_ident(rc):
             with mock.patch('os.mkdir', mock.Mock()):
                 runner.event_callback(dict(uuid="testuuid", counter=0))
     assert runner.event_handler.call_count == 1
-    runner.event_handler.assert_called_with(dict(runner_ident='testident', counter=0, uuid='testuuid', event='test'))
+    runner.event_handler.assert_called_with(dict(
+        runner_ident='testident', counter=0, uuid='testuuid', event='test',
+        created=mock.ANY
+    ))
     chmod.assert_called_once()
     runner.status_callback("running")
 
@@ -115,7 +127,10 @@ def test_event_callback_interface_calls_event_handler_for_verbose_event(rc):
     with mock.patch('os.mkdir', mock.Mock()):
         runner.event_callback(dict(uuid="testuuid", event='verbose', counter=0))
     assert event_handler.call_count == 1
-    event_handler.assert_called_with(dict(runner_ident='testident', counter=0, uuid='testuuid', event='verbose'))
+    event_handler.assert_called_with(dict(
+        runner_ident='testident', counter=0, uuid='testuuid', event='verbose',
+        created=mock.ANY
+    ))
 
 
 def test_status_callback_interface(rc):

@@ -504,12 +504,12 @@ class BaseCallbackModule(CallbackBase):
 
 class AWXDefaultCallbackModule(BaseCallbackModule, DefaultCallbackModule):
 
-    CALLBACK_NAME = 'awx_display'
+    CALLBACK_NAME = 'ansible.runner.awx_display'
 
 
 class AWXMinimalCallbackModule(BaseCallbackModule, MinimalCallbackModule):
 
-    CALLBACK_NAME = 'minimal'
+    CALLBACK_NAME = 'ansible.runner.minimal'
 
     def v2_playbook_on_play_start(self, play):
         pass

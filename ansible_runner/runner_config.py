@@ -187,18 +187,27 @@ class RunnerConfig(object):
             self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path)
 
         # Use local callback directory
+        runner_root = os.path.split(os.path.abspath(__file__))[0]
         callback_dir = self.env.get('AWX_LIB_DIRECTORY', os.getenv('AWX_LIB_DIRECTORY'))
         if callback_dir is None:
-            callback_dir = os.path.join(os.path.split(os.path.abspath(__file__))[0],
-                                        "callbacks")
-        python_path = self.env.get('PYTHONPATH', os.getenv('PYTHONPATH', ''))
-        if python_path and not python_path.endswith(':'):
-            python_path += ':'
-        self.env['ANSIBLE_CALLBACK_PLUGINS'] = ':'.join(filter(None,(self.env.get('ANSIBLE_CALLBACK_PLUGINS'), callback_dir)))
+            callback_dir = os.path.join(runner_root, "callbacks")
+
+        collection_dir = os.path.join(runner_root, 'lib')
+        # collection_dir = self.env.get('AWX_LIB_DIRECTORY', os.getenv('AWX_LIB_DIRECTORY', collection_dir))
+
+        # # for compatibility with old versions
+        # callback_dir = os.path.join(
+        #     collection_dir, 'ansible_collections', 'runner', 'wrapper',
+        #     'plugins', 'callback')
+        # self.env['ANSIBLE_CALLBACK_PLUGINS'] = ':'.join(filter(None,(self.env.get('ANSIBLE_CALLBACK_PLUGINS'), callback_dir)))
+
+        # The new method with collection
+        self.env['ANSIBLE_COLLECTIONS_PATHS'] = ':'.join(filter(None,(self.env.get('ANSIBLE_COLLECTIONS_PATHS'), collection_dir)))
+
         if 'AD_HOC_COMMAND_ID' in self.env:
-            self.env['ANSIBLE_STDOUT_CALLBACK'] = 'minimal'
+            self.env['ANSIBLE_STDOUT_CALLBACK'] = 'runner.wrapper.minimal'
         else:
-            self.env['ANSIBLE_STDOUT_CALLBACK'] = 'awx_display'
+            self.env['ANSIBLE_STDOUT_CALLBACK'] = 'runner.wrapper.awx_display'
         self.env['ANSIBLE_RETRY_FILES_ENABLED'] = 'False'
         if 'ANSIBLE_HOST_KEY_CHECKING' not in self.env:
             self.env['ANSIBLE_HOST_KEY_CHECKING'] = 'False'
@@ -226,7 +235,6 @@ class RunnerConfig(object):
             self.env['CGROUP_WRITE_FILES'] = 'True'
             self.env['CGROUP_DISPLAY_RECAP'] = 'False'
 
-        self.env['PYTHONPATH'] = python_path + callback_dir
         if self.roles_path:
             self.env['ANSIBLE_ROLES_PATH'] = ':'.join(self.roles_path)
 

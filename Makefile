@@ -75,6 +75,7 @@ clean:
 	rm -rf deb-build
 	find . -type f -regex ".*\py[co]$$" -delete
 	rm -rf $(shell find test/ -type d -name "artifacts")
+	find . -type d -name "__pycache__" -delete
 
 dist:
 	poetry build

@@ -31,17 +31,10 @@ DOCUMENTATION = '''
       - Set as stdout in config
 '''
 
-# Python
-import os  # noqa
-import sys  # noqa
-
-# Add awx/lib to sys.path.
-awx_lib_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if awx_lib_path not in sys.path:
-    sys.path.insert(0, awx_lib_path)
-
-# Tower Display Callback
-from display_callback import AWXMinimalCallbackModule  # noqa
+# AWX Display Callback
+from ..module_utils import cleanup  # noqa (registers control persistent cleanup)
+from ..module_utils import display  # noqa (wraps ansible.display.Display methods)
+from ..module_utils.module import AWXMinimalCallbackModule  # noqa
 
 
 # In order to be recognized correctly, self.__class__.__name__ needs to

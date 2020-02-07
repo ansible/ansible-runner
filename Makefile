@@ -70,6 +70,7 @@ clean:
 	rm -rf rpm-build
 	rm -rf deb-build
 	find . -type f -regex ".*\py[co]$$" -delete
+	find . -type d -name "__pycache__" -delete
 
 dist:
 	$(DIST_PYTHON) setup.py bdist_wheel --universal

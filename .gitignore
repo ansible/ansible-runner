@@ -18,3 +18,5 @@
 .coverage
 *,cover
 .venv
+
+/test/integration/artifacts/

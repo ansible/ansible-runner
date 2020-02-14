@@ -102,10 +102,11 @@ def test_playbook_on_stats_summary_fields(rc):
     assert set(fields) >= set(EXPECTED_SUMMARY_FIELDS)
 
 
-def test_include_role_events():
+def test_include_role_events(data_directory):
+    data_dir = os.path.join(data_directory, 'misc')
     try:
         r = run(
-            private_data_dir=os.path.abspath('test/integration'),
+            private_data_dir=data_dir,
             playbook='use_role.yml'
         )
         role_events = [event for event in r.events if event.get('event_data', {}).get('role', '') == "benthomasson.hello_role"]
@@ -116,7 +117,58 @@ def test_include_role_events():
             if event['event'] == 'runner_on_ok':
                 assert event_data['res']['msg'] == 'Hello world!'
     finally:
-        shutil.rmtree('test/integration/artifacts')
+        shutil.rmtree(os.path.join(data_dir, 'artifacts'))
+
+
+def test_use_aggregate_callback(data_directory):
+    data_dir = os.path.join(data_directory, 'aggregate_callback')
+    try:
+        r = run(
+            private_data_dir=data_dir,
+            playbook='debug.yml'
+        )
+        stdout = '\n'.join([event['stdout'] for event in r.events])
+        assert 'ready_set_play_start' in stdout
+        assert 'ready_set_on_ok' in stdout
+    finally:
+        shutil.rmtree(os.path.join(data_dir, 'artifacts'))
+
+
+def test_hide_skipped_tasks(data_directory):
+    data_dir = os.path.join(data_directory, 'callback_options')
+    try:
+        r = run(private_data_dir=data_dir, playbook='task_status.yml')
+        stdout = '\n'.join([event['stdout'] for event in r.events])
+        # skipped tasks should not be shown
+        assert 'skipping:' not in stdout
+    finally:
+        shutil.rmtree(os.path.join(data_dir, 'artifacts'))
+
+
+def test_use_display_callback(data_directory):
+    data_dir = os.path.join(data_directory, 'display_callback')
+    try:
+        r = run(private_data_dir=data_dir, playbook='task_status.yml')
+        stdout = '\n'.join([event['stdout'] for event in r.events])
+        # the task names should not be displayed in output (due to use of "selective" callback)
+        assert 'Use debug task to produce different status for several hosts' not in stdout
+        # callback should print stuff in blue color too
+        assert '\u001b' in stdout or '\x1b' in stdout
+    finally:
+        shutil.rmtree(os.path.join(data_dir, 'artifacts'))
+
+
+def test_use_display_callback_with_option(data_directory):
+    data_dir = os.path.join(data_directory, 'display_callback_options')
+    try:
+        r = run(private_data_dir=data_dir, playbook='task_status.yml')
+        # with this option set, callback should not print anything in blue color
+        stdout = '\n'.join([event['stdout'] for event in r.events])
+        assert 'Use debug task to produce different status for several hosts' not in stdout
+        assert '\u001b' not in stdout and '\x1b' not in stdout
+    finally:
+        shutil.rmtree(os.path.join(data_dir, 'artifacts'))
+
 
 @pytest.mark.skipif(find_executable('cgexec') is None,
                     reason="cgexec not available")

@@ -195,6 +195,9 @@ class RunnerConfig(object):
         if python_path and not python_path.endswith(':'):
             python_path += ':'
         self.env['ANSIBLE_CALLBACK_PLUGINS'] = ':'.join(filter(None,(self.env.get('ANSIBLE_CALLBACK_PLUGINS'), callback_dir)))
+        # If stdout callback specified, pass info for this stdout callback plugin to subclass it
+        if 'ANSIBLE_STDOUT_CALLBACK' in self.env and self.env['ANSIBLE_STDOUT_CALLBACK'] not in ('awx_display', 'minimal'):
+            self.env['RUNNER_STDOUT_CALLBACK_PROXY'] = self.env['ANSIBLE_STDOUT_CALLBACK']
         if 'AD_HOC_COMMAND_ID' in self.env:
             self.env['ANSIBLE_STDOUT_CALLBACK'] = 'minimal'
         else:

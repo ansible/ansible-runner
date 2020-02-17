@@ -292,7 +292,7 @@ class OutputEventFilter(object):
 
             self._last_chunk = remainder
         else:
-            if not self.suppress_ansible_output:
+            if not self.suppress_ansible_output and self._current_event_data is None:
                 sys.stdout.write(
                     data.encode('utf-8') if PY2 else data
                 )

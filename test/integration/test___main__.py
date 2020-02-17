@@ -55,19 +55,6 @@ def test_main_bad_private_data_dir(cmdline):
             os.remove(tmpfile)
 
 
-# def test_cli_streaming(data_directory):
-#     """Tests that when invoking the CLI, we see the same output that is
-#     expected when running the ansible-playbook command directly,
-#     and is same as what is found in the events.
-#     """
-#     proj_dir = os.path.join(data_directory, 'misc')
-#     try:
-#         cmdline('run', proj_dir, '-p', 'debug.yml')
-# 
-#     finally:
-#         shutil.rmtree(os.path.join(proj_dir, 'artifacts'))
-
-
 def run_role(options, private_data_dir=None, expected_rc=0):
     try:
         private_data_dir = private_data_dir or tempfile.mkdtemp()

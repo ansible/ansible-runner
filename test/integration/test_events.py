@@ -5,13 +5,39 @@ from distutils.spawn import find_executable
 import pkg_resources
 import json
 import os
+import io
+import sys
 import shutil
+
+try:
+    from contextlib import redirect_stdout
+except ImportError:
+    # python2 solution for redirect_stdout
+    from contextlib import contextmanager
+
+    @contextmanager
+    def redirect_stdout(new_handle):
+        old_handle = sys.stdout
+        sys.stdout = new_handle
+        try:
+            yield new_handle
+        finally:
+            sys.stdout = old_handle
 
 from ansible_runner import run, run_async
 
 
-def test_basic_events(is_run_async=False,g_facts=False):
-    tdir = tempfile.mkdtemp()
+@pytest.fixture
+def tdir():
+    """Fixture that assures that the temporary directory is cleaned up
+    after the tests finish
+    """
+    tmp_dir = tempfile.mkdtemp()
+    yield tmp_dir
+    shutil.rmtree(tmp_dir)
+
+
+def test_basic_events(tdir, is_run_async=False, g_facts=False):
     inventory = "localhost ansible_connection=local"
     playbook = [{'hosts': 'all', 'gather_facts': g_facts, 'tasks': [{'debug': {'msg': "test"}}]}]
     if not is_run_async:
@@ -45,12 +71,11 @@ def test_basic_events(is_run_async=False,g_facts=False):
     assert "event_data" in okay_event and len(okay_event['event_data']) > 0
 
 
-def test_async_events():
-    test_basic_events(is_run_async=True,g_facts=True)
+def test_async_events(tdir):
+    test_basic_events(tdir, is_run_async=True, g_facts=True)
 
 
-def test_basic_serializeable():
-    tdir = tempfile.mkdtemp()
+def test_basic_serializeable(tdir):
     r = run(private_data_dir=tdir,
             inventory="localhost ansible_connection=local",
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
@@ -58,8 +83,7 @@ def test_basic_serializeable():
     json.dumps(events)
 
 
-def test_event_omission():
-    tdir = tempfile.mkdtemp()
+def test_event_omission(tdir):
     r = run(private_data_dir=tdir,
             inventory="localhost ansible_connection=local",
             omit_event_data=True,
@@ -67,8 +91,7 @@ def test_event_omission():
     assert not any([x['event_data'] for x in r.events])
 
 
-def test_event_omission_except_failed():
-    tdir = tempfile.mkdtemp()
+def test_event_omission_except_failed(tdir):
     r = run(private_data_dir=tdir,
             inventory="localhost ansible_connection=local",
             only_failed_event_data=True,
@@ -78,8 +101,7 @@ def test_event_omission_except_failed():
 
 @pytest.mark.skipif(LooseVersion(pkg_resources.get_distribution('ansible').version) < LooseVersion('2.8'),
                     reason="Valid only on Ansible 2.8+")
-def test_runner_on_start(rc):
-    tdir = tempfile.mkdtemp()
+def test_runner_on_start(rc, tdir):
     r = run(private_data_dir=tdir,
             inventory="localhost ansible_connection=local",
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
@@ -88,8 +110,7 @@ def test_runner_on_start(rc):
     assert len(start_events) == 1
 
 
-def test_playbook_on_stats_summary_fields(rc):
-    tdir = tempfile.mkdtemp()
+def test_playbook_on_stats_summary_fields(rc, tdir):
     r = run(private_data_dir=tdir,
             inventory="localhost ansible_connection=local",
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
@@ -100,6 +121,30 @@ def test_playbook_on_stats_summary_fields(rc):
     EXPECTED_SUMMARY_FIELDS = ('changed', 'dark', 'failures', 'ignored', 'ok', 'rescued', 'skipped')
     fields = stats_events[0]['event_data'].keys()
     assert set(fields) >= set(EXPECTED_SUMMARY_FIELDS)
+
+
+def test_cli_stdout_streaming(data_directory):
+    """Tests consistency between stdout as reported in the event data
+    with the stdout streamed to the command line when invoking via CLI
+    """
+    data_dir = os.path.join(data_directory, 'misc')
+    try:
+        f = io.StringIO()
+        with redirect_stdout(f):
+            r = run(private_data_dir=data_dir, playbook='debug.yml')
+        stdout = f.getvalue()
+
+        # consider only non-empty stdout
+        stdout_bits = [
+            event['stdout'] for event in r.events if event['start_line'] != event['end_line']
+        ]
+        expected_stdout = '\n'.join(stdout_bits)
+
+        # verifies that CLI ansible-runner stdout matches playbook stdout
+        assert stdout.strip() == expected_stdout.strip()
+
+    finally:
+        shutil.rmtree(os.path.join(data_dir, 'artifacts'))
 
 
 def test_include_role_events(data_directory):
@@ -174,8 +219,7 @@ def test_use_display_callback_with_option(data_directory):
                     reason="cgexec not available")
 @pytest.mark.skipif(LooseVersion(pkg_resources.get_distribution('ansible').version) < LooseVersion('2.8'),
                     reason="Valid only on Ansible 2.8+")
-def test_profile_data():
-    tdir = tempfile.mkdtemp()
+def test_profile_data(tdir):
     try:
         r = run(private_data_dir=tdir,
                 inventory="localhost ansible_connection=local",

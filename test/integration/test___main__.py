@@ -7,8 +7,11 @@ import string
 import tempfile
 import shutil
 
-from pytest import raises
-from mock import patch
+import pytest
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch
 
 from ansible_runner.__main__ import main
 
@@ -29,23 +32,40 @@ def random_json(keys=None):
     return json.dumps(data)
 
 
-def cmdline(command, *args):
-    cmdline = ['ansible-runner', command]
-    cmdline.extend(args)
-    sys.argv = cmdline
+@pytest.fixture
+def cmdline():
+    def rf(command, *args):
+        cmdline = ['ansible-runner', command]
+        cmdline.extend(args)
+        return patch.object(sys, 'argv', cmdline)
+        # sys.argv = cmdline
+    return rf
 
 
-def test_main_bad_private_data_dir():
+def test_main_bad_private_data_dir(cmdline):
     tmpfile = os.path.join('/tmp', str(uuid.uuid4().hex))
     open(tmpfile, 'w').write(random_string())
 
-    cmdline('run', tmpfile, '-p', 'fake')
+    with cmdline('run', tmpfile, '-p', 'fake'):
 
-    try:
-        with raises(OSError):
-            main()
-    finally:
-        os.remove(tmpfile)
+        try:
+            with pytest.raises(OSError):
+                main()
+        finally:
+            os.remove(tmpfile)
+
+
+# def test_cli_streaming(data_directory):
+#     """Tests that when invoking the CLI, we see the same output that is
+#     expected when running the ansible-playbook command directly,
+#     and is same as what is found in the events.
+#     """
+#     proj_dir = os.path.join(data_directory, 'misc')
+#     try:
+#         cmdline('run', proj_dir, '-p', 'debug.yml')
+# 
+#     finally:
+#         shutil.rmtree(os.path.join(proj_dir, 'artifacts'))
 
 
 def run_role(options, private_data_dir=None, expected_rc=0):
@@ -55,7 +75,7 @@ def run_role(options, private_data_dir=None, expected_rc=0):
         args.extend(options)
 
         with patch('ansible_runner.interface.run') as mock_run:
-            with raises(SystemExit) as exc:
+            with pytest.raises(SystemExit) as exc:
                 main()
                 assert exc.type == SystemExit
                 assert exc.value.code == expected_rc
@@ -159,16 +179,16 @@ def test_cmdline_roles_path():
     result.called_with_args([run_options])
 
 
-def test_cmdline_role_with_playbook_option():
+def test_cmdline_role_with_playbook_option(cmdline):
     """Test error is raised with invalid command line option '-p'
     """
-    cmdline('run', 'private_data_dir', '-r', 'fake', '-p', 'fake')
-    with raises(SystemExit) as exc:
-        main()
-        assert exc == 1
+    with cmdline('run', 'private_data_dir', '-r', 'fake', '-p', 'fake'):
+        with pytest.raises(SystemExit) as exc:
+            main()
+            assert exc == 1
 
 
-def test_cmdline_playbook():
+def test_cmdline_playbook(cmdline):
     try:
         private_data_dir = tempfile.mkdtemp()
         play = [{'hosts': 'all', 'tasks': [{'debug': {'msg': random_string()}}]}]
@@ -187,36 +207,36 @@ def test_cmdline_playbook():
         with open(inventory, 'w') as f:
             f.write('[all]\nlocalhost ansible_connection=local')
 
-        cmdline('run', private_data_dir, '-p', playbook, '--inventory', inventory)
+        with cmdline('run', private_data_dir, '-p', playbook, '--inventory', inventory):
 
-        assert main() == 0
+            assert main() == 0
 
-        with open(playbook) as f:
-            assert json.loads(f.read()) == play
+            with open(playbook) as f:
+                assert json.loads(f.read()) == play
 
     finally:
         shutil.rmtree(private_data_dir)
 
 
-def test_cmdline_playbook_hosts():
+def test_cmdline_playbook_hosts(cmdline):
     """Test error is raised with trying to pass '--hosts' with '-p'
     """
-    cmdline('run', 'private_data_dir', '-p', 'fake', '--hosts', 'all')
-    with raises(SystemExit) as exc:
-        main()
-        assert exc == 1
+    with cmdline('run', 'private_data_dir', '-p', 'fake', '--hosts', 'all'):
+        with pytest.raises(SystemExit) as exc:
+            main()
+            assert exc == 1
 
 
-def test_cmdline_includes_one_option():
+def test_cmdline_includes_one_option(cmdline):
     """Test error is raised if not '-p', '-m' or '-r'
     """
-    cmdline('run', 'private_data_dir')
-    with raises(SystemExit) as exc:
-        main()
-        assert exc == 1
+    with cmdline('run', 'private_data_dir'):
+        with pytest.raises(SystemExit) as exc:
+            main()
+            assert exc == 1
 
 
-def test_cmdline_cmdline_override():
+def test_cmdline_cmdline_override(cmdline):
     try:
         private_data_dir = tempfile.mkdtemp()
         play = [{'hosts': 'all', 'tasks': [{'debug': {'msg': random_string()}}]}]
@@ -237,7 +257,7 @@ def test_cmdline_cmdline_override():
         # privateip: removed --hosts command line option from test beause it is
         # not a supported combination of cli options
         #cmdline('run', private_data_dir, '-p', playbook, '--hosts', 'all', '--cmdline', '-e foo=bar')
-        cmdline('run', private_data_dir, '-p', playbook, '--cmdline', '-e foo=bar')
-        assert main() == 0
+        with cmdline('run', private_data_dir, '-p', playbook, '--cmdline', '-e foo=bar'):
+            assert main() == 0
     finally:
         shutil.rmtree(private_data_dir)

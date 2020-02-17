@@ -20,6 +20,24 @@ To install from the latest Fedora sources::
 
   $ dnf install python-ansible-runner
 
+Debian
+------
+
+Add an ansible-runner repository::
+
+  $ apt-get update
+  $ echo 'deb https://releases.ansible.com/ansible-runner/deb/ <trusty|xenial|stretch> main' > /etc/apt/sources.list.d/ansible.list
+
+Add a key::
+
+  $ apt-key adv --keyserver keyserver.ubuntu.com --recv 3DD29021
+
+Install the package::
+
+  $ apt-get update
+  $ apt-get install ansible-runner
+
+
 From source
 -----------
 

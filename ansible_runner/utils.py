@@ -282,10 +282,8 @@ class OutputEventFilter(object):
 
             if stdout_actual and stdout_actual != "{}":
                 if not self.suppress_ansible_output:
-                    sys.stdout.write(
-                        stdout_actual.encode('utf-8') if PY2 else stdout_actual
-                    )
-                    sys.stdout.write("\n")
+                    sys.stdout.write(text_type(stdout_actual))
+                    sys.stdout.write(text_type("\n"))
                     sys.stdout.flush()
                 self._handle.write(stdout_actual + "\n")
                 self._handle.flush()

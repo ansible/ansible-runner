@@ -439,6 +439,7 @@ def main(sys_args=None):
     playbook_group.add_argument(
         "--process-isolation-hide-paths",
         dest="process_isolation_hide_paths",
+        nargs='*',
         help="list of paths on the system that should be hidden from the "
              "playbook run (default=None)"
     )
@@ -446,6 +447,7 @@ def main(sys_args=None):
     playbook_group.add_argument(
         "--process-isolation-show-paths",
         dest="process_isolation_show_paths",
+        nargs='*',
         help="list of paths on the system that should be exposed to the "
              "playbook run (default=None)"
     )
@@ -453,6 +455,7 @@ def main(sys_args=None):
     playbook_group.add_argument(
         "--process-isolation-ro-paths",
         dest="process_isolation_ro_paths",
+        nargs='*',
         help="list of paths on the system that should be exposed to the "
              "playbook run as read-only (default=None)"
     )

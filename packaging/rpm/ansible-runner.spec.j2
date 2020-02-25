@@ -23,13 +23,13 @@ BuildArch:      noarch
 %if %{with python2}
 BuildRequires: python-rpm-macros
 BuildRequires: python2-setuptools
-Requires:      python2-%{pypi_name}
+Requires:      python2-%{pypi_name}={{ version }}-{{ release }}
 %endif
 
 %if %{with python3}
 BuildRequires: python3
 BuildRequires: python3-setuptools
-Requires:      python3-%{pypi_name}
+Requires:      python3-%{pypi_name}={{ version }}-{{ release }}
 %endif
 
 %description
@@ -127,6 +127,9 @@ ln -s %{_bindir}/ansible-runner-%{python2_version} %{buildroot}/%{_bindir}/ansib
 %endif
 
 %changelog
+* Tue Feb 25 2020 Yanis Guenane <yguenane@redhat.com> - 1.4.4-2
+- Ansible Runner 1.4.4-2
+
 * Fri Oct 25 2019 Matthew Jones <matburt@redhat.com> - 1.4.4-1
 - Ansible Runner 1.4.4-1
 

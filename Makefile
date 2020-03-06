@@ -92,11 +92,11 @@ docs:
 	cd docs && make html
 
 image:
-	docker pull centos:7
+	docker pull centos:8
 	docker build --rm=true -t $(IMAGE_NAME) .
 
 devimage:
-	docker pull centos:7
+	docker pull centos:8
 	docker build --rm=true -t $(IMAGE_NAME)-dev -f Dockerfile.dev .
 
 rpm:

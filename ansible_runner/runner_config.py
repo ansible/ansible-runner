@@ -396,12 +396,16 @@ class RunnerConfig(object):
 
         if self.extra_vars:
             if isinstance(self.extra_vars, dict) and self.extra_vars:
+                extra_vars_list = []
+                for k in self.extra_vars:
+                    if isinstance(self.extra_vars[k], str):
+                        extra_vars_list.append("\"{}\":\"{}\"".format(k, self.extra_vars[k]))
+                    else:
+                        extra_vars_list.append("\"{}\":{}".format(k, self.extra_vars[k]))
                 exec_list.extend(
                     [
                         '-e',
-                        '%s' % ' '.join(
-                            ["{}=\"{}\"".format(k, self.extra_vars[k]) for k in self.extra_vars]
-                        )
+                        '{%s}' % ','.join(extra_vars_list)
                     ]
                 )
             elif self.loader.isfile(self.extra_vars):

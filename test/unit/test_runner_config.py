@@ -212,11 +212,11 @@ def test_generate_ansible_command():
 
     rc.extra_vars = dict(test="key")
     cmd = rc.generate_ansible_command()
-    assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', 'test="key"', 'main.yaml']
+    assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '{"test":"key"}', 'main.yaml']
 
     with patch.object(rc.loader, 'isfile', side_effect=lambda x: True):
         cmd = rc.generate_ansible_command()
-        assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '@/env/extravars', '-e', 'test="key"', 'main.yaml']
+        assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '@/env/extravars', '-e', '{"test":"key"}', 'main.yaml']
         rc.extra_vars = '/tmp/extravars.yml'
         cmd = rc.generate_ansible_command()
         assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '@/env/extravars', '-e', '@/tmp/extravars.yml', 'main.yaml']
@@ -279,7 +279,7 @@ def test_generate_ansible_command_with_api_extravars():
         rc.prepare_inventory()
 
     cmd = rc.generate_ansible_command()
-    assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', 'foo="bar"', 'main.yaml']
+    assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '{"foo":"bar"}', 'main.yaml']
 
 
 @pytest.mark.parametrize('cmdline,tokens', [

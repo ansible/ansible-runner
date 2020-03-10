@@ -46,9 +46,6 @@ class Runner(object):
         later use
         '''
         self.last_stdout_update = time.time()
-        job_events_path = os.path.join(self.config.artifact_dir, 'job_events')
-        if not os.path.exists(job_events_path):
-            os.mkdir(job_events_path, 0o700)
         if 'uuid' in event_data:
             filename = '{}-partial.json'.format(event_data['uuid'])
             partial_filename = os.path.join(self.config.artifact_dir,
@@ -106,6 +103,10 @@ class Runner(object):
             else:
                 raise
         os.close(os.open(stdout_filename, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
+
+        job_events_path = os.path.join(self.config.artifact_dir, 'job_events')
+        if not os.path.exists(job_events_path):
+            os.mkdir(job_events_path, 0o700)
 
         if six.PY2:
             command = [a.decode('utf-8') for a in self.config.command]

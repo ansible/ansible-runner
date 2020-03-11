@@ -61,6 +61,12 @@ DEB_TAR_NAME=$(NAME)-$(VERSION)
 DEB_TAR_FILE=$(NAME)_$(VERSION).orig.tar.gz
 DEB_DATE := $(shell LC_TIME=C date +"%a, %d %b %Y %T %z")
 
+ifeq ($(shell uname -m),ppc64le)
+    ARCH = "ppc64el"
+else
+    ARCH = ${DEB_ARCH}
+endif
+
 .PHONY: clean dist sdist dev shell image devimage rpm srpm docs deb debian deb-src
 
 clean:
@@ -93,7 +99,7 @@ docs:
 
 image:
 	docker pull centos:8
-	docker build --rm=true -t $(IMAGE_NAME) .
+	docker build --rm=true --build-arg ARCH=-$(ARCH) -t $(IMAGE_NAME) .
 
 devimage:
 	docker pull centos:8

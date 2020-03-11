@@ -1,6 +1,8 @@
 FROM centos:8
 
-ADD https://github.com/krallin/tini/releases/download/v0.18.0/tini /bin/tini
+ARG ARCH
+
+ADD https://github.com/krallin/tini/releases/download/v0.18.0/tini${ARCH} /bin/tini
 ADD utils/entrypoint.sh /bin/entrypoint
 ADD demo/project /runner/project
 ADD demo/env /runner/env
@@ -9,7 +11,7 @@ ADD demo/inventory /runner/inventory
 # Install Ansible and Runner
 ADD https://releases.ansible.com/ansible-runner/ansible-runner.el8.repo /etc/yum.repos.d/ansible-runner.repo
 RUN dnf install -y epel-release && \
-    dnf install -y ansible-runner python3-pip sudo rsync openssh-clients sshpass glibc-langpack-en && \
+    dnf install -y ansible-runner python3-pip python3-cryptography sudo rsync openssh-clients sshpass glibc-langpack-en && \
     alternatives --set python /usr/bin/python3 && \
     pip3 install ansible && \
     chmod +x /bin/tini /bin/entrypoint && \

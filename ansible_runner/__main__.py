@@ -41,6 +41,7 @@ from ansible_runner import output
 from ansible_runner.utils import dump_artifact, Bunch
 from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
+from ansible_runner.receptor_plugin import run_via_receptor
 
 VERSION = pkg_resources.require("ansible_runner")[0].version
 
@@ -336,6 +337,26 @@ def main(sys_args=None):
              "ansible-playbook output (default=None)"
     )
 
+    # Receptor options
+
+    runner_group.add_argument(
+        "--via-receptor",
+        default=None,
+        help="Run the job on a Receptor node rather than locally"
+    )
+
+    runner_group.add_argument(
+        "--receptor-peer",
+        default="receptor://localhost",
+        help="peer connection to use to reach the Receptor network"
+    )
+
+    runner_group.add_argument(
+        "--receptor-node-id",
+        default=None,
+        help="Receptor node-id to use for the local node"
+    )
+
     # ansible options
 
     ansible_group = parser.add_argument_group(
@@ -549,7 +570,7 @@ def main(sys_args=None):
 
     if args.command in ('start', 'run'):
 
-        if args.command == 'start':
+        if args.command == 'start' and not args.via_receptor:
             import daemon
             from daemon.pidfile import TimeoutPIDLockFile
             context = daemon.DaemonContext(pidfile=TimeoutPIDLockFile(pidfile))
@@ -595,7 +616,11 @@ def main(sys_args=None):
                     run_options['cmdline'] = args.cmdline
 
                 try:
-                    res = run(**run_options)
+                    if args.via_receptor:
+                        res = run_via_receptor(args.via_receptor, args.receptor_peer,
+                                               args.receptor_node_id, run_options)
+                    else:
+                        res = run(**run_options)
                 except Exception:
                     exc = traceback.format_exc()
                     if stderr_path:

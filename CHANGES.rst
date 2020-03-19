@@ -10,6 +10,7 @@ Changelog
 - Switch extravar format so we can support more than just string types
 - Make sure job events folder is created earlier to prevent errors when
   using immediately after starting a runner job
+- Annotate all runner_on events with start/end/duration times
 
 
 1.4.4 (2019-10-25)

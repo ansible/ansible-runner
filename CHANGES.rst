@@ -3,6 +3,15 @@
 Changelog
 ---------
 
+1.4.5 (2020-03-19)
+++++++++++++++++++
+- Fix an issue with --process_isoloation_*_ paths parsing cli args
+- Switch default docker images to centos:8
+- Switch extravar format so we can support more than just string types
+- Make sure job events folder is created earlier to prevent errors when
+  using immediately after starting a runner job
+
+
 1.4.4 (2019-10-25)
 ++++++++++++++++++
 - Fix some unicode issues when using command line override on python 2.7

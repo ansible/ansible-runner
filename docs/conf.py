@@ -28,7 +28,7 @@ author = 'Red Hat Ansible'
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = '1.4.4'
+release = '1.4.5'
 
 
 # -- General configuration ---------------------------------------------------

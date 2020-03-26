@@ -3,6 +3,11 @@
 Changelog
 ---------
 
+1.4.6 (2020-03-26)
+++++++++++++++++++
+- Fixed a bug that broke Ansible playbook execution prior to version 2.8 of
+  Ansible.
+
 1.4.5 (2020-03-19)
 ++++++++++++++++++
 - Fix an issue with --process_isoloation_*_ paths parsing cli args

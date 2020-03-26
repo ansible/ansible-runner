@@ -351,6 +351,13 @@ class BaseCallbackModule(CallbackBase):
             return task.loop
         return None
 
+    def _get_result_timing_data(self, result):
+        host_start = self._host_start.get(result._host.get_name())
+        if host_start:
+            end_time = current_time()
+            return host_start, end_time, (end_time - host_start).total_seconds()
+        return None, None, None
+
     def v2_runner_on_ok(self, result):
         # FIXME: Display detailed results or not based on verbosity.
 
@@ -359,15 +366,15 @@ class BaseCallbackModule(CallbackBase):
         if result._task.action in ('setup', 'gather_facts'):
             result._result.get('ansible_facts', {}).pop('ansible_env', None)
 
-        end_time = current_time()
+        host_start, end_time, duration = self._get_result_timing_data(result)
         event_data = dict(
             host=result._host.get_name(),
             remote_addr=result._host.address,
             task=result._task,
             res=result._result,
-            start=self._host_start[result._host.get_name()],
+            start=host_start,
             end=end_time,
-            duration=(end_time - self._host_start[result._host.get_name()]).total_seconds(),
+            duration=duration,
             event_loop=self._get_event_loop(result._task),
         )
         with self.capture_event_data('runner_on_ok', **event_data):
@@ -375,15 +382,15 @@ class BaseCallbackModule(CallbackBase):
 
     def v2_runner_on_failed(self, result, ignore_errors=False):
         # FIXME: Add verbosity for exception/results output.
-        end_time = current_time()
+        host_start, end_time, duration = self._get_result_timing_data(result)
         event_data = dict(
             host=result._host.get_name(),
             remote_addr=result._host.address,
             res=result._result,
             task=result._task,
-            start=self._host_start[result._host.get_name()],
+            start=host_start,
             end=end_time,
-            duration=(end_time - self._host_start[result._host.get_name()]).total_seconds(),
+            duration=duration,
             ignore_errors=ignore_errors,
             event_loop=self._get_event_loop(result._task),
         )
@@ -391,28 +398,28 @@ class BaseCallbackModule(CallbackBase):
             super(BaseCallbackModule, self).v2_runner_on_failed(result, ignore_errors)
 
     def v2_runner_on_skipped(self, result):
-        end_time = current_time()
+        host_start, end_time, duration = self._get_result_timing_data(result)
         event_data = dict(
             host=result._host.get_name(),
             remote_addr=result._host.address,
             task=result._task,
-            start=self._host_start[result._host.get_name()],
+            start=host_start,
             end=end_time,
-            duration=(end_time - self._host_start[result._host.get_name()]).total_seconds(),
+            duration=duration,
             event_loop=self._get_event_loop(result._task),
         )
         with self.capture_event_data('runner_on_skipped', **event_data):
             super(BaseCallbackModule, self).v2_runner_on_skipped(result)
 
     def v2_runner_on_unreachable(self, result):
-        end_time = current_time()
+        host_start, end_time, duration = self._get_result_timing_data(result)
         event_data = dict(
             host=result._host.get_name(),
             remote_addr=result._host.address,
             task=result._task,
-            start=self._host_start[result._host.get_name()],
+            start=host_start,
             end=end_time,
-            duration=(end_time - self._host_start[result._host.get_name()]).total_seconds(),
+            duration=duration,
             res=result._result,
         )
         with self.capture_event_data('runner_on_unreachable', **event_data):

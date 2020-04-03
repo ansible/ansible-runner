@@ -75,7 +75,7 @@ class RunnerConfig(object):
                  private_data_dir=None, playbook=None, ident=uuid4(),
                  inventory=None, roles_path=None, limit=None, module=None, module_args=None,
                  verbosity=None, quiet=False, json_mode=False, artifact_dir=None,
-                 rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, suppress_ansible_output=False,
+                 rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, extravars_file=None, suppress_ansible_output=False,
                  process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None,
                  resource_profiling=False, resource_profiling_base_cgroup='ansible-runner', resource_profiling_cpu_poll_interval=0.25,
@@ -107,6 +107,7 @@ class RunnerConfig(object):
             self.artifact_dir = os.path.join(self.artifact_dir, "{}".format(self.ident))
 
         self.extra_vars = extravars
+        self.extra_vars_file = extravars_file
         self.process_isolation = process_isolation
         self.process_isolation_executable = process_isolation_executable
         self.process_isolation_path = process_isolation_path
@@ -391,7 +392,9 @@ class RunnerConfig(object):
             exec_list.append("--limit")
             exec_list.append(self.limit)
 
-        if self.loader.isfile('env/extravars'):
+        if self.extra_vars_file is not None and self.loader.isfile(self.extra_vars_file):
+            exec_list.extend(['-e', '@{}'.format(self.extra_vars_file)])
+        elif self.loader.isfile('env/extravars'):
             exec_list.extend(['-e', '@{}'.format(self.loader.abspath('env/extravars'))])
 
         if self.extra_vars:

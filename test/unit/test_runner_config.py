@@ -282,6 +282,16 @@ def test_generate_ansible_command_with_api_extravars():
     assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '{"foo":"bar"}', 'main.yaml']
 
 
+def test_generate_ansible_command_with_dict_extravars():
+    rc = RunnerConfig(private_data_dir='/', playbook='main.yaml', extravars={"foo":"test \n hello"})
+    with patch('os.path.exists') as path_exists:
+        path_exists.return_value=True
+        rc.prepare_inventory()
+
+    cmd = rc.generate_ansible_command()
+    assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '{"foo":"test \\n hello"}', 'main.yaml']
+
+
 @pytest.mark.parametrize('cmdline,tokens', [
     (u'--tags foo --skip-tags', ['--tags', 'foo', '--skip-tags']),
     (u'--limit "䉪ቒ칸ⱷ?噂폄蔆㪗輥"', ['--limit', '䉪ቒ칸ⱷ?噂폄蔆㪗輥']),

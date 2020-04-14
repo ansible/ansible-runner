@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+import json
 import logging
 import os
 import pexpect
@@ -398,10 +399,8 @@ class RunnerConfig(object):
             if isinstance(self.extra_vars, dict) and self.extra_vars:
                 extra_vars_list = []
                 for k in self.extra_vars:
-                    if isinstance(self.extra_vars[k], str):
-                        extra_vars_list.append("\"{}\":\"{}\"".format(k, self.extra_vars[k]))
-                    else:
-                        extra_vars_list.append("\"{}\":{}".format(k, self.extra_vars[k]))
+                    extra_vars_list.append("\"{}\":{}".format(k, json.dumps(self.extra_vars[k])))
+
                 exec_list.extend(
                     [
                         '-e',

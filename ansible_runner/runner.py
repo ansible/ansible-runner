@@ -234,6 +234,8 @@ class Runner(object):
             self.status_callback('canceled')
         elif child.exitstatus == 0 and not self.timed_out:
             self.status_callback('successful')
+        elif "Specified hosts and/or --limit does not match any hosts" in self.stdout.read():
+            self.status_callback('successful')
         elif self.timed_out:
             self.status_callback('timeout')
         else:

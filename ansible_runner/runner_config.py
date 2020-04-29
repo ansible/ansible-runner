@@ -170,8 +170,8 @@ class RunnerConfig(object):
                                                                                                            self.directory_isolation_path))
                 copy_tree(self.project_dir, self.directory_isolation_path, preserve_symlinks=True)
 
-        self.prepare_inventory()
         self.prepare_env()
+        self.prepare_inventory()
         self.prepare_command()
 
         if self.execution_mode == ExecutionMode.ANSIBLE_PLAYBOOK and self.playbook is None:
@@ -244,12 +244,17 @@ class RunnerConfig(object):
         self.env["RUNNER_OMIT_EVENTS"] = str(self.omit_event_data)
         self.env["RUNNER_ONLY_FAILED_EVENTS"] = str(self.only_failed_event_data)
 
+        if self.containerized:
+            self.command = self.wrap_args_with_containerization(self.command)
+
     def prepare_inventory(self):
         """
         Prepares the inventory default under ``private_data_dir`` if it's not overridden by the constructor.
         """
-        if self.inventory is None and os.path.exists(os.path.join(self.private_data_dir, "inventory")):
-            self.inventory  = os.path.join(self.private_data_dir, "inventory")
+        if self.containerized:
+            self.inventory = '/runner/inventory/hosts'
+        elif self.inventory is None and os.path.exists(os.path.join(self.private_data_dir, "inventory")):
+            self.inventory = os.path.join(self.private_data_dir, "inventory")
 
     def prepare_env(self):
         """
@@ -316,6 +321,9 @@ class RunnerConfig(object):
         self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
         self.directory_isolation_cleanup = bool(self.settings.get('directory_isolation_cleanup', True))
+
+        self.containerized = self.settings.get('containerized', False)
+        self.container_runtime = self.settings.get('container_runtime', 'podman')
 
         if 'AD_HOC_COMMAND_ID' in self.env or not os.path.exists(self.project_dir):
             self.cwd = self.private_data_dir
@@ -393,7 +401,11 @@ class RunnerConfig(object):
             exec_list.append(self.limit)
 
         if self.loader.isfile('env/extravars'):
-            exec_list.extend(['-e', '@{}'.format(self.loader.abspath('env/extravars'))])
+            if self.containerized:
+                extravars_path = '/runner/env/extravars'
+            else:
+                extravars_path = self.loader.abspath('env/extravars')
+            exec_list.extend(['-e', '@{}'.format(extravars_path)])
 
         if self.extra_vars:
             if isinstance(self.extra_vars, dict) and self.extra_vars:
@@ -512,11 +524,42 @@ class RunnerConfig(object):
         new_args.extend(args)
         return new_args
 
+    def wrap_args_with_containerization(self, args):
+        new_args = [self.container_runtime]
+        new_args.extend(['run', '--rm', '--tty', '--interactive'])
+        new_args.extend(["--workdir", "/runner/project"])
+        new_args.extend(["-v", "{}:/runner:Z".format(self.private_data_dir)])
+
+        container_volume_mounts = self.settings.get('container_volume_mounts')
+        if container_volume_mounts:
+            for path in container_volume_mounts:
+                new_args.extend(["-v", "{}:{}".format(path, path)])
+
+        env_var_whitelist = ['PROJECT_UPDATE_ID']
+        for k, v in self.env.items():
+            if k in env_var_whitelist:
+                new_args.extend(["-e", "{}={}".format(k, v)])
+
+        if 'podman' in self.container_runtime:
+            new_args.extend(['--quiet']) # docker doesnt support this option
+
+        artifact_dir = os.path.join("/runner/artifacts", "{}".format(self.ident))
+        new_args.extend(["-e", "AWX_ISOLATED_DATA_DIR={}".format(artifact_dir)])
+        new_args.extend(['shanemcd/ansible-runner'])
+        new_args.extend(args)
+
+        return new_args
+
+
     def wrap_args_with_ssh_agent(self, args, ssh_key_path, ssh_auth_sock=None, silence_ssh_add=False):
         """
         Given an existing command line and parameterization this will return the same command line wrapped with the
         necessary calls to ``ssh-agent``
         """
+        if self.containerized:
+            artifact_dir = os.path.join("/runner/artifacts", "{}".format(self.ident))
+            ssh_key_path = os.path.join(artifact_dir, "ssh_key_data")
+
         if ssh_key_path:
             ssh_add_command = args2cmdline('ssh-add', ssh_key_path)
             if silence_ssh_add:

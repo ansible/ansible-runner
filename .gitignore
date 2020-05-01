@@ -4,6 +4,7 @@
 # Editors
 *.sw[poj]
 *~
+/.idea
 
 /demo/artifacts
 /docs/_build
@@ -18,3 +19,4 @@
 .coverage
 *,cover
 .venv
+.env

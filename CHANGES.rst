@@ -3,6 +3,10 @@
 Changelog
 ---------
 
+1.4.7 (2020-05-04)
+++++++++++++++++++
+- Fix an issue with extra_vars serialization
+
 1.4.6 (2020-03-26)
 ++++++++++++++++++
 - Fixed a bug that broke Ansible playbook execution prior to version 2.8 of

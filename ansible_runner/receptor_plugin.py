@@ -120,6 +120,7 @@ def run_via_receptor(receptor_node, receptor_peer, receptor_node_id, run_options
         res.rc = 0
         return res
 
+
 # We set these parameters locally rather than using receptor.plugin_utils
 # because this still needs to parse even when our import of receptor failed.
 def receptor_plugin_export(func):
@@ -127,6 +128,7 @@ def receptor_plugin_export(func):
         func.receptor_export = True
         func.payload_type = receptor.BUFFER_PAYLOAD
     return func
+
 
 @receptor_plugin_export
 def execute(message, config, result_queue):

@@ -23,12 +23,6 @@ from ansible_runner import run
 logger = logging.getLogger(__name__)
 
 
-class Receptor_Runner_Result:
-
-    def __init__(self):
-        self.rc = None
-
-
 class UUIDEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, uuid.UUID):
@@ -113,12 +107,12 @@ def run_via_receptor(receptor_node, receptor_peer, receptor_node_id, run_options
         config = ReceptorConfig(receptor_args)
         config._is_ephemeral = True
         controller = Controller(config)
-        controller.run(run_func)
-        controller.cleanup_tmpdir()
+        try:
+            controller.run(run_func)
+        finally:
+            controller.cleanup_tmpdir()
 
-        res = Receptor_Runner_Result()
-        res.rc = 0
-        return res
+        return type('Receptor_Runner_Result', (), {'rc': 0})
 
 
 # We set these parameters locally rather than using receptor.plugin_utils

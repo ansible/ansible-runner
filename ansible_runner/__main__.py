@@ -41,7 +41,7 @@ from ansible_runner import output
 from ansible_runner.utils import dump_artifact, Bunch
 from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
-from ansible_runner.receptor_plugin import run_via_receptor
+from ansible_runner.receptor_plugin import run_via_receptor, receptor_import
 
 VERSION = pkg_resources.require("ansible_runner")[0].version
 
@@ -536,6 +536,9 @@ def main(sys_args=None):
             parser.exit(status=1, message="The --hosts option can only be used with -m or -r\n")
         if not (args.module or args.role) and not args.playbook:
             parser.exit(status=1, message="The -p option must be specified when not using -m or -r\n")
+
+    if args.via_receptor and not receptor_import:
+        parser.exit(status=1, message="The --via-receptor option requires Receptor to be installed.\n")
 
     output.configure()
 

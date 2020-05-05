@@ -8,9 +8,14 @@ import tempfile
 import uuid
 import asyncio
 
-import receptor
-from receptor.config import ReceptorConfig
-from receptor.controller import Controller
+try:
+    import receptor
+    from receptor.config import ReceptorConfig
+    from receptor.controller import Controller
+    receptor_import = True
+except ImportError:
+    receptor_import = False
+
 
 from ansible_runner import run
 
@@ -115,8 +120,15 @@ def run_via_receptor(receptor_node, receptor_peer, receptor_node_id, run_options
         res.rc = 0
         return res
 
+# We set these parameters locally rather than using receptor.plugin_utils
+# because this still needs to parse even when our import of receptor failed.
+def receptor_plugin_export(func):
+    if receptor_import:
+        func.receptor_export = True
+        func.payload_type = receptor.BUFFER_PAYLOAD
+    return func
 
-@receptor.plugin_export(payload_type=receptor.BUFFER_PAYLOAD)
+@receptor_plugin_export
 def execute(message, config, result_queue):
     private_dir = None
     try:

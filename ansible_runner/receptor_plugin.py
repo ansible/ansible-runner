@@ -30,6 +30,23 @@ class UUIDEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
+# List of kwargs options to the run method that should be sent to the remote executor.
+remote_run_options = (
+    'forks',
+    'host_pattern',
+    'ident',
+    'ignore_logging',
+    'inventory',
+    'limit',
+    'module',
+    'module_args',
+    'omit_event_data',
+    'only_failed_event_data',
+    'playbook',
+    'verbosity',
+)
+
+
 def run_via_receptor(receptor_node, receptor_peer, receptor_node_id, run_options):
 
     async def read_responses():
@@ -71,20 +88,7 @@ def run_via_receptor(receptor_node, receptor_peer, receptor_node_id, run_options
         await controller.send(payload=tmpf.name, recipient=receptor_node, directive='ansible_runner:execute')
         await controller.loop.create_task(read_responses())
 
-    remote_options = {key: value for key, value in run_options.items() if key in (
-        'forks',
-        'host_pattern',
-        'ident',
-        'ignore_logging',
-        'inventory',
-        'limit',
-        'module',
-        'module_args',
-        'omit_event_data',
-        'only_failed_event_data',
-        'playbook',
-        'verbosity',
-    )}
+    remote_options = {key: value for key, value in run_options.items() if key in remote_run_options}
 
     with tempfile.NamedTemporaryFile(suffix='.tgz') as tmpf:
 

@@ -43,7 +43,7 @@ from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
 
 if sys.version_info >= (3, 0):
-    from ansible_runner.receptor_plugin import run_via_receptor, receptor_import
+    from ansible_runner.receptor_plugin import receptor_import
 else:
     receptor_import = False
 
@@ -351,7 +351,7 @@ def main(sys_args=None):
 
     runner_group.add_argument(
         "--receptor-peer",
-        default="receptor://localhost",
+        default=None,
         help="peer connection to use to reach the Receptor network"
     )
 
@@ -544,6 +544,9 @@ def main(sys_args=None):
     if args.via_receptor and not receptor_import:
         parser.exit(status=1, message="The --via-receptor option requires Receptor to be installed.\n")
 
+    if args.via_receptor and args.command != 'run':
+        parser.exit(status=1, message="Only the 'run' command is supported via Receptor.\n")
+
     output.configure()
 
     # enable or disable debug mode
@@ -577,7 +580,7 @@ def main(sys_args=None):
 
     if args.command in ('start', 'run'):
 
-        if args.command == 'start' and not args.via_receptor:
+        if args.command == 'start':
             import daemon
             from daemon.pidfile import TimeoutPIDLockFile
             context = daemon.DaemonContext(pidfile=TimeoutPIDLockFile(pidfile))
@@ -618,16 +621,15 @@ def main(sys_args=None):
                                    resource_profiling_memory_poll_interval=args.resource_profiling_memory_poll_interval,
                                    resource_profiling_pid_poll_interval=args.resource_profiling_pid_poll_interval,
                                    resource_profiling_results_dir=args.resource_profiling_results_dir,
-                                   limit=args.limit)
+                                   limit=args.limit,
+                                   via_receptor=args.via_receptor,
+                                   receptor_peer=args.receptor_peer,
+                                   receptor_node_id=args.receptor_node_id)
                 if args.cmdline:
                     run_options['cmdline'] = args.cmdline
 
                 try:
-                    if args.via_receptor:
-                        res = run_via_receptor(args.via_receptor, args.receptor_peer,
-                                               args.receptor_node_id, run_options)
-                    else:
-                        res = run(**run_options)
+                    res = run(**run_options)
                 except Exception:
                     exc = traceback.format_exc()
                     if stderr_path:

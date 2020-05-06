@@ -8,6 +8,8 @@ import tempfile
 import uuid
 import asyncio
 
+import ansible_runner.interface
+
 try:
     import receptor
     from receptor.config import ReceptorConfig
@@ -15,10 +17,6 @@ try:
     receptor_import = True
 except ImportError:
     receptor_import = False
-
-
-from ansible_runner import run
-
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +45,11 @@ remote_run_options = (
 )
 
 
-def run_via_receptor(receptor_node, receptor_peer, receptor_node_id, run_options):
+def run_via_receptor(via_receptor, receptor_peer, receptor_node_id, run_options):
 
     async def read_responses():
+        event_handler = run_options.get('event_handler', None)
+        status_handler = run_options.get('status_handler', None)
         while True:
             message = await controller.recv()
             if message.header.get("eof", False):
@@ -60,42 +60,46 @@ def run_via_receptor(receptor_node, receptor_peer, receptor_node_id, run_options
                 c_type = c_header['type']
                 if c_type == 'event':
                     data = content[1]
-                    if 'event_handler' in run_options and run_options['event_handler']:
-                        run_options['event_handler'](data)
+                    if event_handler:
+                        event_handler(data)
                     if 'stdout' in data and data['stdout']:
                         print(data['stdout'])
                 elif c_type == 'status':
                     data = content[1]
-                    if 'status_handler' in run_options and run_options['status_handler']:
-                        run_options['status_handler'](data, None)
+                    if status_handler:
+                        status_handler(data, None)
                 elif c_type == 'error':
+                    result.errored = True
                     print("Error from remote:", content[1])
 
     async def run_func():
-        if receptor_node_id != receptor_node:
+        if receptor_node_id != via_receptor:
             add_peer_task = controller.add_peer(receptor_peer)
             start_wait = time.time()
             while True:
                 if add_peer_task and add_peer_task.done() and not add_peer_task.result():
-                    return False
-                if controller.receptor.router.node_is_known(receptor_node):
+                    raise RuntimeError('Cannot connect to peer')
+                if controller.receptor.router.node_is_known(via_receptor):
                     break
                 if time.time() - start_wait > 5:
                     if not add_peer_task.done():
                         add_peer_task.cancel()
-                    return False
+                    raise RuntimeError('Timed out waiting for peer')
                 await asyncio.sleep(0.1)
-        await controller.send(payload=tmpf.name, recipient=receptor_node, directive='ansible_runner:execute')
+        await controller.send(payload=tmpf.name, recipient=via_receptor, directive='ansible_runner:execute')
         await controller.loop.create_task(read_responses())
 
+    if not receptor_peer:
+        receptor_peer = 'receptor://localhost'
     remote_options = {key: value for key, value in run_options.items() if key in remote_run_options}
 
     with tempfile.NamedTemporaryFile(suffix='.tgz') as tmpf:
 
         # Create tar file
         with tarfile.open(fileobj=tmpf, mode='w:gz') as tar:
-            if 'private_data_dir' in run_options:
-                tar.add(run_options['private_data_dir'], arcname='')
+            private_data_dir = run_options.get('private_data_dir', None)
+            if private_data_dir:
+                tar.add(private_data_dir, arcname='')
             kwargs = json.dumps(remote_options, cls=UUIDEncoder)
             ti = tarfile.TarInfo('kwargs')
             ti.size = len(kwargs)
@@ -112,11 +116,16 @@ def run_via_receptor(receptor_node, receptor_peer, receptor_node_id, run_options
         config._is_ephemeral = True
         controller = Controller(config)
         try:
+            result = type('Receptor_Runner_Result', (), {'rc': 0, 'errored': False})
             controller.run(run_func)
+        except Exception as exc:
+            result.errored = True
+            setattr(result, 'exception', exc)
+            print(str(exc))
         finally:
             controller.cleanup_tmpdir()
 
-        return type('Receptor_Runner_Result', (), {'rc': 0})
+        return result
 
 
 # We set these parameters locally rather than using receptor.plugin_utils
@@ -151,7 +160,7 @@ def execute(message, config, result_queue):
         kwargs["status_handler"] = lambda item, runner_config: result_queue.put(json.dumps([{'type': 'status'}, item]))
         kwargs["finished_callback"] = lambda runner: result_queue.put(json.dumps([{'type': 'finished'}]))
 
-        run(**kwargs)
+        ansible_runner.interface.run(**kwargs)
 
     except Exception as exc:
         logger.exception(exc)

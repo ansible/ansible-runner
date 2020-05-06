@@ -17,8 +17,14 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+import sys
 import threading
 import logging
+
+if sys.version_info >= (3, 0):
+    from ansible_runner.receptor_plugin import run_via_receptor, receptor_import
+else:
+    receptor_import = False
 
 from ansible_runner import output
 from ansible_runner.runner_config import RunnerConfig
@@ -132,6 +138,9 @@ def run(**kwargs):
     :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
     :param omit_event_data: Omits extra ansible event data from event payload (stdout and event still included)
     :param only_failed_event_data: Omits extra ansible event data unless it's a failed event (stdout and event still included)
+    :param via_receptor: If set, specifies a Receptor node-id on which the job will be run remotely
+    :param receptor_peer: Specifies the Receptor listener, in URL format, to use to connect to the Receptor network
+    :param receptor_node_id: Specifies the node-id to assign to the local Receptor ephemeral node
     :type private_data_dir: str
     :type ident: str
     :type json_mode: bool
@@ -171,12 +180,24 @@ def run(**kwargs):
     :type fact_cache_type: str
     :type omit_event_data: bool
     :type only_failed_event_data: bool
+    :type via_receptor: str
+    :type receptor_peer: str
+    :type receptor_node_id: str
 
-    :returns: A :py:class:`ansible_runner.runner.Runner` object
+    :returns: A :py:class:`ansible_runner.runner.Runner` object, or a simple object containing `rc` if run remotely
     '''
-    r = init_runner(**kwargs)
-    r.run()
-    return r
+    via_receptor = kwargs.pop('via_receptor', None)
+    receptor_peer = kwargs.pop('receptor_peer', None)
+    receptor_node_id = kwargs.pop('receptor_node_id', None)
+    if via_receptor:
+        if not receptor_import:
+            raise RuntimeError('Receptor is not installed or could not be imported')
+        r = run_via_receptor(via_receptor, receptor_peer, receptor_node_id, kwargs)
+        return r
+    else:
+        r = init_runner(**kwargs)
+        r.run()
+        return r
 
 
 def run_async(**kwargs):

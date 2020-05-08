@@ -1,9 +1,9 @@
-.. _receptor_plugin:
+.. _receptor:
 
 Remote job execution via Receptor
 =================================
 
-`Receptor <http://www.github.com/ansible/receptor>`_ is a system for remotely executing jobs and returning results,
+`Receptor <http://www.github.com/project-receptor/receptor>`_ is a system for remotely executing jobs and returning results,
 over a mesh overlay network that can easily be extended across complex underlying network.  Receptor support within
 **Ansible Runner** enables running Ansible jobs remotely, via a Receptor network.
 

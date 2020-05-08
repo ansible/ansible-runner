@@ -43,6 +43,7 @@ Examples of this could include:
    standalone
    python_interface
    container
+   receptor
 
 
 Indices and tables

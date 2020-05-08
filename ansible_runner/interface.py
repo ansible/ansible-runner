@@ -21,11 +21,6 @@ import sys
 import threading
 import logging
 
-if sys.version_info >= (3, 0):
-    from ansible_runner.receptor_plugin import run_via_receptor, receptor_import
-else:
-    receptor_import = False
-
 from ansible_runner import output
 from ansible_runner.runner_config import RunnerConfig
 from ansible_runner.runner import Runner
@@ -33,6 +28,11 @@ from ansible_runner.utils import (
     dump_artifacts,
     check_isolation_executable_installed,
 )
+
+if sys.version_info >= (3, 0):
+    from ansible_runner.receptor_plugin import run_via_receptor, receptor_import
+else:
+    receptor_import = False
 
 logging.getLogger('ansible-runner').addHandler(logging.NullHandler())
 

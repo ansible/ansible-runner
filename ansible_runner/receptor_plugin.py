@@ -2,7 +2,6 @@ import logging
 import json
 import os
 import time
-import io
 import zipfile
 import tempfile
 import uuid

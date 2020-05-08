@@ -3,7 +3,7 @@ import json
 import os
 import time
 import io
-import tarfile
+import zipfile
 import tempfile
 import uuid
 import asyncio
@@ -93,18 +93,21 @@ def run_via_receptor(via_receptor, receptor_peer, receptor_node_id, run_options)
         receptor_peer = 'receptor://localhost'
     remote_options = {key: value for key, value in run_options.items() if key in remote_run_options}
 
-    with tempfile.NamedTemporaryFile(suffix='.tgz') as tmpf:
+    with tempfile.NamedTemporaryFile() as tmpf:
 
-        # Create tar file
-        with tarfile.open(fileobj=tmpf, mode='w:gz') as tar:
+        # Create archive
+        with zipfile.ZipFile(tmpf, 'w') as zip:
             private_data_dir = run_options.get('private_data_dir', None)
             if private_data_dir:
-                tar.add(private_data_dir, arcname='')
+                for dirpath, dirs, files in os.walk(private_data_dir):
+                    relpath = os.path.relpath(dirpath, private_data_dir)
+                    if relpath == ".":
+                        relpath = ""
+                    for file in files:
+                        zip.write(os.path.join(dirpath, file), arcname=os.path.join(relpath, file))
             kwargs = json.dumps(remote_options, cls=UUIDEncoder)
-            ti = tarfile.TarInfo('kwargs')
-            ti.size = len(kwargs)
-            ti.mtime = time.time()
-            tar.addfile(ti, io.BytesIO(kwargs.encode('utf-8')))
+            zip.writestr('kwargs', kwargs)
+            zip.close()
         tmpf.flush()
 
         # Run the job via Receptor
@@ -133,7 +136,7 @@ def run_via_receptor(via_receptor, receptor_peer, receptor_node_id, run_options)
 def receptor_plugin_export(func):
     if receptor_import:
         func.receptor_export = True
-        func.payload_type = receptor.BUFFER_PAYLOAD
+        func.payload_type = receptor.FILE_PAYLOAD
     return func
 
 
@@ -142,8 +145,8 @@ def execute(message, config, result_queue):
     private_dir = None
     try:
         private_dir = tempfile.TemporaryDirectory()
-        with tarfile.open(fileobj=message.fp, mode='r:gz') as tar:
-            tar.extractall(path=private_dir.name)
+        with zipfile.ZipFile(message, 'r') as zip:
+            zip.extractall(path=private_dir.name)
 
         kwargs_path = os.path.join(private_dir.name, 'kwargs')
         if os.path.exists(kwargs_path):

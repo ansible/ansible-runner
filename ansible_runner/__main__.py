@@ -42,6 +42,11 @@ from ansible_runner.utils import dump_artifact, Bunch
 from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
 
+if sys.version_info >= (3, 0):
+    from ansible_runner.receptor_plugin import receptor_import
+else:
+    receptor_import = False
+
 VERSION = pkg_resources.require("ansible_runner")[0].version
 
 DEFAULT_ROLES_PATH = os.getenv('ANSIBLE_ROLES_PATH', None)
@@ -336,6 +341,26 @@ def main(sys_args=None):
              "ansible-playbook output (default=None)"
     )
 
+    # Receptor options
+
+    runner_group.add_argument(
+        "--via-receptor",
+        default=None,
+        help="Run the job on a Receptor node rather than locally"
+    )
+
+    runner_group.add_argument(
+        "--receptor-peer",
+        default=None,
+        help="peer connection to use to reach the Receptor network"
+    )
+
+    runner_group.add_argument(
+        "--receptor-node-id",
+        default=None,
+        help="Receptor node-id to use for the local node"
+    )
+
     # ansible options
 
     ansible_group = parser.add_argument_group(
@@ -516,6 +541,12 @@ def main(sys_args=None):
         if not (args.module or args.role) and not args.playbook:
             parser.exit(status=1, message="The -p option must be specified when not using -m or -r\n")
 
+    if args.via_receptor and not receptor_import:
+        parser.exit(status=1, message="The --via-receptor option requires Receptor to be installed.\n")
+
+    if args.via_receptor and args.command != 'run':
+        parser.exit(status=1, message="Only the 'run' command is supported via Receptor.\n")
+
     output.configure()
 
     # enable or disable debug mode
@@ -590,7 +621,10 @@ def main(sys_args=None):
                                    resource_profiling_memory_poll_interval=args.resource_profiling_memory_poll_interval,
                                    resource_profiling_pid_poll_interval=args.resource_profiling_pid_poll_interval,
                                    resource_profiling_results_dir=args.resource_profiling_results_dir,
-                                   limit=args.limit)
+                                   limit=args.limit,
+                                   via_receptor=args.via_receptor,
+                                   receptor_peer=args.receptor_peer,
+                                   receptor_node_id=args.receptor_node_id)
                 if args.cmdline:
                     run_options['cmdline'] = args.cmdline
 

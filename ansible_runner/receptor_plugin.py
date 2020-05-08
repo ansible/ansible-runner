@@ -96,7 +96,7 @@ def run_via_receptor(via_receptor, receptor_peer, receptor_node_id, run_options)
     with tempfile.NamedTemporaryFile() as tmpf:
 
         # Create archive
-        with zipfile.ZipFile(tmpf, 'w') as zip:
+        with zipfile.ZipFile(tmpf, 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as zip:
             private_data_dir = run_options.get('private_data_dir', None)
             if private_data_dir:
                 for dirpath, dirs, files in os.walk(private_data_dir):

@@ -42,6 +42,7 @@ Examples of this could include:
    external_interface
    standalone
    python_interface
+   playbook_api
    container
    receptor
 

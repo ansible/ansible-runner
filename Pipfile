@@ -12,6 +12,10 @@ funcsigs = "*"
 mock = "*"
 pathlib2 = "*"
 scandir = "*"
+pytest-datadir = "*"
+pytest-cov = "*"
+tox = "*"
+sphinx = "*"
 
 [packages]
 psutil = "*"

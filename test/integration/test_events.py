@@ -76,6 +76,7 @@ def test_event_omission_except_failed():
     all_event_datas = [x['event_data'] for x in r.events if x['event_data']]
     assert len(all_event_datas) == 1
 
+
 @pytest.mark.skipif(LooseVersion(pkg_resources.get_distribution('ansible').version) < LooseVersion('2.8'),
                     reason="Valid only on Ansible 2.8+")
 def test_runner_on_start(rc):
@@ -117,6 +118,7 @@ def test_include_role_events():
                 assert event_data['res']['msg'] == 'Hello world!'
     finally:
         shutil.rmtree('test/integration/artifacts')
+
 
 @pytest.mark.skipif(find_executable('cgexec') is None,
                     reason="cgexec not available")

@@ -7,4 +7,4 @@ RUN apt-get install -y \
 
 RUN update-alternatives --config pinentry
 RUN pip install -IU pip setuptools
-RUN pip install -IU pipenv ansible
+RUN pip install -IU poetry ansible

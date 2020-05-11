@@ -1,6 +1,6 @@
 PYTHON ?= python
 ifeq ($(origin VIRTUAL_ENV), undefined)
-    DIST_PYTHON ?= pipenv run $(PYTHON)
+    DIST_PYTHON ?= poetry run $(PYTHON)
 else
     DIST_PYTHON ?= $(PYTHON)
 endif
@@ -8,7 +8,8 @@ endif
 NAME = ansible-runner
 IMAGE_NAME ?= $(NAME)
 PIP_NAME = ansible_runner
-VERSION := $(shell $(DIST_PYTHON) setup.py --version)
+LONG_VERSION := $(shell poetry version)
+VERSION := $(filter-out $(NAME), $(LONG_VERSION))
 ifeq ($(OFFICIAL),yes)
     RELEASE ?= 1
 else
@@ -71,18 +72,20 @@ clean:
 	find . -type f -regex ".*\py[co]$$" -delete
 
 dist:
-	$(DIST_PYTHON) setup.py bdist_wheel --universal
+	poetry build
 
 sdist: dist/$(NAME)-$(VERSION).tar.gz
 
+# Generate setup.py transiently for the sdist so we don't have to deal with
+# packaging poetry as a RPM for rpm build time dependencies.
 dist/$(NAME)-$(VERSION).tar.gz:
 	$(DIST_PYTHON) setup.py sdist
 
 dev:
-	pipenv install
+	poetry install
 
 shell:
-	pipenv shell
+	poetry shell
 
 test:
 	tox
@@ -99,11 +102,13 @@ devimage:
 	docker build --rm=true -t $(IMAGE_NAME)-dev -f Dockerfile.dev .
 
 rpm:
-	docker-compose -f packaging/rpm/docker-compose.yml \
+	MOCK_CONFIG=$(MOCK_CONFIG) docker-compose -f packaging/rpm/docker-compose.yml build
+	MOCK_CONFIG=$(MOCK_CONFIG) docker-compose -f packaging/rpm/docker-compose.yml \
 	  run --rm -e RELEASE=$(RELEASE) rpm-builder "make mock-rpm"
 
 srpm:
-	docker-compose -f packaging/rpm/docker-compose.yml \
+	MOCK_CONFIG=$(MOCK_CONFIG) docker-compose -f packaging/rpm/docker-compose.yml build
+	MOCK_CONFIG=$(MOCK_CONFIG) docker-compose -f packaging/rpm/docker-compose.yml \
 	  run --rm -e RELEASE=$(RELEASE) rpm-builder "make mock-srpm"
 
 mock-rpm: rpm-build/$(RPM_NVR).$(RPM_ARCH).rpm

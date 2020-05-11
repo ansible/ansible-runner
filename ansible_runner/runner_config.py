@@ -53,6 +53,7 @@ class ExecutionMode():
     ANSIBLE = 1
     ANSIBLE_PLAYBOOK = 2
     RAW = 3
+    CLI_EXECENV = 4
 
 
 class RunnerConfig(object):
@@ -86,7 +87,7 @@ class RunnerConfig(object):
                  resource_profiling_results_dir=None,
                  tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None, ssh_key=None,
                  project_dir=None, directory_isolation_base_path=None, envvars=None, forks=None, cmdline=None, omit_event_data=False,
-                 only_failed_event_data=False):
+                 only_failed_event_data=False, cli_execenv_cmd=""):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = str(ident)
         self.json_mode = json_mode
@@ -96,6 +97,7 @@ class RunnerConfig(object):
         self.limit = limit
         self.module = module
         self.module_args = module_args
+        self.cli_execenv_cmd = cli_execenv_cmd
         self.host_pattern = host_pattern
         self.binary = binary
         self.rotate_artifacts = rotate_artifacts
@@ -145,6 +147,7 @@ class RunnerConfig(object):
         self.envvars = envvars
         self.forks = forks
         self.cmdline_args = cmdline
+
         self.omit_event_data = omit_event_data
         self.only_failed_event_data = only_failed_event_data
 
@@ -193,6 +196,8 @@ class RunnerConfig(object):
             raise ConfigurationError("Runner playbook required when running ansible-playbook")
         elif self.execution_mode == ExecutionMode.ANSIBLE and self.module is None:
             raise ConfigurationError("Runner module required when running ansible")
+        elif self.execution_mode == ExecutionMode.CLI_EXECENV and self.cmdline_args is None:
+            raise ConfigurationError("Runner requires arguments to pass to ansible, try '-h' for ansible help output")
         elif self.execution_mode == ExecutionMode.NONE:
             raise ConfigurationError("No executable for runner to run")
 
@@ -288,7 +293,6 @@ class RunnerConfig(object):
             if os.path.exists(os.path.join(self.private_data_dir, "inventory")):
                 self.inventory = os.path.join(self.private_data_dir, "inventory")
 
-
     def prepare_env(self):
         """
         Manages reading environment metadata files under ``private_data_dir`` and merging/updating
@@ -359,7 +363,6 @@ class RunnerConfig(object):
         self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
 
-
         if 'AD_HOC_COMMAND_ID' in self.env or not os.path.exists(self.project_dir):
             self.cwd = self.private_data_dir
         else:
@@ -380,14 +383,24 @@ class RunnerConfig(object):
         Determines if the literal ``ansible`` or ``ansible-playbook`` commands are given
         and if not calls :py:meth:`ansible_runner.runner_config.RunnerConfig.generate_ansible_command`
         """
-        try:
-            cmdline_args = self.loader.load_file('args', string_types, encoding=None)
-            if six.PY2 and isinstance(cmdline_args, text_type):
-                cmdline_args = cmdline_args.encode('utf-8')
-            self.command = shlex.split(cmdline_args)
-            self.execution_mode = ExecutionMode.RAW
-        except ConfigurationError:
-            self.command = self.generate_ansible_command()
+        if not self.cli_execenv_cmd:
+            try:
+                cmdline_args = self.loader.load_file('args', string_types, encoding=None)
+
+                if six.PY2 and isinstance(cmdline_args, text_type):
+                    cmdline_args = cmdline_args.encode('utf-8')
+                self.command = shlex.split(cmdline_args)
+                self.execution_mode = ExecutionMode.RAW
+            except ConfigurationError:
+                self.command = self.generate_ansible_command()
+        else:
+            if self.cli_execenv_cmd:
+                if self.cli_execenv_cmd == 'adhoc':
+                    self.command = ['ansible'] + self.cmdline_args 
+                elif self.cli_execenv_cmd == 'playbook':
+                    self.command = ['ansible-playbook'] + self.cmdline_args 
+                self.execution_mode = ExecutionMode.CLI_EXECENV
+
 
     def generate_ansible_command(self):
         """
@@ -395,7 +408,16 @@ class RunnerConfig(object):
         will generate the ``ansible`` or ``ansible-playbook`` command that will be used by the
         :py:class:`ansible_runner.runner.Runner` object to start the process
         """
-        if self.binary is not None:
+        # FIXME - this never happens because the conditional in prepare_command
+        #         "branches around it" and I need to figure out if that's the
+        #         correct course of action or not.
+        if self.cli_execenv_cmd:
+            if self.cli_execenv_cmd == 'adhoc':
+                base_command = 'ansible'
+            elif self.cli_execenv_cmd == 'playbook':
+                base_command = 'ansible-playbook'
+            self.execution_mode = ExecutionMode.CLI_EXECENV
+        elif self.binary is not None:
             base_command = self.binary
             self.execution_mode = ExecutionMode.RAW
         elif self.module is not None:
@@ -573,7 +595,78 @@ class RunnerConfig(object):
         # (see https://docs.docker.com/storage/bind-mounts/#configure-the-selinux-label
         #  for usage and potential side-effects)
         _ensure_path_safe_to_mount(self.private_data_dir)
+
         new_args.extend(["-v", "{}:/runner:Z".format(self.private_data_dir)])
+
+        if self.cli_execenv_cmd:
+            if self.cli_execenv_cmd == 'playbook':
+                # FIXME - this might not be something we can assume
+                # grab the directory relative to the playbook so we capture roles and such
+                playbook_file_path = self.cmdline_args[0]
+                _ensure_path_safe_to_mount(playbook_file_path)
+                if os.path.isabs(playbook_file_path) and (os.path.dirname(playbook_file_path) != '/'):
+                    new_args.extend([
+                        "-v", "{}:{}:Z".format(
+                           os.path.dirname(playbook_file_path),
+                           os.path.dirname(playbook_file_path),
+                        )
+                    ])
+                else:
+                    new_args.extend([
+                        "-v", "{}:/runner/project/{}:Z".format(
+                           os.path.dirname(os.path.abspath(playbook_file_path)),
+                           os.path.dirname(playbook_file_path),
+                        )
+                    ])
+
+            # volume mount inventory into the exec env container if provided at cli
+            if '-i' in self.cmdline_args:
+                inventory_file_path = self.cmdline_args[self.cmdline_args.index('-i') + 1]
+                _ensure_path_safe_to_mount(inventory_file_path)
+                inventory_playbook_share_parent = False
+                if self.cli_execenv_cmd == 'playbook':
+                    if os.path.dirname(os.path.abspath(inventory_file_path)) == \
+                            os.path.dirname(os.path.abspath(playbook_file_path)):
+                        inventory_playbook_share_parent = True
+                if not inventory_file_path.endswith(',') and not inventory_playbook_share_parent:
+                    if os.path.isabs(inventory_file_path) and (os.path.dirname(inventory_file_path) != '/'):
+                        new_args.extend([
+                            "-v", "{}:{}:Z".format(
+                               os.path.dirname(inventory_file_path),
+                               os.path.dirname(inventory_file_path),
+                            )
+                        ])
+                    else:
+                        new_args.extend([
+                            "-v", "{}:/runner/project/{}:Z".format(
+                               os.path.dirname(os.path.abspath(inventory_file_path)),
+                               os.path.dirname(inventory_file_path),
+                            )
+                        ])
+
+            # volume mount ~/.ssh/ and ~/.ansible into the exec env container
+            new_args.extend(["-v", "{}/.ssh/:/runner/project/.ssh/:Z".format(os.environ['HOME'])])
+            if not os.path.exists(os.path.join(os.environ['HOME'], '.ansible')):
+                os.mkdir(os.path.join(os.environ['HOME'], '.ansible'))
+            new_args.extend(["-v", "{}/.ansible:/runner/project/.ansible:z".format(os.environ['HOME'])])
+
+            # volume mount system-wide ssh_known_hosts the exec env container
+            if os.path.exists('/etc/ssh/ssh_known_hosts'):
+                new_args.extend(["-v", "/etc/ssh/ssh_known_hosts:/etc/ssh/ssh_known_hosts:z"])
+
+            # handle ssh-agent "forwarding" into the exec env container
+            new_args.extend(
+                ["-v", "{}:{}:z".format(
+                    os.path.dirname(os.environ['SSH_AUTH_SOCK']), 
+                    os.path.dirname(os.environ['SSH_AUTH_SOCK'])
+                )]
+            )
+            new_args.extend(["-e", "SSH_AUTH_SOCK={}".format(os.environ['SSH_AUTH_SOCK'])])
+
+            # container namespace stuff 
+            new_args.extend(["--userns=keep-id"])
+            new_args.extend(["--pid=host"])
+            new_args.extend(["--ipc=host"])
 
         container_volume_mounts = self.container_volume_mounts
         if container_volume_mounts:
@@ -583,6 +676,7 @@ class RunnerConfig(object):
                 new_args.extend(["-v", "{}:{}:Z".format(host_path, container_path)])
 
         env_var_whitelist = ['PROJECT_UPDATE_ID', 'ANSIBLE_CALLBACK_PLUGINS', 'ANSIBLE_STDOUT_CALLBACK']
+
         for k, v in self.env.items():
             if k in env_var_whitelist:
                 new_args.extend(["-e", "{}={}".format(k, v)])

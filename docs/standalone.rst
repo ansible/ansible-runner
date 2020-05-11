@@ -26,6 +26,8 @@ The different **commands** that runner accepts are:
 * ``start`` starts ``ansible-runner`` as a background daemon process and generates a pid file
 * ``stop`` terminates an ``ansible-runner`` process that was launched in the background with ``start``
 * ``is-alive`` checks the status of an ``ansible-runner`` process that was started in the background with ``start``
+* ``adhoc`` will run ad-hoc ``ansible`` commands inside a containerized Ansible Execution Environment 
+* ``playbook`` will run ``ansible-playbook`` commands inside a containerized Ansible Execution Environment 
 
 While **Runner** is running it creates an ``artifacts`` directory (see :ref:`artifactdir`) regardless of what mode it was started
 in. The resulting output and status from **Ansible** will be located here. You can control the exact location underneath the ``artifacts`` directory
@@ -67,6 +69,24 @@ An example invocation using ``demo`` as private directory and ``localhost`` as t
   $ ansible-runner --role testrole --hosts localhost run demo
 
 Ansible roles directory can be provided with ``--roles-path`` option. Role variables can be passed with ``--role-vars`` at runtime.
+
+Running Ansible adhoc Commands
+------------------------------
+
+An example invocation using the ``ping`` module and ``localhost`` as target::
+
+  $ ansible-runner adhoc localhost -m ping 
+
+Something to note here is that implicit ``localhost`` in this context is a containerized instantiation of an Ansible Execution Environment and as such you will not get Ansible Facts about your system if using the ``setup`` module. 
+
+Running ansible-playbook Commands
+---------------------------------
+
+An example invocation using the ``ping`` module and ``localhost`` as target::
+
+  $ ansible-runner playbook demo.yml
+
+Something to note here is that implicit ``localhost`` in this context is a containerized instantiation of an Ansible Execution Environment and as such you will not get Ansible Facts about your system if using ``gather_facts: true`` and targeting ``localhost`` in your playbook without explicit host definition in your inventory.
 
 .. _outputjson:
 

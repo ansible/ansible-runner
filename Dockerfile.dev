@@ -8,7 +8,7 @@ RUN yum -y install epel-release  && \
                    which gcc python-devel libxml2 libxml2-devel krb5 krb5-devel curl curl-devel \
                    openssh openssh-clients && \
     pip install --no-cache-dir -U setuptools && \
-    pip install --no-cache-dir wheel pexpect psutil python-daemon pipenv PyYAML && \
+    pip install --no-cache-dir wheel pexpect psutil python-daemon poetry PyYAML && \
     localedef -c -i en_US -f UTF-8 en_US.UTF-8 && \
     chmod +x /tini && \
     rm -rf /var/cache/yum

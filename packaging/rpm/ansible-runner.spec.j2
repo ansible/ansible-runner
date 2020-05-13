@@ -2,6 +2,8 @@
 
 %global python3_sitelib /usr/lib/python3.6/site-packages/
 
+%define _python_bytecompile_errors_terminate_build 0
+
 %if 0%{?fedora} || 0%{?rhel} > 7
 %bcond_with python2
 %bcond_without python3

@@ -41,6 +41,10 @@ Install the package::
 From source
 -----------
 
+Ansible Runner uses `python-poetry <https://python-poetry.org/`_ for
+development and dependency management, once that is installed performed the
+following steps.
+
 Check out the source code from `github <https://github.com/ansible/ansible-runner>`_::
 
   $ git clone git://github.com/ansible/ansible-runner
@@ -49,11 +53,7 @@ Or download from the `releases page <https://github.com/ansible/ansible-runner/r
 
 Then install::
 
-  $ python setup.py install
-
-OR::
-
-  $ pip install .
+  $ poetry install
 
 .. _builddist:
 

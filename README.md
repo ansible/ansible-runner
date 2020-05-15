@@ -1,6 +1,7 @@
 Ansible Runner
 ==============
 
+[![PyPi](https://img.shields.io/pypi/v/ansible-runner.svg?logo=Python)](https://pypi.org/project/ansible-runner/)
 [![Documentation](https://readthedocs.org/projects/ansible-runner/badge/?version=stable)](https://ansible-runner.readthedocs.io/en/latest/)
 [![Code of Conduct](https://img.shields.io/badge/Code%20of%20Conduct-Ansible-silver.svg)](https://docs.ansible.com/ansible/latest/community/code_of_conduct.html)
 [![Ansible Mailing lists](https://img.shields.io/badge/Mailing%20lists-Ansible-orange.svg)](https://docs.ansible.com/ansible/latest/community/communication.html#mailing-list-information)

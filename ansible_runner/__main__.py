@@ -216,7 +216,7 @@ def main(sys_args=None):
 
     parser.add_argument(
         'private_data_dir',
-        help="base directory cotnaining the ansible-runner metadata "
+        help="base directory containing the ansible-runner metadata "
              "(project, inventory, env, etc)"
     )
 

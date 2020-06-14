@@ -75,7 +75,7 @@ handle containing the ``stdout`` of the **Ansible** process.
 ------------------------
 
 A function passed to `__init__` of :class:`Runner <ansible_runner.runner.Runner>`, this is invoked every time an Ansible event is received. You can use this to
-inspect/process/handle events as they come out of Ansible.
+inspect/process/handle events as they come out of Ansible. This function should return `True` to keep the event, otherwise it will be discarded.
 
 ``Runner.cancel_callback``
 --------------------------

@@ -115,7 +115,7 @@ def run(**kwargs):
     :param artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
     :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
-    :param event_handler: An optional callback that will be invoked any time an event is received by Runner itself
+    :param event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
     :param cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
     :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
     :param status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)

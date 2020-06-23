@@ -38,10 +38,10 @@ def executor(tmpdir, request):
     return r
 
 
-@pytest.mark.parametrize('event', {'playbook_on_start',
+@pytest.mark.parametrize('event', ['playbook_on_start',
                                    'playbook_on_play_start',
                                    'playbook_on_task_start', 'runner_on_ok',
-                                   'playbook_on_stats'})
+                                   'playbook_on_stats'])
 @pytest.mark.parametrize('playbook', [
 {'helloworld.yml': '''
 - name: Hello World Sample
@@ -64,12 +64,13 @@ def executor(tmpdir, request):
     - name: Generate results list
       debug:
         var: results
-'''},  # noqa
-])
+'''}  # noqa
+], ids=['helloworld.yml', 'results_included.yml'])
 @pytest.mark.parametrize('envvars', [
     {'ANSIBLE_CALLBACK_PLUGINS': os.path.join(HERE, 'callback')},
-    {'ANSIBLE_CALLBACK_PLUGINS': ''}
-])
+    {'ANSIBLE_CALLBACK_PLUGINS': ''}],
+    ids=['local-callback-plugin', 'no-callback-plugin']
+)
 def test_callback_plugin_receives_events(executor, event, playbook, envvars):
     executor.run()
     assert len(list(executor.events))

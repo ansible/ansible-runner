@@ -232,8 +232,9 @@ def test_role_run_artifacts_dir_abs():
     {
         'msg': u'utf-8-䉪ቒ칸ⱷ?噂폄蔆㪗輥',
         u'蔆㪗輥': u'䉪ቒ칸'
-    }
-])
+    }],
+    ids=['regular-text', 'utf-8-text']
+)
 def test_role_run_env_vars(envvars):
 
     with temp_directory() as temp_dir:

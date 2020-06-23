@@ -104,6 +104,7 @@ def test_module_run_debug():
         shutil.rmtree('./ping')
 
 
+@pytest.mark.serial
 def test_module_run_clean():
     with temp_directory() as temp_dir:
         rc = main(['-m', 'ping',
@@ -180,6 +181,7 @@ def test_role_bad_project_dir():
         ensure_removed("new_logfile")
 
 
+@pytest.mark.serial
 def test_role_run_clean():
 
     rc = main(['-r', 'benthomasson.hello_role',

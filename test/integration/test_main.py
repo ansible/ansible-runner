@@ -308,6 +308,7 @@ def test_role_start():
         p.join()
 
 
+@pytest.mark.serial
 def test_playbook_start():
 
     with temp_directory() as temp_dir:

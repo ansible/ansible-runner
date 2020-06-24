@@ -103,6 +103,7 @@ def test_playbook_on_stats_summary_fields(rc):
     assert set(fields) >= set(EXPECTED_SUMMARY_FIELDS)
 
 
+@pytest.mark.serial
 def test_include_role_events():
     try:
         r = run(

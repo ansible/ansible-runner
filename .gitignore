@@ -6,6 +6,7 @@
 *~
 /.idea
 
+/test/integration/artifacts
 /demo/artifacts
 /docs/_build
 /.tox

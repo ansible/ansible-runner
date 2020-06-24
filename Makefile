@@ -62,7 +62,7 @@ DEB_TAR_NAME=$(NAME)-$(VERSION)
 DEB_TAR_FILE=$(NAME)_$(VERSION).orig.tar.gz
 DEB_DATE := $(shell LC_TIME=C date +"%a, %d %b %Y %T %z")
 
-.PHONY: clean dist sdist dev shell image devimage rpm srpm docs deb debian deb-src
+.PHONY: test clean dist sdist dev shell image devimage rpm srpm docs deb debian deb-src
 
 clean:
 	rm -rf dist

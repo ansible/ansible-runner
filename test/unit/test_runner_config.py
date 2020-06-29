@@ -570,3 +570,27 @@ def test_profiling_plugin_settings_with_custom_intervals(mock_mkdir):
     assert rc.env['CGROUP_CPU_POLL_INTERVAL'] == '.5'
     assert rc.env['CGROUP_MEMORY_POLL_INTERVAL'] == '.75'
     assert rc.env['CGROUP_PID_POLL_INTERVAL'] == '1.5'
+
+
+@patch('os.mkdir', return_value=True)
+@pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
+def test_containerization_settings(mock_mkdir, container_runtime):
+    rc = RunnerConfig('/')
+    rc.playbook = 'main.yaml'
+    rc.command = 'ansible-playbook'
+    rc.containerized = True
+    rc.container_runtime=container_runtime
+    rc.container_image = 'my_container'
+    rc.prepare()
+
+    extra_container_args = []
+    if container_runtime == 'podman':
+        extra_container_args = ['--quiet']
+
+    expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
+        ['-v', '{}:/runner:Z'.format(rc.private_data_dir)] + \
+        extra_container_args + \
+        ['-e', 'AWX_ISOLATED_DATA_DIR=/runner/artifacts/{}'.format(rc.ident)] + \
+        ['my_container', 'ansible-playbook', '-i', '/runner/inventory/hosts', 'main.yaml']
+    for index, element in enumerate(expected_command_start):
+        assert rc.command[index] == element

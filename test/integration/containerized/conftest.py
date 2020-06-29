@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 import subprocess
 import yaml
 
@@ -42,27 +41,10 @@ class CompletedProcessProxy(object):
         return yaml.safe_load(self.stdout)
 
 
-@pytest.fixture(autouse=True, scope='session')
-def ansible_runner_binary():
-    if not os.environ.get('POETRY_ACTIVE', False):
-        return 'ansible-runner'
-    syspath = os.environ.get('PATH').split(':')
-    venv_index = None
-    for item in syspath:
-        if 'pypoetry' in item:
-            venv_index = syspath.index(item)
-            break
-    if venv_index is None:
-        pytest.fail('poetry is active but cannot find its venv')
-
-    venv_bin = syspath.pop(venv_index)
-    return os.path.join(venv_bin, 'ansible-runner')
-
-
 @pytest.fixture(scope='function')
-def cli(request, ansible_runner_binary):
+def cli(request):
     def run(args, *a, **kw):
-        args = [ansible_runner_binary,] + args
+        args = ['ansible-runner',] + args
         kw['encoding'] = 'utf-8'
         if 'check' not in kw:
             # By default we want to fail if a command fails to run. Tests that
@@ -73,9 +55,9 @@ def cli(request, ansible_runner_binary):
         if 'stderr' not in kw:
             kw['stderr'] = subprocess.PIPE
 
-            kw.setdefault('env', {}).update({
-                'LANG': 'en_US.UTF-8'
-            })
+        kw.setdefault('env', os.environ.copy()).update({
+            'LANG': 'en_US.UTF-8'
+        })
 
         try:
             ret = CompletedProcessProxy(subprocess.run(args, *a, **kw))

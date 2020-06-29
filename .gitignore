@@ -21,3 +21,9 @@
 *,cover
 .venv
 .env
+poetry.lock
+pytestdebug.log
+test/integration/containerized/priv_data/artifacts/
+new_logfile
+otherartifacts/
+test/integration/project/

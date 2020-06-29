@@ -6,22 +6,32 @@ import pkg_resources
 import json
 import os
 import shutil
+import stat
 
 from ansible_runner import run, run_async
 
 
-def test_basic_events(is_run_async=False,g_facts=False):
+@pytest.mark.serial
+@pytest.mark.parametrize('containerized', [True, False])
+def test_basic_events(containerized, is_run_async=False,g_facts=False):
     tdir = tempfile.mkdtemp()
+    if containerized:
+        # container unable to access tempdir because of
+        # mkdtemp()'s minimal permissions
+        os.chmod(tdir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+
     inventory = "localhost ansible_connection=local"
     playbook = [{'hosts': 'all', 'gather_facts': g_facts, 'tasks': [{'debug': {'msg': "test"}}]}]
+    run_args = {'private_data_dir': tdir,
+                'inventory': inventory,
+                'playbook': playbook,
+                'containerized': containerized}
+    if containerized:
+        run_args['container_volume_mounts'] = f'{tdir}:{tdir}'
     if not is_run_async:
-        r = run(private_data_dir=tdir,
-                inventory=inventory,
-                playbook=playbook)
+        r = run(**run_args)
     else:
-        _, r = run_async(private_data_dir=tdir,
-                         inventory=inventory,
-                         playbook=playbook)
+        _, r = run_async(**run_args)
 
     event_types = [x['event'] for x in r.events]
     okay_events = [x for x in filter(lambda x: 'event' in x and x['event'] == 'runner_on_ok',
@@ -46,8 +56,9 @@ def test_basic_events(is_run_async=False,g_facts=False):
 
 
 @pytest.mark.serial
-def test_async_events():
-    test_basic_events(is_run_async=True,g_facts=True)
+@pytest.mark.parametrize('containerized', [True, False])
+def test_async_events(containerized):
+    test_basic_events(containerized, is_run_async=True,g_facts=True)
 
 
 def test_basic_serializeable():

@@ -1,6 +1,6 @@
 ---
 - hosts: localhost
-  gather_facts: yes
+  gather_facts: true
   vars:
     cgroup_search_terms: docker\|lxc\|podman\|oci
     is_container: false
@@ -9,15 +9,15 @@
   tasks:
     - debug: msg="Test if we are in a container!"
 
-    - name: 'Look container env var defined in /proc/1/environ'
+    - name: 'Look for container env var defined in /proc/1/environ'
       shell: "grep 'container=' /proc/1/environ"
       register: container_proc_environ
-      ignore_errors: yes
+      ignore_errors: true
 
-    - name: 'Look container info defined in /proc/1/cgroup'
+    - name: 'Look for container info defined in /proc/1/cgroup'
       shell: "grep '{{ cgroup_search_terms}}' /proc/1/cgroup"
       register: container_proc_cgroup
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: 'Found evidence that we are in docker container'
       set_fact:
@@ -36,4 +36,3 @@
 
     - fail:
       when: not (is_container)
-

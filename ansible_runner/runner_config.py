@@ -246,6 +246,11 @@ class RunnerConfig(object):
 
         if self.containerized:
             self.command = self.wrap_args_with_containerization(self.command)
+        else:
+            debug('containerization disabled')
+
+        if hasattr(self, 'command') and isinstance(self.command, list):
+            debug(f"command: {' '.join(self.command)}")
 
     def prepare_inventory(self):
         """
@@ -322,8 +327,8 @@ class RunnerConfig(object):
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
         self.directory_isolation_cleanup = bool(self.settings.get('directory_isolation_cleanup', True))
 
-        self.containerized = self.settings.get('containerized', False)
-        self.container_runtime = self.settings.get('container_runtime', 'podman')
+        self.containerized = self.settings.get('containerized', self.containerized)
+        self.container_runtime = self.settings.get('container_runtime', self.container_runtime)
 
         if 'AD_HOC_COMMAND_ID' in self.env or not os.path.exists(self.project_dir):
             self.cwd = self.private_data_dir

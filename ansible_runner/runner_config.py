@@ -84,7 +84,7 @@ class RunnerConfig(object):
                  resource_profiling_results_dir=None,
                  tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None, ssh_key=None,
                  project_dir=None, directory_isolation_base_path=None, envvars=None, forks=None, cmdline=None, omit_event_data=False,
-                 only_failed_event_data=False, containerized=False, container_runtime=False):
+                 only_failed_event_data=False, containerized=False, container_runtime=False, container_image='shanemcd/ansible-runner'):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = str(ident)
         self.json_mode = json_mode
@@ -144,6 +144,7 @@ class RunnerConfig(object):
         self.only_failed_event_data = only_failed_event_data
         self.containerized = containerized
         self.container_runtime = container_runtime
+        self.container_image = container_image
 
     def prepare(self):
         """
@@ -331,6 +332,7 @@ class RunnerConfig(object):
 
         self.containerized = self.settings.get('containerized', self.containerized)
         self.container_runtime = self.settings.get('container_runtime', self.container_runtime)
+        self.container_image = self.settings.get('container_image', self.container_image)
 
         if 'AD_HOC_COMMAND_ID' in self.env or not os.path.exists(self.project_dir):
             self.cwd = self.private_data_dir
@@ -552,7 +554,7 @@ class RunnerConfig(object):
 
         artifact_dir = os.path.join("/runner/artifacts", "{}".format(self.ident))
         new_args.extend(["-e", "AWX_ISOLATED_DATA_DIR={}".format(artifact_dir)])
-        new_args.extend(['shanemcd/ansible-runner'])
+        new_args.extend([self.container_image])
         new_args.extend(args)
 
         return new_args

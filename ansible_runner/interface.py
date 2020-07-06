@@ -131,6 +131,10 @@ def run(**kwargs):
     :param resource_profiling_memory_poll_interval: Interval (in seconds) between memory polling for determining memory usage (default: 0.25)
     :param resource_profiling_pid_poll_interval: Interval (in seconds) between polling PID count for determining number of processes used (default: 0.25)
     :param resource_profiling_results_dir: Directory where profiling data files should be saved (defaults to profiling_data folder inside private data dir)
+    :param containerized: Indicates ansible task should be executed using an execution environment (default: false)
+    :param container_runtime: Container engine to use when running an ansible task (default: podman)
+    :param container_image: Container image to use when running an ansible task (default: ansible/ansible-runner)
+    :param container_volume_mounts: Comma-separated list of bind mounts (default: None)
     :param directory_isolation_base_path: An optional path will be used as the base path to create a temp directory, the project contents will be
                                           copied to this location which will then be used as the working directory during playbook execution.
     :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
@@ -175,6 +179,10 @@ def run(**kwargs):
     :type resource_profiling_memory_poll_interval: float
     :type resource_profiling_pid_poll_interval: float
     :type resource_profiling_results_dir: str
+    :type containerized: bool
+    :type container_runtime: str
+    :type container_image: str
+    :type container_volumes: str
     :type directory_isolation_base_path: str
     :type fact_cache: str
     :type fact_cache_type: str

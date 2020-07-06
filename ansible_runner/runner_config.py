@@ -39,6 +39,7 @@ from six import iteritems, string_types, text_type
 from ansible_runner import output
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.loader import ArtifactLoader
+from ansible_runner.output import debug
 from ansible_runner.utils import (
     open_fifo_write,
     args2cmdline,
@@ -84,7 +85,8 @@ class RunnerConfig(object):
                  resource_profiling_results_dir=None,
                  tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None, ssh_key=None,
                  project_dir=None, directory_isolation_base_path=None, envvars=None, forks=None, cmdline=None, omit_event_data=False,
-                 only_failed_event_data=False, containerized=False, container_runtime=False, container_image='shanemcd/ansible-runner'):
+                 only_failed_event_data=False, containerized=False, container_runtime='podman', container_image='ansible/ansible-runner',
+                 container_volume_mounts=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = str(ident)
         self.json_mode = json_mode
@@ -145,6 +147,7 @@ class RunnerConfig(object):
         self.containerized = containerized
         self.container_runtime = container_runtime
         self.container_image = container_image
+        self.container_volume_mounts = container_volume_mounts
 
     def prepare(self):
         """
@@ -248,6 +251,9 @@ class RunnerConfig(object):
         self.env["RUNNER_ONLY_FAILED_EVENTS"] = str(self.only_failed_event_data)
 
         if self.containerized:
+            debug('containerization enabled')
+            for container_setting in ('container_runtime', 'container_image', 'container_volume_mounts'):
+                debug(f'* {container_setting}: {getattr(self, container_setting)}')
             self.command = self.wrap_args_with_containerization(self.command)
         else:
             debug('containerization disabled')
@@ -259,10 +265,11 @@ class RunnerConfig(object):
         """
         Prepares the inventory default under ``private_data_dir`` if it's not overridden by the constructor.
         """
-        if self.containerized:
-            self.inventory = '/runner/inventory/hosts'
-        elif self.inventory is None and os.path.exists(os.path.join(self.private_data_dir, "inventory")):
-            self.inventory = os.path.join(self.private_data_dir, "inventory")
+        if self.inventory is None:
+            if self.containerized:
+                self.inventory = '/runner/inventory/hosts'
+            elif os.path.exists(os.path.join(self.private_data_dir, "inventory")):
+                self.inventory = os.path.join(self.private_data_dir, "inventory")
 
     def prepare_env(self):
         """
@@ -333,6 +340,7 @@ class RunnerConfig(object):
         self.containerized = self.settings.get('containerized', self.containerized)
         self.container_runtime = self.settings.get('container_runtime', self.container_runtime)
         self.container_image = self.settings.get('container_image', self.container_image)
+        self.container_volume_mounts = self.settings.get('container_volume_mounts', self.container_volume_mounts)
 
         if 'AD_HOC_COMMAND_ID' in self.env or not os.path.exists(self.project_dir):
             self.cwd = self.private_data_dir
@@ -539,10 +547,11 @@ class RunnerConfig(object):
         new_args.extend(["--workdir", "/runner/project"])
         new_args.extend(["-v", "{}:/runner:Z".format(self.private_data_dir)])
 
-        container_volume_mounts = self.settings.get('container_volume_mounts')
+        container_volume_mounts = self.container_volume_mounts
         if container_volume_mounts:
-            for path in container_volume_mounts:
-                new_args.extend(["-v", "{}:{}".format(path, path)])
+            for mapping in container_volume_mounts.split(','):
+                host_path, container_path = mapping.split(':')
+                new_args.extend(["-v", "{}:{}:Z".format(host_path, container_path)])
 
         env_var_whitelist = ['PROJECT_UPDATE_ID']
         for k, v in self.env.items():
@@ -566,6 +575,7 @@ class RunnerConfig(object):
         necessary calls to ``ssh-agent``
         """
         if self.containerized:
+            # TODO: use project dir if present
             artifact_dir = os.path.join("/runner/artifacts", "{}".format(self.ident))
             ssh_key_path = os.path.join(artifact_dir, "ssh_key_data")
 

@@ -528,6 +528,33 @@ def main(sys_args=None):
         dest='resource_profiling_results_dir',
         help="Directory where profiling data files should be saved. Defaults to None (profiling_data folder under private data dir is used in this case).")
 
+    playbook_group.add_argument(
+        "--containerized",
+        dest='containerized',
+        action="store_true",
+        help="Indicates ansible task should be executed using an execution environment")
+
+    playbook_group.add_argument(
+        "--container-runtime",
+        dest="container_runtime",
+        default="podman",
+        help="Container engine to use when running an ansible task"
+    )
+
+    playbook_group.add_argument(
+        "--container-image",
+        dest="container_image",
+        default="ansible/ansible-runner",
+        help="Container image to use when running an ansible task (see --containerized)"
+    )
+
+    playbook_group.add_argument(
+        "--container-volume-mounts",
+        dest="container_volume_mounts",
+        default=None,
+        help="Comma-separated list of bind mounts (e.g. 'host_dir:/container_dir,host_dir2:/container_dir2')"
+    )
+
     if len(sys.argv) == 1:
         parser.print_usage()
         print_common_usage()
@@ -621,6 +648,10 @@ def main(sys_args=None):
                                    resource_profiling_memory_poll_interval=args.resource_profiling_memory_poll_interval,
                                    resource_profiling_pid_poll_interval=args.resource_profiling_pid_poll_interval,
                                    resource_profiling_results_dir=args.resource_profiling_results_dir,
+                                   containerized=args.containerized,
+                                   container_runtime=args.container_runtime,
+                                   container_image=args.container_image,
+                                   container_volume_mounts=args.container_volume_mounts,
                                    limit=args.limit,
                                    via_receptor=args.via_receptor,
                                    receptor_peer=args.receptor_peer,

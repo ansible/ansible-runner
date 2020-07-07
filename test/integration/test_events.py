@@ -13,7 +13,9 @@ from ansible_runner import run, run_async
 
 @pytest.mark.serial
 @pytest.mark.parametrize('containerized', [True, False])
-def test_basic_events(containerized, is_run_async=False,g_facts=False):
+def test_basic_events(containerized, container_runtime_available, is_run_async=False,g_facts=False):
+    if containerized and not container_runtime_available:
+        pytest.skip('container runtime(s) not available')
     tdir = tempfile.mkdtemp()
     if containerized:
         # container unable to access tempdir because of
@@ -24,14 +26,18 @@ def test_basic_events(containerized, is_run_async=False,g_facts=False):
     playbook = [{'hosts': 'all', 'gather_facts': g_facts, 'tasks': [{'debug': {'msg': "test"}}]}]
     run_args = {'private_data_dir': tdir,
                 'inventory': inventory,
-                'playbook': playbook,
-                'containerized': containerized}
+                'playbook': playbook}
     if containerized:
-        run_args['container_volume_mounts'] = f'{tdir}:{tdir}'
+        run_args.update({'process_isolation': True,
+                         'process_isolation_executable': 'podman',
+                         'container_image': 'ansible/ansible-runner',
+                         'container_volume_mounts': [f'{tdir}:{tdir}']})
+
     if not is_run_async:
         r = run(**run_args)
     else:
-        _, r = run_async(**run_args)
+        thread, r = run_async(**run_args)
+        thread.join()  # ensure async run finishes
 
     event_types = [x['event'] for x in r.events]
     okay_events = [x for x in filter(lambda x: 'event' in x and x['event'] == 'runner_on_ok',
@@ -57,8 +63,8 @@ def test_basic_events(containerized, is_run_async=False,g_facts=False):
 
 @pytest.mark.serial
 @pytest.mark.parametrize('containerized', [True, False])
-def test_async_events(containerized):
-    test_basic_events(containerized, is_run_async=True,g_facts=True)
+def test_async_events(containerized, container_runtime_available):
+    test_basic_events(containerized, container_runtime_available, is_run_async=True,g_facts=True)
 
 
 def test_basic_serializeable():

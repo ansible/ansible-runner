@@ -119,22 +119,21 @@ def run(**kwargs):
     :param cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
     :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
     :param status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
-    :param process_isolation: Enable limiting what directories on the filesystem the playbook run has access to.
-    :param process_isolation_executable: Path to the executable that will be used to provide filesystem isolation (default: bwrap)
+    :param process_isolation: Enable process isolation, using either a sandbox (e.g. bwrap) or container engine (e.g. podman).
+    :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: bwrap)
     :param process_isolation_path: Path that an isolated playbook run will use for staging. (default: /tmp)
     :param process_isolation_hide_paths: A path or list of paths on the system that should be hidden from the playbook run.
     :param process_isolation_show_paths: A path or list of paths on the system that should be exposed to the playbook run.
     :param process_isolation_ro_paths: A path or list of paths on the system that should be exposed to the playbook run as read-only.
+    :param container_image: Container image to use when running an ansible task (default: ansible/ansible-runner)
+    :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir. (default: None)
+    :param container_options: List of container options to pass to execution engine.
     :param resource_profiling: Enable collection of resource utilization data during playbook execution.
     :param resource_profiling_base_cgroup: Name of existing cgroup which will be sub-grouped in order to measure resource utilization (default: ansible-runner)
     :param resource_profiling_cpu_poll_interval: Interval (in seconds) between CPU polling for determining CPU usage (default: 0.25)
     :param resource_profiling_memory_poll_interval: Interval (in seconds) between memory polling for determining memory usage (default: 0.25)
     :param resource_profiling_pid_poll_interval: Interval (in seconds) between polling PID count for determining number of processes used (default: 0.25)
     :param resource_profiling_results_dir: Directory where profiling data files should be saved (defaults to profiling_data folder inside private data dir)
-    :param containerized: Indicates ansible task should be executed using an execution environment (default: false)
-    :param container_runtime: Container engine to use when running an ansible task (default: podman)
-    :param container_image: Container image to use when running an ansible task (default: ansible/ansible-runner)
-    :param container_volume_mounts: Comma-separated list of bind mounts (default: None)
     :param directory_isolation_base_path: An optional path will be used as the base path to create a temp directory, the project contents will be
                                           copied to this location which will then be used as the working directory during playbook execution.
     :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
@@ -173,16 +172,15 @@ def run(**kwargs):
     :type process_isolation_hide_paths: str or list
     :type process_isolation_show_paths: str or list
     :type process_isolation_ro_paths: str or list
+    :type container_image: str
+    :type container_volume_mounts: list
+    :type container_options: list
     :type resource_profiling: bool
     :type resource_profiling_base_cgroup: str
     :type resource_profiling_cpu_poll_interval: float
     :type resource_profiling_memory_poll_interval: float
     :type resource_profiling_pid_poll_interval: float
     :type resource_profiling_results_dir: str
-    :type containerized: bool
-    :type container_runtime: str
-    :type container_image: str
-    :type container_volumes: str
     :type directory_isolation_base_path: str
     :type fact_cache: str
     :type fact_cache_type: str

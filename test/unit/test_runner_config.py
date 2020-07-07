@@ -578,8 +578,8 @@ def test_containerization_settings(mock_mkdir, container_runtime):
     rc = RunnerConfig('/')
     rc.playbook = 'main.yaml'
     rc.command = 'ansible-playbook'
-    rc.containerized = True
-    rc.container_runtime=container_runtime
+    rc.process_isolation = True
+    rc.process_isolation_executable=container_runtime
     rc.container_image = 'my_container'
     rc.prepare()
 

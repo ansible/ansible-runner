@@ -82,6 +82,7 @@ def test_cancel_callback_error(rc):
         Runner(config=rc, cancel_callback=kaboom).run()
 
 
+@pytest.mark.serial
 @pytest.mark.parametrize('value', ['abc123', six.u('Iñtërnâtiônàlizætiøn')])
 def test_env_vars(rc, value):
     rc.command = [sys.executable, '-c', 'import os; print(os.getenv("X_MY_ENV"))']

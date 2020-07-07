@@ -2,5 +2,6 @@
 idle_timeout: 60
 job_timeout: 360
 pexpect_timeout: 10
-containerized: true
-container_runtime: docker
+process_isolation: true
+process_isolation_executable: podman
+container: ansible/ansible-runner

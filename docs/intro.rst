@@ -155,6 +155,25 @@ The process isolation settings are meant to control the process isolation featur
 * ``process_isolation_show_paths``: ``None`` Path or list of paths on the system that should be exposed to the playbook run.
 * ``process_isolation_ro_paths``: ``None`` Path or list of paths on the system that should be exposed to the playbook run as read-only.
 
+Container-based Execution
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``--containerized`` setting instructs **Ansible Runner** to execute **Ansible** tasks inside a container environment. A default execution environment is provided on Docker Hub at [ansible/ansible-runner](https://hub.docker.com/r/ansible/ansible-runner). Users also have the option of building their own container for executing playbooks, however.
+
+To build an execution environment locally, run:
+
+``docker build --rm=true -t custom-container -f Dockerfile .``
+
+or, using `podman <https://podman.io/releases/>`_:
+
+``podman build --rm=true -t custom-container -f Dockerfile .``
+
+To run Ansible Runner with your custom container:
+
+``ansible-runner run --container-image custom-container -p playbook.yml``
+
+See ``ansible-runner -h`` for other container-related options.
+
 Performance Data Collection Settings for Runner
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -28,24 +28,6 @@ This will automatically setup the development environment under a virtualenv, wh
 
 `tox` is used to run linters (`flake8` and `yamllint`) and unit tests on both Python 2 and 3. It uses poetry to bootstrap these two environments.
 
-## Building an execution environment
-
-A default execution environment is provided on Docker Hub at [ansible/ansible-runner](https://hub.docker.com/r/ansible/ansible-runner). Users have the option of building their own container for executing playbooks, however.
-
-To build an execution environment locally, run:
-
-`docker build --rm=true -t custom-container -f Dockerfile .`
-
-or, using [podman](https://podman.io/releases/):
-
-`podman build --rm=true -t custom-container -f Dockerfile .`
-
-To run Ansible Runner with your custom container:
-
-`ansible-runner run --container_image custom-container -p playbook.yml`
-
-See `ansible-runner -h` for other container-related options.
-
 ## A note about setup.py
 
 In this repository you will find a [`setup.py` file](https://docs.python.org/3/installing/index.html#installing-index),

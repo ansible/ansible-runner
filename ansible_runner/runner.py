@@ -93,7 +93,7 @@ class Runner(object):
         '''
         self.status_callback('starting')
         stdout_filename = os.path.join(self.config.artifact_dir, 'stdout')
-        command_filename = os.path.join(self.config.artifact_dir, 'command')
+        command_filename = os.path.join(self.config.artifact_dir, 'ansible-runner-command')
 
         try:
             os.makedirs(self.config.artifact_dir, mode=0o700)

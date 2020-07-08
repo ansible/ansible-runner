@@ -45,6 +45,7 @@ def test_basic_events(is_run_async=False,g_facts=False):
     assert "event_data" in okay_event and len(okay_event['event_data']) > 0
 
 
+@pytest.mark.serial
 def test_async_events():
     test_basic_events(is_run_async=True,g_facts=True)
 

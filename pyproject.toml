@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ansible-runner"
-version = "1.4.6"
+version = "2.0.0"
 description = "Consistent Ansible Pythin API and CLI with container and process isoluation runtime capabilities"
 homepage = ""
 repository = "https://github.com/ansible/ansible-runner"

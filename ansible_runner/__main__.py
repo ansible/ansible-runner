@@ -502,17 +502,17 @@ def main(sys_args=None):
     )
 
     playbook_group.add_argument(
-        "--container-volume-mounts",
+        "--container-volume-mount",
         dest="container_volume_mounts",
-        nargs='*',
-        help="List of bind mounts (in the form 'host_dir:/container_dir)'"
+        action='append',
+        help="Bind mounts (in the form 'host_dir:/container_dir)'. Can be used more than once to create multiple bind mounts."
     )
 
     playbook_group.add_argument(
-        "--container-options",
+        "--container-option",
         dest="container_options",
-        nargs='*',
-        help="List of container options to pass to execution engine."
+        action='append',
+        help="Container options to pass to execution engine. Can be used more than once to send multiple options."
     )
 
     playbook_group.add_argument(

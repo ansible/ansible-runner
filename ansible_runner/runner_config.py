@@ -587,13 +587,13 @@ class RunnerConfig(object):
 
         artifact_dir = os.path.join("/runner/artifacts", "{}".format(self.ident))
         new_args.extend(["-e", "AWX_ISOLATED_DATA_DIR={}".format(artifact_dir)])
-        new_args.extend([self.container_image])
-        new_args.extend(args)
 
         if self.container_options:
-            for option in self.container_options:
-                new_args.extend(option)
+            new_args.extend(self.container_options)
 
+        new_args.extend([self.container_image])
+
+        new_args.extend(args)
         return new_args
 
     def wrap_args_with_ssh_agent(self, args, ssh_key_path, ssh_auth_sock=None, silence_ssh_add=False):

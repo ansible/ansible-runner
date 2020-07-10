@@ -585,6 +585,9 @@ class RunnerConfig(object):
         if 'podman' in self.process_isolation_executable:
             new_args.extend(['--quiet']) # docker doesnt support this option
 
+        if 'docker' in self.process_isolation_executable:
+            new_args.extend([f'--user={os.getuid()}'])
+
         artifact_dir = os.path.join("/runner/artifacts", "{}".format(self.ident))
         new_args.extend(["-e", "AWX_ISOLATED_DATA_DIR={}".format(artifact_dir)])
 

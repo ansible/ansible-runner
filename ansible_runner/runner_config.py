@@ -277,10 +277,12 @@ class RunnerConfig(object):
         """
         Prepares the inventory default under ``private_data_dir`` if it's not overridden by the constructor.
         """
+        if self.containerized:
+            self.inventory = '/runner/inventory/hosts'
+            return
+
         if self.inventory is None:
-            if self.containerized:
-                self.inventory = '/runner/inventory/hosts'
-            elif os.path.exists(os.path.join(self.private_data_dir, "inventory")):
+            if os.path.exists(os.path.join(self.private_data_dir, "inventory")):
                 self.inventory = os.path.join(self.private_data_dir, "inventory")
 
 

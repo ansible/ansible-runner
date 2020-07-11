@@ -65,7 +65,7 @@ def isinventory(obj):
 
 def check_isolation_executable_installed(isolation_executable):
     '''
-    Check that proot is installed.
+    Check that process isolation executable (e.g. bwrap, docker, podman) is installed.
     '''
     cmd = [isolation_executable, '--version']
     try:

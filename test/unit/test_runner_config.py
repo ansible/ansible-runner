@@ -13,6 +13,7 @@ from mock import patch
 from mock import Mock
 
 from ansible_runner.runner_config import RunnerConfig, ExecutionMode
+from ansible_runner.interface import init_runner
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError
 
@@ -422,6 +423,26 @@ def test_wrap_args_with_ssh_agent_silent():
     rc = RunnerConfig('/')
     res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], '/tmp/sshkey', silence_ssh_add=True)
     assert res == ['ssh-agent', 'sh', '-c', 'ssh-add /tmp/sshkey 2>/dev/null && rm -f /tmp/sshkey && ansible-playbook main.yaml']
+
+
+@patch('ansible_runner.runner_config.RunnerConfig.prepare')
+@patch('ansible_runner.interface.sys')
+@patch('ansible_runner.utils.subprocess')
+@pytest.mark.parametrize('executable_present', [True, False])
+def test_process_isolation_executable_not_found(mock_subprocess, mock_sys, mock_prepare, executable_present):
+    # Mock subprocess.Popen indicates if
+    # process isolation executable is present
+    mock_proc = Mock()
+    mock_proc.returncode=(0 if executable_present else 1)
+    mock_subprocess.Popen.return_value = mock_proc
+
+    kwargs = {'process_isolation': True,
+              'process_isolation_executable': 'fake_executable'}
+    init_runner(**kwargs)
+    if executable_present:
+        assert not mock_sys.exit.called
+    else:
+        assert mock_sys.exit.called
 
 
 def test_process_isolation_defaults():

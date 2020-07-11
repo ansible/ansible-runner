@@ -60,7 +60,10 @@ def init_runner(**kwargs):
             output.set_logfile(logfile)
 
     if kwargs.get("process_isolation", False):
-        check_isolation_executable_installed(kwargs.get("process_isolation_executable", "bwrap"))
+        pi_executable = kwargs.get("process_isolation_executable", "bwrap")
+        if not check_isolation_executable_installed(pi_executable):
+            print(f'Unable to find process isolation executable: {pi_executable}')
+            sys.exit(1)
 
     event_callback_handler = kwargs.pop('event_handler', None)
     status_callback_handler = kwargs.pop('status_handler', None)

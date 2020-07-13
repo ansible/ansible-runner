@@ -204,7 +204,9 @@ class RunnerConfig(object):
 
         # Use local callback directory
         callback_dir = self.env.get('AWX_LIB_DIRECTORY', os.getenv('AWX_LIB_DIRECTORY'))
-        if callback_dir is None:
+        if callback_dir is None and self.containerized:
+            callback_dir = '/usr/lib/python3.6/site-packages/ansible_runner/callbacks'
+        elif callback_dir is None:
             callback_dir = os.path.join(os.path.split(os.path.abspath(__file__))[0],
                                         "callbacks")
         python_path = self.env.get('PYTHONPATH', os.getenv('PYTHONPATH', ''))

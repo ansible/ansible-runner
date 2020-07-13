@@ -29,9 +29,6 @@ ENV LC_ALL=en_US.UTF-8
 ENV RUNNER_BASE_COMMAND=ansible-playbook
 ENV HOME=/runner
 
-ENV ANSIBLE_STDOUT_CALLBACK=awx_display
-ENV ANSIBLE_CALLBACK_PLUGINS=/usr/lib/python3.6/site-packages/ansible_runner/callbacks
-
 WORKDIR /runner
 
 ENTRYPOINT ["entrypoint"]

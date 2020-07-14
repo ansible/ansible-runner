@@ -266,8 +266,6 @@ class RunnerConfig(object):
 
         if self.containerized:
             debug('containerization enabled')
-            for container_setting in ('process_isolation_executable', 'container_image', 'container_volume_mounts'):
-                debug(f'* {container_setting}: {getattr(self, container_setting)}')
             self.command = self.wrap_args_for_containerization(self.command)
         else:
             debug('containerization disabled')
@@ -601,6 +599,7 @@ class RunnerConfig(object):
         new_args.extend([self.container_image])
 
         new_args.extend(args)
+        debug(f"container engine invocation: {' '.join(new_args)}")
         return new_args
 
     def wrap_args_with_ssh_agent(self, args, ssh_key_path, ssh_auth_sock=None, silence_ssh_add=False):

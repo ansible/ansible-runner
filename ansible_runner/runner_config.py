@@ -270,6 +270,9 @@ class RunnerConfig(object):
         else:
             debug('containerization disabled')
 
+        debug('env:')
+        for k,v in sorted(self.env.items()):
+            debug(f' {k}: {v}')
         if hasattr(self, 'command') and isinstance(self.command, list):
             debug(f"command: {' '.join(self.command)}")
 

@@ -442,16 +442,16 @@ def main(sys_args=None):
         "--process-isolation",
         dest="process_isolation",
         action="store_true",
-        help="Isolate execution. Two methods are supported: (1) using a sandbox (e.g. bwrap) which will "
-             "by default restrict access to /tmp or (2) using a container engine (e.g. podman or docker) "
-             "to execute **Ansible**. (default=False)"
+        help="Isolate execution. Two methods are supported: (1) using a container engine (e.g. podman or docker) "
+             "to execute **Ansible**. (2) using a sandbox (e.g. bwrap) which will by default restrict access to /tmp "
+             "(default=False)"
     )
 
     playbook_group.add_argument(
         "--process-isolation-executable",
         dest="process_isolation_executable",
-        default="bwrap",
-        help="Process isolation executable or container engine used to isolate execution. (default=bwrap)"
+        default="podman",
+        help="Process isolation executable or container engine used to isolate execution. (default=podman)"
     )
 
     playbook_group.add_argument(

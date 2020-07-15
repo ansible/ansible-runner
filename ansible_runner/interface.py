@@ -60,7 +60,7 @@ def init_runner(**kwargs):
             output.set_logfile(logfile)
 
     if kwargs.get("process_isolation", False):
-        pi_executable = kwargs.get("process_isolation_executable", "bwrap")
+        pi_executable = kwargs.get("process_isolation_executable", "podman")
         if not check_isolation_executable_installed(pi_executable):
             print(f'Unable to find process isolation executable: {pi_executable}')
             sys.exit(1)
@@ -122,8 +122,8 @@ def run(**kwargs):
     :param cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
     :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
     :param status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
-    :param process_isolation: Enable process isolation, using either a sandbox (e.g. bwrap) or container engine (e.g. podman).
-    :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: bwrap)
+    :param process_isolation: Enable process isolation, using either a container engine (e.g. podman) or a sandbox (e.g. bwrap).
+    :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
     :param process_isolation_path: Path that an isolated playbook run will use for staging. (default: /tmp)
     :param process_isolation_hide_paths: A path or list of paths on the system that should be hidden from the playbook run.
     :param process_isolation_show_paths: A path or list of paths on the system that should be exposed to the playbook run.

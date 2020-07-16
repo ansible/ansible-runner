@@ -614,8 +614,10 @@ def test_containerization_settings(mock_mkdir, container_runtime):
     expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
         ['-v', '{}:/runner:Z'.format(rc.private_data_dir)] + \
         ['-v', '/host1:/container1:Z', '-v', 'host2:/container2:Z'] + \
-        extra_container_args + \
+        ['-e', 'ANSIBLE_CALLBACK_PLUGINS=/usr/lib/python3.6/site-packages/ansible_runner/callbacks'] + \
+        ['-e', 'ANSIBLE_STDOUT_CALLBACK=awx_display'] + \
         ['-e', 'AWX_ISOLATED_DATA_DIR=/runner/artifacts/{}'.format(rc.ident)] + \
+        extra_container_args + \
         ['my_container', 'ansible-playbook', '-i', '/runner/inventory/hosts', 'main.yaml']
     for index, element in enumerate(expected_command_start):
         if '--user' in element:

@@ -78,7 +78,7 @@ class RunnerConfig(object):
                  inventory=None, roles_path=None, limit=None, module=None, module_args=None,
                  verbosity=None, quiet=False, json_mode=False, artifact_dir=None,
                  rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, suppress_ansible_output=False,
-                 process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
+                 process_isolation=False, process_isolation_executable='podman', process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None,
                  container_image='ansible/ansible-runner', container_volume_mounts=None, container_options=None,
                  resource_profiling=False, resource_profiling_base_cgroup='ansible-runner', resource_profiling_cpu_poll_interval=0.25,
@@ -582,19 +582,19 @@ class RunnerConfig(object):
                 _ensure_path_safe_to_mount(host_path)
                 new_args.extend(["-v", "{}:{}:Z".format(host_path, container_path)])
 
-        env_var_whitelist = ['PROJECT_UPDATE_ID']
+        env_var_whitelist = ['PROJECT_UPDATE_ID', 'ANSIBLE_CALLBACK_PLUGINS', 'ANSIBLE_STDOUT_CALLBACK']
         for k, v in self.env.items():
             if k in env_var_whitelist:
                 new_args.extend(["-e", "{}={}".format(k, v)])
+
+        artifact_dir = os.path.join("/runner/artifacts", "{}".format(self.ident))
+        new_args.extend(["-e", "AWX_ISOLATED_DATA_DIR={}".format(artifact_dir)])
 
         if 'podman' in self.process_isolation_executable:
             new_args.extend(['--quiet']) # docker doesnt support this option
 
         if 'docker' in self.process_isolation_executable:
             new_args.extend([f'--user={os.getuid()}'])
-
-        artifact_dir = os.path.join("/runner/artifacts", "{}".format(self.ident))
-        new_args.extend(["-e", "AWX_ISOLATED_DATA_DIR={}".format(artifact_dir)])
 
         if self.container_options:
             new_args.extend(self.container_options)

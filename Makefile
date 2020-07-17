@@ -5,6 +5,8 @@ else
     DIST_PYTHON ?= $(PYTHON)
 endif
 
+CONTAINER_ENGINE ?= docker
+
 NAME = ansible-runner
 IMAGE_NAME ?= $(NAME)
 PIP_NAME = ansible_runner
@@ -95,12 +97,12 @@ docs:
 	cd docs && make html
 
 image:
-	docker pull centos:8
-	docker build --rm=true -t $(IMAGE_NAME) .
+	$(CONTAINER_ENGINE) pull centos:8
+	$(CONTAINER_ENGINE) build --rm=true -t $(IMAGE_NAME) .
 
 devimage:
-	docker pull centos:8
-	docker build --rm=true -t $(IMAGE_NAME)-dev -f Dockerfile.dev .
+	$(CONTAINER_ENGINE) pull centos:8
+	$(CONTAINER_ENGINE) build --rm=true -t $(IMAGE_NAME)-dev -f Dockerfile.dev .
 
 rpm:
 	MOCK_CONFIG=$(MOCK_CONFIG) docker-compose -f packaging/rpm/docker-compose.yml build

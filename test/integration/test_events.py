@@ -6,7 +6,6 @@ import pkg_resources
 import json
 import os
 import shutil
-import stat
 
 from ansible_runner import run, run_async
 
@@ -17,10 +16,6 @@ def test_basic_events(containerized, container_runtime_available, is_run_async=F
     if containerized and not container_runtime_available:
         pytest.skip('container runtime(s) not available')
     tdir = tempfile.mkdtemp()
-    if containerized:
-        # container unable to access tempdir because of
-        # mkdtemp()'s minimal permissions
-        os.chmod(tdir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
 
     inventory = "localhost ansible_connection=local"
     playbook = [{'hosts': 'all', 'gather_facts': g_facts, 'tasks': [{'debug': {'msg': "test"}}]}]

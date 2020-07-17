@@ -340,6 +340,8 @@ def test_prepare_with_defaults():
     assert str(exc.value) == 'No executable for runner to run'
 
 
+@patch.dict('os.environ', {'PYTHONPATH': '/python_path_via_environ',
+                           'AWX_LIB_DIRECTORY': '/awx_lib_directory_via_environ'})
 def test_prepare():
     rc = RunnerConfig('/')
 
@@ -352,9 +354,6 @@ def test_prepare():
     rc.env = {}
     rc.execution_mode = ExecutionMode.ANSIBLE_PLAYBOOK
     rc.playbook = 'main.yaml'
-
-    os.environ['PYTHONPATH'] = '/python_path_via_environ'
-    os.environ['AWX_LIB_DIRECTORY'] = '/awx_lib_directory_via_environ'
 
     rc.prepare()
 
@@ -397,9 +396,8 @@ def test_prepare_with_ssh_key(open_fifo_write_mock):
     rc.ssh_key_data = '01234567890'
     rc.command = 'ansible-playbook'
 
-    os.environ['AWX_LIB_DIRECTORY'] = '/'
-
-    rc.prepare()
+    with patch.dict('os.environ', {'AWX_LIB_DIRECTORY': '/'}):
+        rc.prepare()
 
     assert rc.ssh_key_path == '/ssh_key_data'
     assert rc.wrap_args_with_ssh_agent.called

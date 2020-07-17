@@ -9,8 +9,7 @@ import six
 from pexpect import TIMEOUT, EOF
 
 import pytest
-from mock import patch
-from mock import Mock
+from mock import (Mock, patch, PropertyMock)
 
 from ansible_runner.runner_config import RunnerConfig, ExecutionMode
 from ansible_runner.interface import init_runner
@@ -596,14 +595,16 @@ def test_profiling_plugin_settings_with_custom_intervals(mock_mkdir):
 @patch('os.mkdir', return_value=True)
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
 def test_containerization_settings(mock_mkdir, container_runtime):
-    rc = RunnerConfig('/')
-    rc.playbook = 'main.yaml'
-    rc.command = 'ansible-playbook'
-    rc.process_isolation = True
-    rc.process_isolation_executable=container_runtime
-    rc.container_image = 'my_container'
-    rc.container_volume_mounts=['/host1:/container1', 'host2:/container2']
-    rc.prepare()
+    with patch('ansible_runner.runner_config.RunnerConfig.containerized', new_callable=PropertyMock) as mock_containerized:
+        rc = RunnerConfig('/')
+        rc.playbook = 'main.yaml'
+        rc.command = 'ansible-playbook'
+        rc.process_isolation = True
+        rc.process_isolation_executable=container_runtime
+        rc.container_image = 'my_container'
+        rc.container_volume_mounts=['/host1:/container1', 'host2:/container2']
+        mock_containerized.return_value = True
+        rc.prepare()
 
     extra_container_args = []
     if container_runtime == 'podman':

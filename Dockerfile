@@ -10,7 +10,7 @@ ADD demo/inventory /runner/inventory
 ADD https://releases.ansible.com/ansible-runner/ansible-runner.el8.repo /etc/yum.repos.d/ansible-runner.repo
 RUN dnf install -y epel-release && \
     dnf install -y ansible-runner python3-pip sudo rsync openssh-clients sshpass glibc-langpack-en git && \
-    pip3 install git+https://github.com/ansible/ansible.git && \
+    pip3 install ansible && \
     chmod +x /bin/tini /bin/entrypoint && \
     rm -rf /var/cache/dnf
 

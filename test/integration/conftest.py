@@ -22,7 +22,7 @@ def rc(request, tmpdir):
 
 # TODO: determine if we want to add docker / podman
 # to zuul instances in order to run these tests
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session", autouse=True)
 def container_runtime_available():
     import subprocess
     import warnings

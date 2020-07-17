@@ -444,12 +444,13 @@ def test_process_isolation_executable_not_found(mock_subprocess, mock_sys, mock_
         assert mock_sys.exit.called
 
 
-def test_process_isolation_defaults():
+def test_bwrap_process_isolation_defaults():
     rc = RunnerConfig('/')
     rc.artifact_dir = '/tmp/artifacts'
     rc.playbook = 'main.yaml'
     rc.command = 'ansible-playbook'
     rc.process_isolation = True
+    rc.process_isolation_executable = 'bwrap'
     with patch('os.path.exists') as path_exists:
         path_exists.return_value=True
         rc.prepare()
@@ -471,8 +472,8 @@ def test_process_isolation_defaults():
 @patch('tempfile.mkdtemp', return_value="/tmp/dirisolation/foo")
 @patch('os.chmod', return_value=True)
 @patch('shutil.rmtree', return_value=True)
-def test_process_isolation_and_directory_isolation(mock_makedirs, mock_copytree, mock_mkdtemp,
-                                                   mock_chmod, mock_rmtree):
+def test_bwrap_process_isolation_and_directory_isolation(mock_makedirs, mock_copytree, mock_mkdtemp,
+                                                         mock_chmod, mock_rmtree):
     def new_exists(path):
         if path == "/project":
             return False
@@ -483,6 +484,7 @@ def test_process_isolation_and_directory_isolation(mock_makedirs, mock_copytree,
     rc.playbook = 'main.yaml'
     rc.command = 'ansible-playbook'
     rc.process_isolation = True
+    rc.process_isolation_executable = 'bwrap'
     with patch('os.path.exists', new=new_exists):
         rc.prepare()
 

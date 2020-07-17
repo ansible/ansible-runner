@@ -18,6 +18,7 @@
 import os
 import sys
 
+import q
 
 # If there is a global installation of poetry, prefer that.
 poetry_python_lib = os.path.expanduser('~/.poetry/lib')
@@ -37,10 +38,9 @@ poetry = factory.create_poetry(os.path.dirname(__file__))
 
 # Use the SdistBuilder to genrate a blob for setup.py
 sdist_builder = SdistBuilder(poetry, None, None)
-import pdb; pdb.set_trace()
 setuppy_blob = sdist_builder.build_setup()
 
-import q; q.q(setuppy_blob)
+q.q(setuppy_blob)
 
 with open('setup.py', 'wb') as unit:
     unit.write(setuppy_blob)

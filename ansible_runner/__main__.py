@@ -442,22 +442,23 @@ def main(sys_args=None):
         "--process-isolation",
         dest="process_isolation",
         action="store_true",
-        help="limits what directories on the filesystem the playbook run "
-             "has access to, defaults to /tmp (default=False)"
+        help="Isolate execution. Two methods are supported: (1) using a container engine (e.g. podman or docker) "
+             "to execute **Ansible**. (2) using a sandbox (e.g. bwrap) which will by default restrict access to /tmp "
+             "(default=False)"
     )
 
     playbook_group.add_argument(
         "--process-isolation-executable",
         dest="process_isolation_executable",
-        default="bwrap",
-        help="process isolation executable that will be used. (default=bwrap)"
+        default="podman",
+        help="Process isolation executable or container engine used to isolate execution. (default=podman)"
     )
 
     playbook_group.add_argument(
         "--process-isolation-path",
         dest="process_isolation_path",
         default="/tmp",
-        help="path that an isolated playbook run will use for staging. "
+        help="Path that an isolated playbook run will use for staging. "
              "(default=/tmp)"
     )
 
@@ -465,7 +466,7 @@ def main(sys_args=None):
         "--process-isolation-hide-paths",
         dest="process_isolation_hide_paths",
         nargs='*',
-        help="list of paths on the system that should be hidden from the "
+        help="List of paths on the system that should be hidden from the "
              "playbook run (default=None)"
     )
 
@@ -473,7 +474,7 @@ def main(sys_args=None):
         "--process-isolation-show-paths",
         dest="process_isolation_show_paths",
         nargs='*',
-        help="list of paths on the system that should be exposed to the "
+        help="List of paths on the system that should be exposed to the "
              "playbook run (default=None)"
     )
 
@@ -481,16 +482,37 @@ def main(sys_args=None):
         "--process-isolation-ro-paths",
         dest="process_isolation_ro_paths",
         nargs='*',
-        help="list of paths on the system that should be exposed to the "
+        help="List of paths on the system that should be exposed to the "
              "playbook run as read-only (default=None)"
     )
 
     playbook_group.add_argument(
         "--directory-isolation-base-path",
         dest="directory_isolation_base_path",
-        help="copies the project directory to a location in this directory "
+        help="Copies the project directory to a location in this directory "
              "to prevent multiple simultaneous executions from conflicting "
              "(default=None)"
+    )
+
+    playbook_group.add_argument(
+        "--container-image",
+        dest="container_image",
+        default="ansible/ansible-runner",
+        help="Container image to use when running an ansible task"
+    )
+
+    playbook_group.add_argument(
+        "--container-volume-mount",
+        dest="container_volume_mounts",
+        action='append',
+        help="Bind mounts (in the form 'host_dir:/container_dir)'. Can be used more than once to create multiple bind mounts."
+    )
+
+    playbook_group.add_argument(
+        "--container-option",
+        dest="container_options",
+        action='append',
+        help="Container options to pass to execution engine. Can be used more than once to send multiple options."
     )
 
     playbook_group.add_argument(
@@ -614,6 +636,9 @@ def main(sys_args=None):
                                    process_isolation_hide_paths=args.process_isolation_hide_paths,
                                    process_isolation_show_paths=args.process_isolation_show_paths,
                                    process_isolation_ro_paths=args.process_isolation_ro_paths,
+                                   container_image=args.container_image,
+                                   container_volume_mounts=args.container_volume_mounts,
+                                   container_options=args.container_options,
                                    directory_isolation_base_path=args.directory_isolation_base_path,
                                    resource_profiling=args.resource_profiling,
                                    resource_profiling_base_cgroup=args.resource_profiling_base_cgroup,

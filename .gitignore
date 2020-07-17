@@ -8,6 +8,7 @@
 
 /test/integration/artifacts
 /demo/artifacts
+/demo/daemon.log
 /docs/_build
 /.tox
 /dist
@@ -17,6 +18,8 @@
 /*.egg-info
 *.py[c,o]
 .pytest_cache
+pytestdebug.log
+test/integration/containerized/priv_data/artifacts/
 .coverage
 *,cover
 .venv

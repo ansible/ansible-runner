@@ -39,6 +39,7 @@ from six import iteritems, string_types, text_type
 from ansible_runner import output
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.loader import ArtifactLoader
+from ansible_runner.output import debug
 from ansible_runner.utils import (
     open_fifo_write,
     args2cmdline,
@@ -77,8 +78,9 @@ class RunnerConfig(object):
                  inventory=None, roles_path=None, limit=None, module=None, module_args=None,
                  verbosity=None, quiet=False, json_mode=False, artifact_dir=None,
                  rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, suppress_ansible_output=False,
-                 process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
+                 process_isolation=False, process_isolation_executable='podman', process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None,
+                 container_image='ansible/ansible-runner', container_volume_mounts=None, container_options=None,
                  resource_profiling=False, resource_profiling_base_cgroup='ansible-runner', resource_profiling_cpu_poll_interval=0.25,
                  resource_profiling_memory_poll_interval=0.25, resource_profiling_pid_poll_interval=0.25,
                  resource_profiling_results_dir=None,
@@ -115,6 +117,9 @@ class RunnerConfig(object):
         self.process_isolation_hide_paths = process_isolation_hide_paths
         self.process_isolation_show_paths = process_isolation_show_paths
         self.process_isolation_ro_paths = process_isolation_ro_paths
+        self.container_image = container_image
+        self.container_volume_mounts = container_volume_mounts
+        self.container_options = container_options
         self.resource_profiling = resource_profiling
         self.resource_profiling_base_cgroup = resource_profiling_base_cgroup
         self.resource_profiling_cpu_poll_interval = resource_profiling_cpu_poll_interval
@@ -143,6 +148,16 @@ class RunnerConfig(object):
         self.omit_event_data = omit_event_data
         self.only_failed_event_data = only_failed_event_data
 
+    _CONTAINER_ENGINES = ('docker', 'podman')
+
+    @property
+    def sandboxed(self):
+        return self.process_isolation and self.process_isolation_executable not in self._CONTAINER_ENGINES
+
+    @property
+    def containerized(self):
+        return self.process_isolation and self.process_isolation_executable in self._CONTAINER_ENGINES
+
     def prepare(self):
         """
         Performs basic checks and then properly invokes
@@ -163,15 +178,15 @@ class RunnerConfig(object):
             raise ConfigurationError("Only one of playbook and module options are allowed")
         if not os.path.exists(self.artifact_dir):
             os.makedirs(self.artifact_dir, mode=0o700)
-        if self.directory_isolation_path is not None:
+        if self.sandboxed and self.directory_isolation_path is not None:
             self.directory_isolation_path = tempfile.mkdtemp(prefix='runner_di_', dir=self.directory_isolation_path)
             if os.path.exists(self.project_dir):
                 output.debug("Copying directory tree from {} to {} for working directory isolation".format(self.project_dir,
                                                                                                            self.directory_isolation_path))
                 copy_tree(self.project_dir, self.directory_isolation_path, preserve_symlinks=True)
 
-        self.prepare_inventory()
         self.prepare_env()
+        self.prepare_inventory()
         self.prepare_command()
 
         if self.execution_mode == ExecutionMode.ANSIBLE_PLAYBOOK and self.playbook is None:
@@ -189,7 +204,9 @@ class RunnerConfig(object):
 
         # Use local callback directory
         callback_dir = self.env.get('AWX_LIB_DIRECTORY', os.getenv('AWX_LIB_DIRECTORY'))
-        if callback_dir is None:
+        if self.containerized:
+            callback_dir = '/usr/lib/python3.6/site-packages/ansible_runner/callbacks'
+        elif callback_dir is None:
             callback_dir = os.path.join(os.path.split(os.path.abspath(__file__))[0],
                                         "callbacks")
         python_path = self.env.get('PYTHONPATH', os.getenv('PYTHONPATH', ''))
@@ -231,8 +248,11 @@ class RunnerConfig(object):
         if self.roles_path:
             self.env['ANSIBLE_ROLES_PATH'] = ':'.join(self.roles_path)
 
-        if self.process_isolation:
-            self.command = self.wrap_args_with_process_isolation(self.command)
+        if self.sandboxed:
+            debug('sandbox enabled')
+            self.command = self.wrap_args_for_sandbox(self.command)
+        else:
+            debug('sandbox disabled')
 
         if self.resource_profiling and self.execution_mode == ExecutionMode.ANSIBLE_PLAYBOOK:
             self.command = self.wrap_args_with_cgexec(self.command)
@@ -244,12 +264,30 @@ class RunnerConfig(object):
         self.env["RUNNER_OMIT_EVENTS"] = str(self.omit_event_data)
         self.env["RUNNER_ONLY_FAILED_EVENTS"] = str(self.only_failed_event_data)
 
+        if self.containerized:
+            debug('containerization enabled')
+            self.command = self.wrap_args_for_containerization(self.command)
+        else:
+            debug('containerization disabled')
+
+        debug('env:')
+        for k,v in sorted(self.env.items()):
+            debug(f' {k}: {v}')
+        if hasattr(self, 'command') and isinstance(self.command, list):
+            debug(f"command: {' '.join(self.command)}")
+
     def prepare_inventory(self):
         """
         Prepares the inventory default under ``private_data_dir`` if it's not overridden by the constructor.
         """
-        if self.inventory is None and os.path.exists(os.path.join(self.private_data_dir, "inventory")):
-            self.inventory  = os.path.join(self.private_data_dir, "inventory")
+        if self.containerized:
+            self.inventory = '/runner/inventory/hosts'
+            return
+
+        if self.inventory is None:
+            if os.path.exists(os.path.join(self.private_data_dir, "inventory")):
+                self.inventory = os.path.join(self.private_data_dir, "inventory")
+
 
     def prepare_env(self):
         """
@@ -306,6 +344,11 @@ class RunnerConfig(object):
         self.process_isolation_hide_paths = self.settings.get('process_isolation_hide_paths', self.process_isolation_hide_paths)
         self.process_isolation_show_paths = self.settings.get('process_isolation_show_paths', self.process_isolation_show_paths)
         self.process_isolation_ro_paths = self.settings.get('process_isolation_ro_paths', self.process_isolation_ro_paths)
+        self.directory_isolation_cleanup = bool(self.settings.get('directory_isolation_cleanup', True))
+        self.container_image = self.settings.get('container_image', self.container_image)
+        self.container_volume_mounts = self.settings.get('container_volume_mounts', self.container_volume_mounts)
+        self.container_options = self.settings.get('container_options', self.container_options)
+
         self.resource_profiling = self.settings.get('resource_profiling', self.resource_profiling)
         self.resource_profiling_base_cgroup = self.settings.get('resource_profiling_base_cgroup', self.resource_profiling_base_cgroup)
         self.resource_profiling_cpu_poll_interval = self.settings.get('resource_profiling_cpu_poll_interval', self.resource_profiling_cpu_poll_interval)
@@ -315,7 +358,7 @@ class RunnerConfig(object):
         self.resource_profiling_results_dir = self.settings.get('resource_profiling_results_dir', self.resource_profiling_results_dir)
         self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
-        self.directory_isolation_cleanup = bool(self.settings.get('directory_isolation_cleanup', True))
+
 
         if 'AD_HOC_COMMAND_ID' in self.env or not os.path.exists(self.project_dir):
             self.cwd = self.private_data_dir
@@ -393,7 +436,11 @@ class RunnerConfig(object):
             exec_list.append(self.limit)
 
         if self.loader.isfile('env/extravars'):
-            exec_list.extend(['-e', '@{}'.format(self.loader.abspath('env/extravars'))])
+            if self.containerized:
+                extravars_path = '/runner/env/extravars'
+            else:
+                extravars_path = self.loader.abspath('env/extravars')
+            exec_list.extend(['-e', '@{}'.format(extravars_path)])
 
         if self.extra_vars:
             if isinstance(self.extra_vars, dict) and self.extra_vars:
@@ -456,7 +503,7 @@ class RunnerConfig(object):
         return new_args
 
 
-    def wrap_args_with_process_isolation(self, args):
+    def wrap_args_for_sandbox(self, args):
         '''
         Wrap existing command line with bwrap to restrict access to:
          - self.process_isolation_path (generally, /tmp) (except for own /tmp files)
@@ -512,11 +559,61 @@ class RunnerConfig(object):
         new_args.extend(args)
         return new_args
 
+    def wrap_args_for_containerization(self, args):
+        new_args = [self.process_isolation_executable]
+        new_args.extend(['run', '--rm', '--tty', '--interactive'])
+        new_args.extend(["--workdir", "/runner/project"])
+
+        def _ensure_path_safe_to_mount(path):
+            if path in ('/home', '/usr'):
+                raise ConfigurationError("When using containerized execution, cannot mount /home or /usr")
+
+        # map private data to /runner
+        # .. using Z to modify the selinux label of the _host_ file / directory
+        # (see https://docs.docker.com/storage/bind-mounts/#configure-the-selinux-label
+        #  for usage and potential side-effects)
+        _ensure_path_safe_to_mount(self.private_data_dir)
+        new_args.extend(["-v", "{}:/runner:Z".format(self.private_data_dir)])
+
+        container_volume_mounts = self.container_volume_mounts
+        if container_volume_mounts:
+            for mapping in container_volume_mounts:
+                host_path, container_path = mapping.split(':')
+                _ensure_path_safe_to_mount(host_path)
+                new_args.extend(["-v", "{}:{}:Z".format(host_path, container_path)])
+
+        env_var_whitelist = ['PROJECT_UPDATE_ID', 'ANSIBLE_CALLBACK_PLUGINS', 'ANSIBLE_STDOUT_CALLBACK']
+        for k, v in self.env.items():
+            if k in env_var_whitelist:
+                new_args.extend(["-e", "{}={}".format(k, v)])
+
+        artifact_dir = os.path.join("/runner/artifacts", "{}".format(self.ident))
+        new_args.extend(["-e", "AWX_ISOLATED_DATA_DIR={}".format(artifact_dir)])
+
+        if 'podman' in self.process_isolation_executable:
+            new_args.extend(['--quiet']) # docker doesnt support this option
+
+        if 'docker' in self.process_isolation_executable:
+            new_args.extend([f'--user={os.getuid()}'])
+
+        if self.container_options:
+            new_args.extend(self.container_options)
+
+        new_args.extend([self.container_image])
+
+        new_args.extend(args)
+        debug(f"container engine invocation: {' '.join(new_args)}")
+        return new_args
+
     def wrap_args_with_ssh_agent(self, args, ssh_key_path, ssh_auth_sock=None, silence_ssh_add=False):
         """
         Given an existing command line and parameterization this will return the same command line wrapped with the
         necessary calls to ``ssh-agent``
         """
+        if self.containerized:
+            artifact_dir = os.path.join("/runner/artifacts", "{}".format(self.ident))
+            ssh_key_path = os.path.join(artifact_dir, "ssh_key_data")
+
         if ssh_key_path:
             ssh_add_command = args2cmdline('ssh-add', ssh_key_path)
             if silence_ssh_add:
@@ -529,4 +626,3 @@ class RunnerConfig(object):
                 args.extend(['-a', ssh_auth_sock])
             args.extend(['sh', '-c', cmd])
         return args
-

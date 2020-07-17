@@ -65,7 +65,7 @@ def isinventory(obj):
 
 def check_isolation_executable_installed(isolation_executable):
     '''
-    Check that proot is installed.
+    Check that process isolation executable (e.g. podman, docker, bwrap) is installed.
     '''
     cmd = [isolation_executable, '--version']
     try:
@@ -75,7 +75,7 @@ def check_isolation_executable_installed(isolation_executable):
         return bool(proc.returncode == 0)
     except (OSError, ValueError) as e:
         if isinstance(e, ValueError) or getattr(e, 'errno', 1) != 2:  # ENOENT, no such file or directory
-            raise RuntimeError('bwrap unavailable for unexpected reason.')
+            raise RuntimeError(f'{isolation_executable} unavailable for unexpected reason.')
         return False
 
 

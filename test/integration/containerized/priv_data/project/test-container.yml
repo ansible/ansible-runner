@@ -1,0 +1,38 @@
+---
+- hosts: localhost
+  gather_facts: true
+  vars:
+    cgroup_search_terms: docker\|lxc\|podman\|oci
+    is_container: false
+    is_podman: false
+    is_docker: false
+  tasks:
+    - debug: msg="Test if we are in a container!"
+
+    - name: 'Look for container env var defined in /proc/1/environ'
+      shell: "grep 'container=' /proc/1/environ"
+      register: container_proc_environ
+      ignore_errors: true
+
+    - name: 'Look for container info defined in /proc/1/cgroup'
+      shell: "grep '{{ cgroup_search_terms}}' /proc/1/cgroup"
+      register: container_proc_cgroup
+      ignore_errors: true
+
+    - name: 'Found evidence that we are in docker container'
+      set_fact:
+        is_docker: true
+      when: (('container' in ansible_env and ansible_env.container == 'docker') or ansible_virtualization_type == 'docker')
+
+    - name: 'Found evidence that we are in podman container'
+      set_fact:
+        is_podman: true
+      when: ('container' in ansible_env and ansible_env.container == 'podman')
+
+    - name: 'Found evidence that we are in a container'
+      set_fact:
+        is_container: true
+      when: is_docker or is_podman or container_proc_environ.rc == 0 or container_proc_cgroup.rc == 0
+
+    - fail:
+      when: not (is_container)

@@ -9,10 +9,10 @@ import six
 from pexpect import TIMEOUT, EOF
 
 import pytest
-from mock import patch
-from mock import Mock
+from mock import (Mock, patch, PropertyMock)
 
 from ansible_runner.runner_config import RunnerConfig, ExecutionMode
+from ansible_runner.interface import init_runner
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError
 
@@ -340,6 +340,8 @@ def test_prepare_with_defaults():
     assert str(exc.value) == 'No executable for runner to run'
 
 
+@patch.dict('os.environ', {'PYTHONPATH': '/python_path_via_environ',
+                           'AWX_LIB_DIRECTORY': '/awx_lib_directory_via_environ'})
 def test_prepare():
     rc = RunnerConfig('/')
 
@@ -352,9 +354,6 @@ def test_prepare():
     rc.env = {}
     rc.execution_mode = ExecutionMode.ANSIBLE_PLAYBOOK
     rc.playbook = 'main.yaml'
-
-    os.environ['PYTHONPATH'] = '/python_path_via_environ'
-    os.environ['AWX_LIB_DIRECTORY'] = '/awx_lib_directory_via_environ'
 
     rc.prepare()
 
@@ -397,9 +396,8 @@ def test_prepare_with_ssh_key(open_fifo_write_mock):
     rc.ssh_key_data = '01234567890'
     rc.command = 'ansible-playbook'
 
-    os.environ['AWX_LIB_DIRECTORY'] = '/'
-
-    rc.prepare()
+    with patch.dict('os.environ', {'AWX_LIB_DIRECTORY': '/'}):
+        rc.prepare()
 
     assert rc.ssh_key_path == '/ssh_key_data'
     assert rc.wrap_args_with_ssh_agent.called
@@ -424,12 +422,33 @@ def test_wrap_args_with_ssh_agent_silent():
     assert res == ['ssh-agent', 'sh', '-c', 'ssh-add /tmp/sshkey 2>/dev/null && rm -f /tmp/sshkey && ansible-playbook main.yaml']
 
 
-def test_process_isolation_defaults():
+@patch('ansible_runner.runner_config.RunnerConfig.prepare')
+@patch('ansible_runner.interface.sys')
+@patch('ansible_runner.utils.subprocess')
+@pytest.mark.parametrize('executable_present', [True, False])
+def test_process_isolation_executable_not_found(mock_subprocess, mock_sys, mock_prepare, executable_present):
+    # Mock subprocess.Popen indicates if
+    # process isolation executable is present
+    mock_proc = Mock()
+    mock_proc.returncode=(0 if executable_present else 1)
+    mock_subprocess.Popen.return_value = mock_proc
+
+    kwargs = {'process_isolation': True,
+              'process_isolation_executable': 'fake_executable'}
+    init_runner(**kwargs)
+    if executable_present:
+        assert not mock_sys.exit.called
+    else:
+        assert mock_sys.exit.called
+
+
+def test_bwrap_process_isolation_defaults():
     rc = RunnerConfig('/')
     rc.artifact_dir = '/tmp/artifacts'
     rc.playbook = 'main.yaml'
     rc.command = 'ansible-playbook'
     rc.process_isolation = True
+    rc.process_isolation_executable = 'bwrap'
     with patch('os.path.exists') as path_exists:
         path_exists.return_value=True
         rc.prepare()
@@ -451,8 +470,8 @@ def test_process_isolation_defaults():
 @patch('tempfile.mkdtemp', return_value="/tmp/dirisolation/foo")
 @patch('os.chmod', return_value=True)
 @patch('shutil.rmtree', return_value=True)
-def test_process_isolation_and_directory_isolation(mock_makedirs, mock_copytree, mock_mkdtemp,
-                                                   mock_chmod, mock_rmtree):
+def test_bwrap_process_isolation_and_directory_isolation(mock_makedirs, mock_copytree, mock_mkdtemp,
+                                                         mock_chmod, mock_rmtree):
     def new_exists(path):
         if path == "/project":
             return False
@@ -463,6 +482,7 @@ def test_process_isolation_and_directory_isolation(mock_makedirs, mock_copytree,
     rc.playbook = 'main.yaml'
     rc.command = 'ansible-playbook'
     rc.process_isolation = True
+    rc.process_isolation_executable = 'bwrap'
     with patch('os.path.exists', new=new_exists):
         rc.prepare()
 
@@ -570,3 +590,38 @@ def test_profiling_plugin_settings_with_custom_intervals(mock_mkdir):
     assert rc.env['CGROUP_CPU_POLL_INTERVAL'] == '.5'
     assert rc.env['CGROUP_MEMORY_POLL_INTERVAL'] == '.75'
     assert rc.env['CGROUP_PID_POLL_INTERVAL'] == '1.5'
+
+
+@patch('os.mkdir', return_value=True)
+@pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
+def test_containerization_settings(mock_mkdir, container_runtime):
+    with patch('ansible_runner.runner_config.RunnerConfig.containerized', new_callable=PropertyMock) as mock_containerized:
+        rc = RunnerConfig('/')
+        rc.playbook = 'main.yaml'
+        rc.command = 'ansible-playbook'
+        rc.process_isolation = True
+        rc.process_isolation_executable=container_runtime
+        rc.container_image = 'my_container'
+        rc.container_volume_mounts=['/host1:/container1', 'host2:/container2']
+        mock_containerized.return_value = True
+        rc.prepare()
+
+    extra_container_args = []
+    if container_runtime == 'podman':
+        extra_container_args = ['--quiet']
+    else:
+        extra_container_args = ['--user={os.getuid()}']
+
+    expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
+        ['-v', '{}:/runner:Z'.format(rc.private_data_dir)] + \
+        ['-v', '/host1:/container1:Z', '-v', 'host2:/container2:Z'] + \
+        ['-e', 'ANSIBLE_CALLBACK_PLUGINS=/usr/lib/python3.6/site-packages/ansible_runner/callbacks'] + \
+        ['-e', 'ANSIBLE_STDOUT_CALLBACK=awx_display'] + \
+        ['-e', 'AWX_ISOLATED_DATA_DIR=/runner/artifacts/{}'.format(rc.ident)] + \
+        extra_container_args + \
+        ['my_container', 'ansible-playbook', '-i', '/runner/inventory/hosts', 'main.yaml']
+    for index, element in enumerate(expected_command_start):
+        if '--user' in element:
+            assert '--user=' in rc.command[index]
+        else:
+            assert rc.command[index] == element

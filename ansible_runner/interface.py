@@ -60,7 +60,10 @@ def init_runner(**kwargs):
             output.set_logfile(logfile)
 
     if kwargs.get("process_isolation", False):
-        check_isolation_executable_installed(kwargs.get("process_isolation_executable", "bwrap"))
+        pi_executable = kwargs.get("process_isolation_executable", "podman")
+        if not check_isolation_executable_installed(pi_executable):
+            print(f'Unable to find process isolation executable: {pi_executable}')
+            sys.exit(1)
 
     event_callback_handler = kwargs.pop('event_handler', None)
     status_callback_handler = kwargs.pop('status_handler', None)
@@ -119,12 +122,15 @@ def run(**kwargs):
     :param cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
     :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
     :param status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
-    :param process_isolation: Enable limiting what directories on the filesystem the playbook run has access to.
-    :param process_isolation_executable: Path to the executable that will be used to provide filesystem isolation (default: bwrap)
+    :param process_isolation: Enable process isolation, using either a container engine (e.g. podman) or a sandbox (e.g. bwrap).
+    :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
     :param process_isolation_path: Path that an isolated playbook run will use for staging. (default: /tmp)
     :param process_isolation_hide_paths: A path or list of paths on the system that should be hidden from the playbook run.
     :param process_isolation_show_paths: A path or list of paths on the system that should be exposed to the playbook run.
     :param process_isolation_ro_paths: A path or list of paths on the system that should be exposed to the playbook run as read-only.
+    :param container_image: Container image to use when running an ansible task (default: ansible/ansible-runner)
+    :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir. (default: None)
+    :param container_options: List of container options to pass to execution engine.
     :param resource_profiling: Enable collection of resource utilization data during playbook execution.
     :param resource_profiling_base_cgroup: Name of existing cgroup which will be sub-grouped in order to measure resource utilization (default: ansible-runner)
     :param resource_profiling_cpu_poll_interval: Interval (in seconds) between CPU polling for determining CPU usage (default: 0.25)
@@ -169,6 +175,9 @@ def run(**kwargs):
     :type process_isolation_hide_paths: str or list
     :type process_isolation_show_paths: str or list
     :type process_isolation_ro_paths: str or list
+    :type container_image: str
+    :type container_volume_mounts: list
+    :type container_options: list
     :type resource_profiling: bool
     :type resource_profiling_base_cgroup: str
     :type resource_profiling_cpu_poll_interval: float

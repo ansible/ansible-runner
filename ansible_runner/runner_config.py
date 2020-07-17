@@ -204,7 +204,7 @@ class RunnerConfig(object):
 
         # Use local callback directory
         callback_dir = self.env.get('AWX_LIB_DIRECTORY', os.getenv('AWX_LIB_DIRECTORY'))
-        if callback_dir is None and self.containerized:
+        if self.containerized:
             callback_dir = '/usr/lib/python3.6/site-packages/ansible_runner/callbacks'
         elif callback_dir is None:
             callback_dir = os.path.join(os.path.split(os.path.abspath(__file__))[0],
@@ -626,4 +626,3 @@ class RunnerConfig(object):
                 args.extend(['-a', ssh_auth_sock])
             args.extend(['sh', '-c', cmd])
         return args
-

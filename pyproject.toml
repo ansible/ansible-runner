@@ -57,5 +57,5 @@ pathlib2 = "*"
 scandir = "*"
 
 [build-system]
-requires = ["poetry>=1.0.5"]
+requires = ["poetry>=1.0.5", "ansible-base"]
 build-backend = "poetry.masonry.api"

@@ -34,9 +34,10 @@ def test_basic_events(containerized, container_runtime_available, is_run_async=F
         thread, r = run_async(**run_args)
         thread.join()  # ensure async run finishes
 
-    event_types = [x['event'] for x in r.events]
+    event_types = [x['event'] for x in r.events if x['event'] != 'verbose']
     okay_events = [x for x in filter(lambda x: 'event' in x and x['event'] == 'runner_on_ok',
                                      r.events)]
+
     assert event_types[0] == 'playbook_on_start'
     assert "playbook_on_play_start" in event_types
     assert "runner_on_ok" in event_types

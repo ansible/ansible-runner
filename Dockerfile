@@ -14,6 +14,8 @@ RUN dnf install -y epel-release && \
     chmod +x /bin/tini /bin/entrypoint && \
     rm -rf /var/cache/dnf
 
+RUN useradd runner && usermod -aG root runner
+
 # In OpenShift, container will run as a random uid number and gid 0. Make sure things
 # are writeable by the root group.
 RUN mkdir -p /runner/inventory /runner/project /runner/artifacts /runner/.ansible/tmp && \

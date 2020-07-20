@@ -36,8 +36,6 @@ from distutils.dir_util import copy_tree
 
 from six import iteritems, string_types, text_type
 
-from pathlib import Path
-
 from ansible_runner import output
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.loader import ArtifactLoader
@@ -563,10 +561,6 @@ class RunnerConfig(object):
 
     def wrap_args_for_containerization(self, args):
         new_args = [self.process_isolation_executable]
-
-        if 'podman' in self.process_isolation_executable:
-            new_args.extend(['--root=' + str(Path.home()) + '/.local/share/containers/storage'])
-
         new_args.extend(['run', '--rm', '--tty', '--interactive'])
         new_args.extend(["--workdir", "/runner/project"])
 

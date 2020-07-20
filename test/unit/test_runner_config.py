@@ -4,7 +4,6 @@ from functools import partial
 from io import StringIO
 import os
 import re
-from pathlib import Path
 
 import six
 from pexpect import TIMEOUT, EOF
@@ -607,22 +606,19 @@ def test_containerization_settings(mock_mkdir, container_runtime):
         mock_containerized.return_value = True
         rc.prepare()
 
-    extra_global_args = []
-    extra_run_args = []
+    extra_container_args = []
     if container_runtime == 'podman':
-        extra_global_args = [f'--root={str(Path.home())}/.local/share/containers/storage']
-        extra_run_args = ['--quiet']
+        extra_container_args = ['--quiet']
     else:
-        extra_run_args = ['--user={os.getuid()}']
+        extra_container_args = ['--user={os.getuid()}']
 
-    expected_command_start = [container_runtime] + extra_global_args + \
-        ['run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
+    expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
         ['-v', '{}:/runner:Z'.format(rc.private_data_dir)] + \
         ['-v', '/host1:/container1:Z', '-v', 'host2:/container2:Z'] + \
         ['-e', 'ANSIBLE_CALLBACK_PLUGINS=/usr/lib/python3.6/site-packages/ansible_runner/callbacks'] + \
         ['-e', 'ANSIBLE_STDOUT_CALLBACK=awx_display'] + \
         ['-e', 'AWX_ISOLATED_DATA_DIR=/runner/artifacts/{}'.format(rc.ident)] + \
-        extra_run_args + \
+        extra_container_args + \
         ['my_container', 'ansible-playbook', '-i', '/runner/inventory/hosts', 'main.yaml']
     for index, element in enumerate(expected_command_start):
         if '--user' in element:

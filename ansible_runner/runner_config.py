@@ -665,7 +665,6 @@ class RunnerConfig(object):
 
             # container namespace stuff 
             new_args.extend(["--userns=keep-id"])
-            new_args.extend(["--pid=host"])
             new_args.extend(["--ipc=host"])
 
         container_volume_mounts = self.container_volume_mounts

@@ -431,7 +431,7 @@ DEFAULT_CLI_ARGS = {
             )
         ),
     ),
-    "adhoc_group": (
+    "execenv_cli_group": (
         (
             ('--container-runtime',),
             dict(
@@ -652,7 +652,7 @@ def main(sys_args=None):
              "(project, inventory, env, etc)",
         default='.'
     )
-    add_args_to_parser(adhoc_subparser, DEFAULT_CLI_ARGS['adhoc_group'])
+    add_args_to_parser(adhoc_subparser, DEFAULT_CLI_ARGS['execenv_cli_group'])
 
     # adhoc command exec
     playbook_subparser = subparser.add_parser(
@@ -670,6 +670,7 @@ def main(sys_args=None):
              "(project, inventory, env, etc)",
         default='.'
     )
+    add_args_to_parser(playbook_subparser, DEFAULT_CLI_ARGS['execenv_cli_group'])
 
     # misc args
     add_args_to_parser(run_subparser, DEFAULT_CLI_ARGS['misc_args'])
@@ -796,12 +797,14 @@ def main(sys_args=None):
     stop_container_group = stop_subparser.add_argument_group(*container_group_options)
     isalive_container_group = isalive_subparser.add_argument_group(*container_group_options)
     adhoc_container_group = adhoc_subparser.add_argument_group(*container_group_options)
+    playbook_container_group = playbook_subparser.add_argument_group(*container_group_options)
     add_args_to_parser(base_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(run_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(start_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(stop_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(isalive_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(adhoc_container_group, DEFAULT_CLI_ARGS['container_group'])
+    add_args_to_parser(playbook_container_group, DEFAULT_CLI_ARGS['container_group'])
 
     if len(sys.argv) == 1:
         parser.print_usage()

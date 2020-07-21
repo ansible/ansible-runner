@@ -596,7 +596,7 @@ class RunnerConfig(object):
         #  for usage and potential side-effects)
         _ensure_path_safe_to_mount(self.private_data_dir)
 
-        new_args.extend(["-v", "{}:/runner:Z".format(self.private_data_dir)])
+        new_args.extend(["-v", "{}:/runner".format(self.private_data_dir)])
 
         if self.cli_execenv_cmd:
             if self.cli_execenv_cmd == 'playbook':
@@ -606,14 +606,14 @@ class RunnerConfig(object):
                 _ensure_path_safe_to_mount(playbook_file_path)
                 if os.path.isabs(playbook_file_path) and (os.path.dirname(playbook_file_path) != '/'):
                     new_args.extend([
-                        "-v", "{}:{}:Z".format(
+                        "-v", "{}:{}".format(
                            os.path.dirname(playbook_file_path),
                            os.path.dirname(playbook_file_path),
                         )
                     ])
                 else:
                     new_args.extend([
-                        "-v", "{}:/runner/project/{}:Z".format(
+                        "-v", "{}:/runner/project/{}".format(
                            os.path.dirname(os.path.abspath(playbook_file_path)),
                            os.path.dirname(playbook_file_path),
                         )
@@ -631,48 +631,44 @@ class RunnerConfig(object):
                 if not inventory_file_path.endswith(',') and not inventory_playbook_share_parent:
                     if os.path.isabs(inventory_file_path) and (os.path.dirname(inventory_file_path) != '/'):
                         new_args.extend([
-                            "-v", "{}:{}:Z".format(
+                            "-v", "{}:{}".format(
                                os.path.dirname(inventory_file_path),
                                os.path.dirname(inventory_file_path),
                             )
                         ])
                     else:
                         new_args.extend([
-                            "-v", "{}:/runner/project/{}:Z".format(
+                            "-v", "{}:/runner/project/{}".format(
                                os.path.dirname(os.path.abspath(inventory_file_path)),
                                os.path.dirname(inventory_file_path),
                             )
                         ])
 
             # volume mount ~/.ssh/ and ~/.ansible into the exec env container
-            new_args.extend(["-v", "{}/.ssh/:/runner/project/.ssh/:Z".format(os.environ['HOME'])])
+            new_args.extend(["-v", "{}/.ssh/:/runner/project/.ssh/".format(os.environ['HOME'])])
             if not os.path.exists(os.path.join(os.environ['HOME'], '.ansible')):
                 os.mkdir(os.path.join(os.environ['HOME'], '.ansible'))
-            new_args.extend(["-v", "{}/.ansible:/runner/project/.ansible:z".format(os.environ['HOME'])])
+            new_args.extend(["-v", "{}/.ansible:/runner/project/.ansible".format(os.environ['HOME'])])
 
             # volume mount system-wide ssh_known_hosts the exec env container
             if os.path.exists('/etc/ssh/ssh_known_hosts'):
-                new_args.extend(["-v", "/etc/ssh/ssh_known_hosts:/etc/ssh/ssh_known_hosts:z"])
+                new_args.extend(["-v", "/etc/ssh/ssh_known_hosts:/etc/ssh/ssh_known_hosts"])
 
             # handle ssh-agent "forwarding" into the exec env container
             new_args.extend(
-                ["-v", "{}:{}:z".format(
+                ["-v", "{}:{}".format(
                     os.path.dirname(os.environ['SSH_AUTH_SOCK']), 
                     os.path.dirname(os.environ['SSH_AUTH_SOCK'])
                 )]
             )
             new_args.extend(["-e", "SSH_AUTH_SOCK={}".format(os.environ['SSH_AUTH_SOCK'])])
 
-            # container namespace stuff 
-            new_args.extend(["--userns=keep-id"])
-            new_args.extend(["--ipc=host"])
-
         container_volume_mounts = self.container_volume_mounts
         if container_volume_mounts:
             for mapping in container_volume_mounts:
                 host_path, container_path = mapping.split(':')
                 _ensure_path_safe_to_mount(host_path)
-                new_args.extend(["-v", "{}:{}:Z".format(host_path, container_path)])
+                new_args.extend(["-v", "{}:{}".format(host_path, container_path)])
 
         env_var_whitelist = ['PROJECT_UPDATE_ID', 'ANSIBLE_CALLBACK_PLUGINS', 'ANSIBLE_STDOUT_CALLBACK']
 
@@ -684,7 +680,12 @@ class RunnerConfig(object):
         new_args.extend(["-e", "AWX_ISOLATED_DATA_DIR={}".format(artifact_dir)])
 
         if 'podman' in self.process_isolation_executable:
-            new_args.extend(['--quiet']) # docker doesnt support this option
+            # container namespace stuff
+            new_args.extend(["--userns=keep-id"])
+            new_args.extend(["--ipc=host"])
+
+            # docker doesnt support this option
+            new_args.extend(['--quiet'])
 
         if 'docker' in self.process_isolation_executable:
             new_args.extend([f'--user={os.getuid()}'])

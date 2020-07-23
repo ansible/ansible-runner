@@ -10,6 +10,16 @@ import shutil
 from ansible_runner import run, run_async
 
 
+@pytest.fixture(scope='session')
+def skipif_pre_ansible29():
+    try:
+        if LooseVersion(pkg_resources.get_distribution('ansible').version) < LooseVersion('2.8'):
+            pytest.skip(reason="Valid only on Ansible 2.8+")
+    except pkg_resources.DistributionNotFound:
+        # ansible-base (e.g. ansible 2.10 and beyond) is not accessible in this way
+        pass
+
+
 @pytest.mark.serial
 @pytest.mark.parametrize('containerized', [True, False])
 def test_basic_events(containerized, container_runtime_available, is_run_async=False,g_facts=False):
@@ -91,9 +101,7 @@ def test_event_omission_except_failed():
     assert len(all_event_datas) == 1
 
 
-@pytest.mark.skipif(LooseVersion(pkg_resources.get_distribution('ansible').version) < LooseVersion('2.8'),
-                    reason="Valid only on Ansible 2.8+")
-def test_runner_on_start(rc):
+def test_runner_on_start(rc, skipif_pre_ansible29):
     tdir = tempfile.mkdtemp()
     r = run(private_data_dir=tdir,
             inventory="localhost ansible_connection=local",
@@ -137,9 +145,7 @@ def test_include_role_events():
 
 @pytest.mark.skipif(find_executable('cgexec') is None,
                     reason="cgexec not available")
-@pytest.mark.skipif(LooseVersion(pkg_resources.get_distribution('ansible').version) < LooseVersion('2.8'),
-                    reason="Valid only on Ansible 2.8+")
-def test_profile_data():
+def test_profile_data(skipif_pre_ansible29):
     tdir = tempfile.mkdtemp()
     try:
         r = run(private_data_dir=tdir,

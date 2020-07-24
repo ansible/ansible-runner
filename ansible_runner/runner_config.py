@@ -429,6 +429,10 @@ class RunnerConfig(object):
 
         exec_list = [base_command]
 
+        if self.cli_execenv_cmd:
+            # FIXME Add AWX vars
+            pass
+
         try:
             if self.cmdline_args:
                 cmdline_args = self.cmdline_args
@@ -599,6 +603,7 @@ class RunnerConfig(object):
         new_args.extend(["-v", "{}:/runner".format(self.private_data_dir)])
 
         if self.cli_execenv_cmd:
+            # FIXME - need to handle creation of project dir in private_data_dir
             if self.cli_execenv_cmd == 'playbook':
                 # FIXME - this might not be something we can assume
                 # grab the directory relative to the playbook so we capture roles and such
@@ -644,11 +649,8 @@ class RunnerConfig(object):
                             )
                         ])
 
-            # volume mount ~/.ssh/ and ~/.ansible into the exec env container
-            new_args.extend(["-v", "{}/.ssh/:/runner/project/.ssh/".format(os.environ['HOME'])])
-            if not os.path.exists(os.path.join(os.environ['HOME'], '.ansible')):
-                os.mkdir(os.path.join(os.environ['HOME'], '.ansible'))
-            new_args.extend(["-v", "{}/.ansible:/runner/project/.ansible".format(os.environ['HOME'])])
+            # volume mount ~/.ssh/ into the exec env container
+            new_args.extend(["-v", "{}/.ssh/:/runner/.ssh/".format(os.environ['HOME'])])
 
             # volume mount system-wide ssh_known_hosts the exec env container
             if os.path.exists('/etc/ssh/ssh_known_hosts'):

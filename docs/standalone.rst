@@ -70,8 +70,8 @@ An example invocation using ``demo`` as private directory and ``localhost`` as t
 
 Ansible roles directory can be provided with ``--roles-path`` option. Role variables can be passed with ``--role-vars`` at runtime.
 
-Running Ansible adhoc Commands
-------------------------------
+Running Ansible adhoc Commands with Execution Environments
+----------------------------------------------------------
 
 An example invocation using the ``ping`` module and ``localhost`` as target::
 
@@ -79,12 +79,12 @@ An example invocation using the ``ping`` module and ``localhost`` as target::
 
 Something to note here is that implicit ``localhost`` in this context is a containerized instantiation of an Ansible Execution Environment and as such you will not get Ansible Facts about your system if using the ``setup`` module. 
 
-Running ansible-playbook Commands
----------------------------------
+Running Ansible ansible-playbook Commands with Execution Environments
+---------------------------------------------------------------------
 
-An example invocation using the ``ping`` module and ``localhost`` as target::
+An example invocation using the ``demo.yml`` playbook and ``inventory.ini`` inventory file::
 
-  $ ansible-runner playbook demo.yml
+  $ ansible-runner playbook demo.yml -i inventory.ini
 
 Something to note here is that implicit ``localhost`` in this context is a containerized instantiation of an Ansible Execution Environment and as such you will not get Ansible Facts about your system if using ``gather_facts: true`` and targeting ``localhost`` in your playbook without explicit host definition in your inventory.
 
@@ -95,7 +95,7 @@ Running with Process Isolation
 
 **Runner** supports process isolation. Process isolation creates a new mount namespace where the root is on a tmpfs that is invisible from the host
 and is automatically cleaned up when the last process exits. You can enable process isolation by providing the ``--process-isolation`` argument on
-the command line. **Runner** defaults to using ``bubblewrap`` as the process isolation executable, but supports
+the command line. **Runner** as of version 2.0 defaults to using ``podman`` as the process isolation executable, but supports
 using any executable that is compatible with the ``bubblewrap`` CLI arguments by passing in the ``--process-isolation-executable`` argument::
 
   $ ansible-runner --process-isolation ...

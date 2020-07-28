@@ -706,7 +706,6 @@ def main(sys_args=None):
     add_args_to_parser(start_runner_group, DEFAULT_CLI_ARGS['receptor_group'])
     add_args_to_parser(stop_runner_group, DEFAULT_CLI_ARGS['receptor_group'])
     add_args_to_parser(isalive_runner_group, DEFAULT_CLI_ARGS['receptor_group'])
-    add_args_to_parser(playbook_runner_group, DEFAULT_CLI_ARGS['receptor_group'])
 
     # mutually exclusive group
     base_mutually_exclusive_group = parser.add_mutually_exclusive_group()

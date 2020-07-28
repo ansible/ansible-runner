@@ -612,17 +612,24 @@ class RunnerConfig(object):
                 if os.path.isabs(playbook_file_path) and (os.path.dirname(playbook_file_path) != '/'):
                     new_args.extend([
                         "-v", "{}:{}".format(
-                           os.path.dirname(playbook_file_path),
-                           os.path.dirname(playbook_file_path),
+                            os.path.dirname(playbook_file_path),
+                            os.path.dirname(playbook_file_path),
                         )
                     ])
                 else:
                     new_args.extend([
                         "-v", "{}:/runner/project/{}".format(
-                           os.path.dirname(os.path.abspath(playbook_file_path)),
-                           os.path.dirname(playbook_file_path),
+                            os.path.dirname(os.path.abspath(playbook_file_path)),
+                            os.path.dirname(playbook_file_path),
                         )
                     ])
+
+            if self.cli_execenv_cmd == 'adhoc':
+                new_args.extend([
+                    "-v", "{}:/runner/project/".format(
+                        os.path.dirname(self.private_data_dir),
+                    )
+                ])
 
             # volume mount inventory into the exec env container if provided at cli
             if '-i' in self.cmdline_args:
@@ -699,6 +706,7 @@ class RunnerConfig(object):
 
         new_args.extend(args)
         debug(f"container engine invocation: {' '.join(new_args)}")
+
         return new_args
 
     def wrap_args_with_ssh_agent(self, args, ssh_key_path, ssh_auth_sock=None, silence_ssh_add=False):

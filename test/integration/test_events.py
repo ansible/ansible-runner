@@ -11,7 +11,7 @@ from ansible_runner import run, run_async
 
 
 @pytest.fixture(scope='session')
-def skipif_pre_ansible29():
+def skipif_pre_ansible28():
     try:
         if LooseVersion(pkg_resources.get_distribution('ansible').version) < LooseVersion('2.8'):
             pytest.skip(reason="Valid only on Ansible 2.8+")
@@ -89,7 +89,7 @@ def test_event_omission_except_failed():
     assert len(all_event_datas) == 1
 
 
-def test_runner_on_start(rc, skipif_pre_ansible29):
+def test_runner_on_start(rc, skipif_pre_ansible28):
     tdir = tempfile.mkdtemp()
     r = run(private_data_dir=tdir,
             inventory="localhost ansible_connection=local",
@@ -133,7 +133,7 @@ def test_include_role_events():
 
 @pytest.mark.skipif(find_executable('cgexec') is None,
                     reason="cgexec not available")
-def test_profile_data(skipif_pre_ansible29):
+def test_profile_data(skipif_pre_ansible28):
     tdir = tempfile.mkdtemp()
     try:
         r = run(private_data_dir=tdir,

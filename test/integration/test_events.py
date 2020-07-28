@@ -14,7 +14,7 @@ from ansible_runner import run, run_async
 def skipif_pre_ansible28():
     try:
         if LooseVersion(pkg_resources.get_distribution('ansible').version) < LooseVersion('2.8'):
-            pytest.skip(reason="Valid only on Ansible 2.8+")
+            pytest.skip("Valid only on Ansible 2.8+")
     except pkg_resources.DistributionNotFound:
         # ansible-base (e.g. ansible 2.10 and beyond) is not accessible in this way
         pass
@@ -31,6 +31,7 @@ def test_basic_events(containerized, container_runtime_available, is_run_async=F
     playbook = [{'hosts': 'all', 'gather_facts': g_facts, 'tasks': [{'debug': {'msg': "test"}}]}]
     run_args = {'private_data_dir': tdir,
                 'inventory': inventory,
+                'envvars': {"ANSIBLE_DEPRECATION_WARNINGS": "False", 'ANSIBLE_PYTHON_INTERPRETER': 'auto_silent'},
                 'playbook': playbook}
     if containerized:
         run_args.update({'process_isolation': True,

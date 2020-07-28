@@ -9,6 +9,11 @@ cat << EOF > /etc/passwd
 root:x:0:0:root:/root:/bin/bash
 runner:x:`id -u`:`id -g`:,,,:/runner:/bin/bash
 EOF
+
+# Rootless podman volume mounts creates new directories
+# with incorrect permissions, but we have permission
+# to chown them.
+chown -R runner:runner /runner
 fi
 
 exec tini -- "${@}"

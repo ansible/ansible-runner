@@ -57,3 +57,41 @@ An example invocation using the ``demo.yml`` playbook and ``inventory.ini`` inve
   $ ansible-runner playbook demo.yml -i inventory.ini
 
 Something to note here is that implicit ``localhost`` in this context is a containerized instantiation of an Ansible Execution Environment and as such you will not get Ansible Facts about your system if using ``gather_facts: true`` and targeting ``localhost`` in your playbook without explicit host definition in your inventory.
+
+Notes an Considerations
+-----------------------
+
+There are some differences between running Ansible directly from the command
+that have to do with configuration, content locality, and secret data.
+
+Secrets
+^^^^^^^
+
+Typically with Ansible you are able to provide secret data via a series of
+machanisms, many of which are pluggable and configurable. However when using
+Ansible Runner certain considerations need to be made, these are analogous to
+how Ansible AWX and Tower manage this information.
+
+See :ref:`inputdir` for more information
+
+~/.ssh/ symlinks
+^^^^^^^^^^^^^^^^
+
+In order to make the ``adhoc`` and ``playbook`` container execution of Ansible
+easier, Ansible Runner will automatically bind mount your local ssh agent 
+UNIX-domain socket (``SSH_AUTH_SOCK``) into the container runtime. However, this
+does not work if files in your ``~/.ssh/`` directory happen to be symlink'd to
+another directory that is also not mounted into the container runtime. Ansible
+Runner ``adhoc`` and ``playbook`` subcommands provide the ``--container-volume-mount``
+option to address this, among other things.
+
+Here is an example of a ssh config file that is a symlink:
+
+::
+
+        $ $ ls -l ~/.ssh/config
+        lrwxrwxrwx. 1 myuser myuser 34 Jul 15 19:27 /home/myuser/.ssh/config -> /home/myuser/dotfiles/ssh_config
+
+        $ ansible-runner playbook \
+            --container-volume-mount /home/myuser/dotfiles/:/home/myuser/dotfiles/ \
+            my_playbook.yml -i my_inventory.ini

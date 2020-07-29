@@ -30,6 +30,8 @@ import stat
 import os
 import shutil
 import textwrap
+import tempfile
+import atexit
 
 from contextlib import contextmanager
 from uuid import uuid4
@@ -440,6 +442,15 @@ DEFAULT_CLI_ARGS = {
                 help="OCI Compliant container runtime to use. Examples: podman, docker"
             ),
         ),
+        (
+            ('--keep-files',),
+            dict(
+                dest='keep_files',
+                type=bool,
+                default=False,
+                help="Keep temporary files persistent on disk instead of cleaning them automatically. (Useful for debugging)"
+            ),
+        ),
     ),
 }
 
@@ -650,7 +661,6 @@ def main(sys_args=None):
         "--private-data-dir",
         help="base directory cotnaining the ansible-runner metadata "
              "(project, inventory, env, etc)",
-        default='.'
     )
     add_args_to_parser(adhoc_subparser, DEFAULT_CLI_ARGS['execenv_cli_group'])
 
@@ -668,7 +678,6 @@ def main(sys_args=None):
         "--private-data-dir",
         help="base directory cotnaining the ansible-runner metadata "
              "(project, inventory, env, etc)",
-        default='.'
     )
     add_args_to_parser(playbook_subparser, DEFAULT_CLI_ARGS['execenv_cli_group'])
 
@@ -819,6 +828,16 @@ def main(sys_args=None):
 
     if vargs.get('command') in ('adhoc', 'playbook'):
         cli_execenv_cmd = vargs.get('command')
+        if not vargs.get('private_data_dir'):
+            temp_private_dir = tempfile.TemporaryDirectory()
+            vargs['private_data_dir'] = temp_private_dir.name
+            if vargs.get('keep_files', False):
+                print("ANSIBLE-RUNNER: keeping temporary data directory: {}".format(temp_private_dir.name))
+
+    @atexit.register
+    def conditonally_clean_cli_execenv_tempdir():
+        if not vargs.get('keep_files', False):
+            shutil.rmtree(temp_private_dir.name)
 
     if vargs.get('command') in ('start', 'run'):
         if vargs.get('hosts') and not (vargs.get('module') or vargs.get('role')):
@@ -922,7 +941,7 @@ def main(sys_args=None):
                                    receptor_node_id=vargs.get('receptor_node_id'),
                                    cli_execenv_cmd=cli_execenv_cmd
                                    )
-                if vargs.get('cmdline'):
+                if vargs.get('command') in ('adhoc', 'playbook'):
                     run_options['cmdline'] = vargs.get('cmdline')
                     run_options['process_isolation']=True
                     run_options['process_isolation_executable']=vargs.get('container_runtime')

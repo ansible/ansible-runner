@@ -446,7 +446,7 @@ DEFAULT_CLI_ARGS = {
             ('--keep-files',),
             dict(
                 dest='keep_files',
-                type=bool,
+                action='store_true',
                 default=False,
                 help="Keep temporary files persistent on disk instead of cleaning them automatically. (Useful for debugging)"
             ),
@@ -829,15 +829,15 @@ def main(sys_args=None):
     if vargs.get('command') in ('adhoc', 'playbook'):
         cli_execenv_cmd = vargs.get('command')
         if not vargs.get('private_data_dir'):
-            temp_private_dir = tempfile.TemporaryDirectory()
-            vargs['private_data_dir'] = temp_private_dir.name
+            temp_private_dir = tempfile.mkdtemp()
+            vargs['private_data_dir'] = temp_private_dir
             if vargs.get('keep_files', False):
-                print("ANSIBLE-RUNNER: keeping temporary data directory: {}".format(temp_private_dir.name))
+                print("ANSIBLE-RUNNER: keeping temporary data directory: {}".format(temp_private_dir))
 
     @atexit.register
     def conditonally_clean_cli_execenv_tempdir():
         if not vargs.get('keep_files', False):
-            shutil.rmtree(temp_private_dir.name)
+            shutil.rmtree(temp_private_dir)
 
     if vargs.get('command') in ('start', 'run'):
         if vargs.get('hosts') and not (vargs.get('module') or vargs.get('role')):

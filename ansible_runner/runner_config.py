@@ -624,13 +624,6 @@ class RunnerConfig(object):
                         )
                     ])
 
-            if self.cli_execenv_cmd == 'adhoc':
-                new_args.extend([
-                    "-v", "{}:/runner/project/".format(
-                        os.path.dirname(self.private_data_dir),
-                    )
-                ])
-
             # volume mount inventory into the exec env container if provided at cli
             if '-i' in self.cmdline_args:
                 inventory_file_path = self.cmdline_args[self.cmdline_args.index('-i') + 1]

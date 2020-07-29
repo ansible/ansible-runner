@@ -430,8 +430,25 @@ class RunnerConfig(object):
         exec_list = [base_command]
 
         if self.cli_execenv_cmd:
-            # FIXME Add AWX vars
-            pass
+            # Provide dummy data for Tower/AWX vars so that playbooks won't
+            # fail with undefined var errors
+            awx_tower_vars = {
+                'awx_job_id': 1,
+                'tower_job_id': 1,
+                'awx_job_launch_type': 'workflow',
+                'tower_job_launch_type': 'workflow',
+                'awx_workflow_job_name': 'workflow-job',
+                'tower_workflow_job_name': 'workflow-job',
+                'awx_workflow_job_id': 1,
+                'tower_workflow_job_id': 1,
+                'awx_parent_job_schedule_id': 1,
+                'tower_parent_job_schedule_id': 1,
+                'awx_parent_job_schedule_name': 'job-schedule',
+                'tower_parent_job_schedule_name': 'job-schedule',
+            }
+            for k,v in awx_tower_vars.items():
+                exec_list.append('-e')
+                exec_list.append('"{}={}"'.format(k, v))
 
         try:
             if self.cmdline_args:
@@ -602,12 +619,42 @@ class RunnerConfig(object):
 
         new_args.extend(["-v", "{}:/runner".format(self.private_data_dir)])
 
+        def _parse_cli_execenv_cmd_playbook_args():
+
+            # Determine all inventory file paths, accounting for the possibility of multiple
+            # inventory files provided
+            _inventory_paths = []
+            _playbook = ""
+            _book_keeping_copy = self.cmdline_args.copy()
+            for arg in self.cmdline_args:
+                if arg == '-i':
+                    _book_keeping_copy_inventory_index = _book_keeping_copy.index('-i')
+                    _inventory_paths.append(self.cmdline_args[_book_keeping_copy_inventory_index + 1])
+                    _book_keeping_copy.pop(_book_keeping_copy_inventory_index)
+                    _book_keeping_copy.pop(_book_keeping_copy_inventory_index)
+
+            if len(_book_keeping_copy) == 1:
+                # it's probably safe to assume this is the playbook
+                _playbook = _book_keeping_copy[0]
+            elif _book_keeping_copy[0][0] != '-':
+                # this should be the playbook, it's the only "naked" arg
+                _playbook = _book_keeping_copy[0]
+            else:
+                # parse everything beyond the first arg because we checked that
+                # in the previous case already
+                for arg in _book_keeping_copy[1:]:
+                    if arg[0] == '-':
+                        continue
+                    elif _book_keeping_copy[_book_keeping_copy.index(arg - 1)][0] != '-':
+                        _playbook = arg
+                        break
+
+            return (_playbook, _inventory_paths)
+
         if self.cli_execenv_cmd:
-            # FIXME - need to handle creation of project dir in private_data_dir
+            _parsed_playbook_path, _parsed_inventory_paths = _parse_cli_execenv_cmd_playbook_args()
             if self.cli_execenv_cmd == 'playbook':
-                # FIXME - this might not be something we can assume
-                # grab the directory relative to the playbook so we capture roles and such
-                playbook_file_path = self.cmdline_args[0]
+                playbook_file_path = _parsed_playbook_path
                 _ensure_path_safe_to_mount(playbook_file_path)
                 if os.path.isabs(playbook_file_path) and (os.path.dirname(playbook_file_path) != '/'):
                     new_args.extend([
@@ -626,28 +673,29 @@ class RunnerConfig(object):
 
             # volume mount inventory into the exec env container if provided at cli
             if '-i' in self.cmdline_args:
-                inventory_file_path = self.cmdline_args[self.cmdline_args.index('-i') + 1]
-                _ensure_path_safe_to_mount(inventory_file_path)
+                inventory_file_paths = _parsed_inventory_paths
                 inventory_playbook_share_parent = False
-                if self.cli_execenv_cmd == 'playbook':
-                    if os.path.dirname(os.path.abspath(inventory_file_path)) == \
-                            os.path.dirname(os.path.abspath(playbook_file_path)):
-                        inventory_playbook_share_parent = True
-                if not inventory_file_path.endswith(',') and not inventory_playbook_share_parent:
-                    if os.path.isabs(inventory_file_path) and (os.path.dirname(inventory_file_path) != '/'):
-                        new_args.extend([
-                            "-v", "{}:{}".format(
-                               os.path.dirname(inventory_file_path),
-                               os.path.dirname(inventory_file_path),
-                            )
-                        ])
-                    else:
-                        new_args.extend([
-                            "-v", "{}:/runner/project/{}".format(
-                               os.path.dirname(os.path.abspath(inventory_file_path)),
-                               os.path.dirname(inventory_file_path),
-                            )
-                        ])
+                for inventory_file_path in inventory_file_paths:
+                    _ensure_path_safe_to_mount(inventory_file_path)
+                    if self.cli_execenv_cmd == 'playbook':
+                        if os.path.dirname(os.path.abspath(inventory_file_path)) == \
+                                os.path.dirname(os.path.abspath(playbook_file_path)):
+                            inventory_playbook_share_parent = True
+                    if not inventory_file_path.endswith(',') and not inventory_playbook_share_parent:
+                        if os.path.isabs(inventory_file_path) and (os.path.dirname(inventory_file_path) != '/'):
+                            new_args.extend([
+                                "-v", "{}:{}".format(
+                                   os.path.dirname(inventory_file_path),
+                                   os.path.dirname(inventory_file_path),
+                                )
+                            ])
+                        else:
+                            new_args.extend([
+                                "-v", "{}:/runner/project/{}".format(
+                                   os.path.dirname(os.path.abspath(inventory_file_path)),
+                                   os.path.dirname(inventory_file_path),
+                                )
+                            ])
 
             # volume mount ~/.ssh/ into the exec env container
             new_args.extend(["-v", "{}/.ssh/:/runner/.ssh/".format(os.environ['HOME'])])

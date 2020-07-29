@@ -13,7 +13,7 @@ EOF
 # Rootless podman volume mounts creates new directories
 # with incorrect permissions, but we have permission
 # to chown them.
-chown -R runner:runner /runner
+chown -R runner:runner /runner &>/dev/null
 fi
 
 exec tini -- "${@}"

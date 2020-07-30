@@ -1,4 +1,4 @@
-FROM centos:8
+FROM docker.io/centos:8
 
 ADD https://github.com/krallin/tini/releases/download/v0.18.0/tini /bin/tini
 ADD utils/entrypoint.sh /bin/entrypoint

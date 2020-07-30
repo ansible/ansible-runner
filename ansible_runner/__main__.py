@@ -68,12 +68,25 @@ DEFAULT_CLI_ARGS = {
             ),
         ),
     ),
-    "misc_args": (
+    "generic_args": (
         (
             ('--version',),
             dict(
                 action='version',
                 version=VERSION
+            ),
+        ),
+        (
+            ("--debug",),
+            dict(
+                action="store_true",
+                help="enable ansible-runner debug output logging (default=False)"
+            ),
+        ),
+        (
+            ("--logfile",),
+            dict(
+                help="log output messages to a file (default=None)"
             ),
         ),
     ),
@@ -135,19 +148,6 @@ DEFAULT_CLI_ARGS = {
     ),
     "runner_group": (
         # ansible-runner options
-        (
-            ("--debug",),
-            dict(
-                action="store_true",
-                help="enable ansible-runner debug output logging (default=False)"
-            ),
-        ),
-        (
-            ("--logfile",),
-            dict(
-                help="log output messages to a file (default=None)"
-            ),
-        ),
         (
             ("-b", "--binary",),
             dict(
@@ -653,11 +653,6 @@ def main(sys_args=None):
         help="Run ansible adhoc commands in an Execution Environment"
     )
     adhoc_subparser.add_argument(
-        "cmdline",
-        nargs=argparse.REMAINDER,
-        help="command line options to pass to ansible at execution time"
-    )
-    adhoc_subparser.add_argument(
         "--private-data-dir",
         help="base directory cotnaining the ansible-runner metadata "
              "(project, inventory, env, etc)",
@@ -670,23 +665,19 @@ def main(sys_args=None):
         help="Run ansible-playbook commands in an Execution Environment"
     )
     playbook_subparser.add_argument(
-        "cmdline",
-        nargs=argparse.REMAINDER,
-        help="command line options to pass to ansible at execution time"
-    )
-    playbook_subparser.add_argument(
         "--private-data-dir",
         help="base directory cotnaining the ansible-runner metadata "
              "(project, inventory, env, etc)",
     )
     add_args_to_parser(playbook_subparser, DEFAULT_CLI_ARGS['execenv_cli_group'])
 
-    # misc args
-    add_args_to_parser(run_subparser, DEFAULT_CLI_ARGS['misc_args'])
-    add_args_to_parser(start_subparser, DEFAULT_CLI_ARGS['misc_args'])
-    add_args_to_parser(stop_subparser, DEFAULT_CLI_ARGS['misc_args'])
-    add_args_to_parser(isalive_subparser, DEFAULT_CLI_ARGS['misc_args'])
-    add_args_to_parser(adhoc_subparser, DEFAULT_CLI_ARGS['misc_args'])
+    # generic args for all subparsers 
+    add_args_to_parser(run_subparser, DEFAULT_CLI_ARGS['generic_args'])
+    add_args_to_parser(start_subparser, DEFAULT_CLI_ARGS['generic_args'])
+    add_args_to_parser(stop_subparser, DEFAULT_CLI_ARGS['generic_args'])
+    add_args_to_parser(isalive_subparser, DEFAULT_CLI_ARGS['generic_args'])
+    add_args_to_parser(adhoc_subparser, DEFAULT_CLI_ARGS['generic_args'])
+    add_args_to_parser(playbook_subparser, DEFAULT_CLI_ARGS['generic_args'])
 
     # runner group
     ansible_runner_group_options = (
@@ -699,15 +690,11 @@ def main(sys_args=None):
     start_runner_group = start_subparser.add_argument_group(*ansible_runner_group_options)
     stop_runner_group = stop_subparser.add_argument_group(*ansible_runner_group_options)
     isalive_runner_group = isalive_subparser.add_argument_group(*ansible_runner_group_options)
-    adhoc_runner_group = adhoc_subparser.add_argument_group(*ansible_runner_group_options)
-    playbook_runner_group = playbook_subparser.add_argument_group(*ansible_runner_group_options)
     add_args_to_parser(base_runner_group, DEFAULT_CLI_ARGS['runner_group'])
     add_args_to_parser(run_runner_group, DEFAULT_CLI_ARGS['runner_group'])
     add_args_to_parser(start_runner_group, DEFAULT_CLI_ARGS['runner_group'])
     add_args_to_parser(stop_runner_group, DEFAULT_CLI_ARGS['runner_group'])
     add_args_to_parser(isalive_runner_group, DEFAULT_CLI_ARGS['runner_group'])
-    add_args_to_parser(adhoc_runner_group, DEFAULT_CLI_ARGS['runner_group'])
-    add_args_to_parser(playbook_runner_group, DEFAULT_CLI_ARGS['runner_group'])
 
     # receptor group (combined with runner help header)
     add_args_to_parser(base_runner_group, DEFAULT_CLI_ARGS['receptor_group'])
@@ -819,7 +806,11 @@ def main(sys_args=None):
         print_common_usage()
         parser.exit(status=0)
 
-    args = parser.parse_args(sys_args)
+    if ('playbook' in sys.argv) or ('adhoc' in sys.argv):
+        args, leftover_args = parser.parse_known_args(sys_args)
+    else:
+        args = parser.parse_known_args(sys_args)
+
     vargs = vars(args)
 
     # FIXME - Probably a more elegant way to handle this.
@@ -833,6 +824,13 @@ def main(sys_args=None):
             vargs['private_data_dir'] = temp_private_dir
             if vargs.get('keep_files', False):
                 print("ANSIBLE-RUNNER: keeping temporary data directory: {}".format(temp_private_dir))
+        if not leftover_args:
+            parser.exit(
+                status=1,
+                message="The {} subcommand requires arguments to pass to Ansible inside the container.\n".format(
+                    vargs.get('command')
+                )
+            )
 
     @atexit.register
     def conditonally_clean_cli_execenv_tempdir():
@@ -883,13 +881,6 @@ def main(sys_args=None):
             os.close(os.open(stderr_path, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
 
     if vargs.get('command') in ('start', 'run', 'adhoc', 'playbook'):
-
-        if cli_execenv_cmd:
-            # FIXME - this doesn't actually work
-            if vargs.get('cmdline') is None:
-                logger.error("When using 'adhoc' or 'playbook' option, command arguments are required to pass to ansible.")
-                print_common_usage()
-                sys.exit(1)
 
         if vargs.get('command') == 'start':
             import daemon
@@ -942,7 +933,7 @@ def main(sys_args=None):
                                    cli_execenv_cmd=cli_execenv_cmd
                                    )
                 if vargs.get('command') in ('adhoc', 'playbook'):
-                    run_options['cmdline'] = vargs.get('cmdline')
+                    run_options['cmdline'] = sys.argv[sys.argv.index(leftover_args[0]):]
                     run_options['process_isolation']=True
                     run_options['process_isolation_executable']=vargs.get('container_runtime')
 

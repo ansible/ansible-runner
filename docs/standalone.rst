@@ -79,6 +79,8 @@ An example invocation using the ``ping`` module and ``localhost`` as target::
 
 Something to note here is that implicit ``localhost`` in this context is a containerized instantiation of an Ansible Execution Environment and as such you will not get Ansible Facts about your system if using the ``setup`` module. 
 
+For more information, see :ref:`execution_environments`
+
 Running Ansible ansible-playbook Commands with Execution Environments
 ---------------------------------------------------------------------
 
@@ -87,6 +89,8 @@ An example invocation using the ``demo.yml`` playbook and ``inventory.ini`` inve
   $ ansible-runner playbook demo.yml -i inventory.ini
 
 Something to note here is that implicit ``localhost`` in this context is a containerized instantiation of an Ansible Execution Environment and as such you will not get Ansible Facts about your system if using ``gather_facts: true`` and targeting ``localhost`` in your playbook without explicit host definition in your inventory.
+
+For more information, see :ref:`execution_environments`
 
 .. _outputjson:
 

@@ -216,7 +216,7 @@ def test_cmdline_includes_one_option():
         assert exc == 1
 
 
-def test_cmdline_cmdline_override():
+def test_cmdline_cmdline_override(skipif_pre_ansible28):
     try:
         private_data_dir = tempfile.mkdtemp()
         play = [{'hosts': 'all', 'tasks': [{'debug': {'msg': random_string()}}]}]

@@ -134,7 +134,7 @@ def test_role_run_abs():
     assert rc == 0
 
 
-def test_role_logfile():
+def test_role_logfile(skipif_pre_ansible28):
     try:
         rc = main(['-r', 'benthomasson.hello_role',
                    '--hosts', 'localhost',
@@ -279,7 +279,7 @@ def test_role_run_inventory():
     assert rc == 0
 
 
-def test_role_run_inventory_missing():
+def test_role_run_inventory_missing(skipif_pre_ansible28):
 
     with temp_directory() as temp_dir:
         ensure_directory(os.path.join(temp_dir, 'inventory'))

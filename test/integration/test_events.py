@@ -1,23 +1,11 @@
 import pytest
 import tempfile
-from distutils.version import LooseVersion
 from distutils.spawn import find_executable
-import pkg_resources
 import json
 import os
 import shutil
 
 from ansible_runner import run, run_async
-
-
-@pytest.fixture(scope='session')
-def skipif_pre_ansible28():
-    try:
-        if LooseVersion(pkg_resources.get_distribution('ansible').version) < LooseVersion('2.8'):
-            pytest.skip("Valid only on Ansible 2.8+")
-    except pkg_resources.DistributionNotFound:
-        # ansible-base (e.g. ansible 2.10 and beyond) is not accessible in this way
-        pass
 
 
 @pytest.mark.serial

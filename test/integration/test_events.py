@@ -1,8 +1,6 @@
 import pytest
 import tempfile
-from distutils.version import LooseVersion
 from distutils.spawn import find_executable
-import pkg_resources
 import json
 import os
 import shutil
@@ -12,15 +10,20 @@ from ansible_runner import run, run_async
 
 @pytest.mark.serial
 @pytest.mark.parametrize('containerized', [True, False])
-def test_basic_events(containerized, container_runtime_available, is_run_async=False,g_facts=False):
+def test_basic_events(containerized, container_runtime_available, is_pre_ansible28, is_run_async=False, g_facts=False):
     if containerized and not container_runtime_available:
         pytest.skip('container runtime(s) not available')
     tdir = tempfile.mkdtemp()
 
-    inventory = "localhost ansible_connection=local"
+    if is_pre_ansible28:
+        inventory = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
+    else:
+        inventory = 'localhost ansible_connection=local'
+
     playbook = [{'hosts': 'all', 'gather_facts': g_facts, 'tasks': [{'debug': {'msg': "test"}}]}]
     run_args = {'private_data_dir': tdir,
                 'inventory': inventory,
+                'envvars': {"ANSIBLE_DEPRECATION_WARNINGS": "False", 'ANSIBLE_PYTHON_INTERPRETER': 'auto_silent'},
                 'playbook': playbook}
     if containerized:
         run_args.update({'process_isolation': True,
@@ -59,41 +62,51 @@ def test_basic_events(containerized, container_runtime_available, is_run_async=F
 
 @pytest.mark.serial
 @pytest.mark.parametrize('containerized', [True, False])
-def test_async_events(containerized, container_runtime_available):
-    test_basic_events(containerized, container_runtime_available, is_run_async=True,g_facts=True)
+def test_async_events(containerized, container_runtime_available, is_pre_ansible28):
+    test_basic_events(containerized, container_runtime_available, is_pre_ansible28, is_run_async=True,g_facts=True)
 
 
-def test_basic_serializeable():
+def test_basic_serializeable(is_pre_ansible28):
     tdir = tempfile.mkdtemp()
+    if is_pre_ansible28:
+        inv = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
+    else:
+        inv = 'localhost ansible_connection=local'
     r = run(private_data_dir=tdir,
-            inventory="localhost ansible_connection=local",
+            inventory=inv,
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
     events = [x for x in r.events]
     json.dumps(events)
 
 
-def test_event_omission():
+def test_event_omission(is_pre_ansible28):
     tdir = tempfile.mkdtemp()
+    if is_pre_ansible28:
+        inv = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
+    else:
+        inv = 'localhost ansible_connection=local'
     r = run(private_data_dir=tdir,
-            inventory="localhost ansible_connection=local",
+            inventory=inv,
             omit_event_data=True,
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
     assert not any([x['event_data'] for x in r.events])
 
 
-def test_event_omission_except_failed():
+def test_event_omission_except_failed(is_pre_ansible28):
     tdir = tempfile.mkdtemp()
+    if is_pre_ansible28:
+        inv = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
+    else:
+        inv = 'localhost ansible_connection=local'
     r = run(private_data_dir=tdir,
-            inventory="localhost ansible_connection=local",
+            inventory=inv,
             only_failed_event_data=True,
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'fail': {'msg': "test"}}]}])
     all_event_datas = [x['event_data'] for x in r.events if x['event_data']]
     assert len(all_event_datas) == 1
 
 
-@pytest.mark.skipif(LooseVersion(pkg_resources.get_distribution('ansible').version) < LooseVersion('2.8'),
-                    reason="Valid only on Ansible 2.8+")
-def test_runner_on_start(rc):
+def test_runner_on_start(rc, skipif_pre_ansible28):
     tdir = tempfile.mkdtemp()
     r = run(private_data_dir=tdir,
             inventory="localhost ansible_connection=local",
@@ -103,10 +116,14 @@ def test_runner_on_start(rc):
     assert len(start_events) == 1
 
 
-def test_playbook_on_stats_summary_fields(rc):
+def test_playbook_on_stats_summary_fields(rc, is_pre_ansible28):
+    if is_pre_ansible28:
+        inv = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
+    else:
+        inv = 'localhost ansible_connection=local'
     tdir = tempfile.mkdtemp()
     r = run(private_data_dir=tdir,
-            inventory="localhost ansible_connection=local",
+            inventory=inv,
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
     stats_events = [x for x in filter(lambda x: 'event' in x and x['event'] == 'playbook_on_stats',
                                       r.events)]
@@ -137,9 +154,7 @@ def test_include_role_events():
 
 @pytest.mark.skipif(find_executable('cgexec') is None,
                     reason="cgexec not available")
-@pytest.mark.skipif(LooseVersion(pkg_resources.get_distribution('ansible').version) < LooseVersion('2.8'),
-                    reason="Valid only on Ansible 2.8+")
-def test_profile_data():
+def test_profile_data(skipif_pre_ansible28):
     tdir = tempfile.mkdtemp()
     try:
         r = run(private_data_dir=tdir,

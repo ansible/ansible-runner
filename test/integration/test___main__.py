@@ -168,7 +168,7 @@ def test_cmdline_role_with_playbook_option():
         assert exc == 1
 
 
-def test_cmdline_playbook():
+def test_cmdline_playbook(is_pre_ansible28):
     try:
         private_data_dir = tempfile.mkdtemp()
         play = [{'hosts': 'all', 'tasks': [{'debug': {'msg': random_string()}}]}]
@@ -185,7 +185,10 @@ def test_cmdline_playbook():
 
         inventory = os.path.join(path, 'hosts')
         with open(inventory, 'w') as f:
-            f.write('[all]\nlocalhost ansible_connection=local')
+            if is_pre_ansible28:
+                f.write('[all]\nlocalhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"')
+            else:
+                f.write('[all]\nlocalhost ansible_connection=local')
 
         cmdline('run', private_data_dir, '-p', playbook, '--inventory', inventory)
 
@@ -216,7 +219,7 @@ def test_cmdline_includes_one_option():
         assert exc == 1
 
 
-def test_cmdline_cmdline_override():
+def test_cmdline_cmdline_override(is_pre_ansible28):
     try:
         private_data_dir = tempfile.mkdtemp()
         play = [{'hosts': 'all', 'tasks': [{'debug': {'msg': random_string()}}]}]
@@ -232,7 +235,10 @@ def test_cmdline_cmdline_override():
 
         inventory = os.path.join(path, 'hosts')
         with open(inventory, 'w') as f:
-            f.write('[all]\nlocalhost ansible_connection=local')
+            if is_pre_ansible28:
+                f.write('[all]\nlocalhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"')
+            else:
+                f.write('[all]\nlocalhost ansible_connection=local')
 
         # privateip: removed --hosts command line option from test beause it is
         # not a supported combination of cli options

@@ -15,7 +15,7 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.fixture()
-def executor(tmpdir, request):
+def executor(tmpdir, request, is_pre_ansible28):
     private_data_dir = six.text_type(tmpdir.mkdir('foo'))
 
     playbooks = request.node.callspec.params.get('playbook')
@@ -28,9 +28,15 @@ def executor(tmpdir, request):
     # python interpreter used is not of much interest, we really want to silence warnings
     envvars['ANSIBLE_PYTHON_INTERPRETER'] = 'auto_silent'
 
+    if is_pre_ansible28:
+        inventory = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
+    else:
+        inventory = 'localhost ansible_connection=local'
+
+
     r = init_runner(
         private_data_dir=private_data_dir,
-        inventory="localhost ansible_connection=local",
+        inventory=inventory,
         envvars=envvars,
         playbook=yaml.safe_load(playbook)
     )
@@ -176,7 +182,7 @@ def test_callback_plugin_no_log_filters(executor, playbook):
     - uri: url=https://example.org url_username="PUBLIC" url_password="PRIVATE"
 '''},  # noqa
 ])
-def test_callback_plugin_task_args_leak(executor, playbook):
+def test_callback_plugin_task_args_leak(executor, playbook, skipif_pre_ansible28):
     executor.run()
     events = list(executor.events)
     assert events[0]['event'] == 'playbook_on_start'
@@ -213,7 +219,7 @@ def test_callback_plugin_task_args_leak(executor, playbook):
     - debug: msg="{{ command_register.results|map(attribute='stdout')|list }}"
 '''},  # noqa
 ])
-def test_callback_plugin_censoring_does_not_overwrite(executor, playbook):
+def test_callback_plugin_censoring_does_not_overwrite(executor, playbook, skipif_pre_ansible28):
     executor.run()
     events = list(executor.events)
     assert events[0]['event'] == 'playbook_on_start'
@@ -258,7 +264,7 @@ def test_callback_plugin_strips_task_environ_variables(executor, playbook):
           foo: "bar"
 '''},  # noqa
 ])
-def test_callback_plugin_saves_custom_stats(executor, playbook):
+def test_callback_plugin_saves_custom_stats(executor, playbook, skipif_pre_ansible28):
     executor.run()
     for event in executor.events:
         event_data = event.get('event_data', {})
@@ -285,7 +291,7 @@ def test_callback_plugin_saves_custom_stats(executor, playbook):
 '''},  # noqa
 ])
 @pytest.mark.skipif(ANSIBLE_VERSION < '2.5', reason="v2_playbook_on_notify doesn't work before ansible 2.5")
-def test_callback_plugin_records_notify_events(executor, playbook):
+def test_callback_plugin_records_notify_events(executor, playbook, skipif_pre_ansible28):
     executor.run()
     assert len(list(executor.events))
     notify_events = [x for x in executor.events if x['event'] == 'playbook_on_notify']
@@ -309,7 +315,7 @@ def test_callback_plugin_records_notify_events(executor, playbook):
         url_password: "{{ pw }}"
 '''},  # noqa
 ])
-def test_module_level_no_log(executor, playbook):
+def test_module_level_no_log(executor, playbook, skipif_pre_ansible28):
     # It's possible for `no_log=True` to be defined at the _module_ level,
     # e.g., for the URI module password parameter
     # This test ensures that we properly redact those

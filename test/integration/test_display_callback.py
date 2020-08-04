@@ -15,7 +15,7 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.fixture()
-def executor(tmpdir, request):
+def executor(tmpdir, request, is_pre_ansible28):
     private_data_dir = six.text_type(tmpdir.mkdir('foo'))
 
     playbooks = request.node.callspec.params.get('playbook')
@@ -28,9 +28,15 @@ def executor(tmpdir, request):
     # python interpreter used is not of much interest, we really want to silence warnings
     envvars['ANSIBLE_PYTHON_INTERPRETER'] = 'auto_silent'
 
+    if is_pre_ansible28:
+        inventory = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
+    else:
+        inventory = 'localhost ansible_connection=local'
+
+
     r = init_runner(
         private_data_dir=private_data_dir,
-        inventory="localhost ansible_connection=local",
+        inventory=inventory,
         envvars=envvars,
         playbook=yaml.safe_load(playbook)
     )

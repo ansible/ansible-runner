@@ -114,7 +114,7 @@ def test_module_run_clean():
     assert rc == 0
 
 
-def test_role_run():
+def test_role_run(skipif_pre_ansible28):
     rc = main(['-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
                '--roles-path', 'test/integration/roles',
@@ -182,7 +182,7 @@ def test_role_bad_project_dir():
 
 
 @pytest.mark.serial
-def test_role_run_clean():
+def test_role_run_clean(skipif_pre_ansible28):
 
     rc = main(['-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
@@ -203,7 +203,7 @@ def test_role_run_cmd_line_abs():
     assert rc == 0
 
 
-def test_role_run_artifacts_dir():
+def test_role_run_artifacts_dir(skipif_pre_ansible28):
     rc = main(['-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
                '--roles-path', 'test/integration/roles',
@@ -214,7 +214,7 @@ def test_role_run_artifacts_dir():
     ensure_removed("test/integration/artifacts")
 
 
-def test_role_run_artifacts_dir_abs():
+def test_role_run_artifacts_dir_abs(skipif_pre_ansible28):
     try:
         with temp_directory() as temp_dir:
             rc = main(['-r', 'benthomasson.hello_role',
@@ -264,26 +264,28 @@ def test_role_run_args():
     assert rc == 0
 
 
-def test_role_run_inventory():
+def test_role_run_inventory(is_pre_ansible28):
 
+    inv = 'inventory/localhost_preansible28' if is_pre_ansible28 else 'inventory/localhost'
     with temp_directory() as temp_dir:
         ensure_directory(os.path.join(temp_dir, 'inventory'))
-        shutil.copy(os.path.join(HERE, 'inventory/localhost'), os.path.join(temp_dir, 'inventory/localhost'))
+        shutil.copy(os.path.join(HERE, inv), os.path.join(temp_dir, 'inventory/localhost'))
 
         rc = main(['-r', 'benthomasson.hello_role',
                    '--hosts', 'localhost',
                    '--roles-path', os.path.join(HERE, 'project/roles'),
-                   '--inventory', 'localhost',
+                   '--inventory', os.path.join(temp_dir, 'inventory/localhost'),
                    'run',
                    temp_dir])
     assert rc == 0
 
 
-def test_role_run_inventory_missing(skipif_pre_ansible28):
+def test_role_run_inventory_missing(is_pre_ansible28):
 
+    inv = 'inventory/localhost_preansible28' if is_pre_ansible28 else 'inventory/localhost'
     with temp_directory() as temp_dir:
         ensure_directory(os.path.join(temp_dir, 'inventory'))
-        shutil.copy(os.path.join(HERE, 'inventory/localhost'), os.path.join(temp_dir, 'inventory/localhost'))
+        shutil.copy(os.path.join(HERE, inv), os.path.join(temp_dir, 'inventory/localhost'))
 
         with pytest.raises(AnsibleRunnerException):
             main(['-r', 'benthomasson.hello_role',
@@ -309,14 +311,15 @@ def test_role_start():
 
 
 @pytest.mark.serial
-def test_playbook_start():
+def test_playbook_start(skipif_pre_ansible28):
 
+    inv = 'inventory/localhost'
     with temp_directory() as temp_dir:
         project_dir = os.path.join(temp_dir, 'project')
         ensure_directory(project_dir)
         shutil.copy(os.path.join(HERE, 'project/hello.yml'), project_dir)
         ensure_directory(os.path.join(temp_dir, 'inventory'))
-        shutil.copy(os.path.join(HERE, 'inventory/localhost'), os.path.join(temp_dir, 'inventory/localhost'))
+        shutil.copy(os.path.join(HERE, inv), os.path.join(temp_dir,'inventory/localhost'))
 
         # privateip: removed --hosts command line option from test beause it is
         # not a supported combination of cli options

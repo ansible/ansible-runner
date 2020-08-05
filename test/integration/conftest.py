@@ -42,7 +42,6 @@ def container_runtime_available():
 @pytest.fixture(scope="session", autouse=True)
 def container_runtime_installed(container_runtime_available):
     import subprocess
-    import warnings
 
     if container_runtime_available:
         for runtime in ('podman', 'docker'):

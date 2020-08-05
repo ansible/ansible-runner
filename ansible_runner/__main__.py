@@ -319,7 +319,7 @@ DEFAULT_CLI_ARGS = {
                 dest="process_isolation_hide_paths",
                 nargs='*',
                 help="list of paths on the system that should be hidden from the "
-                      "playbook run (default=None)"
+                     "playbook run (default=None)"
             )
         ),
         (
@@ -393,7 +393,8 @@ DEFAULT_CLI_ARGS = {
             ("--resource-profiling-results-dir",),
             dict(
                 dest='resource_profiling_results_dir',
-                help="Directory where profiling data files should be saved. Defaults to None (profiling_data folder under private data dir is used in this case)."
+                help="Directory where profiling data files should be saved. "
+                     "Defaults to None (profiling_data folder under private data dir is used in this case)."
             )
         )
     ),
@@ -421,7 +422,8 @@ DEFAULT_CLI_ARGS = {
             dict(
                 dest="container_volume_mounts",
                 action='append',
-                help="Bind mounts (in the form 'host_dir:/container_dir)'. Can be used more than once to create multiple bind mounts."
+                help="Bind mounts (in the form 'host_dir:/container_dir)'. "
+                     "Can be used more than once to create multiple bind mounts."
             )
         ),
         (
@@ -429,7 +431,8 @@ DEFAULT_CLI_ARGS = {
             dict(
                 dest="container_options",
                 action='append',
-                help="Container options to pass to execution engine. Can be used more than once to send multiple options."
+                help="Container options to pass to execution engine. "
+                     "Can be used more than once to send multiple options."
             )
         ),
     ),
@@ -448,7 +451,8 @@ DEFAULT_CLI_ARGS = {
                 dest='keep_files',
                 action='store_true',
                 default=False,
-                help="Keep temporary files persistent on disk instead of cleaning them automatically. (Useful for debugging)"
+                help="Keep temporary files persistent on disk instead of cleaning them automatically. "
+                     "(Useful for debugging)"
             ),
         ),
     ),
@@ -671,7 +675,7 @@ def main(sys_args=None):
     )
     add_args_to_parser(playbook_subparser, DEFAULT_CLI_ARGS['execenv_cli_group'])
 
-    # generic args for all subparsers 
+    # generic args for all subparsers
     add_args_to_parser(run_subparser, DEFAULT_CLI_ARGS['generic_args'])
     add_args_to_parser(start_subparser, DEFAULT_CLI_ARGS['generic_args'])
     add_args_to_parser(stop_subparser, DEFAULT_CLI_ARGS['generic_args'])
@@ -751,8 +755,8 @@ def main(sys_args=None):
     # modules groups
 
     modules_group_options = (
-            "Ansible Module Options",
-            "configuration options for directly executing Ansible modules",
+        "Ansible Module Options",
+        "configuration options for directly executing Ansible modules",
     )
     base_modules_group = parser.add_argument_group(*modules_group_options)
     run_modules_group = run_subparser.add_argument_group(*modules_group_options)
@@ -814,7 +818,7 @@ def main(sys_args=None):
     vargs = vars(args)
 
     # FIXME - Probably a more elegant way to handle this.
-    # set some state about CLI Exec Env 
+    # set some state about CLI Exec Env
     cli_execenv_cmd = ""
 
     if vargs.get('command') in ('adhoc', 'playbook'):

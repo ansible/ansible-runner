@@ -29,7 +29,7 @@ Requires:      python2-%{pypi_name} = %{version}-%{release}
 %endif
 
 %if %{with python3}
-BuildRequires: python3
+BuildRequires: python3-devel
 BuildRequires: python3-setuptools
 Requires:      python3-%{pypi_name} = %{version}-%{release}
 %endif

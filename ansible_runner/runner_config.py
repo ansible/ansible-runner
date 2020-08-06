@@ -685,15 +685,15 @@ class RunnerConfig(object):
                         if os.path.isabs(inventory_file_path) and (os.path.dirname(inventory_file_path) != '/'):
                             new_args.extend([
                                 "-v", "{}:{}".format(
-                                   os.path.dirname(inventory_file_path),
-                                   os.path.dirname(inventory_file_path),
+                                    os.path.dirname(inventory_file_path),
+                                    os.path.dirname(inventory_file_path),
                                 )
                             ])
                         else:
                             new_args.extend([
                                 "-v", "{}:/runner/project/{}".format(
-                                   os.path.dirname(os.path.abspath(inventory_file_path)),
-                                   os.path.dirname(inventory_file_path),
+                                    os.path.dirname(os.path.abspath(inventory_file_path)),
+                                    os.path.dirname(inventory_file_path),
                                 )
                             ])
 

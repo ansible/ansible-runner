@@ -728,7 +728,7 @@ class RunnerConfig(object):
                 _ensure_path_safe_to_mount(host_path)
                 new_args.extend(["-v", "{}:{}".format(host_path, container_path)])
 
-        env_var_whitelist = ['PROJECT_UPDATE_ID', 'ANSIBLE_CALLBACK_PLUGINS', 'ANSIBLE_STDOUT_CALLBACK']
+        env_var_whitelist = ['PROJECT_UPDATE_ID']
 
         for k, v in self.env.items():
             if k in env_var_whitelist:

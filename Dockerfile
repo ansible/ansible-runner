@@ -22,14 +22,17 @@ RUN chmod +x /bin/entrypoint
 # In OpenShift, container will run as a random uid number and gid 0. Make sure things
 # are writeable by the root group.
 RUN for dir in \
+      /home/runner \
+      /home/runner/.ansible \
       /runner \
       /home/runner \
       /runner/env \
       /runner/inventory \
       /runner/project \
       /runner/artifacts ; \
-    do mkdir -m 0775 -p $dir ; chmod g+rw $dir ; chgrp runner $dir ; done && \
+    do mkdir -m 0775 -p $dir ; chmod g+rw $dir ; chown -R runner:runner $dir ; done && \
     for file in \
+      /home/runner/.ansible/galaxy_token \
       /etc/passwd ; \
     do touch $file ; chmod g+rw $file ; chgrp runner $file ; done
 

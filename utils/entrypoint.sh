@@ -11,10 +11,12 @@ runner:x:`id -u`:`id -g`:,,,:/home/runner:/bin/bash
 EOF
 fi
 
-RUNNER_CALLBACKS=$(python3 -c "import ansible_runner.callbacks; print(ansible_runner.callbacks.__file__)")
+if [[ -n "${LAUNCHED_BY_RUNNER}" ]]; then
+    RUNNER_CALLBACKS=$(python3 -c "import ansible_runner.callbacks; print(ansible_runner.callbacks.__file__)")
 
-export ANSIBLE_CALLBACK_PLUGINS="$(dirname $RUNNER_CALLBACKS):${ANSIBLE_CALLBACK_PLUGINS}"
+    export ANSIBLE_CALLBACK_PLUGINS="$(dirname $RUNNER_CALLBACKS):${ANSIBLE_CALLBACK_PLUGINS}"
 
-export ANSIBLE_STDOUT_CALLBACK=awx_display
+    export ANSIBLE_STDOUT_CALLBACK=awx_display
+fi
 
 exec tini -- "${@}"

@@ -606,6 +606,7 @@ class RunnerConfig(object):
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm', '--tty', '--interactive'])
         new_args.extend(["--workdir", "/runner/project"])
+        new_args.extend(["-e", "LAUNCHED_BY_RUNNER=1"])
 
         def _ensure_path_safe_to_mount(path):
             if path in ('/home', '/usr'):

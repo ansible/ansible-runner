@@ -642,9 +642,10 @@ class RunnerConfig(object):
                 # parse everything beyond the first arg because we checked that
                 # in the previous case already
                 for arg in _book_keeping_copy[1:]:
+                    import q; q.q(arg)
                     if arg[0] == '-':
                         continue
-                    elif _book_keeping_copy[_book_keeping_copy.index(arg - 1)][0] != '-':
+                    elif _book_keeping_copy[(_book_keeping_copy.index(arg) - 1)][0] != '-':
                         _playbook = arg
                         break
 

@@ -23,6 +23,7 @@ RUN chmod +x /bin/entrypoint
 # are writeable by the root group.
 RUN for dir in \
       /runner \
+      /home/runner \
       /runner/env \
       /runner/inventory \
       /runner/project \

@@ -698,7 +698,7 @@ class RunnerConfig(object):
                             ])
 
             # volume mount ~/.ssh/ into the exec env container
-            new_args.extend(["-v", "{}/.ssh/:/runner/.ssh/".format(os.environ['HOME'])])
+            new_args.extend(["-v", "{}/.ssh/:/home/runner/.ssh/".format(os.environ['HOME'])])
 
             # volume mount system-wide ssh_known_hosts the exec env container
             if os.path.exists('/etc/ssh/ssh_known_hosts'):

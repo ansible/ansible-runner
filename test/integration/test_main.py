@@ -87,7 +87,8 @@ def test_module_run():
         assert os.path.exists('./ping/artifacts')
         assert rc == 0
     finally:
-        shutil.rmtree('./ping')
+        if os.path.exists('./ping'):
+            shutil.rmtree('./ping')
 
 
 def test_module_run_debug():
@@ -101,7 +102,8 @@ def test_module_run_debug():
         assert os.path.exists('./ping/artifacts')
         assert rc == 0
     finally:
-        shutil.rmtree('./ping')
+        if os.path.exists('./ping'):
+            shutil.rmtree('./ping')
 
 
 @pytest.mark.serial

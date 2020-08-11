@@ -36,6 +36,9 @@ class Bunch(object):
     def update(self, **kwargs):
         self.__dict__.update(kwargs)
 
+    def get(self, key):
+        return self.__dict__.get(key)
+
 
 def isplaybook(obj):
     '''

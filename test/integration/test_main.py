@@ -79,9 +79,8 @@ def test_help():
 
 def test_module_run():
     try:
-        rc = main(['-m', 'ping',
+        rc = main(['run', '-m', 'ping',
                    '--hosts', 'localhost',
-                   'run',
                    'ping'])
         assert os.path.exists('./ping')
         assert os.path.exists('./ping/artifacts')
@@ -93,10 +92,9 @@ def test_module_run():
 
 def test_module_run_debug():
     try:
-        rc = main(['-m', 'ping',
+        rc = main(['run', '-m', 'ping',
                    '--hosts', 'localhost',
                    '--debug',
-                   'run',
                    'ping'])
         assert os.path.exists('./ping')
         assert os.path.exists('./ping/artifacts')
@@ -109,18 +107,16 @@ def test_module_run_debug():
 @pytest.mark.serial
 def test_module_run_clean():
     with temp_directory() as temp_dir:
-        rc = main(['-m', 'ping',
+        rc = main(['run', '-m', 'ping',
                    '--hosts', 'localhost',
-                   'run',
                    temp_dir])
     assert rc == 0
 
 
 def test_role_run(skipif_pre_ansible28):
-    rc = main(['-r', 'benthomasson.hello_role',
+    rc = main(['run', '-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
                '--roles-path', 'test/integration/roles',
-               'run',
                "test/integration"])
     assert rc == 0
     ensure_removed("test/integration/artifacts")
@@ -128,21 +124,19 @@ def test_role_run(skipif_pre_ansible28):
 
 def test_role_run_abs():
     with temp_directory() as temp_dir:
-        rc = main(['-r', 'benthomasson.hello_role',
+        rc = main(['run', '-r', 'benthomasson.hello_role',
                    '--hosts', 'localhost',
                    '--roles-path', os.path.join(HERE, 'project/roles'),
-                   'run',
                    temp_dir])
     assert rc == 0
 
 
 def test_role_logfile(skipif_pre_ansible28):
     try:
-        rc = main(['-r', 'benthomasson.hello_role',
+        rc = main(['run', '-r', 'benthomasson.hello_role',
                    '--hosts', 'localhost',
                    '--roles-path', 'test/integration/project/roles',
                    '--logfile', 'new_logfile',
-                   'run',
                    'test/integration'])
         assert os.path.exists('new_logfile')
         assert rc == 0
@@ -153,11 +147,10 @@ def test_role_logfile(skipif_pre_ansible28):
 def test_role_logfile_abs():
     try:
         with temp_directory() as temp_dir:
-            rc = main(['-r', 'benthomasson.hello_role',
+            rc = main(['run', '-r', 'benthomasson.hello_role',
                        '--hosts', 'localhost',
                        '--roles-path', os.path.join(HERE, 'project/roles'),
                        '--logfile', 'new_logfile',
-                       'run',
                        temp_dir])
         assert os.path.exists('new_logfile')
         assert rc == 0
@@ -172,11 +165,10 @@ def test_role_bad_project_dir():
 
     try:
         with pytest.raises(OSError):
-            main(['-r', 'benthomasson.hello_role',
+            main(['run', '-r', 'benthomasson.hello_role',
                   '--hosts', 'localhost',
                   '--roles-path', os.path.join(HERE, 'project/roles'),
                   '--logfile', 'new_logfile',
-                  'run',
                   'bad_project_dir'])
     finally:
         os.unlink('bad_project_dir')
@@ -186,10 +178,9 @@ def test_role_bad_project_dir():
 @pytest.mark.serial
 def test_role_run_clean(skipif_pre_ansible28):
 
-    rc = main(['-r', 'benthomasson.hello_role',
+    rc = main(['run', '-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
                '--roles-path', 'test/integration/roles',
-               'run',
                "test/integration"])
     assert rc == 0
     ensure_removed("test/integration/artifacts")
@@ -197,20 +188,18 @@ def test_role_run_clean(skipif_pre_ansible28):
 
 def test_role_run_cmd_line_abs():
     with temp_directory() as temp_dir:
-        rc = main(['-r', 'benthomasson.hello_role',
+        rc = main(['run', '-r', 'benthomasson.hello_role',
                    '--hosts', 'localhost',
                    '--roles-path', os.path.join(HERE, 'project/roles'),
-                   'run',
                    temp_dir])
     assert rc == 0
 
 
 def test_role_run_artifacts_dir(skipif_pre_ansible28):
-    rc = main(['-r', 'benthomasson.hello_role',
+    rc = main(['run', '-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
                '--roles-path', 'test/integration/roles',
                '--artifact-dir', 'otherartifacts',
-               'run',
                "test/integration"])
     assert rc == 0
     ensure_removed("test/integration/artifacts")
@@ -219,11 +208,10 @@ def test_role_run_artifacts_dir(skipif_pre_ansible28):
 def test_role_run_artifacts_dir_abs(skipif_pre_ansible28):
     try:
         with temp_directory() as temp_dir:
-            rc = main(['-r', 'benthomasson.hello_role',
+            rc = main(['run', '-r', 'benthomasson.hello_role',
                        '--hosts', 'localhost',
                        '--roles-path', os.path.join(HERE, 'project/roles'),
                        '--artifact-dir', 'otherartifacts',
-                       'run',
                        temp_dir])
         assert os.path.exists(os.path.join('.', 'otherartifacts'))
         assert rc == 0
@@ -246,10 +234,9 @@ def test_role_run_env_vars(envvars):
         with codecs.open(os.path.join(temp_dir, 'env/envvars'), 'w', encoding='utf-8') as f:
             f.write(yaml.dump(envvars))
 
-        rc = main(['-r', 'benthomasson.hello_role',
+        rc = main(['run', '-r', 'benthomasson.hello_role',
                    '--hosts', 'localhost',
                    '--roles-path', os.path.join(HERE, 'project/roles'),
-                   'run',
                    temp_dir])
     assert rc == 0
 
@@ -257,11 +244,10 @@ def test_role_run_env_vars(envvars):
 def test_role_run_args():
 
     with temp_directory() as temp_dir:
-        rc = main(['-r', 'benthomasson.hello_role',
+        rc = main(['run', '-r', 'benthomasson.hello_role',
                    '--hosts', 'localhost',
                    '--roles-path', os.path.join(HERE, 'project/roles'),
                    '--role-vars', 'msg=hi',
-                   'run',
                    temp_dir])
     assert rc == 0
 
@@ -273,11 +259,10 @@ def test_role_run_inventory(is_pre_ansible28):
         ensure_directory(os.path.join(temp_dir, 'inventory'))
         shutil.copy(os.path.join(HERE, inv), os.path.join(temp_dir, 'inventory/localhost'))
 
-        rc = main(['-r', 'benthomasson.hello_role',
+        rc = main(['run', '-r', 'benthomasson.hello_role',
                    '--hosts', 'localhost',
                    '--roles-path', os.path.join(HERE, 'project/roles'),
                    '--inventory', os.path.join(temp_dir, 'inventory/localhost'),
-                   'run',
                    temp_dir])
     assert rc == 0
 
@@ -290,11 +275,10 @@ def test_role_run_inventory_missing(is_pre_ansible28):
         shutil.copy(os.path.join(HERE, inv), os.path.join(temp_dir, 'inventory/localhost'))
 
         with pytest.raises(AnsibleRunnerException):
-            main(['-r', 'benthomasson.hello_role',
+            main(['run', '-r', 'benthomasson.hello_role',
                   '--hosts', 'localhost',
                   '--roles-path', os.path.join(HERE, 'project/roles'),
                   '--inventory', 'does_not_exist',
-                  'run',
                   temp_dir])
 
 
@@ -303,10 +287,9 @@ def test_role_start():
 
     with temp_directory() as temp_dir:
         p = multiprocessing.Process(target=main,
-                                    args=[['-r', 'benthomasson.hello_role',
+                                    args=[['start', '-r', 'benthomasson.hello_role',
                                            '--hosts', 'localhost',
                                            '--roles-path', os.path.join(HERE, 'project/roles'),
-                                           'start',
                                            temp_dir]])
         p.start()
         p.join()
@@ -326,10 +309,9 @@ def test_playbook_start(skipif_pre_ansible28):
         # privateip: removed --hosts command line option from test beause it is
         # not a supported combination of cli options
         p = multiprocessing.Process(target=main,
-                                    args=[['-p', 'hello.yml',
+                                    args=[['start', '-p', 'hello.yml',
                                            '--inventory', os.path.join(HERE, 'inventory/localhost'),
                                            #'--hosts', 'localhost',
-                                           'start',
                                            temp_dir]])
         p.start()
 

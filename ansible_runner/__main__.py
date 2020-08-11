@@ -626,6 +626,7 @@ def main(sys_args=None):
         dest='command',
         description="COMMAND PRIVATE_DATA_DIR [ARGS]"
     )
+    subparser.required = True
 
 
     # positional options
@@ -813,7 +814,7 @@ def main(sys_args=None):
     if ('playbook' in sys.argv) or ('adhoc' in sys.argv):
         args, leftover_args = parser.parse_known_args(sys_args)
     else:
-        args = parser.parse_known_args(sys_args)
+        args = parser.parse_args(sys_args)
 
     vargs = vars(args)
 
@@ -828,6 +829,11 @@ def main(sys_args=None):
             vargs['private_data_dir'] = temp_private_dir
             if vargs.get('keep_files', False):
                 print("ANSIBLE-RUNNER: keeping temporary data directory: {}".format(temp_private_dir))
+            else:
+                @atexit.register
+                def conditonally_clean_cli_execenv_tempdir():
+                    shutil.rmtree(temp_private_dir)
+
         if not leftover_args:
             parser.exit(
                 status=1,
@@ -835,11 +841,6 @@ def main(sys_args=None):
                     vargs.get('command')
                 )
             )
-
-    @atexit.register
-    def conditonally_clean_cli_execenv_tempdir():
-        if not vargs.get('keep_files', False):
-            shutil.rmtree(temp_private_dir)
 
     if vargs.get('command') in ('start', 'run'):
         if vargs.get('hosts') and not (vargs.get('module') or vargs.get('role')):

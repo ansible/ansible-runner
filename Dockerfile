@@ -5,14 +5,18 @@ ADD demo/project /runner/project
 ADD demo/env /runner/env
 ADD demo/inventory /runner/inventory
 
+# UNDO Before 2.0 Release:
 # Install Ansible and Runner
-ADD https://releases.ansible.com/ansible-runner/ansible-runner.el8.repo /etc/yum.repos.d/ansible-runner.repo
+#ADD https://releases.ansible.com/ansible-runner/ansible-runner.el8.repo /etc/yum.repos.d/ansible-runner.repo
+#RUN dnf install -y ansible-runner
 RUN dnf install -y epel-release && \
-    dnf install -y ansible-runner python3-pip sudo rsync openssh-clients sshpass glibc-langpack-en git && \
+    dnf install -y python3-pip sudo rsync openssh-clients sshpass glibc-langpack-en git && \
     alternatives --set python /usr/bin/python3 && \
-    pip3 install ansible && \
     chmod +x /bin/tini && \
     rm -rf /var/cache/dnf
+
+RUN dnf install -y gcc python3-devel
+RUN pip3 install https://github.com/ansible/ansible/archive/devel.tar.gz https://github.com/maxamillion/ansible-runner/archive/cli_execenv_rebase.tar.gz
 
 RUN useradd runner && usermod -aG root runner
 

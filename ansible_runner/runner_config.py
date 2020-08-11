@@ -614,11 +614,6 @@ class RunnerConfig(object):
 
         _ensure_path_safe_to_mount(self.private_data_dir)
 
-        if not self.cli_execenv_cmd:
-            dirs_to_create = ['project', 'artifacts', 'inventory', 'env']
-        else:
-            dirs_to_create = ['artifacts']
-
         def _parse_cli_execenv_cmd_playbook_args():
 
             # Determine all inventory file paths, accounting for the possibility of multiple
@@ -713,14 +708,24 @@ class RunnerConfig(object):
             )
             new_args.extend(["-e", "SSH_AUTH_SOCK={}".format(os.environ['SSH_AUTH_SOCK'])])
 
+            if 'podman' in self.process_isolation_executable:
+                # container namespace stuff
+                new_args.extend(["--userns=keep-id"])
+                new_args.extend(["--ipc=host"])
+
 
         # These directories need to exist before they are mounted in the container,
         # or they will be owned by root.
+        if not self.cli_execenv_cmd:
+            dirs_to_create = ['project', 'artifacts', 'inventory', 'env']
+        else:
+            dirs_to_create = ['artifacts']
+
         for d in dirs_to_create:
             if not os.path.exists(os.path.join(self.private_data_dir, d)):
                 os.mkdir(os.path.join(self.private_data_dir, d), 0o700)
 
-            new_args.extend(["-v", "{}:/runner/{}".format(os.path.join(self.private_data_dir, d), d)])
+            new_args.extend(["-v", "{}:/runner/{}:Z".format(os.path.join(self.private_data_dir, d), d)])
 
         container_volume_mounts = self.container_volume_mounts
         if container_volume_mounts:
@@ -739,10 +744,6 @@ class RunnerConfig(object):
         new_args.extend(["-e", "AWX_ISOLATED_DATA_DIR={}".format(artifact_dir)])
 
         if 'podman' in self.process_isolation_executable:
-            # container namespace stuff
-            new_args.extend(["--userns=keep-id"])
-            new_args.extend(["--ipc=host"])
-
             # docker doesnt support this option
             new_args.extend(['--quiet'])
 

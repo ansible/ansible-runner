@@ -626,6 +626,7 @@ def main(sys_args=None):
         dest='command',
         description="COMMAND PRIVATE_DATA_DIR [ARGS]"
     )
+    add_args_to_parser(parser, DEFAULT_CLI_ARGS['generic_args'])
     subparser.required = True
 
 

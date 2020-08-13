@@ -1,0 +1,7 @@
+FROM registry.access.redhat.com/ubi8/ubi
+
+RUN yum -y install python3-pip gcc python3-devel openssh-clients
+RUN pip3 install https://github.com/ansible/ansible/archive/devel.tar.gz
+RUN pip3 install https://github.com/ansible/ansible-runner/archive/devel.tar.gz
+
+

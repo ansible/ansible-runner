@@ -53,6 +53,7 @@ class ExecutionMode():
     ANSIBLE = 1
     ANSIBLE_PLAYBOOK = 2
     RAW = 3
+    CLI_EXECENV = 4
 
 
 class RunnerConfig(object):
@@ -86,7 +87,7 @@ class RunnerConfig(object):
                  resource_profiling_results_dir=None,
                  tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None, ssh_key=None,
                  project_dir=None, directory_isolation_base_path=None, envvars=None, forks=None, cmdline=None, omit_event_data=False,
-                 only_failed_event_data=False):
+                 only_failed_event_data=False, cli_execenv_cmd=""):
         self.private_data_dir = os.path.abspath(private_data_dir)
         self.ident = str(ident)
         self.json_mode = json_mode
@@ -96,6 +97,7 @@ class RunnerConfig(object):
         self.limit = limit
         self.module = module
         self.module_args = module_args
+        self.cli_execenv_cmd = cli_execenv_cmd
         self.host_pattern = host_pattern
         self.binary = binary
         self.rotate_artifacts = rotate_artifacts
@@ -145,6 +147,7 @@ class RunnerConfig(object):
         self.envvars = envvars
         self.forks = forks
         self.cmdline_args = cmdline
+
         self.omit_event_data = omit_event_data
         self.only_failed_event_data = only_failed_event_data
 
@@ -193,6 +196,8 @@ class RunnerConfig(object):
             raise ConfigurationError("Runner playbook required when running ansible-playbook")
         elif self.execution_mode == ExecutionMode.ANSIBLE and self.module is None:
             raise ConfigurationError("Runner module required when running ansible")
+        elif self.execution_mode == ExecutionMode.CLI_EXECENV and self.cmdline_args is None:
+            raise ConfigurationError("Runner requires arguments to pass to ansible, try '-h' for ansible help output")
         elif self.execution_mode == ExecutionMode.NONE:
             raise ConfigurationError("No executable for runner to run")
 
@@ -288,7 +293,6 @@ class RunnerConfig(object):
             if os.path.exists(os.path.join(self.private_data_dir, "inventory")):
                 self.inventory = os.path.join(self.private_data_dir, "inventory")
 
-
     def prepare_env(self):
         """
         Manages reading environment metadata files under ``private_data_dir`` and merging/updating
@@ -359,7 +363,6 @@ class RunnerConfig(object):
         self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
 
-
         if 'AD_HOC_COMMAND_ID' in self.env or not os.path.exists(self.project_dir):
             self.cwd = self.private_data_dir
         else:
@@ -380,14 +383,24 @@ class RunnerConfig(object):
         Determines if the literal ``ansible`` or ``ansible-playbook`` commands are given
         and if not calls :py:meth:`ansible_runner.runner_config.RunnerConfig.generate_ansible_command`
         """
-        try:
-            cmdline_args = self.loader.load_file('args', string_types, encoding=None)
-            if six.PY2 and isinstance(cmdline_args, text_type):
-                cmdline_args = cmdline_args.encode('utf-8')
-            self.command = shlex.split(cmdline_args)
-            self.execution_mode = ExecutionMode.RAW
-        except ConfigurationError:
-            self.command = self.generate_ansible_command()
+        if not self.cli_execenv_cmd:
+            try:
+                cmdline_args = self.loader.load_file('args', string_types, encoding=None)
+
+                if six.PY2 and isinstance(cmdline_args, text_type):
+                    cmdline_args = cmdline_args.encode('utf-8')
+                self.command = shlex.split(cmdline_args)
+                self.execution_mode = ExecutionMode.RAW
+            except ConfigurationError:
+                self.command = self.generate_ansible_command()
+        else:
+            if self.cli_execenv_cmd:
+                if self.cli_execenv_cmd == 'adhoc':
+                    self.command = ['ansible'] + self.cmdline_args 
+                elif self.cli_execenv_cmd == 'playbook':
+                    self.command = ['ansible-playbook'] + self.cmdline_args 
+                self.execution_mode = ExecutionMode.CLI_EXECENV
+
 
     def generate_ansible_command(self):
         """
@@ -395,7 +408,16 @@ class RunnerConfig(object):
         will generate the ``ansible`` or ``ansible-playbook`` command that will be used by the
         :py:class:`ansible_runner.runner.Runner` object to start the process
         """
-        if self.binary is not None:
+        # FIXME - this never happens because the conditional in prepare_command
+        #         "branches around it" and I need to figure out if that's the
+        #         correct course of action or not.
+        if self.cli_execenv_cmd:
+            if self.cli_execenv_cmd == 'adhoc':
+                base_command = 'ansible'
+            elif self.cli_execenv_cmd == 'playbook':
+                base_command = 'ansible-playbook'
+            self.execution_mode = ExecutionMode.CLI_EXECENV
+        elif self.binary is not None:
             base_command = self.binary
             self.execution_mode = ExecutionMode.RAW
         elif self.module is not None:
@@ -406,6 +428,27 @@ class RunnerConfig(object):
             self.execution_mode = ExecutionMode.ANSIBLE_PLAYBOOK
 
         exec_list = [base_command]
+
+        if self.cli_execenv_cmd:
+            # Provide dummy data for Tower/AWX vars so that playbooks won't
+            # fail with undefined var errors
+            awx_tower_vars = {
+                'awx_job_id': 1,
+                'tower_job_id': 1,
+                'awx_job_launch_type': 'workflow',
+                'tower_job_launch_type': 'workflow',
+                'awx_workflow_job_name': 'workflow-job',
+                'tower_workflow_job_name': 'workflow-job',
+                'awx_workflow_job_id': 1,
+                'tower_workflow_job_id': 1,
+                'awx_parent_job_schedule_id': 1,
+                'tower_parent_job_schedule_id': 1,
+                'awx_parent_job_schedule_name': 'job-schedule',
+                'tower_parent_job_schedule_name': 'job-schedule',
+            }
+            for k,v in awx_tower_vars.items():
+                exec_list.append('-e')
+                exec_list.append('"{}={}"'.format(k, v))
 
         try:
             if self.cmdline_args:
@@ -563,26 +606,136 @@ class RunnerConfig(object):
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm', '--tty', '--interactive'])
         new_args.extend(["--workdir", "/runner/project"])
+        new_args.extend(["-e", "LAUNCHED_BY_RUNNER=1"])
 
         def _ensure_path_safe_to_mount(path):
             if path in ('/home', '/usr'):
                 raise ConfigurationError("When using containerized execution, cannot mount /home or /usr")
 
-        # map private data to /runner
-        # .. using Z to modify the selinux label of the _host_ file / directory
-        # (see https://docs.docker.com/storage/bind-mounts/#configure-the-selinux-label
-        #  for usage and potential side-effects)
         _ensure_path_safe_to_mount(self.private_data_dir)
-        new_args.extend(["-v", "{}:/runner:Z".format(self.private_data_dir)])
+
+        def _parse_cli_execenv_cmd_playbook_args():
+
+            # Determine all inventory file paths, accounting for the possibility of multiple
+            # inventory files provided
+            _inventory_paths = []
+            _playbook = ""
+            _book_keeping_copy = self.cmdline_args.copy()
+            for arg in self.cmdline_args:
+                if arg == '-i':
+                    _book_keeping_copy_inventory_index = _book_keeping_copy.index('-i')
+                    _inventory_paths.append(self.cmdline_args[_book_keeping_copy_inventory_index + 1])
+                    _book_keeping_copy.pop(_book_keeping_copy_inventory_index)
+                    _book_keeping_copy.pop(_book_keeping_copy_inventory_index)
+
+            if len(_book_keeping_copy) == 1:
+                # it's probably safe to assume this is the playbook
+                _playbook = _book_keeping_copy[0]
+            elif _book_keeping_copy[0][0] != '-':
+                # this should be the playbook, it's the only "naked" arg
+                _playbook = _book_keeping_copy[0]
+            else:
+                # parse everything beyond the first arg because we checked that
+                # in the previous case already
+                for arg in _book_keeping_copy[1:]:
+                    if arg[0] == '-':
+                        continue
+                    elif _book_keeping_copy[(_book_keeping_copy.index(arg) - 1)][0] != '-':
+                        _playbook = arg
+                        break
+
+            return (_playbook, _inventory_paths)
+
+        if self.cli_execenv_cmd:
+            _parsed_playbook_path, _parsed_inventory_paths = _parse_cli_execenv_cmd_playbook_args()
+            if self.cli_execenv_cmd == 'playbook':
+                playbook_file_path = _parsed_playbook_path
+                _ensure_path_safe_to_mount(playbook_file_path)
+                if os.path.isabs(playbook_file_path) and (os.path.dirname(playbook_file_path) != '/'):
+                    new_args.extend([
+                        "-v", "{}:{}".format(
+                            os.path.dirname(playbook_file_path),
+                            os.path.dirname(playbook_file_path),
+                        )
+                    ])
+                else:
+                    new_args.extend([
+                        "-v", "{}:/runner/project/{}".format(
+                            os.path.dirname(os.path.abspath(playbook_file_path)),
+                            os.path.dirname(playbook_file_path),
+                        )
+                    ])
+
+            # volume mount inventory into the exec env container if provided at cli
+            if '-i' in self.cmdline_args:
+                inventory_file_paths = _parsed_inventory_paths
+                inventory_playbook_share_parent = False
+                for inventory_file_path in inventory_file_paths:
+                    _ensure_path_safe_to_mount(inventory_file_path)
+                    if self.cli_execenv_cmd == 'playbook':
+                        if os.path.dirname(os.path.abspath(inventory_file_path)) == \
+                                os.path.dirname(os.path.abspath(playbook_file_path)):
+                            inventory_playbook_share_parent = True
+                    if not inventory_file_path.endswith(',') and not inventory_playbook_share_parent:
+                        if os.path.isabs(inventory_file_path) and (os.path.dirname(inventory_file_path) != '/'):
+                            new_args.extend([
+                                "-v", "{}:{}".format(
+                                    os.path.dirname(inventory_file_path),
+                                    os.path.dirname(inventory_file_path),
+                                )
+                            ])
+                        else:
+                            new_args.extend([
+                                "-v", "{}:/runner/project/{}".format(
+                                    os.path.dirname(os.path.abspath(inventory_file_path)),
+                                    os.path.dirname(inventory_file_path),
+                                )
+                            ])
+
+            # volume mount ~/.ssh/ into the exec env container
+            new_args.extend(["-v", "{}/.ssh/:/home/runner/.ssh/".format(os.environ['HOME'])])
+
+            # volume mount system-wide ssh_known_hosts the exec env container
+            if os.path.exists('/etc/ssh/ssh_known_hosts'):
+                new_args.extend(["-v", "/etc/ssh/ssh_known_hosts:/etc/ssh/ssh_known_hosts"])
+
+            # handle ssh-agent "forwarding" into the exec env container
+            new_args.extend(
+                ["-v", "{}:{}".format(
+                    os.path.dirname(os.environ['SSH_AUTH_SOCK']), 
+                    os.path.dirname(os.environ['SSH_AUTH_SOCK'])
+                )]
+            )
+            new_args.extend(["-e", "SSH_AUTH_SOCK={}".format(os.environ['SSH_AUTH_SOCK'])])
+
+            if 'podman' in self.process_isolation_executable:
+                # container namespace stuff
+                new_args.extend(["--userns=keep-id"])
+                new_args.extend(["--ipc=host"])
+
+
+        # These directories need to exist before they are mounted in the container,
+        # or they will be owned by root.
+        if not self.cli_execenv_cmd:
+            dirs_to_create = ['project', 'artifacts', 'inventory', 'env']
+        else:
+            dirs_to_create = ['artifacts']
+
+        for d in dirs_to_create:
+            if not os.path.exists(os.path.join(self.private_data_dir, d)):
+                os.mkdir(os.path.join(self.private_data_dir, d), 0o700)
+
+            new_args.extend(["-v", "{}:/runner/{}:Z".format(os.path.join(self.private_data_dir, d), d)])
 
         container_volume_mounts = self.container_volume_mounts
         if container_volume_mounts:
             for mapping in container_volume_mounts:
                 host_path, container_path = mapping.split(':')
                 _ensure_path_safe_to_mount(host_path)
-                new_args.extend(["-v", "{}:{}:Z".format(host_path, container_path)])
+                new_args.extend(["-v", "{}:{}".format(host_path, container_path)])
 
-        env_var_whitelist = ['PROJECT_UPDATE_ID', 'ANSIBLE_CALLBACK_PLUGINS', 'ANSIBLE_STDOUT_CALLBACK']
+        env_var_whitelist = ['PROJECT_UPDATE_ID']
+
         for k, v in self.env.items():
             if k in env_var_whitelist:
                 new_args.extend(["-e", "{}={}".format(k, v)])
@@ -591,7 +744,8 @@ class RunnerConfig(object):
         new_args.extend(["-e", "AWX_ISOLATED_DATA_DIR={}".format(artifact_dir)])
 
         if 'podman' in self.process_isolation_executable:
-            new_args.extend(['--quiet']) # docker doesnt support this option
+            # docker doesnt support this option
+            new_args.extend(['--quiet'])
 
         if 'docker' in self.process_isolation_executable:
             new_args.extend([f'--user={os.getuid()}'])
@@ -603,6 +757,7 @@ class RunnerConfig(object):
 
         new_args.extend(args)
         debug(f"container engine invocation: {' '.join(new_args)}")
+
         return new_args
 
     def wrap_args_with_ssh_agent(self, args, ssh_key_path, ssh_auth_sock=None, silence_ssh_add=False):

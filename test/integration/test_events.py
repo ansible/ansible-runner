@@ -28,7 +28,7 @@ def test_basic_events(containerized, container_runtime_available, is_pre_ansible
     if containerized:
         run_args.update({'process_isolation': True,
                          'process_isolation_executable': 'podman',
-                         'container_image': 'ansible/ansible-runner',
+                         'container_image': 'localhost/ansible/ansible-runner',
                          'container_volume_mounts': [f'{tdir}:{tdir}']})
 
     if not is_run_async:

@@ -1,0 +1,41 @@
+---
+- name: Run some basic system automation stuff
+  hosts: rhel8
+  tasks:
+    - name: install some basic packages
+      yum:
+        name:
+          - tmux
+          - git
+          - vim-enhanced
+          - python3
+
+    - name: enable journald persistent storage
+      file:
+        path: /var/log/journal
+        state: directory
+
+    - name: Get tuned profile
+      slurp:
+        src: /etc/tuned/active_profile
+      register: tuned_active_profile
+
+    - debug:
+        msg: "{{ tuned_active_profile['content'] | b64decode | trim }}"
+
+    - name: tuned-adm set throughput-performance
+      shell: /usr/sbin/tuned-adm profile throughput-performance
+      when: "tuned_active_profile['content'] | b64decode | trim != 'throughput-performance'"
+
+    - name: don't allow password based ssh
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PasswordAuthentication'
+        line: "PasswordAuthentication no"
+      notify: restart sshd
+
+  handlers:
+    - name: restart sshd
+      service:
+        name: sshd
+        state: restarted

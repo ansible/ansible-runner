@@ -5,14 +5,18 @@
 # require a named user. So if we're in OpenShift, we need to make
 # one before Ansible runs.
 if [ `id -u` -ge 500 ] || [ -z "${CURRENT_UID}" ]; then
-
-  cat << EOF > /tmp/passwd
+cat << EOF > /etc/passwd
 root:x:0:0:root:/root:/bin/bash
-runner:x:`id -u`:`id -g`:,,,:/runner:/bin/bash
+runner:x:`id -u`:`id -g`:,,,:/home/runner:/bin/bash
 EOF
+fi
 
-  cat /tmp/passwd > /etc/passwd
-  rm /tmp/passwd
+if [[ -n "${LAUNCHED_BY_RUNNER}" ]]; then
+    RUNNER_CALLBACKS=$(python3 -c "import ansible_runner.callbacks; print(ansible_runner.callbacks.__file__)")
+
+    export ANSIBLE_CALLBACK_PLUGINS="$(dirname $RUNNER_CALLBACKS):${ANSIBLE_CALLBACK_PLUGINS}"
+
+    export ANSIBLE_STDOUT_CALLBACK=awx_display
 fi
 
 exec tini -- "${@}"

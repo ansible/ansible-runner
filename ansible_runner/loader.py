@@ -129,6 +129,7 @@ class ArtifactLoader(object):
         '''
         return os.path.isfile(self.abspath(path))
 
+
     def load_file(self, path, objtype=None, encoding='utf-8'):
         '''
         Load the file specified by path

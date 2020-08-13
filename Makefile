@@ -97,7 +97,7 @@ docs:
 	cd docs && make html
 
 image:
-	$(CONTAINER_ENGINE) pull centos:8
+	$(CONTAINER_ENGINE) pull docker.io/centos:8
 	$(CONTAINER_ENGINE) build --rm=true -t $(IMAGE_NAME) .
 
 devimage:

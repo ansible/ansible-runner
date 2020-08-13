@@ -613,13 +613,16 @@ def test_containerization_settings(mock_mkdir, container_runtime):
         extra_container_args = ['--user={os.getuid()}']
 
     expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
-        ['-v', '{}:/runner:Z'.format(rc.private_data_dir)] + \
-        ['-v', '/host1:/container1:Z', '-v', 'host2:/container2:Z'] + \
-        ['-e', 'ANSIBLE_CALLBACK_PLUGINS=/usr/lib/python3.6/site-packages/ansible_runner/callbacks'] + \
-        ['-e', 'ANSIBLE_STDOUT_CALLBACK=awx_display'] + \
+        ['-e', 'LAUNCHED_BY_RUNNER=1'] + \
+        ['-v', '{}:/runner/project:Z'.format(os.path.join(rc.private_data_dir, 'project'))] + \
+        ['-v', '{}:/runner/artifacts:Z'.format(os.path.join(rc.private_data_dir, 'artifacts'))] + \
+        ['-v', '{}:/runner/inventory:Z'.format(os.path.join(rc.private_data_dir, 'inventory'))] + \
+        ['-v', '{}:/runner/env:Z'.format(os.path.join(rc.private_data_dir, 'env'))] + \
+        ['-v', '/host1:/container1', '-v', 'host2:/container2'] + \
         ['-e', 'AWX_ISOLATED_DATA_DIR=/runner/artifacts/{}'.format(rc.ident)] + \
         extra_container_args + \
         ['my_container', 'ansible-playbook', '-i', '/runner/inventory/hosts', 'main.yaml']
+
     for index, element in enumerate(expected_command_start):
         if '--user' in element:
             assert '--user=' in rc.command[index]

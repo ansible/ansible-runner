@@ -63,7 +63,7 @@ DEFAULT_CLI_ARGS = {
         (
             ('private_data_dir',),
             dict(
-                help="base directory cotnaining the ansible-runner metadata "
+                help="base directory containing the ansible-runner metadata "
                      "(project, inventory, env, etc)"
             ),
         ),

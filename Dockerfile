@@ -16,7 +16,8 @@ RUN dnf install -y epel-release && \
     rm -rf /var/cache/dnf
 
 RUN dnf install -y gcc python3-devel
-RUN pip3 install https://github.com/ansible/ansible/archive/devel.tar.gz https://github.com/ansible/ansible-runner/archive/devel.tar.gz
+RUN pip3 install bindep https://github.com/ansible/ansible/archive/devel.tar.gz \
+    https://github.com/ansible/ansible-runner/archive/devel.tar.gz
 
 RUN useradd runner && usermod -aG root runner
 

@@ -28,7 +28,7 @@ RUN chmod +x /bin/entrypoint
 # are writeable by the root group.
 RUN for dir in \
       /home/runner \
-      /home/runner/.ansible \
+      /home/runner/.ansible/tmp \
       /runner \
       /home/runner \
       /runner/env \

@@ -35,11 +35,11 @@ RUN for dir in \
       /runner/inventory \
       /runner/project \
       /runner/artifacts ; \
-    do mkdir -m 0775 -p $dir ; chmod g+rw $dir ; chown -R runner:runner $dir ; done && \
+    do mkdir -m 0775 -p $dir ; chmod g+rwx $dir ; chgrp root $dir ; done && \
     for file in \
       /home/runner/.ansible/galaxy_token \
       /etc/passwd ; \
-    do touch $file ; chmod g+rw $file ; chgrp runner $file ; done
+    do touch $file ; chmod g+rw $file ; chgrp root $file ; done
 
 VOLUME /runner
 

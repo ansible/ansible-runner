@@ -11,11 +11,12 @@ ADD demo/inventory /runner/inventory
 #ADD https://releases.ansible.com/ansible-runner/ansible-runner.el8.repo /etc/yum.repos.d/ansible-runner.repo
 #RUN dnf install -y ansible-runner
 RUN dnf install -y python3-pip rsync openssh-clients sshpass glibc-langpack-en git \
+    gcc python3-devel \
     https://github.com/krallin/tini/releases/download/v0.19.0/tini_0.19.0-amd64.rpm && \
+    dnf clean all && \
     rm -rf /var/cache/dnf
 
-RUN dnf install -y gcc python3-devel
-RUN pip3 install bindep https://github.com/ansible/ansible/archive/devel.tar.gz \
+RUN pip3 install --no-cache-dir bindep https://github.com/ansible/ansible/archive/devel.tar.gz \
     https://github.com/ansible/ansible-runner/archive/devel.tar.gz
 
 RUN useradd runner && usermod -aG root runner

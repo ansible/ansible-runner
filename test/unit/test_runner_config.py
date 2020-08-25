@@ -592,6 +592,21 @@ def test_profiling_plugin_settings_with_custom_intervals(mock_mkdir):
     assert rc.env['CGROUP_PID_POLL_INTERVAL'] == '1.5'
 
 
+def test_container_volume_mounting_with_Z(tmpdir):
+    rc = RunnerConfig(str(tmpdir))
+    rc.container_volume_mounts = ['project_path:project_path:Z']
+    rc.env = {}
+    new_args = rc.wrap_args_for_containerization(['ansible-playbook', 'foo.yml'])
+    assert new_args[0] == 'podman'
+    for i, entry in enumerate(new_args):
+        if entry == '-v':
+            mount = new_args[i + 1]
+            if mount.endswith(':project_path:Z'):
+                break
+    else:
+        raise Exception('Could not find expected mount, args: {}'.format(new_args))
+
+
 @patch('os.mkdir', return_value=True)
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
 def test_containerization_settings(mock_mkdir, container_runtime):

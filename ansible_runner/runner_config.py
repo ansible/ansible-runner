@@ -730,7 +730,7 @@ class RunnerConfig(object):
         container_volume_mounts = self.container_volume_mounts
         if container_volume_mounts:
             for mapping in container_volume_mounts:
-                host_path, container_path = mapping.split(':')
+                host_path, container_path = mapping.split(':', 1)
                 _ensure_path_safe_to_mount(host_path)
                 new_args.extend(["-v", "{}:{}".format(host_path, container_path)])
 

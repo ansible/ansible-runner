@@ -6,6 +6,7 @@ else
 endif
 
 CONTAINER_ENGINE ?= docker
+BASE_IMAGE ?= docker.io/fedora:32
 
 NAME = ansible-runner
 IMAGE_NAME ?= $(NAME)
@@ -97,8 +98,8 @@ docs:
 	cd docs && make html
 
 image:
-	$(CONTAINER_ENGINE) pull docker.io/centos:8
-	$(CONTAINER_ENGINE) build --rm=true -t $(IMAGE_NAME) .
+	$(CONTAINER_ENGINE) pull $(BASE_IMAGE)
+	$(CONTAINER_ENGINE) build --rm=true --build-arg BASE_IMAGE=$(BASE_IMAGE) -t $(IMAGE_NAME) .
 
 devimage:
 	$(CONTAINER_ENGINE) pull centos:8

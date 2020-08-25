@@ -1,6 +1,7 @@
-FROM docker.io/centos:8
+ARG BASE_IMAGE=docker.io/fedora:32
 
-ADD https://github.com/krallin/tini/releases/download/v0.18.0/tini /bin/tini
+FROM ${BASE_IMAGE}
+
 ADD demo/project /runner/project
 ADD demo/env /runner/env
 ADD demo/inventory /runner/inventory
@@ -9,10 +10,8 @@ ADD demo/inventory /runner/inventory
 # Install Ansible and Runner
 #ADD https://releases.ansible.com/ansible-runner/ansible-runner.el8.repo /etc/yum.repos.d/ansible-runner.repo
 #RUN dnf install -y ansible-runner
-RUN dnf install -y epel-release && \
-    dnf install -y python3-pip sudo rsync openssh-clients sshpass glibc-langpack-en git && \
-    alternatives --set python /usr/bin/python3 && \
-    chmod +x /bin/tini && \
+RUN dnf install -y python3-pip rsync openssh-clients sshpass glibc-langpack-en git \
+    https://github.com/krallin/tini/releases/download/v0.19.0/tini_0.19.0-amd64.rpm && \
     rm -rf /var/cache/dnf
 
 RUN dnf install -y gcc python3-devel

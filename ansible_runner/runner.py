@@ -26,11 +26,12 @@ logger = logging.getLogger('ansible-runner')
 
 class Runner(object):
 
-    def __init__(self, config, cancel_callback=None, remove_partials=True,
-                 event_handler=None, finished_callback=None, status_handler=None):
+    def __init__(self, config, cancel_callback=None, remove_partials=True, event_handler=None,
+                 artifacts_callback=None, finished_callback=None, status_handler=None):
         self.config = config
         self.cancel_callback = cancel_callback
         self.event_handler = event_handler
+        self.artifacts_callback = artifacts_callback
         self.finished_callback = finished_callback
         self.status_handler = status_handler
         self.canceled = False
@@ -282,6 +283,12 @@ class Runner(object):
             if proc.returncode:
                 logger.error('Failed to delete cgroup: {}'.format(stderr))
                 raise RuntimeError('Failed to delete cgroup: {}'.format(stderr))
+
+        if self.artifacts_callback is not None:
+            try:
+                self.artifacts_callback(self.config.artifact_dir)
+            except Exception as e:
+                raise CallbackError("Exception in Artifact Callback: {}".format(e))
 
         if self.finished_callback is not None:
             try:

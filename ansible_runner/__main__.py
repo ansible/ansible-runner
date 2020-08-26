@@ -44,11 +44,6 @@ from ansible_runner.utils import dump_artifact, Bunch
 from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
 
-if sys.version_info >= (3, 0):
-    from ansible_runner.receptor_plugin import receptor_import
-else:
-    receptor_import = False
-
 VERSION = pkg_resources.require("ansible_runner")[0].version
 
 DEFAULT_ROLES_PATH = os.getenv('ANSIBLE_ROLES_PATH', None)
@@ -236,30 +231,6 @@ DEFAULT_CLI_ARGS = {
                      "ansible-playbook output (default=None)"
             ),
         ),
-    ),
-    "receptor_group": (
-        # Receptor options
-        (
-            ("--via-receptor",),
-            dict(
-                default=None,
-                help="Run the job on a Receptor node rather than locally"
-            ),
-        ),
-        (
-            ("--receptor-peer",),
-            dict(
-                default=None,
-                help="peer connection to use to reach the Receptor network"
-            ),
-        ),
-        (
-            ("--receptor-node-id",),
-            dict(
-                default=None,
-                help="Receptor node-id to use for the local node"
-            ),
-        )
     ),
     "roles_group": (
         (
@@ -702,13 +673,6 @@ def main(sys_args=None):
     add_args_to_parser(stop_runner_group, DEFAULT_CLI_ARGS['runner_group'])
     add_args_to_parser(isalive_runner_group, DEFAULT_CLI_ARGS['runner_group'])
 
-    # receptor group (combined with runner help header)
-    add_args_to_parser(base_runner_group, DEFAULT_CLI_ARGS['receptor_group'])
-    add_args_to_parser(run_runner_group, DEFAULT_CLI_ARGS['receptor_group'])
-    add_args_to_parser(start_runner_group, DEFAULT_CLI_ARGS['receptor_group'])
-    add_args_to_parser(stop_runner_group, DEFAULT_CLI_ARGS['receptor_group'])
-    add_args_to_parser(isalive_runner_group, DEFAULT_CLI_ARGS['receptor_group'])
-
     # mutually exclusive group
     run_mutually_exclusive_group = run_subparser.add_mutually_exclusive_group()
     start_mutually_exclusive_group = start_subparser.add_mutually_exclusive_group()
@@ -837,12 +801,6 @@ def main(sys_args=None):
         if not (vargs.get('module') or vargs.get('role')) and not vargs.get('playbook'):
             parser.exit(status=1, message="The -p option must be specified when not using -m or -r\n")
 
-    if vargs.get('via_receptor') and not receptor_import:
-        parser.exit(status=1, message="The --via-receptor option requires Receptor to be installed.\n")
-
-    if vargs.get('via_receptor') and vargs.get('command') != 'run':
-        parser.exit(status=1, message="Only the 'run' command is supported via Receptor.\n")
-
     output.configure()
 
     # enable or disable debug mode
@@ -921,9 +879,6 @@ def main(sys_args=None):
                                    resource_profiling_pid_poll_interval=vargs.get('resource_profiling_pid_poll_interval'),
                                    resource_profiling_results_dir=vargs.get('resource_profiling_results_dir'),
                                    limit=vargs.get('limit'),
-                                   via_receptor=vargs.get('via_receptor'),
-                                   receptor_peer=vargs.get('receptor_peer'),
-                                   receptor_node_id=vargs.get('receptor_node_id'),
                                    cli_execenv_cmd=cli_execenv_cmd
                                    )
                 if vargs.get('command') in ('adhoc', 'playbook'):

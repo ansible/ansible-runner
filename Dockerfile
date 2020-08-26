@@ -2,6 +2,8 @@ ARG BASE_IMAGE=docker.io/fedora:32
 
 FROM ${BASE_IMAGE}
 
+ARG ANSIBLE_INSTALL="pip3 install bindep https://github.com/ansible/ansible/archive/devel.tar.gz"
+
 ADD demo/project /runner/project
 ADD demo/env /runner/env
 ADD demo/inventory /runner/inventory
@@ -15,8 +17,9 @@ RUN dnf install -y python3-pip rsync openssh-clients sshpass glibc-langpack-en g
     rm -rf /var/cache/dnf
 
 RUN dnf install -y gcc python3-devel
-RUN pip3 install bindep https://github.com/ansible/ansible/archive/devel.tar.gz \
-    https://github.com/ansible/ansible-runner/archive/devel.tar.gz
+RUN pip3 install bindep https://github.com/ansible/ansible-runner/archive/devel.tar.gz
+
+RUN ${ANSIBLE_INSTALL}
 
 RUN useradd runner && usermod -aG root runner
 

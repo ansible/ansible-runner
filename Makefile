@@ -7,6 +7,7 @@ endif
 
 CONTAINER_ENGINE ?= docker
 BASE_IMAGE ?= docker.io/fedora:32
+ANSIBLE_INSTALL ?= pip3 install bindep https://github.com/ansible/ansible/archive/devel.tar.gz
 
 NAME = ansible-runner
 IMAGE_NAME ?= $(NAME)
@@ -99,7 +100,7 @@ docs:
 
 image:
 	$(CONTAINER_ENGINE) pull $(BASE_IMAGE)
-	$(CONTAINER_ENGINE) build --rm=true --build-arg BASE_IMAGE=$(BASE_IMAGE) -t $(IMAGE_NAME) .
+	$(CONTAINER_ENGINE) build --rm=true --build-arg BASE_IMAGE=$(BASE_IMAGE) --build-arg ANSIBLE_INSTALL="$(ANSIBLE_INSTALL)" -t $(IMAGE_NAME) .
 
 devimage:
 	$(CONTAINER_ENGINE) pull centos:8

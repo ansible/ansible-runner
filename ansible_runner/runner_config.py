@@ -214,10 +214,15 @@ class RunnerConfig(object):
         elif callback_dir is None:
             callback_dir = os.path.join(os.path.split(os.path.abspath(__file__))[0],
                                         "callbacks")
-        python_path = self.env.get('PYTHONPATH', os.getenv('PYTHONPATH', ''))
-        if python_path and not python_path.endswith(':'):
-            python_path += ':'
-        self.env['ANSIBLE_CALLBACK_PLUGINS'] = ':'.join(filter(None,(self.env.get('ANSIBLE_CALLBACK_PLUGINS'), callback_dir)))
+        if self.containerized:
+            self.env['ANSIBLE_CALLBACK_PLUGINS'] = callback_dir
+        else:
+            python_path = self.env.get('PYTHONPATH', os.getenv('PYTHONPATH', ''))
+            self.env['PYTHONPATH'] = ':'.join([python_path, callback_dir])
+            if python_path and not python_path.endswith(':'):
+                python_path += ':'
+            self.env['ANSIBLE_CALLBACK_PLUGINS'] = ':'.join(filter(None,(self.env.get('ANSIBLE_CALLBACK_PLUGINS'), callback_dir)))
+
         if 'AD_HOC_COMMAND_ID' in self.env:
             self.env['ANSIBLE_STDOUT_CALLBACK'] = 'minimal'
         else:
@@ -225,7 +230,8 @@ class RunnerConfig(object):
         self.env['ANSIBLE_RETRY_FILES_ENABLED'] = 'False'
         if 'ANSIBLE_HOST_KEY_CHECKING' not in self.env:
             self.env['ANSIBLE_HOST_KEY_CHECKING'] = 'False'
-        self.env['AWX_ISOLATED_DATA_DIR'] = self.artifact_dir
+        if not self.containerized:
+            self.env['AWX_ISOLATED_DATA_DIR'] = self.artifact_dir
 
         if self.resource_profiling:
             callback_whitelist = os.environ.get('ANSIBLE_CALLBACK_WHITELIST', '').strip()
@@ -249,7 +255,6 @@ class RunnerConfig(object):
             self.env['CGROUP_WRITE_FILES'] = 'True'
             self.env['CGROUP_DISPLAY_RECAP'] = 'False'
 
-        self.env['PYTHONPATH'] = python_path + callback_dir
         if self.roles_path:
             self.env['ANSIBLE_ROLES_PATH'] = ':'.join(self.roles_path)
 
@@ -310,26 +315,35 @@ class RunnerConfig(object):
         self.expect_passwords[pexpect.TIMEOUT] = None
         self.expect_passwords[pexpect.EOF] = None
 
-        # seed env with existing shell env
-        self.env = os.environ.copy()
-        if self.envvars and isinstance(self.envvars, dict):
-            if six.PY2:
-                self.env.update({k.decode('utf-8'):v.decode('utf-8') for k, v in self.envvars.items()})
-            else:
-                self.env.update({k:v for k, v in self.envvars.items()})
-        try:
-            envvars = self.loader.load_file('env/envvars', Mapping)
-            if envvars:
-                self.env.update({six.text_type(k):six.text_type(v) for k, v in envvars.items()})
-        except ConfigurationError:
-            output.debug("Not loading environment vars")
-            # Still need to pass default environment to pexpect
-
         try:
             self.settings = self.loader.load_file('env/settings', Mapping)
         except ConfigurationError:
             output.debug("Not loading settings")
             self.settings = dict()
+
+        self.process_isolation = self.settings.get('process_isolation', self.process_isolation)
+        self.process_isolation_executable = self.settings.get('process_isolation_executable', self.process_isolation_executable)
+
+        if self.containerized:
+            self.env = {}
+            # Special flags to convey info to entrypoint or process in container
+            self.env['LAUNCHED_BY_RUNNER'] = '1'
+            artifact_dir = os.path.join("/runner/artifacts", "{}".format(self.ident))
+            self.env['AWX_ISOLATED_DATA_DIR'] = artifact_dir
+        else:
+            # seed env with existing shell env
+            self.env = os.environ.copy()
+
+        if self.envvars and isinstance(self.envvars, dict):
+            self.env.update(self.envvars)
+
+        try:
+            envvars = self.loader.load_file('env/envvars', Mapping)
+            if envvars:
+                self.env.update({str(k):str(v) for k, v in envvars.items()})
+        except ConfigurationError:
+            output.debug("Not loading environment vars")
+            # Still need to pass default environment to pexpect
 
         try:
             if self.ssh_key_data is None:
@@ -342,8 +356,6 @@ class RunnerConfig(object):
         self.job_timeout = self.settings.get('job_timeout', None)
         self.pexpect_timeout = self.settings.get('pexpect_timeout', 5)
 
-        self.process_isolation = self.settings.get('process_isolation', self.process_isolation)
-        self.process_isolation_executable = self.settings.get('process_isolation_executable', self.process_isolation_executable)
         self.process_isolation_path = self.settings.get('process_isolation_path', self.process_isolation_path)
         self.process_isolation_hide_paths = self.settings.get('process_isolation_hide_paths', self.process_isolation_hide_paths)
         self.process_isolation_show_paths = self.settings.get('process_isolation_show_paths', self.process_isolation_show_paths)
@@ -606,7 +618,6 @@ class RunnerConfig(object):
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm', '--tty', '--interactive'])
         new_args.extend(["--workdir", "/runner/project"])
-        new_args.extend(["-e", "LAUNCHED_BY_RUNNER=1"])
 
         def _ensure_path_safe_to_mount(path):
             if path in ('/home', '/usr'):
@@ -700,13 +711,14 @@ class RunnerConfig(object):
                 new_args.extend(["-v", "/etc/ssh/ssh_known_hosts:/etc/ssh/ssh_known_hosts"])
 
             # handle ssh-agent "forwarding" into the exec env container
-            new_args.extend(
-                ["-v", "{}:{}".format(
-                    os.path.dirname(os.environ['SSH_AUTH_SOCK']), 
-                    os.path.dirname(os.environ['SSH_AUTH_SOCK'])
-                )]
-            )
-            new_args.extend(["-e", "SSH_AUTH_SOCK={}".format(os.environ['SSH_AUTH_SOCK'])])
+            if 'SSH_AUTH_SOCK' in os.environ:
+                new_args.extend(
+                    ["-v", "{}:{}".format(
+                        os.path.dirname(os.environ['SSH_AUTH_SOCK']), 
+                        os.path.dirname(os.environ['SSH_AUTH_SOCK'])
+                    )]
+                )
+                new_args.extend(["-e", "SSH_AUTH_SOCK={}".format(os.environ['SSH_AUTH_SOCK'])])
 
             if 'podman' in self.process_isolation_executable:
                 # container namespace stuff
@@ -734,14 +746,8 @@ class RunnerConfig(object):
                 _ensure_path_safe_to_mount(host_path)
                 new_args.extend(["-v", "{}:{}".format(host_path, container_path)])
 
-        env_var_whitelist = ['PROJECT_UPDATE_ID']
-
         for k, v in self.env.items():
-            if k in env_var_whitelist:
-                new_args.extend(["-e", "{}={}".format(k, v)])
-
-        artifact_dir = os.path.join("/runner/artifacts", "{}".format(self.ident))
-        new_args.extend(["-e", "AWX_ISOLATED_DATA_DIR={}".format(artifact_dir)])
+            new_args.extend(["-e", k])
 
         if 'podman' in self.process_isolation_executable:
             # docker doesnt support this option

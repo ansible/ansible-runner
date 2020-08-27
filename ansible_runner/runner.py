@@ -108,10 +108,7 @@ class Runner(object):
         if not os.path.exists(job_events_path):
             os.mkdir(job_events_path, 0o700)
 
-        if six.PY2:
-            command = [a.decode('utf-8') for a in self.config.command]
-        else:
-            command = self.config.command
+        command = self.config.command
         with codecs.open(command_filename, 'w', encoding='utf-8') as f:
             os.chmod(command_filename, stat.S_IRUSR | stat.S_IWUSR)
             json.dump(
@@ -140,9 +137,17 @@ class Runner(object):
         # https://github.com/pexpect/pexpect/issues/512
 
         # Use a copy so as not to cause problems when serializing the job_env.
+        if self.config.containerized:
+            # If this is containerized, the shell environment calling podman has little
+            # to do with the actual job environment, but still needs PATH, auth, etc.
+            pexpect_env = os.environ.copy()
+            # But we still rely on env vars to pass secrets
+            pexpect_env.update(self.config.env)
+        else:
+            pexpect_env = self.config.env
         env = {
             ensure_str(k): ensure_str(v) if k != 'PATH' and isinstance(v, six.text_type) else v
-            for k, v in self.config.env.items()
+            for k, v in pexpect_env.items()
         }
 
         # Prepare to collect performance data

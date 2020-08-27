@@ -1,6 +1,7 @@
 import pytest
 from distutils.version import LooseVersion
 import pkg_resources
+import os
 
 
 @pytest.fixture(autouse=True)
@@ -22,3 +23,8 @@ def is_pre_ansible28():
 def skipif_pre_ansible28(is_pre_ansible28):
     if is_pre_ansible28:
         pytest.skip("Valid only on Ansible 2.8+")
+
+
+@pytest.fixture
+def test_data_dir():
+    return os.path.join(os.path.dirname(__file__), 'data')

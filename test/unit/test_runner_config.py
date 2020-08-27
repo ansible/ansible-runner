@@ -628,13 +628,21 @@ def test_containerization_settings(mock_mkdir, container_runtime):
         extra_container_args = ['--user={os.getuid()}']
 
     expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
-        ['-e', 'LAUNCHED_BY_RUNNER=1'] + \
         ['-v', '{}:/runner/project:Z'.format(os.path.join(rc.private_data_dir, 'project'))] + \
         ['-v', '{}:/runner/artifacts:Z'.format(os.path.join(rc.private_data_dir, 'artifacts'))] + \
         ['-v', '{}:/runner/inventory:Z'.format(os.path.join(rc.private_data_dir, 'inventory'))] + \
         ['-v', '{}:/runner/env:Z'.format(os.path.join(rc.private_data_dir, 'env'))] + \
         ['-v', '/host1:/container1', '-v', 'host2:/container2'] + \
-        ['-e', 'AWX_ISOLATED_DATA_DIR=/runner/artifacts/{}'.format(rc.ident)] + \
+        ['-e', 'LAUNCHED_BY_RUNNER'] + \
+        ['-e', 'AWX_ISOLATED_DATA_DIR'] + \
+        ['-e', 'ANSIBLE_CALLBACK_PLUGINS'] + \
+        ['-e', 'ANSIBLE_STDOUT_CALLBACK'] + \
+        ['-e', 'ANSIBLE_RETRY_FILES_ENABLED'] + \
+        ['-e', 'ANSIBLE_HOST_KEY_CHECKING'] + \
+        ['-e', 'ANSIBLE_CACHE_PLUGIN'] + \
+        ['-e', 'ANSIBLE_CACHE_PLUGIN_CONNECTION'] + \
+        ['-e', 'RUNNER_OMIT_EVENTS'] + \
+        ['-e', 'RUNNER_ONLY_FAILED_EVENTS'] + \
         extra_container_args + \
         ['my_container', 'ansible-playbook', '-i', '/runner/inventory/hosts', 'main.yaml']
 

@@ -49,3 +49,4 @@ def container_runtime_installed():
             return runtime
         except FileNotFoundError:
             pass
+    pytest.skip('No container runtime is available.')

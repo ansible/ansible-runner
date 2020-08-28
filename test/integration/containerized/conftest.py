@@ -60,7 +60,7 @@ def cli(request):
         })
 
         try:
-            ret = CompletedProcessProxy(subprocess.run(args, shell=True, *a, **kw))
+            ret = CompletedProcessProxy(subprocess.run(' '.join(args), shell=True, *a, **kw))
         except subprocess.CalledProcessError as err:
             pytest.fail(
                 f"Running {err.cmd} resulted in a non-zero return code: {err.returncode} - stdout: {err.stdout}, stderr: {err.stderr}"

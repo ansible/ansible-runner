@@ -75,7 +75,7 @@ class RunnerConfig(object):
     """
 
     def __init__(self,
-                 private_data_dir=None, playbook=None, ident=uuid4(),
+                 private_data_dir=None, playbook=None, ident=None,
                  inventory=None, roles_path=None, limit=None, module=None, module_args=None,
                  verbosity=None, quiet=False, json_mode=False, artifact_dir=None,
                  rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, suppress_ansible_output=False,
@@ -89,7 +89,10 @@ class RunnerConfig(object):
                  project_dir=None, directory_isolation_base_path=None, envvars=None, forks=None, cmdline=None, omit_event_data=False,
                  only_failed_event_data=False, cli_execenv_cmd=""):
         self.private_data_dir = os.path.abspath(private_data_dir)
-        self.ident = str(ident)
+        if ident is None:
+            self.ident = str(uuid4())
+        else:
+            self.ident = ident
         self.json_mode = json_mode
         self.playbook = playbook
         self.inventory = inventory

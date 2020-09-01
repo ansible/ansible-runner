@@ -1,5 +1,6 @@
 import os
 import pytest
+import shutil
 
 from ansible_runner.interface import run, run_async
 
@@ -21,10 +22,25 @@ def printenv_example(test_data_dir):
     # TODO: remove if main code can handle this for us
     # https://github.com/ansible/ansible-runner/issues/493
     # for now, necessary to prevent errors on re-run
-    settings_file = os.path.join(private_data_dir, 'env', 'settings')
-    if os.path.exists(settings_file):
-        os.remove(settings_file)
+    env_dir = os.path.join(private_data_dir, 'env')
+    if os.path.exists(env_dir):
+        shutil.rmtree(env_dir)
     return private_data_dir
+
+
+def get_env_data(res):
+    for event in res.events:
+        found = bool(
+            event['event'] == 'runner_on_ok' and event.get(
+                'event_data', {}
+            ).get('task_action', None) == 'look_at_environment'
+        )
+        if found:
+            return event['event_data']['res']
+    else:
+        print('output:')
+        print(res.stdout.read())
+        raise RuntimeError('Count not find look_at_environment task from playbook')
 
 
 @pytest.mark.serial
@@ -39,26 +55,15 @@ def test_env_accuracy(request, printenv_example):
 
     res = run(
         private_data_dir=printenv_example,
-        project_dir='/tmp',
-        playbook=None,
+        playbook='get_environment.yml',
         inventory=None,
         envvars={'FROM_TEST': 'FOOBAR'},
     )
     assert res.rc == 0, res.stdout.read()
 
-    printenv_out = res.stdout.read()
-    actual_env = {}
-    for line in printenv_out.split('\n'):
-        if not line:
-            continue
-        k, v = line.split('=', 1)
-        actual_env[k] = v
+    actual_env = get_env_data(res)['environment']
 
-    assert actual_env
-
-    assert actual_env == res.config.env, printenv_out
-
-    assert '/tmp' == res.config.cwd
+    assert actual_env == res.config.env
 
 
 @pytest.mark.serial
@@ -74,7 +79,7 @@ def test_env_accuracy_inside_container(request, printenv_example, container_runt
     res = run(
         private_data_dir=printenv_example,
         project_dir='/tmp',
-        playbook=None,
+        playbook='get_environment.yml',
         inventory=None,
         envvars={'FROM_TEST': 'FOOBAR'},
         settings={
@@ -84,13 +89,7 @@ def test_env_accuracy_inside_container(request, printenv_example, container_runt
     )
     assert res.rc == 0, res.stdout.read()
 
-    printenv_out = res.stdout.read()
-    actual_env = {}
-    for line in printenv_out.split('\n'):
-        if not line:
-            continue
-        k, v = line.split('=', 1)
-        actual_env[k] = v
+    actual_env = get_env_data(res)['environment']
 
     expected_env = res.config.env.copy()
 

@@ -1,0 +1,6 @@
+---
+- hosts: localhost
+  gather_facts: False
+  connection: local
+  tasks:
+    - look_at_environment:

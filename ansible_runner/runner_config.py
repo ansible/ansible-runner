@@ -735,9 +735,9 @@ class RunnerConfig(object):
         # These directories need to exist before they are mounted in the container,
         # or they will be owned by root.
         if not self.cli_execenv_cmd:
-            dirs_to_create = ['project', 'artifacts', 'inventory', 'env']
-        else:
-            dirs_to_create = ['artifacts']
+            dirs_to_create = ['project', 'inventory', 'env']
+
+        dirs_to_create += ['artifacts', 'requirements_roles', 'requirements_collections']
 
         for d in dirs_to_create:
             if not os.path.exists(os.path.join(self.private_data_dir, d)):

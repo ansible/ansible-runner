@@ -4,4 +4,3 @@ job_timeout: 360
 pexpect_timeout: 10
 process_isolation: true
 process_isolation_executable: podman
-container_image: ansible/ansible-runner

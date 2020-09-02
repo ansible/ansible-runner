@@ -129,7 +129,7 @@ def run(**kwargs):
     :param process_isolation_hide_paths: A path or list of paths on the system that should be hidden from the playbook run.
     :param process_isolation_show_paths: A path or list of paths on the system that should be exposed to the playbook run.
     :param process_isolation_ro_paths: A path or list of paths on the system that should be exposed to the playbook run as read-only.
-    :param container_image: Container image to use when running an ansible task (default: ansible/ansible-runner)
+    :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
     :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir. (default: None)
     :param container_options: List of container options to pass to execution engine.
     :param resource_profiling: Enable collection of resource utilization data during playbook execution.

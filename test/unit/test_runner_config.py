@@ -635,12 +635,12 @@ def test_containerization_settings(mock_mkdir, container_runtime):
         ['-v', '/host1:/container1', '-v', 'host2:/container2'] + \
         ['-e', 'LAUNCHED_BY_RUNNER'] + \
         ['-e', 'AWX_ISOLATED_DATA_DIR'] + \
+        ['-e', 'ANSIBLE_CACHE_PLUGIN_CONNECTION'] + \
         ['-e', 'ANSIBLE_CALLBACK_PLUGINS'] + \
         ['-e', 'ANSIBLE_STDOUT_CALLBACK'] + \
         ['-e', 'ANSIBLE_RETRY_FILES_ENABLED'] + \
         ['-e', 'ANSIBLE_HOST_KEY_CHECKING'] + \
         ['-e', 'ANSIBLE_CACHE_PLUGIN'] + \
-        ['-e', 'ANSIBLE_CACHE_PLUGIN_CONNECTION'] + \
         ['-e', 'RUNNER_OMIT_EVENTS'] + \
         ['-e', 'RUNNER_ONLY_FAILED_EVENTS'] + \
         extra_container_args + \

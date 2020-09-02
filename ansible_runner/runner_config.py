@@ -272,7 +272,8 @@ class RunnerConfig(object):
 
         if self.fact_cache_type == 'jsonfile':
             self.env['ANSIBLE_CACHE_PLUGIN'] = 'jsonfile'
-            self.env['ANSIBLE_CACHE_PLUGIN_CONNECTION'] = self.fact_cache
+            if not self.containerized:
+                self.env['ANSIBLE_CACHE_PLUGIN_CONNECTION'] = self.fact_cache
 
         self.env["RUNNER_OMIT_EVENTS"] = str(self.omit_event_data)
         self.env["RUNNER_ONLY_FAILED_EVENTS"] = str(self.only_failed_event_data)
@@ -333,6 +334,8 @@ class RunnerConfig(object):
             self.env['LAUNCHED_BY_RUNNER'] = '1'
             artifact_dir = os.path.join("/runner/artifacts", "{}".format(self.ident))
             self.env['AWX_ISOLATED_DATA_DIR'] = artifact_dir
+            if self.fact_cache_type == 'jsonfile':
+                self.env['ANSIBLE_CACHE_PLUGIN_CONNECTION'] = os.path.join(artifact_dir, 'fact_cache')
         else:
             # seed env with existing shell env
             self.env = os.environ.copy()

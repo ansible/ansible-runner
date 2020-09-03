@@ -11,12 +11,4 @@ runner:x:`id -u`:`id -g`:,,,:/home/runner:/bin/bash
 EOF
 fi
 
-if [[ -n "${LAUNCHED_BY_RUNNER}" ]]; then
-    RUNNER_CALLBACKS=$(python3 -c "import ansible_runner.callbacks; print(ansible_runner.callbacks.__file__)")
-
-    # TODO: respect user callback settings via
-    # env ANSIBLE_CALLBACK_PLUGINS or ansible.cfg
-    export ANSIBLE_CALLBACK_PLUGINS="$(dirname $RUNNER_CALLBACKS)"
-fi
-
 exec tini -- "${@}"

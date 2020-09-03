@@ -6,17 +6,17 @@ ADD demo/project /runner/project
 ADD demo/env /runner/env
 ADD demo/inventory /runner/inventory
 
+# Install the collection for ansible-runner integrations
+ADD ansible_runner/lib/ansible_collections/runner /usr/share/ansible/collections/ansible_collections/runner
+
 # UNDO Before 2.0 Release:
-# Install Ansible and Runner
-#ADD https://releases.ansible.com/ansible-runner/ansible-runner.el8.repo /etc/yum.repos.d/ansible-runner.repo
-#RUN dnf install -y ansible-runner
+# Install Ansible
 RUN dnf install -y python3-pip rsync openssh-clients sshpass glibc-langpack-en git \
     https://github.com/krallin/tini/releases/download/v0.19.0/tini_0.19.0-amd64.rpm && \
     rm -rf /var/cache/dnf
 
 RUN dnf install -y gcc python3-devel
-RUN pip3 install bindep https://github.com/ansible/ansible/archive/devel.tar.gz \
-    https://github.com/ansible/ansible-runner/archive/devel.tar.gz
+RUN pip3 install bindep psutil https://github.com/ansible/ansible/archive/devel.tar.gz
 
 RUN useradd runner && usermod -aG root runner
 

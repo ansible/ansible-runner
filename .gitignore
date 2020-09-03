@@ -24,3 +24,5 @@ test/integration/containerized/priv_data/artifacts/
 *,cover
 .venv
 .env
+
+/build_context/

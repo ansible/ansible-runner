@@ -98,8 +98,13 @@ docs:
 	cd docs && make html
 
 image:
+	rm -rf build_context
+	mkdir build_context  # work out of a new folder to minimize build context size
+	cp Dockerfile build_context/
+	cp -Ra demo build_context/
+	cp -Ra utils build_context/
 	$(CONTAINER_ENGINE) pull $(BASE_IMAGE)
-	$(CONTAINER_ENGINE) build --rm=true --build-arg BASE_IMAGE=$(BASE_IMAGE) -t $(IMAGE_NAME) .
+	$(CONTAINER_ENGINE) build -f build_context/Dockerfile --rm=true --build-arg BASE_IMAGE=$(BASE_IMAGE) -t $(IMAGE_NAME) build_context
 
 devimage:
 	$(CONTAINER_ENGINE) pull centos:8

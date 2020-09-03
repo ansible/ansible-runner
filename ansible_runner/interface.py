@@ -24,7 +24,7 @@ import logging
 from ansible_runner import output
 from ansible_runner.runner_config import RunnerConfig
 from ansible_runner.runner import Runner
-from ansible_runner.streaming import StreamWorker
+from ansible_runner.streaming import StreamController, StreamWorker
 from ansible_runner.utils import (
     dump_artifacts,
     check_isolation_executable_installed,
@@ -64,16 +64,28 @@ def init_runner(**kwargs):
 
     event_callback_handler = kwargs.pop('event_handler', None)
     status_callback_handler = kwargs.pop('status_handler', None)
+    artifacts_handler = kwargs.pop('artifacts_handler', None)
     cancel_callback = kwargs.pop('cancel_callback', None)
-    artifacts_callback = kwargs.pop('artifacts_callback', None)  # Currently not expected
     finished_callback = kwargs.pop('finished_callback', None)
 
+    control_in = kwargs.pop('control_in', None)
     control_out = kwargs.pop('control_out', None)
-    if control_out is not None:
-        stream_worker = StreamWorker(control_out)
-        status_callback_handler = stream_worker.status_handler
-        event_callback_handler = stream_worker.event_handler
-        artifacts_callback = stream_worker.artifacts_callback
+    worker_in = kwargs.pop('worker_in', None)
+    worker_out = kwargs.pop('worker_out', None)
+
+    if worker_in is not None and worker_out is not None:
+        stream_worker = StreamWorker(worker_in, worker_out, **kwargs)
+        return stream_worker
+
+    if control_in is not None and control_out is not None:
+        stream_controller = StreamController(control_in, control_out,
+                                             event_handler=event_callback_handler,
+                                             status_handler=status_callback_handler,
+                                             artifacts_handler=artifacts_handler,
+                                             cancel_callback=cancel_callback,
+                                             finished_callback=finished_callback,
+                                             **kwargs)
+        return stream_controller
 
     rc = RunnerConfig(**kwargs)
     rc.prepare()
@@ -81,8 +93,8 @@ def init_runner(**kwargs):
     return Runner(rc,
                   event_handler=event_callback_handler,
                   status_handler=status_callback_handler,
+                  artifacts_handler=artifacts_handler,
                   cancel_callback=cancel_callback,
-                  artifacts_callback=artifacts_callback,
                   finished_callback=finished_callback)
 
 
@@ -124,11 +136,15 @@ def run(**kwargs):
     :param artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
     :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
-    :param control_out: A file-like object used for streaming information back to a control instance of Runner
+    :param control_in: A file object used for receiving streamed data back from a worker instance of Runner
+    :param control_out: A file object used for streaming project data to a worker instance of Runner
+    :param worker_in: A file object used for streaming project data to a worker instance of Runner
+    :param worker_out: A file object used for streaming information back to a control instance of Runner
     :param event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
     :param cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
     :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
     :param status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
+    :param artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
     :param process_isolation: Enable process isolation, using either a container engine (e.g. podman) or a sandbox (e.g. bwrap).
     :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
     :param process_isolation_path: Path that an isolated playbook run will use for staging. (default: /tmp)
@@ -170,11 +186,15 @@ def run(**kwargs):
     :type forks: int
     :type quiet: bool
     :type verbosity: int
+    :type control_in: file
     :type control_out: file
+    :type worker_in: file
+    :type worker_out: file
     :type event_handler: function
     :type cancel_callback: function
     :type finished_callback: function
     :type status_handler: function
+    :type artifacts_handler: function
     :type process_isolation: bool
     :type process_isolation_executable: str
     :type process_isolation_path: str

@@ -628,10 +628,7 @@ def test_containerization_settings(mock_mkdir, container_runtime):
         extra_container_args = ['--user={os.getuid()}']
 
     expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
-        ['-v', '{}:/runner/project:Z'.format(os.path.join(rc.private_data_dir, 'project'))] + \
-        ['-v', '{}:/runner/artifacts:Z'.format(os.path.join(rc.private_data_dir, 'artifacts'))] + \
-        ['-v', '{}:/runner/inventory:Z'.format(os.path.join(rc.private_data_dir, 'inventory'))] + \
-        ['-v', '{}:/runner/env:Z'.format(os.path.join(rc.private_data_dir, 'env'))] + \
+        ['-v', '{}:/runner:Z'.format(rc.private_data_dir)] + \
         ['-v', '/host1:/container1', '-v', 'host2:/container2'] + \
         ['-e', 'LAUNCHED_BY_RUNNER'] + \
         ['-e', 'AWX_ISOLATED_DATA_DIR'] + \

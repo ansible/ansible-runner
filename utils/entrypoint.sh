@@ -17,8 +17,6 @@ if [[ -n "${LAUNCHED_BY_RUNNER}" ]]; then
     # TODO: respect user callback settings via
     # env ANSIBLE_CALLBACK_PLUGINS or ansible.cfg
     export ANSIBLE_CALLBACK_PLUGINS="$(dirname $RUNNER_CALLBACKS)"
-
-    export ANSIBLE_STDOUT_CALLBACK=awx_display
 fi
 
 exec tini -- "${@}"

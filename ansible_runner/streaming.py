@@ -130,9 +130,13 @@ class StreamController(object):
                 os.chmod(full_filename, stat.S_IRUSR | stat.S_IWUSR)
                 json.dump(event_data, write_file)
 
-    def artifacts_callback(self, artifacts_data):  # FIXME
+    def artifacts_callback(self, artifacts_data):
+        buf = io.BytesIO(base64.b64decode(artifacts_data['payload']))
+        with zipfile.ZipFile(buf, 'r') as archive:
+            archive.extractall(path=self.config.artifact_dir)
+
         if self.artifacts_handler is not None:
-            self.artifacts_handler()
+            self.artifacts_handler(self.config.artifact_dir)
 
 
 class StreamWorker(object):

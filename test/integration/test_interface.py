@@ -97,6 +97,6 @@ def test_env_accuracy_inside_container(request, printenv_example, container_runt
     # all environment variables, particularly those set by the entrypoint script
     for key, value in expected_env.items():
         assert key in actual_env
-        assert actual_env[key] == value
+        assert actual_env[key] == value, 'Reported value wrong for {0} env var'.format(key)
 
     assert '/tmp' == res.config.cwd

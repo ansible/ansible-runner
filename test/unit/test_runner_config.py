@@ -636,7 +636,6 @@ def test_containerization_settings(mock_mkdir, container_runtime):
         ['-e', 'LAUNCHED_BY_RUNNER'] + \
         ['-e', 'AWX_ISOLATED_DATA_DIR'] + \
         ['-e', 'ANSIBLE_CACHE_PLUGIN_CONNECTION'] + \
-        ['-e', 'ANSIBLE_CALLBACK_PLUGINS'] + \
         ['-e', 'ANSIBLE_STDOUT_CALLBACK'] + \
         ['-e', 'ANSIBLE_RETRY_FILES_ENABLED'] + \
         ['-e', 'ANSIBLE_HOST_KEY_CHECKING'] + \

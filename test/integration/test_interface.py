@@ -133,3 +133,20 @@ def test_inventory_absolute_path(test_data_dir):
     # hosts can be down-selected to one inventory out of those available
     assert 'host_1' in stdout
     assert 'host_2' not in stdout
+
+
+@pytest.mark.serial
+def test_become_user(request, test_data_dir, container_runtime_installed):
+    settings_dir = os.path.join(test_data_dir, 'become', 'env', 'settings')
+    if os.path.exists(settings_dir):
+        shutil.rmtree(settings_dir)
+    res = run(
+        private_data_dir=os.path.join(test_data_dir, 'become'),
+        playbook='become.yml',
+        inventory=None,
+        settings={
+            'process_isolation_executable': container_runtime_installed,
+            'process_isolation': True
+        }
+    )
+    assert res.rc == 0, res.stdout.read()

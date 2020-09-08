@@ -1,0 +1,7 @@
+---
+- hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Become
+      command: id

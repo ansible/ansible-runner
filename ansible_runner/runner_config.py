@@ -728,18 +728,8 @@ class RunnerConfig(object):
                 new_args.extend(["--ipc=host"])
 
 
-        # These directories need to exist before they are mounted in the container,
-        # or they will be owned by root.
-        if not self.cli_execenv_cmd:
-            dirs_to_create = ['project', 'artifacts', 'inventory', 'env']
-        else:
-            dirs_to_create = ['artifacts']
-
-        for d in dirs_to_create:
-            if not os.path.exists(os.path.join(self.private_data_dir, d)):
-                os.mkdir(os.path.join(self.private_data_dir, d), 0o700)
-
-            new_args.extend(["-v", "{}:/runner/{}:Z".format(os.path.join(self.private_data_dir, d), d)])
+        # Mount the private_data_dir
+        new_args.extend(["-v", "{}:/runner:Z".format(self.private_data_dir)])
 
         container_volume_mounts = self.container_volume_mounts
         if container_volume_mounts:

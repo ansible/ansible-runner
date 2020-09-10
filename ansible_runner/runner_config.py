@@ -738,8 +738,10 @@ class RunnerConfig(object):
                 _ensure_path_safe_to_mount(host_path)
                 new_args.extend(["-v", "{}:{}".format(host_path, container_path)])
 
-        for k, v in self.env.items():
-            new_args.extend(["-e", k])
+        # Reference the file with list of keys to pass into container
+        # this file will be written in ansible_runner.runner
+        env_file_host = os.path.join(self.artifact_dir, 'env.list')
+        new_args.extend(['--env-file', env_file_host])
 
         if 'podman' in self.process_isolation_executable:
             # docker doesnt support this option

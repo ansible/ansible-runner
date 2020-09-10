@@ -630,15 +630,7 @@ def test_containerization_settings(mock_mkdir, container_runtime):
     expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
         ['-v', '{}:/runner:Z'.format(rc.private_data_dir)] + \
         ['-v', '/host1:/container1', '-v', 'host2:/container2'] + \
-        ['-e', 'LAUNCHED_BY_RUNNER'] + \
-        ['-e', 'AWX_ISOLATED_DATA_DIR'] + \
-        ['-e', 'ANSIBLE_CACHE_PLUGIN_CONNECTION'] + \
-        ['-e', 'ANSIBLE_STDOUT_CALLBACK'] + \
-        ['-e', 'ANSIBLE_RETRY_FILES_ENABLED'] + \
-        ['-e', 'ANSIBLE_HOST_KEY_CHECKING'] + \
-        ['-e', 'ANSIBLE_CACHE_PLUGIN'] + \
-        ['-e', 'RUNNER_OMIT_EVENTS'] + \
-        ['-e', 'RUNNER_ONLY_FAILED_EVENTS'] + \
+        ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \
         ['my_container', 'ansible-playbook', '-i', '/runner/inventory/hosts', 'main.yaml']
 

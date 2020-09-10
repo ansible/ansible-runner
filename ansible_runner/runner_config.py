@@ -740,7 +740,6 @@ class RunnerConfig(object):
 
         # Reference the file with list of keys to pass into container
         # this file will be written in ansible_runner.runner
-        # write file with keys to pass into container
         env_file_host = os.path.join(self.artifact_dir, 'env.list')
         new_args.extend(['--env-file', env_file_host])
 

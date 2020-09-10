@@ -143,8 +143,8 @@ class Runner(object):
             pexpect_env = os.environ.copy()
             # But we still rely on env vars to pass secrets
             pexpect_env.update(self.config.env)
-            # Write the keys to expected env.list file in artifacts dir
-            # option expecting it written in ansible_runner.runner_config
+            # Write the keys to pass into container to expected file in artifacts dir
+            # option expecting should have already been written in ansible_runner.runner_config
             env_file_host = os.path.join(self.config.artifact_dir, 'env.list')
             with open(env_file_host, 'w') as f:
                 f.write('\n'.join(list(self.config.env.keys())))

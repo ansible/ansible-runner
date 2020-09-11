@@ -1,0 +1,10 @@
+namespace: runner
+name: wrapper
+version: 1.0.0
+authors:
+  - Ansible (https://github.com/ansible)
+description: Ansible plugins needed for ansible-runner to function correctly.
+license_file: LICENSE.md
+repository: https://github.com/ansible/ansible-runner/
+homepage: https://ansible-runner.readthedocs.io/
+issues: https://github.com/ansible/ansible-runner/issues

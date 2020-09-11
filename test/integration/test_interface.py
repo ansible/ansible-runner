@@ -100,3 +100,44 @@ def test_env_accuracy_inside_container(request, printenv_example, container_runt
         assert actual_env[key] == value, 'Reported value wrong for {0} env var'.format(key)
 
     assert '/tmp' == res.config.cwd
+
+
+@pytest.mark.serial
+def test_collection_install(request, test_data_dir, container_runtime_installed, tmpdir):
+    '''Tests that the permissions set up are compatible with what ansible-galaxy collection
+    install command will need to work properly
+    '''
+    private_data_dir = os.path.join(test_data_dir, 'collection_install')
+
+    def delete_env_folder():
+        env_dir = os.path.join(private_data_dir, 'env')
+        if os.path.exists(env_dir):
+            shutil.rmtree(env_dir)
+
+    delete_env_folder()
+    request.addfinalizer(delete_env_folder)
+
+    host_folder = str(tmpdir)
+
+    res = run(
+        private_data_dir=private_data_dir,
+        playbook='project_update.yml',
+        inventory=None,
+        settings={
+            'process_isolation_executable': container_runtime_installed,
+            'process_isolation': True,
+            'container_volume_mounts': [
+                f'{host_folder}:/var/lib/awx/projects/collections:Z'
+            ]
+        }
+    )
+    assert res.rc == 0, res.stdout.read()
+
+    expected_path = os.path.join(host_folder, 'ansible_collections', 'awx', 'awx')
+
+    print('listdir')
+    print(os.listdir(expected_path))
+
+    assert os.path.exists(expected_path)
+    assert 'requirements.txt' in os.listdir(expected_path)
+    assert 'COPYING' in os.listdir(expected_path)

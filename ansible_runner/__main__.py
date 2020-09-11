@@ -232,6 +232,32 @@ DEFAULT_CLI_ARGS = {
             ),
         ),
     ),
+    "streaming_group": (
+        (
+            ('--control-in',),
+            dict(
+                help="Executes runner in controller-mode, and consumes data piped into this named file or fifo."
+            ),
+        ),
+        (
+            ('--control-out',),
+            dict(
+                help="Executes runner in controller-mode, and pipes commands through this named file or fifo."
+            ),
+        ),
+        (
+            ('--worker-in',),
+            dict(
+                help="Executes runner in worker-mode, and consumes commands piped into this named file or fifo."
+            ),
+        ),
+        (
+            ('--worker-out',),
+            dict(
+                help="Executes runner in worker-mode, and pipes output data through this named file or fifo."
+            ),
+        ),
+    ),
     "roles_group": (
         (
             ("--roles-path",),
@@ -673,6 +699,13 @@ def main(sys_args=None):
     add_args_to_parser(stop_runner_group, DEFAULT_CLI_ARGS['runner_group'])
     add_args_to_parser(isalive_runner_group, DEFAULT_CLI_ARGS['runner_group'])
 
+    # streaming group
+    add_args_to_parser(base_runner_group, DEFAULT_CLI_ARGS['streaming_group'])
+    add_args_to_parser(run_runner_group, DEFAULT_CLI_ARGS['streaming_group'])
+    add_args_to_parser(start_runner_group, DEFAULT_CLI_ARGS['streaming_group'])
+    add_args_to_parser(stop_runner_group, DEFAULT_CLI_ARGS['streaming_group'])
+    add_args_to_parser(isalive_runner_group, DEFAULT_CLI_ARGS['streaming_group'])
+
     # mutually exclusive group
     run_mutually_exclusive_group = run_subparser.add_mutually_exclusive_group()
     start_mutually_exclusive_group = start_subparser.add_mutually_exclusive_group()
@@ -801,6 +834,13 @@ def main(sys_args=None):
         if not (vargs.get('module') or vargs.get('role')) and not vargs.get('playbook'):
             parser.exit(status=1, message="The -p option must be specified when not using -m or -r\n")
 
+    if (vargs.get('control_in') is None) != (vargs.get('control_out') is None):
+        parser.exit(status=1, message="Both --control-in and --control-out must be specified\n")
+    if (vargs.get('worker_in') is None) != (vargs.get('worker_out') is None):
+        parser.exit(status=1, message="Both --worker-in and --worker-out must be specified\n")
+    if vargs.get('control_in') is not None and vargs.get('worker_in') is not None:
+        parser.exit(status=1, message="Runner may not be run in both control and worker modes.\n")
+
     output.configure()
 
     # enable or disable debug mode
@@ -885,6 +925,15 @@ def main(sys_args=None):
                     run_options['cmdline'] = sys.argv[sys.argv.index(leftover_args[0]):]
                     run_options['process_isolation']=True
                     run_options['process_isolation_executable']=vargs.get('container_runtime')
+
+                if vargs.get('control_in'):
+                    run_options['control_in'] = open(vargs['control_in'], 'rb')
+                if vargs.get('worker_in'):
+                    run_options['worker_in'] = open(vargs['worker_in'], 'rb')
+                if vargs.get('control_in'):
+                    run_options['control_out'] = open(vargs['control_out'], 'wb')
+                if vargs.get('control_in'):
+                    run_options['worker_out'] = open(vargs['worker_out'], 'wb')
 
                 try:
                     res = run(**run_options)

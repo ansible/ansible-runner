@@ -5,19 +5,21 @@
   gather_facts: false
   connection: local
   name: Update collections
+  vars:
+    content_path: /home/runner/collections
   tasks:
 
     - name: fetch galaxy collections
       command: >
         ansible-galaxy collection install awx.awx
-        --collections-path /var/lib/awx/projects/collections
+        --collections-path {{ content_path }}
         {{ ' -' + 'v' * ansible_verbosity if ansible_verbosity else '' }}
       args:
-        chdir: /var/lib/awx/projects/collections
+        chdir: "{{ content_path }}"
       register: galaxy_collection_result
       changed_when: "'Installing ' in galaxy_collection_result.stdout"
       environment:
         ANSIBLE_FORCE_COLOR: false
-        ANSIBLE_COLLECTIONS_PATHS: "/var/lib/awx/projects/collections"
+        ANSIBLE_COLLECTIONS_PATHS: "{{ content_path }}"
         GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
 

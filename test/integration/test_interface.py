@@ -127,7 +127,7 @@ def test_collection_install(request, test_data_dir, container_runtime_installed,
             'process_isolation_executable': container_runtime_installed,
             'process_isolation': True,
             'container_volume_mounts': [
-                f'{host_folder}:/var/lib/awx/projects/collections:Z'
+                f'{host_folder}:/home/runner/collections:Z'
             ]
         }
     )

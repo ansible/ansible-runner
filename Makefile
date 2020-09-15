@@ -9,7 +9,10 @@ CONTAINER_ENGINE ?= docker
 BASE_IMAGE ?= docker.io/fedora:32
 
 NAME = ansible-runner
-IMAGE_NAME ?= $(NAME)
+IMAGE_NAME ?= quay.io/ansible/ansible-runner
+IMAGE_NAME_STRIPPED := $(word 1,$(subst :, ,$(IMAGE_NAME)))
+GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
+ANSIBLE_BRANCH ?= devel
 PIP_NAME = ansible_runner
 LONG_VERSION := $(shell poetry version)
 VERSION := $(filter-out $(NAME), $(LONG_VERSION))
@@ -98,13 +101,19 @@ test:
 docs:
 	cd docs && make html
 
-image:
+image: sdist
 	$(CONTAINER_ENGINE) pull $(BASE_IMAGE)
-	$(CONTAINER_ENGINE) build --rm=true --build-arg BASE_IMAGE=$(BASE_IMAGE) -t $(IMAGE_NAME) .
+	$(CONTAINER_ENGINE) build --rm=true \
+		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
+		--build-arg RUNNER_VERSION=$(VERSION) \
+		--build-arg ANSIBLE_BRANCH=$(ANSIBLE_BRANCH) \
+		-t $(IMAGE_NAME) -f Dockerfile .
+	$(CONTAINER_ENGINE) tag $(IMAGE_NAME) $(IMAGE_NAME_STRIPPED):$(GIT_BRANCH)
 
-devimage:
-	$(CONTAINER_ENGINE) pull centos:8
-	$(CONTAINER_ENGINE) build --rm=true -t $(IMAGE_NAME)-dev -f Dockerfile.dev .
+image_matrix:
+	ANSIBLE_BRANCH=stable-2.9 GIT_BRANCH=2.9.$(GIT_BRANCH) make image
+	ANSIBLE_BRANCH=stable-2.10 GIT_BRANCH=2.10.$(GIT_BRANCH) make image
+	ANSIBLE_BRANCH=devel GIT_BRANCH=devel.$(GIT_BRANCH) make image
 
 rpm:
 	MOCK_CONFIG=$(MOCK_CONFIG) docker-compose -f packaging/rpm/docker-compose.yml build

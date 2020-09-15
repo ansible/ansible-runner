@@ -705,22 +705,88 @@ class RunnerConfig(object):
                                 )
                             ])
 
-            # volume mount ~/.ssh/ into the exec env container
-            new_args.extend(["-v", "{}/.ssh/:/home/runner/.ssh/".format(os.environ['HOME'])])
 
-            # volume mount system-wide ssh_known_hosts the exec env container
-            if os.path.exists('/etc/ssh/ssh_known_hosts'):
-                new_args.extend(["-v", "/etc/ssh/ssh_known_hosts:/etc/ssh/ssh_known_hosts"])
+            # Handle automounts
+            cli_automounts = [
+                {
+                    'ENVS': ['SSH_AUTH_SOCK'],
+                    'PATHS': [
+                        {
+                            'src': '{}/.ssh/'.format(os.environ['HOME']),
+                            'dest': '/home/runner/.ssh/'
+                        },
+                        {
+                            'src': '/etc/ssh/ssh_known_hosts',
+                            'dest': '/etc/ssh/ssh_known_hosts'
+                        }
+                    ]
+                },
+                {
+                    "ENVS": ['K8S_AUTH_KUBECONFIG'],
+                    "PATHS": [
+                        {
+                            'src': '{}/.kube/'.format(os.environ['HOME']),
+                            'dest': '/home/runner/.kube/'
+                        },
+                    ]
+                },
+                {
+                    "ENVS": [
+                        'AWS_URL', 'EC2_URL', 'AWS_ACCESS_KEY_ID', 'AWS_ACCESS_KEY',
+                        'EC2_ACCESS_KEY', 'AWS_SECRET_ACCESS_KEY', 'AWS_SECRET_KEY', 'EC2_SECRET_KEY',
+                        'AWS_SECURITY_TOKEN', 'EC2_SECURITY_TOKEN', 'AWS_REGION', 'EC2_REGION'
+                    ],
+                    "PATHS": [
+                        {
+                            'src': '{}/.boto/'.format(os.environ['HOME']),
+                            'dest': '/home/runner/.boto/'
+                        },
+                    ]
+                },
+                {
+                    "ENVS": [
+                        'AZURE_SUBSCRIPTION_ID', 'AZURE_CLIENT_ID', 'AZURE_SECRET', 'AZURE_TENANT',
+                        'AZURE_AD_USER', 'AZURE_PASSWORD'
+                    ],
+                    "PATHS": [
+                        {
+                            'src': '{}/.azure/'.format(os.environ['HOME']),
+                            'dest': '/home/runner/.azure/'
+                        },
+                    ]
+                },
+                {
+                    "ENVS": [
+                        'gcp_service_account_file', 'GCP_SERVICE_ACCOUNT_FILE', 'GCP_SERVICE_ACCOUNT_CONTENTS',
+                        'GCP_SERVICE_ACCOUNT_EMAIL', 'GCP_AUTH_KIND', 'GCP_SCOPES'
+                    ],
+                    "PATHS": [
+                        {
+                            'src': '{}/.gcp/'.format(os.environ['HOME']),
+                            'dest': '/home/runner/.gcp/'
+                        },
+                    ]
+                }
+            ]
+            for cli_automount in cli_automounts:
+                for env in cli_automount['ENVS']:
+                    if env in os.environ:
+                        dest_path = os.environ[env]
 
-            # handle ssh-agent "forwarding" into the exec env container
-            if 'SSH_AUTH_SOCK' in os.environ:
-                new_args.extend(
-                    ["-v", "{}:{}".format(
-                        os.path.dirname(os.environ['SSH_AUTH_SOCK']), 
-                        os.path.dirname(os.environ['SSH_AUTH_SOCK'])
-                    )]
-                )
-                new_args.extend(["-e", "SSH_AUTH_SOCK={}".format(os.environ['SSH_AUTH_SOCK'])])
+                        if os.path.exists(os.environ[env]):
+                            if os.environ[env].startswith(os.environ['HOME']):
+                                dest_path = '/home/runner/{}'.format(os.environ[env].lstrip(os.environ['HOME']))
+                            elif os.environ[env].startswith('~'):
+                                dest_path = '/home/runner/{}'.format(os.environ[env].lstrip('~/'))
+                            else:
+                                dest_path = os.environ[env]
+                            new_args.extend(["-v", "{}:{}".format(os.environ[env], dest_path)])
+
+                        new_args.extend(["-e", "{}={}".format(env, dest_path)])
+
+                for paths in cli_automount['PATHS']:
+                    if os.path.exists(paths['src']):
+                        new_args.extend(["-v", "{}:{}".format(paths['src'], paths['dest'])])
 
             if 'podman' in self.process_isolation_executable:
                 # container namespace stuff

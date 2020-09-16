@@ -125,7 +125,20 @@ class RunnerConfig(object):
         self.process_isolation_ro_paths = process_isolation_ro_paths
         self.container_image = container_image
         self.container_volume_mounts = container_volume_mounts
-        self.container_options = container_options
+        if container_options:
+            sanitized_options = []
+            for option in container_options:
+                if '=' not in option:
+                    sanitized_options.append(option)
+                else:
+                    key, value = option.split('=', 1)
+                    if len(key) == 1:
+                        sanitized_options.append('-{}'.format(option))
+                    elif len(key) > 1:
+                        sanitized_options.append('--{}'.format(option))
+                    else:
+                        sanitized_options.append(option)
+        self.container_options = sanitized_options
         self.resource_profiling = resource_profiling
         self.resource_profiling_base_cgroup = resource_profiling_base_cgroup
         self.resource_profiling_cpu_poll_interval = resource_profiling_cpu_poll_interval
@@ -748,7 +761,12 @@ class RunnerConfig(object):
             new_args.extend(['--quiet'])
 
         if 'docker' in self.process_isolation_executable:
-            new_args.extend([f'--user={os.getuid()}'])
+            if self.container_options:
+                user_options = ' '.join(self.container_options)
+            else:
+                user_options = ''
+            if '-u' not in user_options and '--user' not in user_options:
+                new_args.extend([f'--user={os.getuid()}'])
 
         if self.container_options:
             new_args.extend(self.container_options)

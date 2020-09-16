@@ -67,7 +67,7 @@ def test_env_accuracy(request, printenv_example):
 
 
 @pytest.mark.serial
-def test_env_accuracy_inside_container(request, printenv_example, container_runtime_installed):
+def test_env_accuracy_inside_container(request, printenv_example, container_runtime_installed, container_user_id):
     os.environ['SET_BEFORE_TEST'] = 'MADE_UP_VALUE'
 
     def remove_test_env_var():
@@ -85,7 +85,8 @@ def test_env_accuracy_inside_container(request, printenv_example, container_runt
         settings={
             'process_isolation_executable': container_runtime_installed,
             'process_isolation': True
-        }
+        },
+        container_options=['-u', container_user_id]
     )
     assert res.rc == 0, res.stdout.read()
 

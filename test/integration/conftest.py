@@ -37,16 +37,18 @@ def container_runtime_available():
     return runtimes_available
 
 
-# TODO: determine if we want to add docker / podman
-# to zuul instances in order to run these tests
-@pytest.fixture(scope="session", autouse=True)
-def container_runtime_installed():
+@pytest.fixture(params=['docker', 'podman'], ids=['docker', 'podman'], scope='session')
+def container_runtime_installed(request):
     import subprocess
 
-    for runtime in ('podman', 'docker'):
-        try:
-            subprocess.run([runtime, '-v'])
-            return runtime
-        except FileNotFoundError:
-            pass
-    pytest.skip('No container runtime is available.')
+    runtime = request.param
+    try:
+        subprocess.run([runtime, '-v'])
+        return runtime
+    except FileNotFoundError:
+        pytest.skip('Container runtime is not available.')
+
+
+@pytest.fixture(params=['0', '1000', '23383'], ids=['root', 'root_like', 'openshift'], scope='session')
+def container_user_id(request):
+    return request.param

@@ -125,8 +125,8 @@ class RunnerConfig(object):
         self.process_isolation_ro_paths = process_isolation_ro_paths
         self.container_image = container_image
         self.container_volume_mounts = container_volume_mounts
+        sanitized_options = []
         if container_options:
-            sanitized_options = []
             for option in container_options:
                 if '=' not in option:
                     sanitized_options.append(option)

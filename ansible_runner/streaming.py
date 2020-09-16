@@ -61,13 +61,14 @@ class StreamController(object):
         if not os.path.exists(job_events_path):
             os.mkdir(job_events_path, 0o700)
 
-        for line in self.control_in:
+        while True:
+            line = self.control_in.readline()
             data = json.loads(line)
+
             if 'status' in data:
                 self.status_callback(data)
             elif 'artifacts' in data:
-                self.artifacts_callback(data)
-            elif 'eof' in data:
+                self.artifacts_callback(self.control_in.read())
                 break
             else:
                 self.event_callback(data)
@@ -131,7 +132,7 @@ class StreamController(object):
                 json.dump(event_data, write_file)
 
     def artifacts_callback(self, artifacts_data):
-        buf = io.BytesIO(base64.b64decode(artifacts_data['payload']))
+        buf = io.BytesIO(artifacts_data)
         with zipfile.ZipFile(buf, 'r') as archive:
             archive.extractall(path=self.config.artifact_dir)
 
@@ -189,6 +190,10 @@ class StreamWorker(object):
         self.worker_out.flush()
 
     def artifacts_handler(self, artifact_dir):
+        self.worker_out.write(json.dumps({'artifacts': True}).encode('utf-8'))
+        self.worker_out.write(b'\n')
+        self.worker_out.flush()
+
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
             for dirpath, dirs, files in os.walk(artifact_dir):
@@ -199,16 +204,9 @@ class StreamWorker(object):
                     archive.write(os.path.join(dirpath, fname), arcname=os.path.join(relpath, fname))
             archive.close()
 
-        data = {
-            'artifacts': True,
-            'payload': base64.b64encode(buf.getvalue()).decode('ascii'),
-        }
-        self.worker_out.write(json.dumps(data).encode('utf-8'))
-        self.worker_out.write(b'\n')
+        self.worker_out.write(buf.getvalue())
         self.worker_out.flush()
 
     def finished_callback(self, runner_obj):
-        self.worker_out.write(json.dumps({'eof': True}).encode('utf-8'))
-        self.worker_out.write(b'\n')
         self.worker_out.flush()
         self.worker_out.close()

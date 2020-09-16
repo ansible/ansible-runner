@@ -33,7 +33,6 @@ def test_provide_env_var(cli, skip_if_no_podman, test_data_dir):
 
 @pytest.mark.serial
 def test_adhoc_localhost_setup(cli, skip_if_no_podman, container_runtime_installed):
-    pytest.skip('Base image needs permission updates')
     r = cli(
         [
             'adhoc',
@@ -48,7 +47,6 @@ def test_adhoc_localhost_setup(cli, skip_if_no_podman, container_runtime_install
 
 @pytest.mark.serial
 def test_playbook_with_private_data_dir(cli, skip_if_no_podman, container_runtime_installed):
-    pytest.skip('Base image needs permission updates')
     r = cli(
         [
             'playbook',

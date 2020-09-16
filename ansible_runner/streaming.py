@@ -68,7 +68,8 @@ class StreamController(object):
             if 'status' in data:
                 self.status_callback(data)
             elif 'artifacts' in data:
-                self.artifacts_callback(self.control_in.read())
+                self.artifacts_callback(self.control_in.read(data['artifacts']))
+            elif 'eof' in data:
                 break
             else:
                 self.event_callback(data)
@@ -190,10 +191,6 @@ class StreamWorker(object):
         self.worker_out.flush()
 
     def artifacts_handler(self, artifact_dir):
-        self.worker_out.write(json.dumps({'artifacts': True}).encode('utf-8'))
-        self.worker_out.write(b'\n')
-        self.worker_out.flush()
-
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
             for dirpath, dirs, files in os.walk(artifact_dir):
@@ -204,9 +201,15 @@ class StreamWorker(object):
                     archive.write(os.path.join(dirpath, fname), arcname=os.path.join(relpath, fname))
             archive.close()
 
-        self.worker_out.write(buf.getvalue())
+        payload = buf.getvalue()
+
+        self.worker_out.write(json.dumps({'artifacts': len(payload)}).encode('utf-8'))
+        self.worker_out.write(b'\n')
+        self.worker_out.write(payload)
         self.worker_out.flush()
 
     def finished_callback(self, runner_obj):
+        self.worker_out.write(json.dumps({'eof': True}).encode('utf-8'))
+        self.worker_out.write(b'\n')
         self.worker_out.flush()
         self.worker_out.close()

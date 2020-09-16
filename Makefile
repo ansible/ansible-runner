@@ -114,6 +114,7 @@ image_matrix:
 	ANSIBLE_BRANCH=stable-2.9 GIT_BRANCH=2.9.$(GIT_BRANCH) make image
 	ANSIBLE_BRANCH=stable-2.10 GIT_BRANCH=2.10.$(GIT_BRANCH) make image
 	ANSIBLE_BRANCH=devel GIT_BRANCH=devel.$(GIT_BRANCH) make image
+	$(CONTAINER_ENGINE) tag $(IMAGE_NAME) $(IMAGE_NAME_STRIPPED):$(GIT_BRANCH)
 
 rpm:
 	MOCK_CONFIG=$(MOCK_CONFIG) docker-compose -f packaging/rpm/docker-compose.yml build

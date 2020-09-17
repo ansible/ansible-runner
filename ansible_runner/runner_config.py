@@ -731,23 +731,11 @@ class RunnerConfig(object):
 
         # These directories need to exist before they are mounted in the container,
         # or they will be owned by root.
-        private_subdirs = [
-            d for d in os.listdir(self.private_data_dir) if os.path.isdir(
-                os.path.join(self.private_data_dir, d)
-            )
-        ]
+        if not os.path.exists(os.path.join(self.private_data_dir, 'artifacts')):
+            os.mkdir(os.path.join(self.private_data_dir, 'artifacts'), 0o700)
 
-        if 'artifacts' not in private_subdirs:
-            private_subdirs += ['artifacts']
-
-        for d in private_subdirs:
-            if not os.path.exists(os.path.join(self.private_data_dir, d)):
-                if d == 'artifacts':
-                    os.mkdir(os.path.join(self.private_data_dir, d), 0o700)
-                else:
-                    continue
-
-            new_args.extend(["-v", "{}:/runner/{}:Z".format(os.path.join(self.private_data_dir, d), d)])
+        # Mount the private_data_dir
+        new_args.extend(["-v", "{}:/runner:Z".format(self.private_data_dir)])
 
         container_volume_mounts = self.container_volume_mounts
         if container_volume_mounts:

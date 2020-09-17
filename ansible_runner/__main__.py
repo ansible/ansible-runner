@@ -660,7 +660,7 @@ def main(sys_args=None):
     )
     adhoc_subparser.add_argument(
         "--private-data-dir",
-        help="base directory cotnaining the ansible-runner metadata "
+        help="base directory containing the ansible-runner metadata "
              "(project, inventory, env, etc)",
     )
     add_args_to_parser(adhoc_subparser, DEFAULT_CLI_ARGS['execenv_cli_group'])
@@ -672,7 +672,7 @@ def main(sys_args=None):
     )
     playbook_subparser.add_argument(
         "--private-data-dir",
-        help="base directory cotnaining the ansible-runner metadata "
+        help="base directory containing the ansible-runner metadata "
              "(project, inventory, env, etc)",
     )
     add_args_to_parser(playbook_subparser, DEFAULT_CLI_ARGS['execenv_cli_group'])

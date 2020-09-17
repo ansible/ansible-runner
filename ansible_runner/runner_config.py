@@ -81,7 +81,7 @@ class RunnerConfig(object):
                  rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, suppress_ansible_output=False,
                  process_isolation=False, process_isolation_executable='podman', process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None,
-                 container_image='quay.io/ansible/ansible-runner:devel',
+                 container_image='quay.io/ansible/ansible-runner:fix-compat-commands',
                  container_volume_mounts=None, container_options=None,
                  resource_profiling=False, resource_profiling_base_cgroup='ansible-runner', resource_profiling_cpu_poll_interval=0.25,
                  resource_profiling_memory_poll_interval=0.25, resource_profiling_pid_poll_interval=0.25,

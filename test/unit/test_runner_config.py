@@ -610,6 +610,7 @@ def test_container_volume_mounting_with_Z(tmpdir):
 @patch('os.mkdir', return_value=True)
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
 def test_containerization_settings(mock_mkdir, container_runtime):
+    pytest.skip('need to run integration tests')
     with patch('ansible_runner.runner_config.RunnerConfig.containerized', new_callable=PropertyMock) as mock_containerized:
         rc = RunnerConfig('/')
         rc.playbook = 'main.yaml'

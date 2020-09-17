@@ -232,32 +232,6 @@ DEFAULT_CLI_ARGS = {
             ),
         ),
     ),
-    "streaming_group": (
-        (
-            ('--control-in',),
-            dict(
-                help="Executes runner in controller-mode, and consumes data piped into this named file or fifo."
-            ),
-        ),
-        (
-            ('--control-out',),
-            dict(
-                help="Executes runner in controller-mode, and pipes commands through this named file or fifo."
-            ),
-        ),
-        (
-            ('--worker-in',),
-            dict(
-                help="Executes runner in worker-mode, and consumes commands piped into this named file or fifo."
-            ),
-        ),
-        (
-            ('--worker-out',),
-            dict(
-                help="Executes runner in worker-mode, and pipes output data through this named file or fifo."
-            ),
-        ),
-    ),
     "roles_group": (
         (
             ("--roles-path",),
@@ -626,7 +600,6 @@ def main(sys_args=None):
     add_args_to_parser(parser, DEFAULT_CLI_ARGS['generic_args'])
     subparser.required = True
 
-
     # positional options
     run_subparser = subparser.add_parser(
         'run',
@@ -649,6 +622,22 @@ def main(sys_args=None):
     )
     add_args_to_parser(isalive_subparser, DEFAULT_CLI_ARGS['positional_args'])
 
+    # streaming commands
+    transmit_subparser = subparser.add_parser(
+        'transmit',
+        help="Send a job to a remote ansible-runner process"
+    )
+    add_args_to_parser(transmit_subparser, DEFAULT_CLI_ARGS['positional_args'])
+
+    worker_subparser = subparser.add_parser(
+        'worker',
+        help="Execute work streamed from a controlling instance"
+    )
+
+    process_subparser = subparser.add_parser(
+        'process',
+        help="Receive the output of remote ansible-runner work and distribute the results"
+    )
 
     # adhoc command exec
     adhoc_subparser = subparser.add_parser(
@@ -662,7 +651,7 @@ def main(sys_args=None):
     )
     add_args_to_parser(adhoc_subparser, DEFAULT_CLI_ARGS['execenv_cli_group'])
 
-    # adhoc command exec
+    # playbook command exec
     playbook_subparser = subparser.add_parser(
         'playbook',
         help="Run ansible-playbook commands in an Execution Environment"
@@ -681,6 +670,9 @@ def main(sys_args=None):
     add_args_to_parser(isalive_subparser, DEFAULT_CLI_ARGS['generic_args'])
     add_args_to_parser(adhoc_subparser, DEFAULT_CLI_ARGS['generic_args'])
     add_args_to_parser(playbook_subparser, DEFAULT_CLI_ARGS['generic_args'])
+    add_args_to_parser(transmit_subparser, DEFAULT_CLI_ARGS['generic_args'])
+    add_args_to_parser(worker_subparser, DEFAULT_CLI_ARGS['generic_args'])
+    add_args_to_parser(process_subparser, DEFAULT_CLI_ARGS['generic_args'])
 
     # runner group
     ansible_runner_group_options = (
@@ -693,28 +685,25 @@ def main(sys_args=None):
     start_runner_group = start_subparser.add_argument_group(*ansible_runner_group_options)
     stop_runner_group = stop_subparser.add_argument_group(*ansible_runner_group_options)
     isalive_runner_group = isalive_subparser.add_argument_group(*ansible_runner_group_options)
+    transmit_runner_group = transmit_subparser.add_argument_group(*ansible_runner_group_options)
     add_args_to_parser(base_runner_group, DEFAULT_CLI_ARGS['runner_group'])
     add_args_to_parser(run_runner_group, DEFAULT_CLI_ARGS['runner_group'])
     add_args_to_parser(start_runner_group, DEFAULT_CLI_ARGS['runner_group'])
     add_args_to_parser(stop_runner_group, DEFAULT_CLI_ARGS['runner_group'])
     add_args_to_parser(isalive_runner_group, DEFAULT_CLI_ARGS['runner_group'])
-
-    # streaming group
-    add_args_to_parser(base_runner_group, DEFAULT_CLI_ARGS['streaming_group'])
-    add_args_to_parser(run_runner_group, DEFAULT_CLI_ARGS['streaming_group'])
-    add_args_to_parser(start_runner_group, DEFAULT_CLI_ARGS['streaming_group'])
-    add_args_to_parser(stop_runner_group, DEFAULT_CLI_ARGS['streaming_group'])
-    add_args_to_parser(isalive_runner_group, DEFAULT_CLI_ARGS['streaming_group'])
+    add_args_to_parser(transmit_runner_group, DEFAULT_CLI_ARGS['runner_group'])
 
     # mutually exclusive group
     run_mutually_exclusive_group = run_subparser.add_mutually_exclusive_group()
     start_mutually_exclusive_group = start_subparser.add_mutually_exclusive_group()
     stop_mutually_exclusive_group = stop_subparser.add_mutually_exclusive_group()
     isalive_mutually_exclusive_group = isalive_subparser.add_mutually_exclusive_group()
+    transmit_mutually_exclusive_group = transmit_subparser.add_mutually_exclusive_group()
     add_args_to_parser(run_mutually_exclusive_group, DEFAULT_CLI_ARGS['mutually_exclusive_group'])
     add_args_to_parser(start_mutually_exclusive_group, DEFAULT_CLI_ARGS['mutually_exclusive_group'])
     add_args_to_parser(stop_mutually_exclusive_group, DEFAULT_CLI_ARGS['mutually_exclusive_group'])
     add_args_to_parser(isalive_mutually_exclusive_group, DEFAULT_CLI_ARGS['mutually_exclusive_group'])
+    add_args_to_parser(transmit_mutually_exclusive_group, DEFAULT_CLI_ARGS['mutually_exclusive_group'])
 
     # ansible options
     ansible_options = (
@@ -725,11 +714,12 @@ def main(sys_args=None):
     start_ansible_group = start_subparser.add_argument_group(*ansible_options)
     stop_ansible_group = stop_subparser.add_argument_group(*ansible_options)
     isalive_ansible_group = isalive_subparser.add_argument_group(*ansible_options)
+    transmit_ansible_group = transmit_subparser.add_argument_group(*ansible_options)
     add_args_to_parser(run_ansible_group, DEFAULT_CLI_ARGS['ansible_group'])
     add_args_to_parser(start_ansible_group, DEFAULT_CLI_ARGS['ansible_group'])
     add_args_to_parser(stop_ansible_group, DEFAULT_CLI_ARGS['ansible_group'])
     add_args_to_parser(isalive_ansible_group, DEFAULT_CLI_ARGS['ansible_group'])
-
+    add_args_to_parser(transmit_ansible_group, DEFAULT_CLI_ARGS['ansible_group'])
 
     # roles group
     roles_group_options = (
@@ -740,10 +730,12 @@ def main(sys_args=None):
     start_roles_group = start_subparser.add_argument_group(*roles_group_options)
     stop_roles_group = stop_subparser.add_argument_group(*roles_group_options)
     isalive_roles_group = isalive_subparser.add_argument_group(*roles_group_options)
+    transmit_roles_group = transmit_subparser.add_argument_group(*roles_group_options)
     add_args_to_parser(run_roles_group, DEFAULT_CLI_ARGS['roles_group'])
     add_args_to_parser(start_roles_group, DEFAULT_CLI_ARGS['roles_group'])
     add_args_to_parser(stop_roles_group, DEFAULT_CLI_ARGS['roles_group'])
     add_args_to_parser(isalive_roles_group, DEFAULT_CLI_ARGS['roles_group'])
+    add_args_to_parser(transmit_roles_group, DEFAULT_CLI_ARGS['roles_group'])
 
     # modules groups
 
@@ -755,10 +747,12 @@ def main(sys_args=None):
     start_modules_group = start_subparser.add_argument_group(*modules_group_options)
     stop_modules_group = stop_subparser.add_argument_group(*modules_group_options)
     isalive_modules_group = isalive_subparser.add_argument_group(*modules_group_options)
+    transmit_modules_group = transmit_subparser.add_argument_group(*modules_group_options)
     add_args_to_parser(run_modules_group, DEFAULT_CLI_ARGS['modules_group'])
     add_args_to_parser(start_modules_group, DEFAULT_CLI_ARGS['modules_group'])
     add_args_to_parser(stop_modules_group, DEFAULT_CLI_ARGS['modules_group'])
     add_args_to_parser(isalive_modules_group, DEFAULT_CLI_ARGS['modules_group'])
+    add_args_to_parser(transmit_modules_group, DEFAULT_CLI_ARGS['modules_group'])
 
     # playbook options
     playbook_group_options = (
@@ -769,10 +763,12 @@ def main(sys_args=None):
     start_playbook_group = start_subparser.add_argument_group(*playbook_group_options)
     stop_playbook_group = stop_subparser.add_argument_group(*playbook_group_options)
     isalive_playbook_group = isalive_subparser.add_argument_group(*playbook_group_options)
+    transmit_playbook_group = transmit_subparser.add_argument_group(*playbook_group_options)
     add_args_to_parser(run_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
     add_args_to_parser(start_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
     add_args_to_parser(stop_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
     add_args_to_parser(isalive_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
+    add_args_to_parser(transmit_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
 
     # container group
     container_group_options = (
@@ -828,18 +824,11 @@ def main(sys_args=None):
                 )
             )
 
-    if vargs.get('command') in ('start', 'run'):
+    if vargs.get('command') in ('start', 'run', 'transmit'):
         if vargs.get('hosts') and not (vargs.get('module') or vargs.get('role')):
             parser.exit(status=1, message="The --hosts option can only be used with -m or -r\n")
         if not (vargs.get('module') or vargs.get('role')) and not vargs.get('playbook'):
             parser.exit(status=1, message="The -p option must be specified when not using -m or -r\n")
-
-    if (vargs.get('control_in') is None) != (vargs.get('control_out') is None):
-        parser.exit(status=1, message="Both --control-in and --control-out must be specified\n")
-    if (vargs.get('worker_in') is None) != (vargs.get('worker_out') is None):
-        parser.exit(status=1, message="Both --worker-in and --worker-out must be specified\n")
-    if vargs.get('control_in') is not None and vargs.get('worker_in') is not None:
-        parser.exit(status=1, message="Runner may not be run in both control and worker modes.\n")
 
     output.configure()
 
@@ -867,12 +856,12 @@ def main(sys_args=None):
 
     stderr_path = None
     context = None
-    if vargs.get('command') not in ('run', 'adhoc', 'playbook'):
+    if vargs.get('command') not in ('run', 'transmit', 'adhoc', 'playbook'):
         stderr_path = os.path.join(vargs.get('private_data_dir'), 'daemon.log')
         if not os.path.exists(stderr_path):
             os.close(os.open(stderr_path, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
 
-    if vargs.get('command') in ('start', 'run', 'adhoc', 'playbook'):
+    if vargs.get('command') in ('start', 'run', 'transmit', 'adhoc', 'playbook'):
 
         if vargs.get('command') == 'start':
             import daemon
@@ -880,6 +869,10 @@ def main(sys_args=None):
             context = daemon.DaemonContext(pidfile=TimeoutPIDLockFile(pidfile))
         else:
             context = threading.Lock()
+
+        streamer = None
+        if vargs.get('command') in ('transmit', 'worker', 'process'):
+            streamer = vargs.get('command')
 
         with context:
             with role_manager(vargs) as vargs:
@@ -919,21 +912,13 @@ def main(sys_args=None):
                                    resource_profiling_pid_poll_interval=vargs.get('resource_profiling_pid_poll_interval'),
                                    resource_profiling_results_dir=vargs.get('resource_profiling_results_dir'),
                                    limit=vargs.get('limit'),
+                                   streamer=streamer,
                                    cli_execenv_cmd=cli_execenv_cmd
                                    )
                 if vargs.get('command') in ('adhoc', 'playbook'):
                     run_options['cmdline'] = sys.argv[sys.argv.index(leftover_args[0]):]
                     run_options['process_isolation']=True
                     run_options['process_isolation_executable']=vargs.get('container_runtime')
-
-                if vargs.get('control_in'):
-                    run_options['control_in'] = open(vargs['control_in'], 'rb')
-                if vargs.get('worker_in'):
-                    run_options['worker_in'] = open(vargs['worker_in'], 'rb')
-                if vargs.get('control_in'):
-                    run_options['control_out'] = open(vargs['control_out'], 'wb')
-                if vargs.get('control_in'):
-                    run_options['worker_out'] = open(vargs['worker_out'], 'wb')
 
                 try:
                     res = run(**run_options)

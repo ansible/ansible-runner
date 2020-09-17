@@ -24,7 +24,7 @@ import logging
 from ansible_runner import output
 from ansible_runner.runner_config import RunnerConfig
 from ansible_runner.runner import Runner
-from ansible_runner.streaming import StreamController, StreamWorker
+from ansible_runner.streaming import Transmitter, Worker, Processor
 from ansible_runner.utils import (
     dump_artifacts,
     check_isolation_executable_installed,
@@ -68,24 +68,25 @@ def init_runner(**kwargs):
     cancel_callback = kwargs.pop('cancel_callback', None)
     finished_callback = kwargs.pop('finished_callback', None)
 
-    control_in = kwargs.pop('control_in', None)
-    control_out = kwargs.pop('control_out', None)
-    worker_in = kwargs.pop('worker_in', None)
-    worker_out = kwargs.pop('worker_out', None)
+    if kwargs.get('streamer'):
+        streamer = kwargs.pop('streamer')
 
-    if worker_in is not None and worker_out is not None:
-        stream_worker = StreamWorker(worker_in, worker_out, **kwargs)
-        return stream_worker
+        if streamer == 'transmit':
+            stream_transmitter = Transmitter(**kwargs)
+            return stream_transmitter
 
-    if control_in is not None and control_out is not None:
-        stream_controller = StreamController(control_in, control_out,
-                                             event_handler=event_callback_handler,
-                                             status_handler=status_callback_handler,
-                                             artifacts_handler=artifacts_handler,
-                                             cancel_callback=cancel_callback,
-                                             finished_callback=finished_callback,
-                                             **kwargs)
-        return stream_controller
+        if streamer == 'worker':
+            stream_worker = Worker(**kwargs)
+            return stream_worker
+
+        if streamer == 'process':
+            stream_processor = Processor(event_handler=event_callback_handler,
+                                         status_handler=status_callback_handler,
+                                         artifacts_handler=artifacts_handler,
+                                         cancel_callback=cancel_callback,
+                                         finished_callback=finished_callback,
+                                         **kwargs)
+            return stream_processor
 
     rc = RunnerConfig(**kwargs)
     rc.prepare()
@@ -136,10 +137,7 @@ def run(**kwargs):
     :param artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
     :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
-    :param control_in: A file object used for receiving streamed data back from a worker instance of Runner
-    :param control_out: A file object used for streaming project data to a worker instance of Runner
-    :param worker_in: A file object used for streaming project data to a worker instance of Runner
-    :param worker_out: A file object used for streaming information back to a control instance of Runner
+    :param streamer: Optionally invoke ansible-runner as one of the steps in the streaming pipeline
     :param event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
     :param cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
     :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
@@ -186,10 +184,7 @@ def run(**kwargs):
     :type forks: int
     :type quiet: bool
     :type verbosity: int
-    :type control_in: file
-    :type control_out: file
-    :type worker_in: file
-    :type worker_out: file
+    :type streamer: str
     :type event_handler: function
     :type cancel_callback: function
     :type finished_callback: function

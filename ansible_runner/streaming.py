@@ -4,6 +4,7 @@ import io
 import json
 import os
 import stat
+import sys
 import tempfile
 import uuid
 import zipfile
@@ -36,49 +37,18 @@ remote_run_options = (
 )
 
 
-class StreamController(object):
-    def __init__(self, control_in, control_out, status_handler=None, event_handler=None,
-                 artifacts_handler=None, cancel_callback=None, finished_callback=None, **kwargs):
-        self.control_in = control_in
-        self.control_out = control_out
-
+class Transmitter(object):
+    def __init__(self, _output=None, **kwargs):
+        if _output is None:
+            _output = sys.stdout.buffer
+        self._output = _output
         self.kwargs = kwargs
         self.config = ansible_runner.RunnerConfig(**kwargs)
-        self.status_handler = status_handler
-        self.event_handler = event_handler
-        self.artifacts_handler = artifacts_handler
-
-        self.cancel_callback = cancel_callback
-        self.finished_callback = finished_callback
 
         self.status = "unstarted"
         self.rc = None
 
     def run(self):
-        self.send_job()
-
-        job_events_path = os.path.join(self.config.artifact_dir, 'job_events')
-        if not os.path.exists(job_events_path):
-            os.mkdir(job_events_path, 0o700)
-
-        while True:
-            line = self.control_in.readline()
-            data = json.loads(line)
-
-            if 'status' in data:
-                self.status_callback(data)
-            elif 'artifacts' in data:
-                self.artifacts_callback(self.control_in.read(data['artifacts']))
-            elif 'eof' in data:
-                break
-            else:
-                self.event_callback(data)
-
-        if self.finished_callback is not None:
-            self.finished_callback(self)
-        return self.status, self.rc
-
-    def send_job(self):
         self.config.prepare()
         remote_options = {key: value for key, value in self.kwargs.items() if key in remote_run_options}
 
@@ -102,10 +72,109 @@ class StreamController(object):
             'private_data_dir': True,
             'payload': base64.b64encode(buf.getvalue()).decode('ascii'),
         }
-        self.control_out.write(json.dumps(data).encode('utf-8'))
-        self.control_out.write(b'\n')
-        self.control_out.flush()
-        self.control_out.close()
+        self._output.flush()
+        self._output.write(json.dumps(data).encode('utf-8'))
+        self._output.write(b'\n')
+        self._output.flush()
+        self._output.close()
+
+
+class Worker(object):
+    def __init__(self, _input=None, _output=None, **kwargs):
+        if _input is None:
+            _input = sys.stdin.buffer
+        if _output is None:
+            _output = sys.stdout.buffer
+        self._input = _input
+        self._output = _output
+
+        self.kwargs = kwargs
+
+        self.private_data_dir = tempfile.TemporaryDirectory().name
+
+    def run(self):
+        for line in self._input:
+            data = json.loads(line)
+            if data.get('private_data_dir'):
+                buf = io.BytesIO(base64.b64decode(data['payload']))
+                with zipfile.ZipFile(buf, 'r') as archive:
+                    archive.extractall(path=self.private_data_dir)
+
+        kwargs_path = os.path.join(self.private_data_dir, 'kwargs')
+        if os.path.exists(kwargs_path):
+            with open(kwargs_path, "r") as kwf:
+                kwargs = json.load(kwf)
+            if not isinstance(kwargs, dict):
+                raise ValueError("Invalid kwargs data")
+        else:
+            kwargs = {}
+
+        self.kwargs.update(kwargs)
+
+        self.kwargs['quiet'] = True
+        self.kwargs['private_data_dir'] = self.private_data_dir
+        self.kwargs['status_handler'] = self.status_handler
+        self.kwargs['event_handler'] = self.event_handler
+        self.kwargs['artifacts_handler'] = self.artifacts_handler
+        self.kwargs['finished_callback'] = self.finished_callback
+
+        ansible_runner.interface.run(**self.kwargs)
+
+        # FIXME: do cleanup on the tempdir
+
+    def status_handler(self, status, runner_config):
+        self._output.write(json.dumps(status).encode('utf-8'))
+        self._output.write(b'\n')
+        self._output.flush()
+
+    def event_handler(self, event_data):
+        self._output.write(json.dumps(event_data).encode('utf-8'))
+        self._output.write(b'\n')
+        self._output.flush()
+
+    def artifacts_handler(self, artifact_dir):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
+            for dirpath, dirs, files in os.walk(artifact_dir):
+                relpath = os.path.relpath(dirpath, artifact_dir)
+                if relpath == ".":
+                    relpath = ""
+                for fname in files:
+                    archive.write(os.path.join(dirpath, fname), arcname=os.path.join(relpath, fname))
+            archive.close()
+
+        payload = buf.getvalue()
+
+        self._output.write(json.dumps({'artifacts': len(payload)}).encode('utf-8'))
+        self._output.write(b'\n')
+        self._output.write(payload)
+        self._output.flush()
+
+    def finished_callback(self, runner_obj):
+        self._output.write(json.dumps({'eof': True}).encode('utf-8'))
+        self._output.write(b'\n')
+        self._output.flush()
+        self._output.close()
+
+
+class Processor(object):
+    def __init__(self, _input=None, status_handler=None, event_handler=None,
+                 artifacts_handler=None, cancel_callback=None, finished_callback=None, **kwargs):
+        if _input is None:
+            _input = sys.stdin.buffer
+        self._input = _input
+
+        self.kwargs = kwargs
+        self.config = ansible_runner.RunnerConfig(**kwargs)
+        self.status_handler = status_handler
+        self.event_handler = event_handler
+        self.artifacts_handler = artifacts_handler
+
+        self.cancel_callback = cancel_callback
+        self.finished_callback = finished_callback
+
+        self.status = "unstarted"
+        self.rc = None
 
     def status_callback(self, status_data):
         self.status = status_data['status']
@@ -140,76 +209,26 @@ class StreamController(object):
         if self.artifacts_handler is not None:
             self.artifacts_handler(self.config.artifact_dir)
 
-
-class StreamWorker(object):
-    def __init__(self, worker_in, worker_out, **kwargs):
-        self.worker_in = worker_in
-        self.worker_out = worker_out
-
-        self.kwargs = kwargs
-
-        self.private_data_dir = tempfile.TemporaryDirectory().name
-
     def run(self):
-        for line in self.worker_in:
+        self.config.prepare()
+
+        job_events_path = os.path.join(self.config.artifact_dir, 'job_events')
+        if not os.path.exists(job_events_path):
+            os.mkdir(job_events_path, 0o700)
+
+        while True:
+            line = self._input.readline()
             data = json.loads(line)
-            if data.get('private_data_dir'):
-                buf = io.BytesIO(base64.b64decode(data['payload']))
-                with zipfile.ZipFile(buf, 'r') as archive:
-                    archive.extractall(path=self.private_data_dir)
 
-        kwargs_path = os.path.join(self.private_data_dir, 'kwargs')
-        if os.path.exists(kwargs_path):
-            with open(kwargs_path, "r") as kwf:
-                kwargs = json.load(kwf)
-            if not isinstance(kwargs, dict):
-                raise ValueError("Invalid kwargs data")
-        else:
-            kwargs = {}
+            if 'status' in data:
+                self.status_callback(data)
+            elif 'artifacts' in data:
+                self.artifacts_callback(self._input.read(data['artifacts']))
+            elif 'eof' in data:
+                break
+            else:
+                self.event_callback(data)
 
-        self.kwargs.update(kwargs)
-
-        self.kwargs['quiet'] = True
-        self.kwargs['private_data_dir'] = self.private_data_dir
-        self.kwargs['status_handler'] = self.status_handler
-        self.kwargs['event_handler'] = self.event_handler
-        self.kwargs['artifacts_handler'] = self.artifacts_handler
-        self.kwargs['finished_callback'] = self.finished_callback
-
-        ansible_runner.interface.run(**self.kwargs)
-
-        # FIXME: do cleanup on the tempdir
-
-    def status_handler(self, status, runner_config):
-        self.worker_out.write(json.dumps(status).encode('utf-8'))
-        self.worker_out.write(b'\n')
-        self.worker_out.flush()
-
-    def event_handler(self, event_data):
-        self.worker_out.write(json.dumps(event_data).encode('utf-8'))
-        self.worker_out.write(b'\n')
-        self.worker_out.flush()
-
-    def artifacts_handler(self, artifact_dir):
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
-            for dirpath, dirs, files in os.walk(artifact_dir):
-                relpath = os.path.relpath(dirpath, artifact_dir)
-                if relpath == ".":
-                    relpath = ""
-                for fname in files:
-                    archive.write(os.path.join(dirpath, fname), arcname=os.path.join(relpath, fname))
-            archive.close()
-
-        payload = buf.getvalue()
-
-        self.worker_out.write(json.dumps({'artifacts': len(payload)}).encode('utf-8'))
-        self.worker_out.write(b'\n')
-        self.worker_out.write(payload)
-        self.worker_out.flush()
-
-    def finished_callback(self, runner_obj):
-        self.worker_out.write(json.dumps({'eof': True}).encode('utf-8'))
-        self.worker_out.write(b'\n')
-        self.worker_out.flush()
-        self.worker_out.close()
+        if self.finished_callback is not None:
+            self.finished_callback(self)
+        return self.status, self.rc

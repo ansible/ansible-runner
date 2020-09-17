@@ -619,7 +619,10 @@ class RunnerConfig(object):
     def wrap_args_for_containerization(self, args):
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm', '--tty', '--interactive'])
-        new_args.extend(["--workdir", "/runner/project"])
+        if os.path.exists(os.path.join(self.private_data_dir, 'project')):
+            new_args.extend(["--workdir", "/runner/project"])
+        else:
+            new_args.extend(["--workdir", "/runner"])
 
         def _ensure_path_safe_to_mount(path):
             if path in ('/home', '/usr'):

@@ -607,12 +607,11 @@ def test_container_volume_mounting_with_Z(tmpdir):
         raise Exception('Could not find expected mount, args: {}'.format(new_args))
 
 
-@patch('os.mkdir', return_value=True)
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_containerization_settings(mock_mkdir, container_runtime):
+def test_containerization_settings(tmpdir, container_runtime):
     pytest.skip('need to run integration tests')
     with patch('ansible_runner.runner_config.RunnerConfig.containerized', new_callable=PropertyMock) as mock_containerized:
-        rc = RunnerConfig('/')
+        rc = RunnerConfig(tmpdir)
         rc.playbook = 'main.yaml'
         rc.command = 'ansible-playbook'
         rc.process_isolation = True
@@ -629,7 +628,7 @@ def test_containerization_settings(mock_mkdir, container_runtime):
         extra_container_args = ['--user={os.getuid()}']
 
     expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
-        ['-v', '{}:/runner:Z'.format(rc.private_data_dir)] + \
+        ['-v', '{}/artifacts:/runner/artifacts:Z'.format(rc.private_data_dir)] + \
         ['-v', '/host1:/container1', '-v', 'host2:/container2'] + \
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \

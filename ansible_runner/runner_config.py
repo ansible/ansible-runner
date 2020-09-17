@@ -737,6 +737,7 @@ class RunnerConfig(object):
 
             if 'podman' in self.process_isolation_executable:
                 # container namespace stuff
+                new_args.extend(["--group-add=root"])
                 new_args.extend(["--userns=keep-id"])
                 new_args.extend(["--ipc=host"])
 

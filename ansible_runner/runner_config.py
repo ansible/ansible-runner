@@ -619,10 +619,7 @@ class RunnerConfig(object):
     def wrap_args_for_containerization(self, args):
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm', '--tty', '--interactive'])
-        if os.path.exists(os.path.join(self.private_data_dir, 'project')):
-            new_args.extend(["--workdir", "/runner/project"])
-        else:
-            new_args.extend(["--workdir", "/runner"])
+        new_args.extend(["--workdir", "/runner/project"])
 
         def _ensure_path_safe_to_mount(path):
             if path in ('/home', '/usr'):
@@ -731,14 +728,25 @@ class RunnerConfig(object):
                 new_args.extend(["--userns=keep-id"])
                 new_args.extend(["--ipc=host"])
 
+        # the playbook / adhoc cases (cli_execenv_cmd) are handled separately
+        # because they have pre-existing mounts already in new_args
+        if self.cli_execenv_cmd:
+            # Relative paths are mounted relative to /runner/project
+            for subdir in ('project', 'artifacts'):
+                subdir_path = os.path.join(self.private_data_dir, subdir)
+                if not os.path.exists(subdir_path):
+                    os.mkdir(subdir_path, 0o700)
 
-        # These directories need to exist before they are mounted in the container,
-        # or they will be owned by root.
-        if not os.path.exists(os.path.join(self.private_data_dir, 'artifacts')):
-            os.mkdir(os.path.join(self.private_data_dir, 'artifacts'), 0o700)
+            # playbook / adhoc commands need artifacts mounted to output data
+            new_args.extend(["-v", "{}/artifacts:/runner/artifacts:Z".format(self.private_data_dir)])
+        else:
+            subdir_path = os.path.join(self.private_data_dir, 'artifacts')
+            if not os.path.exists(subdir_path):
+                os.mkdir(subdir_path, 0o700)
 
-        # Mount the private_data_dir
-        new_args.extend(["-v", "{}:/runner:Z".format(self.private_data_dir)])
+            # Mount the entire private_data_dir
+            # custom show paths inside private_data_dir do not make sense
+            new_args.extend(["-v", "{}:/runner:Z".format(self.private_data_dir)])
 
         container_volume_mounts = self.container_volume_mounts
         if container_volume_mounts:

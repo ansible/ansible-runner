@@ -627,7 +627,7 @@ def test_containerization_settings(tmpdir, container_runtime):
         extra_container_args = ['--user={os.getuid()}']
 
     expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
-        ['-v', '{}/artifacts:/runner/artifacts:Z'.format(rc.private_data_dir)] + \
+        ['-v', '{}:/runner:Z'.format(rc.private_data_dir)] + \
         ['-v', '/host1:/container1', '-v', 'host2:/container2'] + \
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \

@@ -100,3 +100,37 @@ def test_env_accuracy_inside_container(request, printenv_example, container_runt
         assert actual_env[key] == value, 'Reported value wrong for {0} env var'.format(key)
 
     assert '/tmp' == res.config.cwd
+
+
+def test_multiple_inventories(test_data_dir):
+    private_data_dir = os.path.join(test_data_dir, 'debug')
+
+    res = run(
+        private_data_dir=private_data_dir,
+        playbook='debug.yml',
+    )
+    stdout = res.stdout.read()
+    assert res.rc == 0, stdout
+
+    # providing no inventory should cause <private_data_dir>/inventory
+    # to be used, reading both inventories in the directory
+    assert 'host_1' in stdout
+    assert 'host_2' in stdout
+
+
+def test_inventory_absolute_path(test_data_dir):
+    private_data_dir = os.path.join(test_data_dir, 'debug')
+
+    res = run(
+        private_data_dir=private_data_dir,
+        playbook='debug.yml',
+        inventory=[
+            os.path.join(private_data_dir, 'inventory', 'inv_1'),
+        ],
+    )
+    stdout = res.stdout.read()
+    assert res.rc == 0, stdout
+
+    # hosts can be down-selected to one inventory out of those available
+    assert 'host_1' in stdout
+    assert 'host_2' not in stdout

@@ -607,11 +607,10 @@ def test_container_volume_mounting_with_Z(tmpdir):
         raise Exception('Could not find expected mount, args: {}'.format(new_args))
 
 
-@patch('os.mkdir', return_value=True)
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_containerization_settings(mock_mkdir, container_runtime):
+def test_containerization_settings(tmpdir, container_runtime):
     with patch('ansible_runner.runner_config.RunnerConfig.containerized', new_callable=PropertyMock) as mock_containerized:
-        rc = RunnerConfig('/')
+        rc = RunnerConfig(tmpdir)
         rc.playbook = 'main.yaml'
         rc.command = 'ansible-playbook'
         rc.process_isolation = True

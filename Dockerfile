@@ -18,8 +18,6 @@ RUN dnf install -y gcc python3-devel
 RUN pip3 install bindep https://github.com/ansible/ansible/archive/devel.tar.gz \
     https://github.com/ansible/ansible-runner/archive/devel.tar.gz
 
-RUN useradd runner && usermod -aG root runner
-
 ADD utils/entrypoint.sh /bin/entrypoint
 RUN chmod +x /bin/entrypoint
 
@@ -27,7 +25,7 @@ RUN chmod +x /bin/entrypoint
 # are writeable by the root group.
 RUN for dir in \
       /home/runner \
-      /home/runner/.ansible/tmp \
+      /home/runner/.ansible \
       /runner \
       /home/runner \
       /runner/env \
@@ -37,7 +35,8 @@ RUN for dir in \
     do mkdir -m 0775 -p $dir ; chmod g+rwx $dir ; chgrp root $dir ; done && \
     for file in \
       /home/runner/.ansible/galaxy_token \
-      /etc/passwd ; \
+      /etc/passwd \
+      /etc/group ; \
     do touch $file ; chmod g+rw $file ; chgrp root $file ; done
 
 VOLUME /runner

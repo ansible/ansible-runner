@@ -724,12 +724,29 @@ class RunnerConfig(object):
 
             if 'podman' in self.process_isolation_executable:
                 # container namespace stuff
+                new_args.extend(["--group-add=root"])
                 new_args.extend(["--userns=keep-id"])
                 new_args.extend(["--ipc=host"])
 
+        # the playbook / adhoc cases (cli_execenv_cmd) are handled separately
+        # because they have pre-existing mounts already in new_args
+        if self.cli_execenv_cmd:
+            # Relative paths are mounted relative to /runner/project
+            for subdir in ('project', 'artifacts'):
+                subdir_path = os.path.join(self.private_data_dir, subdir)
+                if not os.path.exists(subdir_path):
+                    os.mkdir(subdir_path, 0o700)
 
-        # Mount the private_data_dir
-        new_args.extend(["-v", "{}:/runner:Z".format(self.private_data_dir)])
+            # playbook / adhoc commands need artifacts mounted to output data
+            new_args.extend(["-v", "{}/artifacts:/runner/artifacts:Z".format(self.private_data_dir)])
+        else:
+            subdir_path = os.path.join(self.private_data_dir, 'artifacts')
+            if not os.path.exists(subdir_path):
+                os.mkdir(subdir_path, 0o700)
+
+            # Mount the entire private_data_dir
+            # custom show paths inside private_data_dir do not make sense
+            new_args.extend(["-v", "{}:/runner:Z".format(self.private_data_dir)])
 
         container_volume_mounts = self.container_volume_mounts
         if container_volume_mounts:

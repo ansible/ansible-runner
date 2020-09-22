@@ -525,7 +525,7 @@ def test_process_isolation_settings():
     # hide /home
     assert rc.command[8] == '--bind'
     assert 'ansible_runner_pi' in rc.command[9]
-    assert rc.command[10] == '/home'
+    assert rc.command[10] == os.path.realpath('/home')  # needed for Mac
 
     # hide /var
     assert rc.command[11] == '--bind'

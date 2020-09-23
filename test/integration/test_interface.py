@@ -123,7 +123,6 @@ def test_collection_install(request, test_data_dir, container_runtime_installed,
         private_data_dir=private_data_dir,
         playbook='project_update.yml',
         inventory=None,
-        verbosity=5,
         settings={
             'process_isolation_executable': container_runtime_installed,
             'process_isolation': True,

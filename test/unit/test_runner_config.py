@@ -595,6 +595,7 @@ def test_profiling_plugin_settings_with_custom_intervals(mock_mkdir):
 def test_container_volume_mounting_with_Z(tmpdir):
     rc = RunnerConfig(str(tmpdir))
     rc.container_volume_mounts = ['project_path:project_path:Z']
+    rc.container_name = 'foo'
     rc.env = {}
     new_args = rc.wrap_args_for_containerization(['ansible-playbook', 'foo.yml'])
     assert new_args[0] == 'podman'
@@ -611,6 +612,7 @@ def test_container_volume_mounting_with_Z(tmpdir):
 def test_containerization_settings(tmpdir, container_runtime):
     with patch('ansible_runner.runner_config.RunnerConfig.containerized', new_callable=PropertyMock) as mock_containerized:
         rc = RunnerConfig(tmpdir)
+        rc.ident = 'foo'
         rc.playbook = 'main.yaml'
         rc.command = 'ansible-playbook'
         rc.process_isolation = True
@@ -631,6 +633,7 @@ def test_containerization_settings(tmpdir, container_runtime):
         ['-v', '/host1:/container1', '-v', 'host2:/container2'] + \
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \
+        ['--name', 'ansible_runner_foo'] + \
         ['my_container', 'ansible-playbook', '-i', '/runner/inventory/hosts', 'main.yaml']
 
     for index, element in enumerate(expected_command_start):

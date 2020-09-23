@@ -74,6 +74,19 @@ how Ansible AWX and Tower manage this information.
 
 See :ref:`inputdir` for more information
 
+Container Names
+^^^^^^^^^^^^^^^
+
+Like all ansible-runner jobs, each job has an identifier associated with it
+which is also the name of the artifacts subfolder where results are saved to.
+When a container for job isolation is launched, it will be given a name
+of ``ansible_runner_<job identifier>``. Some characters from the job
+identifier may be replaced with underscores for compatibility with
+names that podman and docker allow.
+
+This name is used internally if a command needs to be ran against the container
+at a later time, for instance, to stop the container when the job is canceled.
+
 ~/.ssh/ symlinks
 ^^^^^^^^^^^^^^^^
 

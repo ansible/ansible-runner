@@ -1,0 +1,11 @@
+---
+- name: Sleep playbook for testing things while process is running
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  vars:
+    sleep_interval: 30
+
+  tasks:
+    - name: sleep for a specified interval
+      command: 'sleep {{ sleep_interval }}'

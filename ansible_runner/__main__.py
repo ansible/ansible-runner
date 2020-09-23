@@ -863,7 +863,7 @@ def main(sys_args=None):
         if not os.path.exists(stderr_path):
             os.close(os.open(stderr_path, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
 
-    if vargs.get('command') in ('start', 'run', 'transmit', 'worker', 'adhoc', 'playbook'):
+    if vargs.get('command') in ('start', 'run', 'transmit', 'worker', 'process', 'adhoc', 'playbook'):
 
         if vargs.get('command') == 'start':
             import daemon

@@ -11,6 +11,7 @@ import zipfile
 
 import ansible_runner
 import ansible_runner.plugins
+from ansible_runner import utils
 
 
 class UUIDEncoder(json.JSONEncoder):
@@ -52,28 +53,10 @@ class Transmitter(object):
         self.config.prepare()
         remote_options = {key: value for key, value in self.kwargs.items() if key in remote_run_options}
 
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
-            private_data_dir = self.kwargs.get('private_data_dir', None)
-            if private_data_dir:
-                for dirpath, dirs, files in os.walk(private_data_dir):
-                    relpath = os.path.relpath(dirpath, private_data_dir)
-                    if relpath == ".":
-                        relpath = ""
-                    for fname in files:
-                        archive.write(os.path.join(dirpath, fname), arcname=os.path.join(relpath, fname))
-
-            kwargs = json.dumps(remote_options, cls=UUIDEncoder)
-            archive.writestr('kwargs', kwargs)
-            archive.close()
-        buf.flush()
-
-        data = {
-            'private_data_dir': True,
-            'payload': base64.b64encode(buf.getvalue()).decode('ascii'),
-        }
-        self._output.flush()
-        self._output.write(json.dumps(data).encode('utf-8'))
+        private_data_dir = self.kwargs.get('private_data_dir', None)
+        self._output.write(
+            utils.stream_dir(private_data_dir, kwargs=json.dumps(remote_options, cls=UUIDEncoder)))
+        self._output.write(json.dumps({'eof': True}).encode('utf-8'))
         self._output.write(b'\n')
         self._output.flush()
         # self._output.close()
@@ -101,12 +84,17 @@ class Worker(object):
         self.rc = None
 
     def run(self):
-        for line in self._input:
+        while True:
+            line = self._input.readline()
             data = json.loads(line)
-            if data.get('private_data_dir'):
-                buf = io.BytesIO(base64.b64decode(data['payload']))
+
+            if 'zipfile' in data:
+                zip_data = self._input.read(data['zipfile'])
+                buf = io.BytesIO(zip_data)
                 with zipfile.ZipFile(buf, 'r') as archive:
                     archive.extractall(path=self.private_data_dir)
+            elif 'eof' in data:
+                break
 
         kwargs_path = os.path.join(self.private_data_dir, 'kwargs')
         if os.path.exists(kwargs_path):
@@ -145,21 +133,7 @@ class Worker(object):
         self._output.flush()
 
     def artifacts_handler(self, artifact_dir):
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
-            for dirpath, dirs, files in os.walk(artifact_dir):
-                relpath = os.path.relpath(dirpath, artifact_dir)
-                if relpath == ".":
-                    relpath = ""
-                for fname in files:
-                    archive.write(os.path.join(dirpath, fname), arcname=os.path.join(relpath, fname))
-            archive.close()
-
-        payload = buf.getvalue()
-
-        self._output.write(json.dumps({'artifacts': len(payload)}).encode('utf-8'))
-        self._output.write(b'\n')
-        self._output.write(payload)
+        self._output.write(utils.stream_dir(artifact_dir))
         self._output.flush()
 
     def finished_callback(self, runner_obj):
@@ -234,8 +208,8 @@ class Processor(object):
 
             if 'status' in data:
                 self.status_callback(data)
-            elif 'artifacts' in data:
-                self.artifacts_callback(self._input.read(data['artifacts']))
+            elif 'zipfile' in data:
+                self.artifacts_callback(self._input.read(data['zipfile']))
             elif 'eof' in data:
                 break
             else:
@@ -243,4 +217,5 @@ class Processor(object):
 
         if self.finished_callback is not None:
             self.finished_callback(self)
+
         return self.status, self.rc

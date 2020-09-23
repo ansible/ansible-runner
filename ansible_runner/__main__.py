@@ -806,6 +806,16 @@ def main(sys_args=None):
 
     if vargs.get('command') in ('adhoc', 'playbook'):
         cli_execenv_cmd = vargs.get('command')
+
+        if not leftover_args:
+            parser.exit(
+                status=1,
+                message="The {} subcommand requires arguments to pass to Ansible inside the container.\n".format(
+                    vargs.get('command')
+                )
+            )
+
+    if vargs.get('command') in ('worker', 'process', 'adhoc', 'playbook'):
         if not vargs.get('private_data_dir'):
             temp_private_dir = tempfile.mkdtemp()
             vargs['private_data_dir'] = temp_private_dir
@@ -815,14 +825,6 @@ def main(sys_args=None):
                 @atexit.register
                 def conditonally_clean_cli_execenv_tempdir():
                     shutil.rmtree(temp_private_dir)
-
-        if not leftover_args:
-            parser.exit(
-                status=1,
-                message="The {} subcommand requires arguments to pass to Ansible inside the container.\n".format(
-                    vargs.get('command')
-                )
-            )
 
     if vargs.get('command') in ('start', 'run', 'transmit'):
         if vargs.get('hosts') and not (vargs.get('module') or vargs.get('role')):
@@ -861,7 +863,7 @@ def main(sys_args=None):
         if not os.path.exists(stderr_path):
             os.close(os.open(stderr_path, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
 
-    if vargs.get('command') in ('start', 'run', 'transmit', 'adhoc', 'playbook'):
+    if vargs.get('command') in ('start', 'run', 'transmit', 'worker', 'adhoc', 'playbook'):
 
         if vargs.get('command') == 'start':
             import daemon

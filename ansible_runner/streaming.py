@@ -76,7 +76,9 @@ class Transmitter(object):
         self._output.write(json.dumps(data).encode('utf-8'))
         self._output.write(b'\n')
         self._output.flush()
-        self._output.close()
+        # self._output.close()
+
+        return self.status, self.rc
 
 
 class Worker(object):
@@ -90,7 +92,13 @@ class Worker(object):
 
         self.kwargs = kwargs
 
-        self.private_data_dir = tempfile.TemporaryDirectory().name
+        private_data_dir = kwargs.get('private_data_dir')
+        if not private_data_dir:
+            private_data_dir = tempfile.TemporaryDirectory().name
+        self.private_data_dir = private_data_dir
+
+        self.status = "unstarted"
+        self.rc = None
 
     def run(self):
         for line in self._input:
@@ -118,12 +126,16 @@ class Worker(object):
         self.kwargs['artifacts_handler'] = self.artifacts_handler
         self.kwargs['finished_callback'] = self.finished_callback
 
-        ansible_runner.interface.run(**self.kwargs)
+        r = ansible_runner.interface.run(**self.kwargs)
+        self.status, self.rc = r.status, r.rc
 
         # FIXME: do cleanup on the tempdir
 
-    def status_handler(self, status, runner_config):
-        self._output.write(json.dumps(status).encode('utf-8'))
+        return self.status, self.rc
+
+    def status_handler(self, status_data, runner_config):
+        self.status = status_data['status']
+        self._output.write(json.dumps(status_data).encode('utf-8'))
         self._output.write(b'\n')
         self._output.flush()
 
@@ -154,7 +166,7 @@ class Worker(object):
         self._output.write(json.dumps({'eof': True}).encode('utf-8'))
         self._output.write(b'\n')
         self._output.flush()
-        self._output.close()
+        # self._output.close()
 
 
 class Processor(object):

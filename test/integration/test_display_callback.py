@@ -395,19 +395,19 @@ def test_output_when_given_non_playbook_script(private_data_dir):
     assert events[1]['stdout'] == 'goodbye world'
 
 
-@pytest.mark.parametrize('json_mode', [True])
 @pytest.mark.parametrize('playbook', [
 {'listvars.yml': '''
 - name: List Variables
   connection: local
-  hosts: all
+  hosts: localhost
+  gather_facts: false
   tasks:
-    - name: Display all variables/facts known for a host
+    - name: Print a lot of lines
       debug:
-        var: hostvars[inventory_hostname]
+        msg: "{{ ('F' * 150) | list }}"
 '''},  # noqa
 ])
-def test_large_stdout_parsing_when_using_json_output(executor, playbook, json_mode):
+def test_large_stdout_parsing_when_using_json_output(executor, playbook):
     # When the json flag is used, it is possible to output more data than
     # pexpect's maxread default of 2000 characters.  As a result, if not
     # handled properly, the stdout can end up being corrupted with partial
@@ -416,5 +416,7 @@ def test_large_stdout_parsing_when_using_json_output(executor, playbook, json_mo
     #
     # This tests to confirm we don't polute the stdout output with non-json
     # lines when a single event has a lot of output.
+    executor.config.env['ANSIBLE_NOCOLOR'] = str(True)
     executor.run()
-    assert all(line[0] == "{" for line in executor.stdout.readlines())
+    text = executor.stdout.read()
+    assert text.count('"F"') == 150

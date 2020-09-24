@@ -20,4 +20,7 @@
         ANSIBLE_FORCE_COLOR: false
         ANSIBLE_COLLECTIONS_PATHS: "/var/lib/awx/projects/collections"
         GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
+        # Put the local tmp directory to same volume as collection destination
+        # otherwise, files cannot be moved accross volumes and will cause error
+        ANSIBLE_LOCAL_TEMP: "/var/lib/awx/projects/collections/tmp"
 

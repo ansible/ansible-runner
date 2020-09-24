@@ -414,6 +414,8 @@ def test_large_stdout_parsing_when_using_json_output(executor, playbook):
     #
     # This tests to confirm we don't polute the stdout output with non-json
     # lines when a single event has a lot of output.
+    if six.PY2:
+        pytest.skip('Ansible in python2 uses different syntax.')
     executor.config.env['ANSIBLE_NOCOLOR'] = str(True)
     executor.run()
     text = executor.stdout.read()

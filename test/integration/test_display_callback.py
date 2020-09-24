@@ -18,9 +18,6 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 def executor(tmpdir, request, is_pre_ansible28):
     private_data_dir = six.text_type(tmpdir.mkdir('foo'))
 
-
-@pytest.fixture()
-def executor(request, private_data_dir):
     playbooks = request.node.callspec.params.get('playbook')
     playbook = list(playbooks.values())[0]
     envvars = request.node.callspec.params.get('envvars')
@@ -36,11 +33,12 @@ def executor(request, private_data_dir):
     else:
         inventory = 'localhost ansible_connection=local'
 
+
     r = init_runner(
         private_data_dir=private_data_dir,
         inventory=inventory,
         envvars=envvars,
-        playbook=yaml.safe_load(playbook),
+        playbook=yaml.safe_load(playbook)
     )
 
     return r
@@ -352,7 +350,7 @@ def test_output_when_given_invalid_playbook(tmpdir):
     assert "could not be found" in stdout
 
 
-def test_output_when_given_non_playbook_script(private_data_dir):
+def test_output_when_given_non_playbook_script(tmpdir):
     # As shown in the following pull request:
     #
     #   https://github.com/ansible/ansible-runner/pull/256
@@ -364,7 +362,7 @@ def test_output_when_given_non_playbook_script(private_data_dir):
     # this is a retro-active test based on the sample repo provided in the PR:
     #
     #   https://github.com/AlanCoding/ansible-runner-examples/tree/master/non_playbook/sleep_with_writes
-
+    private_data_dir = str(tmpdir)
     with open(os.path.join(private_data_dir, "args"), 'w') as args_file:
         args_file.write("bash sleep_and_write.sh\n")
     with open(os.path.join(private_data_dir, "sleep_and_write.sh"), 'w') as script_file:

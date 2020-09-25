@@ -405,7 +405,7 @@ def test_output_when_given_non_playbook_script(tmpdir):
         msg: "{{ ('F' * 150) | list }}"
 '''},  # noqa
 ])
-def test_large_stdout_parsing_when_using_json_output(executor, playbook):
+def test_large_stdout_parsing_when_using_json_output(executor, playbook, skipif_pre_ansible28):
     # When the json flag is used, it is possible to output more data than
     # pexpect's maxread default of 2000 characters.  As a result, if not
     # handled properly, the stdout can end up being corrupted with partial

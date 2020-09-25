@@ -43,7 +43,6 @@ def get_env_data(res):
         raise RuntimeError('Count not find look_at_environment task from playbook')
 
 
-@pytest.mark.serial
 def test_env_accuracy(request, printenv_example):
     os.environ['SET_BEFORE_TEST'] = 'MADE_UP_VALUE'
 

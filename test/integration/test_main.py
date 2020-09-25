@@ -104,7 +104,6 @@ def test_module_run_debug():
             shutil.rmtree('./ping')
 
 
-@pytest.mark.serial
 def test_module_run_clean():
     with temp_directory() as temp_dir:
         rc = main(['run', '-m', 'ping',
@@ -113,13 +112,12 @@ def test_module_run_clean():
     assert rc == 0
 
 
-def test_role_run(skipif_pre_ansible28):
+def test_role_run(skipif_pre_ansible28, clear_integration_artifacts):
     rc = main(['run', '-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
                '--roles-path', 'test/integration/roles',
                "test/integration"])
     assert rc == 0
-    ensure_removed("test/integration/artifacts")
 
 
 def test_role_run_abs():
@@ -131,17 +129,14 @@ def test_role_run_abs():
     assert rc == 0
 
 
-def test_role_logfile(skipif_pre_ansible28):
-    try:
-        rc = main(['run', '-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', 'test/integration/project/roles',
-                   '--logfile', 'new_logfile',
-                   'test/integration'])
-        assert os.path.exists('new_logfile')
-        assert rc == 0
-    finally:
-        ensure_removed("test/integration/artifacts")
+def test_role_logfile(skipif_pre_ansible28, clear_integration_artifacts):
+    rc = main(['run', '-r', 'benthomasson.hello_role',
+               '--hosts', 'localhost',
+               '--roles-path', 'test/integration/project/roles',
+               '--logfile', 'new_logfile',
+               'test/integration'])
+    assert os.path.exists('new_logfile')
+    assert rc == 0
 
 
 def test_role_logfile_abs():
@@ -175,15 +170,13 @@ def test_role_bad_project_dir():
         ensure_removed("new_logfile")
 
 
-@pytest.mark.serial
-def test_role_run_clean(skipif_pre_ansible28):
+def test_role_run_clean(skipif_pre_ansible28, clear_integration_artifacts):
 
     rc = main(['run', '-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
                '--roles-path', 'test/integration/roles',
                "test/integration"])
     assert rc == 0
-    ensure_removed("test/integration/artifacts")
 
 
 def test_role_run_cmd_line_abs():
@@ -195,14 +188,13 @@ def test_role_run_cmd_line_abs():
     assert rc == 0
 
 
-def test_role_run_artifacts_dir(skipif_pre_ansible28):
+def test_role_run_artifacts_dir(skipif_pre_ansible28, clear_integration_artifacts):
     rc = main(['run', '-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
                '--roles-path', 'test/integration/roles',
                '--artifact-dir', 'otherartifacts',
                "test/integration"])
     assert rc == 0
-    ensure_removed("test/integration/artifacts")
 
 
 def test_role_run_artifacts_dir_abs(skipif_pre_ansible28):
@@ -295,7 +287,6 @@ def test_role_start():
         p.join()
 
 
-@pytest.mark.serial
 def test_playbook_start(skipif_pre_ansible28):
 
     inv = 'inventory/localhost'

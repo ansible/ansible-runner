@@ -3,12 +3,10 @@ import tempfile
 from distutils.spawn import find_executable
 import json
 import os
-import shutil
 
 from ansible_runner import run, run_async
 
 
-@pytest.mark.serial
 @pytest.mark.parametrize('containerized', [True, False])
 def test_basic_events(containerized, container_runtime_available, is_pre_ansible28, is_run_async=False, g_facts=False):
     if containerized and not container_runtime_available:
@@ -60,7 +58,6 @@ def test_basic_events(containerized, container_runtime_available, is_pre_ansible
     assert "event_data" in okay_event and len(okay_event['event_data']) > 0
 
 
-@pytest.mark.serial
 @pytest.mark.parametrize('containerized', [True, False])
 def test_async_events(containerized, container_runtime_available, is_pre_ansible28):
     test_basic_events(containerized, container_runtime_available, is_pre_ansible28, is_run_async=True,g_facts=True)
@@ -134,22 +131,18 @@ def test_playbook_on_stats_summary_fields(rc, is_pre_ansible28):
     assert set(fields) >= set(EXPECTED_SUMMARY_FIELDS)
 
 
-@pytest.mark.serial
-def test_include_role_events():
-    try:
-        r = run(
-            private_data_dir=os.path.abspath('test/integration'),
-            playbook='use_role.yml'
-        )
-        role_events = [event for event in r.events if event.get('event_data', {}).get('role', '') == "benthomasson.hello_role"]
-        assert 'runner_on_ok' in [event['event'] for event in role_events]
-        for event in role_events:
-            event_data = event['event_data']
-            assert not event_data.get('warning', False)  # role use should not contain warnings
-            if event['event'] == 'runner_on_ok':
-                assert event_data['res']['msg'] == 'Hello world!'
-    finally:
-        shutil.rmtree('test/integration/artifacts')
+def test_include_role_events(clear_integration_artifacts):
+    r = run(
+        private_data_dir=os.path.abspath('test/integration'),
+        playbook='use_role.yml'
+    )
+    role_events = [event for event in r.events if event.get('event_data', {}).get('role', '') == "benthomasson.hello_role"]
+    assert 'runner_on_ok' in [event['event'] for event in role_events]
+    for event in role_events:
+        event_data = event['event_data']
+        assert not event_data.get('warning', False)  # role use should not contain warnings
+        if event['event'] == 'runner_on_ok':
+            assert event_data['res']['msg'] == 'Hello world!'
 
 
 @pytest.mark.skipif(find_executable('cgexec') is None,

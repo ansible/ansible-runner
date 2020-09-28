@@ -125,7 +125,6 @@ def test_playbook_on_stats_summary_fields(test_data_dir):
     EXPECTED_SUMMARY_FIELDS = ('changed', 'dark', 'failures', 'ignored', 'ok', 'rescued', 'skipped')
 
     runner_stats = res.stats
-    print(runner_stats)
     for stat in EXPECTED_SUMMARY_FIELDS:
         assert stat in runner_stats
         assert runner_stats[stat]  # expected at least 1 host in each stat type

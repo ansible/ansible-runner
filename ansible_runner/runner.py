@@ -377,6 +377,8 @@ class Runner(object):
                     ok=last_event.get('ok',{}),
                     dark=last_event.get('dark',{}),
                     failures=last_event.get('failures',{}),
+                    ignored=last_event.get('ignored', {}),
+                    rescued=last_event.get('rescued', {}),
                     processed=last_event.get('processed',{}),
                     changed=last_event.get('changed',{}))
 

@@ -710,12 +710,10 @@ def main(sys_args=None):
     add_args_to_parser(isalive_runner_group, DEFAULT_CLI_ARGS['receptor_group'])
 
     # mutually exclusive group
-    base_mutually_exclusive_group = parser.add_mutually_exclusive_group()
     run_mutually_exclusive_group = run_subparser.add_mutually_exclusive_group()
     start_mutually_exclusive_group = start_subparser.add_mutually_exclusive_group()
     stop_mutually_exclusive_group = stop_subparser.add_mutually_exclusive_group()
     isalive_mutually_exclusive_group = isalive_subparser.add_mutually_exclusive_group()
-    add_args_to_parser(base_mutually_exclusive_group, DEFAULT_CLI_ARGS['mutually_exclusive_group'])
     add_args_to_parser(run_mutually_exclusive_group, DEFAULT_CLI_ARGS['mutually_exclusive_group'])
     add_args_to_parser(start_mutually_exclusive_group, DEFAULT_CLI_ARGS['mutually_exclusive_group'])
     add_args_to_parser(stop_mutually_exclusive_group, DEFAULT_CLI_ARGS['mutually_exclusive_group'])
@@ -726,12 +724,10 @@ def main(sys_args=None):
         "Ansible Options",
         "control the ansible[-playbook] execution environment",
     )
-    base_ansible_group = parser.add_argument_group(*ansible_options)
     run_ansible_group = run_subparser.add_argument_group(*ansible_options)
     start_ansible_group = start_subparser.add_argument_group(*ansible_options)
     stop_ansible_group = stop_subparser.add_argument_group(*ansible_options)
     isalive_ansible_group = isalive_subparser.add_argument_group(*ansible_options)
-    add_args_to_parser(base_ansible_group, DEFAULT_CLI_ARGS['ansible_group'])
     add_args_to_parser(run_ansible_group, DEFAULT_CLI_ARGS['ansible_group'])
     add_args_to_parser(start_ansible_group, DEFAULT_CLI_ARGS['ansible_group'])
     add_args_to_parser(stop_ansible_group, DEFAULT_CLI_ARGS['ansible_group'])
@@ -743,12 +739,10 @@ def main(sys_args=None):
         "Ansible Role Options",
         "configuration options for directly executing Ansible roles",
     )
-    base_roles_group = parser.add_argument_group(*roles_group_options)
     run_roles_group = run_subparser.add_argument_group(*roles_group_options)
     start_roles_group = start_subparser.add_argument_group(*roles_group_options)
     stop_roles_group = stop_subparser.add_argument_group(*roles_group_options)
     isalive_roles_group = isalive_subparser.add_argument_group(*roles_group_options)
-    add_args_to_parser(base_roles_group, DEFAULT_CLI_ARGS['roles_group'])
     add_args_to_parser(run_roles_group, DEFAULT_CLI_ARGS['roles_group'])
     add_args_to_parser(start_roles_group, DEFAULT_CLI_ARGS['roles_group'])
     add_args_to_parser(stop_roles_group, DEFAULT_CLI_ARGS['roles_group'])
@@ -760,12 +754,10 @@ def main(sys_args=None):
         "Ansible Module Options",
         "configuration options for directly executing Ansible modules",
     )
-    base_modules_group = parser.add_argument_group(*modules_group_options)
     run_modules_group = run_subparser.add_argument_group(*modules_group_options)
     start_modules_group = start_subparser.add_argument_group(*modules_group_options)
     stop_modules_group = stop_subparser.add_argument_group(*modules_group_options)
     isalive_modules_group = isalive_subparser.add_argument_group(*modules_group_options)
-    add_args_to_parser(base_modules_group, DEFAULT_CLI_ARGS['modules_group'])
     add_args_to_parser(run_modules_group, DEFAULT_CLI_ARGS['modules_group'])
     add_args_to_parser(start_modules_group, DEFAULT_CLI_ARGS['modules_group'])
     add_args_to_parser(stop_modules_group, DEFAULT_CLI_ARGS['modules_group'])
@@ -776,12 +768,10 @@ def main(sys_args=None):
         "Ansible Playbook Options",
         "configuation options for executing Ansible playbooks",
     )
-    base_playbook_group = parser.add_argument_group(*playbook_group_options)
     run_playbook_group = run_subparser.add_argument_group(*playbook_group_options)
     start_playbook_group = start_subparser.add_argument_group(*playbook_group_options)
     stop_playbook_group = stop_subparser.add_argument_group(*playbook_group_options)
     isalive_playbook_group = isalive_subparser.add_argument_group(*playbook_group_options)
-    add_args_to_parser(base_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
     add_args_to_parser(run_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
     add_args_to_parser(start_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
     add_args_to_parser(stop_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
@@ -792,14 +782,12 @@ def main(sys_args=None):
         "Ansible Container Options",
         "configuation options for executing Ansible playbooks",
     )
-    base_container_group = parser.add_argument_group(*container_group_options)
     run_container_group = run_subparser.add_argument_group(*container_group_options)
     start_container_group = start_subparser.add_argument_group(*container_group_options)
     stop_container_group = stop_subparser.add_argument_group(*container_group_options)
     isalive_container_group = isalive_subparser.add_argument_group(*container_group_options)
     adhoc_container_group = adhoc_subparser.add_argument_group(*container_group_options)
     playbook_container_group = playbook_subparser.add_argument_group(*container_group_options)
-    add_args_to_parser(base_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(run_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(start_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(stop_container_group, DEFAULT_CLI_ARGS['container_group'])

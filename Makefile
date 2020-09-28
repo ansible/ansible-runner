@@ -13,6 +13,7 @@ IMAGE_NAME ?= quay.io/ansible/ansible-runner
 IMAGE_NAME_STRIPPED := $(word 1,$(subst :, ,$(IMAGE_NAME)))
 GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
 ANSIBLE_BRANCH ?= devel
+ANSIBLE_VERSIONS ?= stable-2.9 stable-2.10 devel
 PIP_NAME = ansible_runner
 LONG_VERSION := $(shell poetry version)
 VERSION := $(filter-out $(NAME), $(LONG_VERSION))
@@ -111,10 +112,16 @@ image: sdist
 	$(CONTAINER_ENGINE) tag $(IMAGE_NAME) $(IMAGE_NAME_STRIPPED):$(GIT_BRANCH)
 
 image_matrix:
-	ANSIBLE_BRANCH=stable-2.9 GIT_BRANCH=2.9.$(GIT_BRANCH) make image
-	ANSIBLE_BRANCH=stable-2.10 GIT_BRANCH=2.10.$(GIT_BRANCH) make image
-	ANSIBLE_BRANCH=devel GIT_BRANCH=devel.$(GIT_BRANCH) make image
+	for version in $(ANSIBLE_VERSIONS) ; do \
+		ANSIBLE_BRANCH=$$version GIT_BRANCH=$$version.$(GIT_BRANCH) make image ; \
+	done
 	$(CONTAINER_ENGINE) tag $(IMAGE_NAME) $(IMAGE_NAME_STRIPPED):$(GIT_BRANCH)
+
+image_matrix_publish:
+	for version in $(ANSIBLE_VERSIONS) ; do \
+		$(CONTAINER_ENGINE) push $(IMAGE_NAME_STRIPPED):$$version.$(GIT_BRANCH) ; \
+	done
+	$(CONTAINER_ENGINE) push $(IMAGE_NAME_STRIPPED):$(GIT_BRANCH)
 
 rpm:
 	MOCK_CONFIG=$(MOCK_CONFIG) docker-compose -f packaging/rpm/docker-compose.yml build

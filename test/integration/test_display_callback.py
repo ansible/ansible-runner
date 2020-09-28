@@ -323,3 +323,100 @@ def test_module_level_no_log(executor, playbook, skipif_pre_ansible28):
     assert len(list(executor.events))
     assert 'john-jacob-jingleheimer-schmidt' in json.dumps(list(executor.events))
     assert 'SENSITIVE' not in json.dumps(list(executor.events))
+
+
+def test_output_when_given_invalid_playbook(tmpdir):
+    # As shown in the following issue:
+    #
+    #   https://github.com/ansible/ansible-runner/issues/29
+    #
+    # There was a lack of output by runner when a playbook that doesn't exist
+    # is provided.  This was fixed in this PR:
+    #
+    #   https://github.com/ansible/ansible-runner/pull/34
+    #
+    # But no test validated it.  This does that.
+    private_data_dir = str(tmpdir)
+    executor = init_runner(
+        private_data_dir=private_data_dir,
+        inventory="localhost ansible_connection=local",
+        envvars={"ANSIBLE_DEPRECATION_WARNINGS": "False"},
+        playbook=os.path.join(private_data_dir, 'fake_playbook.yml')
+    )
+
+    executor.run()
+    stdout = executor.stdout.read()
+    assert "ERROR! the playbook:" in stdout
+    assert "could not be found" in stdout
+
+
+def test_output_when_given_non_playbook_script(tmpdir):
+    # As shown in the following pull request:
+    #
+    #   https://github.com/ansible/ansible-runner/pull/256
+    #
+    # This ports some functionality that previously lived in awx and allows raw
+    # lines of stdout to be treated as event lines.
+    #
+    # As mentioned in the pull request as well, there were no specs added, and
+    # this is a retro-active test based on the sample repo provided in the PR:
+    #
+    #   https://github.com/AlanCoding/ansible-runner-examples/tree/master/non_playbook/sleep_with_writes
+    private_data_dir = str(tmpdir)
+    with open(os.path.join(private_data_dir, "args"), 'w') as args_file:
+        args_file.write("bash sleep_and_write.sh\n")
+    with open(os.path.join(private_data_dir, "sleep_and_write.sh"), 'w') as script_file:
+        script_file.write("echo 'hi world'\nsleep 0.5\necho 'goodbye world'\n")
+
+    # Update the settings to make this test a bit faster :)
+    os.mkdir(os.path.join(private_data_dir, "env"))
+    with open(os.path.join(private_data_dir, "env", "settings"), 'w') as settings_file:
+        settings_file.write("pexpect_timeout: 0.2")
+
+    executor = init_runner(
+        private_data_dir=private_data_dir,
+        inventory="localhost ansible_connection=local",
+        envvars={"ANSIBLE_DEPRECATION_WARNINGS": "False"}
+    )
+
+    executor.run()
+    stdout = executor.stdout.readlines()
+    assert stdout[0].strip() == "hi world"
+    assert stdout[1].strip() == "goodbye world"
+
+    events = list(executor.events)
+
+    assert len(events) == 2
+    assert events[0]['event'] == 'verbose'
+    assert events[0]['stdout'] == 'hi world'
+    assert events[1]['event'] == 'verbose'
+    assert events[1]['stdout'] == 'goodbye world'
+
+
+@pytest.mark.parametrize('playbook', [
+{'listvars.yml': '''
+- name: List Variables
+  connection: local
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Print a lot of lines
+      debug:
+        msg: "{{ ('F' * 150) | list }}"
+'''},  # noqa
+])
+def test_large_stdout_parsing_when_using_json_output(executor, playbook, skipif_pre_ansible28):
+    # When the json flag is used, it is possible to output more data than
+    # pexpect's maxread default of 2000 characters.  As a result, if not
+    # handled properly, the stdout can end up being corrupted with partial
+    # non-event matches with raw "non-json" lines being intermixed with json
+    # ones.
+    #
+    # This tests to confirm we don't polute the stdout output with non-json
+    # lines when a single event has a lot of output.
+    if six.PY2:
+        pytest.skip('Ansible in python2 uses different syntax.')
+    executor.config.env['ANSIBLE_NOCOLOR'] = str(True)
+    executor.run()
+    text = executor.stdout.read()
+    assert text.count('"F"') == 150

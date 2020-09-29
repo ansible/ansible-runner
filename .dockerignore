@@ -171,3 +171,14 @@ fabric.properties
 
 # Editor-based Rest Client
 .idea/httpRequests
+
+# Specific to ansible-runner
+test/
+ansible_runner/
+docs/
+packaging/
+.github/
+*.md
+*.rst
+*.toml
+*.py

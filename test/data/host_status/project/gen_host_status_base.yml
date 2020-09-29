@@ -1,3 +1,4 @@
+---
 - name: A debug msg all hosts will show except for skipped ones
   debug:
     msg: "Playing {{ ansible_host }}"
@@ -29,7 +30,7 @@
     - debug: msg="ε-(´・｀) ﾌ"
 
 - name: Set unreachable fact
-  set_fact: 
+  set_fact:
     unreachable: true
   when: "'_unreachable' in ansible_host"
 

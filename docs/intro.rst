@@ -202,7 +202,9 @@ Inventory
 
 The **Runner** ``inventory`` location under the private data dir has the same expectations as inventory provided directly to ansible itself. It can
 be either a single file or script or a directory containing static inventory files or scripts. This inventory is automatically loaded and provided to
-**Ansible** when invoked and can be further limited or overridden on the command line or via an environment variable to specify the hosts directly.
+**Ansible** when invoked and can be further overridden on the command line or via the ``ANSIBLE_INVENTORY`` environment variable to specify the hosts directly.
+Giving an absolute path for the inventory location is best practice, because relative paths are interpreted relative to the ``current working directory``
+which defaults to the ``project`` directory.
 
 Project
 --------

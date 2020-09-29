@@ -1,0 +1,41 @@
+---
+- name: A debug msg all hosts will show except for skipped ones
+  debug:
+    msg: "Playing {{ ansible_host }}"
+  when: "'_skipped' not in ansible_host"
+
+- name: Hosts haven't really changed, but we will say they have
+  debug:
+    msg: "I am a changed host."
+  changed_when: true
+  when: "'_changed' in ansible_host"
+
+- name: All failhosts aboard the failboat
+  fail:
+    msg: "I did nothing to deserve this."
+  when: "'_failed' in ansible_host"
+
+- name: Ignore this failure for some hosts
+  fail:
+    msg: "<insert inspirational quote about failure>"
+  ignore_errors: true
+  when: "'_ignored' in ansible_host"
+
+- name: Fail and rescue - collection of tasks
+  block:
+    - fail:
+        msg: "HALP!!!"
+      when: "'_rescued' in ansible_host"
+  rescue:
+    - debug: msg="ε-(´・｀) ﾌ"
+
+- name: Set unreachable fact
+  set_fact:
+    unreachable: true
+  when: "'_unreachable' in ansible_host"
+
+- name: Reach out to the unreachable hosts
+  ping:
+  vars:
+    ansible_host: 'invalid.invalid'
+  when: unreachable is defined and unreachable

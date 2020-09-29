@@ -113,22 +113,23 @@ def test_runner_on_start(rc, skipif_pre_ansible28):
     assert len(start_events) == 1
 
 
-def test_playbook_on_stats_summary_fields(rc, is_pre_ansible28):
+def test_playbook_on_stats_summary_fields(test_data_dir, is_pre_ansible28):
     if is_pre_ansible28:
-        inv = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
-    else:
-        inv = 'localhost ansible_connection=local'
-    tdir = tempfile.mkdtemp()
-    r = run(private_data_dir=tdir,
-            inventory=inv,
-            playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
-    stats_events = [x for x in filter(lambda x: 'event' in x and x['event'] == 'playbook_on_stats',
-                                      r.events)]
-    assert len(stats_events) == 1
+        pytest.skip('Test is for post 2.8 status types.')
+    private_data_dir = os.path.join(test_data_dir, 'host_status')
+
+    res = run(
+        private_data_dir=private_data_dir,
+        playbook='gen_host_status.yml'
+    )
+    assert res.rc != 0, res.stdout.read()
 
     EXPECTED_SUMMARY_FIELDS = ('changed', 'dark', 'failures', 'ignored', 'ok', 'rescued', 'skipped')
-    fields = stats_events[0]['event_data'].keys()
-    assert set(fields) >= set(EXPECTED_SUMMARY_FIELDS)
+
+    runner_stats = res.stats
+    for stat in EXPECTED_SUMMARY_FIELDS:
+        assert stat in runner_stats
+        assert runner_stats[stat]  # expected at least 1 host in each stat type
 
 
 def test_include_role_events(clear_integration_artifacts):

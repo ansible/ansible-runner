@@ -218,7 +218,7 @@ class Runner(object):
             if password is not None:
                 child.sendline(password)
                 self.last_stdout_update = time.time()
-            if (not self.canceled) and self.cancel_callback:
+            if self.cancel_callback:
                 try:
                     self.canceled = self.cancel_callback()
                 except Exception as e:

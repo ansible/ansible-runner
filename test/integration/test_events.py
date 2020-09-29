@@ -113,7 +113,9 @@ def test_runner_on_start(rc, skipif_pre_ansible28):
     assert len(start_events) == 1
 
 
-def test_playbook_on_stats_summary_fields(test_data_dir):
+def test_playbook_on_stats_summary_fields(test_data_dir, is_pre_ansible28):
+    if is_pre_ansible28:
+        pytest.skip('Test is for post 2.8 status types.')
     private_data_dir = os.path.join(test_data_dir, 'host_status')
 
     res = run(

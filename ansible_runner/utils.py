@@ -389,3 +389,12 @@ def ensure_str(s, encoding='utf-8', errors='strict'):
     elif PY3 and isinstance(s, binary_type):
         s = s.decode(encoding, errors)
     return s
+
+
+def sanitize_container_name(original_name):
+    """
+    Docker and podman will only accept certain characters in container names
+    This takes a given name from user-specified values and replaces the
+    invalid characters so it can be used in docker/podman CLI commands
+    """
+    return re.sub('[^a-zA-Z0-9_-]', '_', text_type(original_name))

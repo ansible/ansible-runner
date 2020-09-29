@@ -44,7 +44,8 @@ class CompletedProcessProxy(object):
 @pytest.fixture(scope='function')
 def cli(request):
     def run(args, *a, **kw):
-        args = ['ansible-runner',] + args
+        if not kw.pop('bare', None):
+            args = ['ansible-runner',] + args
         kw['encoding'] = 'utf-8'
         if 'check' not in kw:
             # By default we want to fail if a command fails to run. Tests that

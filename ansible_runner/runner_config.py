@@ -43,6 +43,7 @@ from ansible_runner.output import debug
 from ansible_runner.utils import (
     open_fifo_write,
     args2cmdline,
+    sanitize_container_name
 )
 
 logger = logging.getLogger('ansible-runner')
@@ -119,6 +120,7 @@ class RunnerConfig(object):
         self.process_isolation = process_isolation
         self.process_isolation_executable = process_isolation_executable
         self.process_isolation_path = process_isolation_path
+        self.container_name = None  # like other properties, not accurate until prepare is called
         self.process_isolation_path_actual = None
         self.process_isolation_hide_paths = process_isolation_hide_paths
         self.process_isolation_show_paths = process_isolation_show_paths
@@ -325,6 +327,7 @@ class RunnerConfig(object):
         self.process_isolation_executable = self.settings.get('process_isolation_executable', self.process_isolation_executable)
 
         if self.containerized:
+            self.container_name = "ansible_runner_{}".format(sanitize_container_name(self.ident))
             self.env = {}
             # Special flags to convey info to entrypoint or process in container
             self.env['LAUNCHED_BY_RUNNER'] = '1'
@@ -766,6 +769,8 @@ class RunnerConfig(object):
 
         if 'docker' in self.process_isolation_executable:
             new_args.extend([f'--user={os.getuid()}'])
+
+        new_args.extend(['--name', self.container_name])
 
         if self.container_options:
             new_args.extend(self.container_options)

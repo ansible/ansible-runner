@@ -231,8 +231,10 @@ class Runner(object):
                 # if isinstance(extra_update_fields, dict):
                 #     extra_update_fields['job_explanation'] = "Job terminated due to timeout"
             if self.canceled or self.timed_out or self.errored:
+                self.kill_container()
                 Runner.handle_termination(child.pid, is_cancel=self.canceled)
             if self.config.idle_timeout and (time.time() - self.last_stdout_update) > self.config.idle_timeout:
+                self.kill_container()
                 Runner.handle_termination(child.pid, is_cancel=False)
                 self.timed_out = True
 
@@ -390,6 +392,21 @@ class Runner(object):
         all_host_events = filter(lambda x: 'event_data' in x and 'host' in x['event_data'] and x['event_data']['host'] == host,
                                  self.events)
         return all_host_events
+
+    def kill_container(self):
+        '''
+        Internal method to terminate a container being used for job isolation
+        '''
+        container_name = self.config.container_name
+        if container_name:
+            container_cli = self.config.process_isolation_executable
+            cmd = '{} kill {}'.format(container_cli, container_name)
+            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+            _, stderr = proc.communicate()
+            if proc.returncode:
+                logger.info('Error from {} kill {} command:\n{}'.format(container_cli, container_name, stderr))
+            else:
+                logger.info("Killed container {}".format(container_name))
 
     @classmethod
     def handle_termination(cls, pid, pidfile=None, is_cancel=True):

@@ -2,7 +2,7 @@ import json
 import shutil
 import tempfile
 
-from pytest import raises
+import pytest
 from mock import patch
 
 from ansible_runner.utils import (
@@ -10,6 +10,7 @@ from ansible_runner.utils import (
     isinventory,
     dump_artifacts,
     args2cmdline,
+    sanitize_container_name
 )
 
 
@@ -41,7 +42,7 @@ def test_dump_artifacts_private_data_dir():
     assert kwargs['private_data_dir'].startswith(tempfile.gettempdir())
     shutil.rmtree(kwargs['private_data_dir'])
 
-    with raises(ValueError):
+    with pytest.raises(ValueError):
         data_dir = '/foo'
         kwargs = {'private_data_dir': data_dir}
         dump_artifacts(kwargs)
@@ -213,3 +214,11 @@ def test_args2cmdline():
     res = args2cmdline('ansible', '-m', 'setup', 'localhost')
     assert res == 'ansible -m setup localhost'
 
+
+@pytest.mark.parametrize('container_name,expected_name', [
+    ('foo?bar', 'foo_bar'),
+    ('096aac5c-024d-453e-9725-779dc8b3faee', '096aac5c-024d-453e-9725-779dc8b3faee'),  # uuid4
+    (42, '42')  # AWX will use primary keys and may not be careful about type
+])
+def test_sanitize_container_name(container_name, expected_name):
+    sanitize_container_name(str(container_name)) == expected_name

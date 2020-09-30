@@ -137,9 +137,9 @@ def test_inventory_absolute_path(test_data_dir):
 
 @pytest.mark.serial
 def test_become_user(request, test_data_dir, container_runtime_installed):
-    settings_dir = os.path.join(test_data_dir, 'become', 'env', 'settings')
-    if os.path.exists(settings_dir):
-        shutil.rmtree(settings_dir)
+    settings_file = os.path.join(test_data_dir, 'become', 'env', 'settings')
+    if os.path.exists(settings_file):
+        os.remove(settings_file)
     res = run(
         private_data_dir=os.path.join(test_data_dir, 'become'),
         playbook='become.yml',

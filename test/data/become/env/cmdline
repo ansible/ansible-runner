@@ -1,1 +1,1 @@
--u root --ask-pass --become-method custom_plugin --become-user runner --ask-become-pass
+-u root --ask-pass --become-method custom_plugin --become-user root --ask-become-pass

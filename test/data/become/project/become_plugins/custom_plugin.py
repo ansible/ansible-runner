@@ -70,7 +70,7 @@ DOCUMENTATION = """
 """
 
 
-from ansible.plugins.become import BecomeBase
+from ansible.plugins.become import BecomeBase  # noqa
 
 
 class BecomeModule(BecomeBase):

@@ -1,4 +1,3 @@
-import base64
 import codecs
 import io
 import json
@@ -44,13 +43,11 @@ class Transmitter(object):
             _output = sys.stdout.buffer
         self._output = _output
         self.kwargs = kwargs
-        self.config = ansible_runner.RunnerConfig(**kwargs)
 
         self.status = "unstarted"
         self.rc = None
 
     def run(self):
-        self.config.prepare()
         remote_options = {key: value for key, value in self.kwargs.items() if key in remote_run_options}
 
         private_data_dir = self.kwargs.get('private_data_dir', None)
@@ -59,7 +56,6 @@ class Transmitter(object):
         self._output.write(json.dumps({'eof': True}).encode('utf-8'))
         self._output.write(b'\n')
         self._output.flush()
-        # self._output.close()
 
         return self.status, self.rc
 
@@ -140,7 +136,6 @@ class Worker(object):
         self._output.write(json.dumps({'eof': True}).encode('utf-8'))
         self._output.write(b'\n')
         self._output.flush()
-        # self._output.close()
 
 
 class Processor(object):

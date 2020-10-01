@@ -26,13 +26,14 @@ ADD demo /runner
 RUN for dir in \
       /home/runner \
       /home/runner/.ansible \
+      /home/runner/.ansible/tmp \
       /runner \
       /home/runner \
       /runner/env \
       /runner/inventory \
       /runner/project \
       /runner/artifacts ; \
-    do mkdir -m 0775 -p $dir ; chmod g+rwx $dir ; chgrp root $dir ; done && \
+    do mkdir -m 0775 -p $dir ; chmod -R g+rwx $dir ; chgrp -R root $dir ; done && \
     for file in \
       /home/runner/.ansible/galaxy_token \
       /etc/passwd \

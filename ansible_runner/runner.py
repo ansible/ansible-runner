@@ -81,7 +81,10 @@ class Runner(object):
 
     def status_callback(self, status):
         self.status = status
-        status_data = dict(status=status, runner_ident=str(self.config.ident))
+        status_data = {
+            'status': status, 'runner_ident': str(self.config.ident),
+            'command': self.config.command, 'env': self.config.env, 'cwd': self.config.cwd
+        }
         for plugin in ansible_runner.plugins:
             ansible_runner.plugins[plugin].status_handler(self.config, status_data)
         if self.status_handler is not None:

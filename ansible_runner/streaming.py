@@ -7,8 +7,13 @@ import sys
 import tempfile
 import uuid
 import zipfile
+try:
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping
 
 import ansible_runner
+from ansible_runner.loader import ArtifactLoader
 import ansible_runner.plugins
 from ansible_runner import utils
 
@@ -20,6 +25,9 @@ class UUIDEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
+class MockConfig(object):
+    def __init__(self, settings):
+        self.settings = settings
 
 
 class Transmitter(object):
@@ -125,13 +133,26 @@ class Processor(object):
             _input = sys.stdin.buffer
         self._input = _input
 
-        self.kwargs = kwargs
-        self.config = ansible_runner.RunnerConfig(**kwargs)
+        private_data_dir = kwargs.get('private_data_dir')
+        if private_data_dir is None:
+            private_data_dir = tempfile.TemporaryDirectory().name
+        self.private_data_dir = private_data_dir
+        self._loader = ArtifactLoader(self.private_data_dir)
+
+        settings = kwargs.get('settings')
+        if settings is None:
+            settings = self._loader.load_file('env/settings', Mapping)
+        self.config = MockConfig(settings)
+
+        artifact_dir = kwargs.get('artifact_dir')
+        self.artifact_dir = os.path.abspath(
+            artifact_dir or os.path.join(self.private_data_dir, 'artifacts'))
+
         self.status_handler = status_handler
         self.event_handler = event_handler
         self.artifacts_handler = artifacts_handler
 
-        self.cancel_callback = cancel_callback
+        self.cancel_callback = cancel_callback  # FIXME: unused
         self.finished_callback = finished_callback
 
         self.status = "unstarted"
@@ -139,6 +160,10 @@ class Processor(object):
 
     def status_callback(self, status_data):
         self.status = status_data['status']
+        if self.status == 'starting':
+            self.config.command = status_data.get('command')
+            self.config.env = status_data.get('env')
+            self.config.cwd = status_data.get('cwd')
 
         for plugin in ansible_runner.plugins:
             ansible_runner.plugins[plugin].status_handler(self.config, status_data)
@@ -146,7 +171,7 @@ class Processor(object):
             self.status_handler(status_data, runner_config=self.config)
 
     def event_callback(self, event_data):
-        full_filename = os.path.join(self.config.artifact_dir,
+        full_filename = os.path.join(self.artifact_dir,
                                      'job_events',
                                      '{}-{}.json'.format(event_data['counter'],
                                                          event_data['uuid']))
@@ -171,9 +196,7 @@ class Processor(object):
             self.artifacts_handler(self.config.artifact_dir)
 
     def run(self):
-        self.config.prepare()
-
-        job_events_path = os.path.join(self.config.artifact_dir, 'job_events')
+        job_events_path = os.path.join(self.artifact_dir, 'job_events')
         if not os.path.exists(job_events_path):
             os.mkdir(job_events_path, 0o700)
 

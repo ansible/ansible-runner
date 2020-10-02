@@ -112,7 +112,7 @@ def run(**kwargs):
     :param module: The module that will be invoked in ad-hoc mode by runner when executing Ansible.
     :param module_args: The module arguments that will be supplied to ad-hoc mode.
     :param host_pattern: The host pattern to match when running in ad-hoc mode.
-    :param inventory: Overridees the inventory directory/file (supplied at ``private_data_dir/inventory``) with
+    :param inventory: Overrides the inventory directory/file (supplied at ``private_data_dir/inventory``) with
                       a specific host or list of hosts. This can take the form of
       - Path to the inventory file in the ``private_data_dir``
       - Native python dict supporting the YAML/json inventory structure

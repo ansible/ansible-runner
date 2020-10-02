@@ -83,7 +83,7 @@ def check_isolation_executable_installed(isolation_executable):
         return False
 
 
-def stream_dir(directory, **additional):
+def stream_dir(directory):
     buf = BytesIO()
     with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
         if directory:
@@ -93,9 +93,6 @@ def stream_dir(directory, **additional):
                     relpath = ""
                 for fname in files:
                     archive.write(os.path.join(dirpath, fname), arcname=os.path.join(relpath, fname))
-
-        for fname, data in additional.items():
-            archive.writestr(fname, data)
         archive.close()
 
     payload = buf.getvalue()

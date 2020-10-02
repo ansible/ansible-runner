@@ -20,21 +20,6 @@ class UUIDEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-# List of kwargs options to the run method that should be sent to the remote executor.
-remote_run_options = (
-    'forks',
-    'host_pattern',
-    'ident',
-    'ignore_logging',
-    'inventory',
-    'limit',
-    'module',
-    'module_args',
-    'omit_event_data',
-    'only_failed_event_data',
-    'playbook',
-    'verbosity',
-)
 
 
 class Transmitter(object):
@@ -48,11 +33,13 @@ class Transmitter(object):
         self.rc = None
 
     def run(self):
-        remote_options = {key: value for key, value in self.kwargs.items() if key in remote_run_options}
-
-        private_data_dir = self.kwargs.get('private_data_dir', None)
         self._output.write(
-            utils.stream_dir(private_data_dir, kwargs=json.dumps(remote_options, cls=UUIDEncoder)))
+            json.dumps({'kwargs': self.kwargs}, cls=UUIDEncoder).encode('utf-8')
+        )
+        self._output.flush()
+
+        private_data_dir = self.kwargs.get('private_data_dir')
+        self._output.write(utils.stream_dir(private_data_dir))
         self._output.write(json.dumps({'eof': True}).encode('utf-8'))
         self._output.write(b'\n')
         self._output.flush()
@@ -70,9 +57,10 @@ class Worker(object):
         self._output = _output
 
         self.kwargs = kwargs
+        self.job_kwargs = None
 
         private_data_dir = kwargs.get('private_data_dir')
-        if not private_data_dir:
+        if private_data_dir is None:
             private_data_dir = tempfile.TemporaryDirectory().name
         self.private_data_dir = private_data_dir
 
@@ -84,7 +72,9 @@ class Worker(object):
             line = self._input.readline()
             data = json.loads(line)
 
-            if 'zipfile' in data:
+            if 'kwargs' in data:
+                self.job_kwargs = data['kwargs']
+            elif 'zipfile' in data:
                 zip_data = self._input.read(data['zipfile'])
                 buf = io.BytesIO(zip_data)
                 with zipfile.ZipFile(buf, 'r') as archive:
@@ -92,17 +82,7 @@ class Worker(object):
             elif 'eof' in data:
                 break
 
-        kwargs_path = os.path.join(self.private_data_dir, 'kwargs')
-        if os.path.exists(kwargs_path):
-            with open(kwargs_path, "r") as kwf:
-                kwargs = json.load(kwf)
-            if not isinstance(kwargs, dict):
-                raise ValueError("Invalid kwargs data")
-        else:
-            kwargs = {}
-
-        self.kwargs.update(kwargs)
-
+        self.kwargs.update(self.job_kwargs)
         self.kwargs['quiet'] = True
         self.kwargs['private_data_dir'] = self.private_data_dir
         self.kwargs['status_handler'] = self.status_handler

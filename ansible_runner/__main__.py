@@ -638,6 +638,7 @@ def main(sys_args=None):
         'process',
         help="Receive the output of remote ansible-runner work and distribute the results"
     )
+    add_args_to_parser(process_subparser, DEFAULT_CLI_ARGS['positional_args'])
 
     # adhoc command exec
     adhoc_subparser = subparser.add_parser(

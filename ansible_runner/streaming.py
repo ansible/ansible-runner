@@ -13,6 +13,7 @@ except ImportError:
     from collections import Mapping
 
 import ansible_runner
+from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.loader import ArtifactLoader
 import ansible_runner.plugins
 from ansible_runner import utils
@@ -44,6 +45,7 @@ class Transmitter(object):
         self._output.write(
             json.dumps({'kwargs': self.kwargs}, cls=UUIDEncoder).encode('utf-8')
         )
+        self._output.write(b'\n')
         self._output.flush()
 
         private_data_dir = self.kwargs.get('private_data_dir')
@@ -92,6 +94,7 @@ class Worker(object):
 
         self.kwargs.update(self.job_kwargs)
         self.kwargs['quiet'] = True
+        self.kwargs['suppress_ansible_output'] = True
         self.kwargs['private_data_dir'] = self.private_data_dir
         self.kwargs['status_handler'] = self.status_handler
         self.kwargs['event_handler'] = self.event_handler
@@ -141,7 +144,10 @@ class Processor(object):
 
         settings = kwargs.get('settings')
         if settings is None:
-            settings = self._loader.load_file('env/settings', Mapping)
+            try:
+                settings = self._loader.load_file('env/settings', Mapping)
+            except ConfigurationError:
+                settings = {}
         self.config = MockConfig(settings)
 
         artifact_dir = kwargs.get('artifact_dir')
@@ -175,6 +181,8 @@ class Processor(object):
                                      'job_events',
                                      '{}-{}.json'.format(event_data['counter'],
                                                          event_data['uuid']))
+        if 'stdout' in event_data:
+            print(event_data['stdout'])
 
         if self.event_handler is not None:
             should_write = self.event_handler(event_data)
@@ -198,7 +206,7 @@ class Processor(object):
     def run(self):
         job_events_path = os.path.join(self.artifact_dir, 'job_events')
         if not os.path.exists(job_events_path):
-            os.mkdir(job_events_path, 0o700)
+            os.makedirs(job_events_path, 0o700, exist_ok=True)
 
         while True:
             line = self._input.readline()

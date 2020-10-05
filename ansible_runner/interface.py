@@ -68,7 +68,7 @@ def init_runner(**kwargs):
     cancel_callback = kwargs.pop('cancel_callback', None)
     finished_callback = kwargs.pop('finished_callback', None)
 
-    streamer = kwargs.pop('streamer')
+    streamer = kwargs.pop('streamer', None)
     if streamer:
         if streamer == 'transmit':
             stream_transmitter = Transmitter(**kwargs)

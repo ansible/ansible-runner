@@ -859,7 +859,7 @@ def main(sys_args=None):
 
     stderr_path = None
     context = None
-    if vargs.get('command') not in ('run', 'transmit', 'adhoc', 'playbook'):
+    if vargs.get('command') not in ('run', 'transmit', 'worker', 'adhoc', 'playbook'):
         stderr_path = os.path.join(vargs.get('private_data_dir'), 'daemon.log')
         if not os.path.exists(stderr_path):
             os.close(os.open(stderr_path, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))

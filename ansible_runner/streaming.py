@@ -136,6 +136,8 @@ class Processor(object):
             _input = sys.stdin.buffer
         self._input = _input
 
+        self.quiet = kwargs.get('quiet')
+
         private_data_dir = kwargs.get('private_data_dir')
         if private_data_dir is None:
             private_data_dir = tempfile.TemporaryDirectory().name
@@ -181,7 +183,7 @@ class Processor(object):
                                      'job_events',
                                      '{}-{}.json'.format(event_data['counter'],
                                                          event_data['uuid']))
-        if 'stdout' in event_data:
+        if not self.quiet and 'stdout' in event_data:
             print(event_data['stdout'])
 
         if self.event_handler is not None:

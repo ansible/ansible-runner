@@ -633,6 +633,11 @@ def main(sys_args=None):
         'worker',
         help="Execute work streamed from a controlling instance"
     )
+    worker_subparser.add_argument(
+        "--private-data-dir",
+        help="base directory containing the ansible-runner metadata "
+             "(project, inventory, env, etc)",
+    )
 
     process_subparser = subparser.add_parser(
         'process',

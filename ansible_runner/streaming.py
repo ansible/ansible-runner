@@ -200,10 +200,10 @@ class Processor(object):
     def artifacts_callback(self, artifacts_data):
         buf = io.BytesIO(self._input.read(artifacts_data['zipfile']))
         with zipfile.ZipFile(buf, 'r') as archive:
-            archive.extractall(path=self.config.artifact_dir)
+            archive.extractall(path=self.artifact_dir)
 
         if self.artifacts_handler is not None:
-            self.artifacts_handler(self.config.artifact_dir)
+            self.artifacts_handler(self.artifact_dir)
 
     def run(self):
         job_events_path = os.path.join(self.artifact_dir, 'job_events')

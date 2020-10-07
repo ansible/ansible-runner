@@ -44,11 +44,6 @@ from ansible_runner.utils import dump_artifact, Bunch
 from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
 
-if sys.version_info >= (3, 0):
-    from ansible_runner.receptor_plugin import receptor_import
-else:
-    receptor_import = False
-
 VERSION = pkg_resources.require("ansible_runner")[0].version
 
 DEFAULT_ROLES_PATH = os.getenv('ANSIBLE_ROLES_PATH', None)
@@ -236,30 +231,6 @@ DEFAULT_CLI_ARGS = {
                      "ansible-playbook output (default=None)"
             ),
         ),
-    ),
-    "receptor_group": (
-        # Receptor options
-        (
-            ("--via-receptor",),
-            dict(
-                default=None,
-                help="Run the job on a Receptor node rather than locally"
-            ),
-        ),
-        (
-            ("--receptor-peer",),
-            dict(
-                default=None,
-                help="peer connection to use to reach the Receptor network"
-            ),
-        ),
-        (
-            ("--receptor-node-id",),
-            dict(
-                default=None,
-                help="Receptor node-id to use for the local node"
-            ),
-        )
     ),
     "roles_group": (
         (
@@ -629,7 +600,6 @@ def main(sys_args=None):
     add_args_to_parser(parser, DEFAULT_CLI_ARGS['generic_args'])
     subparser.required = True
 
-
     # positional options
     run_subparser = subparser.add_parser(
         'run',
@@ -652,6 +622,28 @@ def main(sys_args=None):
     )
     add_args_to_parser(isalive_subparser, DEFAULT_CLI_ARGS['positional_args'])
 
+    # streaming commands
+    transmit_subparser = subparser.add_parser(
+        'transmit',
+        help="Send a job to a remote ansible-runner process"
+    )
+    add_args_to_parser(transmit_subparser, DEFAULT_CLI_ARGS['positional_args'])
+
+    worker_subparser = subparser.add_parser(
+        'worker',
+        help="Execute work streamed from a controlling instance"
+    )
+    worker_subparser.add_argument(
+        "--private-data-dir",
+        help="base directory containing the ansible-runner metadata "
+             "(project, inventory, env, etc)",
+    )
+
+    process_subparser = subparser.add_parser(
+        'process',
+        help="Receive the output of remote ansible-runner work and distribute the results"
+    )
+    add_args_to_parser(process_subparser, DEFAULT_CLI_ARGS['positional_args'])
 
     # adhoc command exec
     adhoc_subparser = subparser.add_parser(
@@ -665,7 +657,7 @@ def main(sys_args=None):
     )
     add_args_to_parser(adhoc_subparser, DEFAULT_CLI_ARGS['execenv_cli_group'])
 
-    # adhoc command exec
+    # playbook command exec
     playbook_subparser = subparser.add_parser(
         'playbook',
         help="Run ansible-playbook commands in an Execution Environment"
@@ -684,6 +676,9 @@ def main(sys_args=None):
     add_args_to_parser(isalive_subparser, DEFAULT_CLI_ARGS['generic_args'])
     add_args_to_parser(adhoc_subparser, DEFAULT_CLI_ARGS['generic_args'])
     add_args_to_parser(playbook_subparser, DEFAULT_CLI_ARGS['generic_args'])
+    add_args_to_parser(transmit_subparser, DEFAULT_CLI_ARGS['generic_args'])
+    add_args_to_parser(worker_subparser, DEFAULT_CLI_ARGS['generic_args'])
+    add_args_to_parser(process_subparser, DEFAULT_CLI_ARGS['generic_args'])
 
     # runner group
     ansible_runner_group_options = (
@@ -696,28 +691,25 @@ def main(sys_args=None):
     start_runner_group = start_subparser.add_argument_group(*ansible_runner_group_options)
     stop_runner_group = stop_subparser.add_argument_group(*ansible_runner_group_options)
     isalive_runner_group = isalive_subparser.add_argument_group(*ansible_runner_group_options)
+    transmit_runner_group = transmit_subparser.add_argument_group(*ansible_runner_group_options)
     add_args_to_parser(base_runner_group, DEFAULT_CLI_ARGS['runner_group'])
     add_args_to_parser(run_runner_group, DEFAULT_CLI_ARGS['runner_group'])
     add_args_to_parser(start_runner_group, DEFAULT_CLI_ARGS['runner_group'])
     add_args_to_parser(stop_runner_group, DEFAULT_CLI_ARGS['runner_group'])
     add_args_to_parser(isalive_runner_group, DEFAULT_CLI_ARGS['runner_group'])
-
-    # receptor group (combined with runner help header)
-    add_args_to_parser(base_runner_group, DEFAULT_CLI_ARGS['receptor_group'])
-    add_args_to_parser(run_runner_group, DEFAULT_CLI_ARGS['receptor_group'])
-    add_args_to_parser(start_runner_group, DEFAULT_CLI_ARGS['receptor_group'])
-    add_args_to_parser(stop_runner_group, DEFAULT_CLI_ARGS['receptor_group'])
-    add_args_to_parser(isalive_runner_group, DEFAULT_CLI_ARGS['receptor_group'])
+    add_args_to_parser(transmit_runner_group, DEFAULT_CLI_ARGS['runner_group'])
 
     # mutually exclusive group
     run_mutually_exclusive_group = run_subparser.add_mutually_exclusive_group()
     start_mutually_exclusive_group = start_subparser.add_mutually_exclusive_group()
     stop_mutually_exclusive_group = stop_subparser.add_mutually_exclusive_group()
     isalive_mutually_exclusive_group = isalive_subparser.add_mutually_exclusive_group()
+    transmit_mutually_exclusive_group = transmit_subparser.add_mutually_exclusive_group()
     add_args_to_parser(run_mutually_exclusive_group, DEFAULT_CLI_ARGS['mutually_exclusive_group'])
     add_args_to_parser(start_mutually_exclusive_group, DEFAULT_CLI_ARGS['mutually_exclusive_group'])
     add_args_to_parser(stop_mutually_exclusive_group, DEFAULT_CLI_ARGS['mutually_exclusive_group'])
     add_args_to_parser(isalive_mutually_exclusive_group, DEFAULT_CLI_ARGS['mutually_exclusive_group'])
+    add_args_to_parser(transmit_mutually_exclusive_group, DEFAULT_CLI_ARGS['mutually_exclusive_group'])
 
     # ansible options
     ansible_options = (
@@ -728,11 +720,12 @@ def main(sys_args=None):
     start_ansible_group = start_subparser.add_argument_group(*ansible_options)
     stop_ansible_group = stop_subparser.add_argument_group(*ansible_options)
     isalive_ansible_group = isalive_subparser.add_argument_group(*ansible_options)
+    transmit_ansible_group = transmit_subparser.add_argument_group(*ansible_options)
     add_args_to_parser(run_ansible_group, DEFAULT_CLI_ARGS['ansible_group'])
     add_args_to_parser(start_ansible_group, DEFAULT_CLI_ARGS['ansible_group'])
     add_args_to_parser(stop_ansible_group, DEFAULT_CLI_ARGS['ansible_group'])
     add_args_to_parser(isalive_ansible_group, DEFAULT_CLI_ARGS['ansible_group'])
-
+    add_args_to_parser(transmit_ansible_group, DEFAULT_CLI_ARGS['ansible_group'])
 
     # roles group
     roles_group_options = (
@@ -743,10 +736,12 @@ def main(sys_args=None):
     start_roles_group = start_subparser.add_argument_group(*roles_group_options)
     stop_roles_group = stop_subparser.add_argument_group(*roles_group_options)
     isalive_roles_group = isalive_subparser.add_argument_group(*roles_group_options)
+    transmit_roles_group = transmit_subparser.add_argument_group(*roles_group_options)
     add_args_to_parser(run_roles_group, DEFAULT_CLI_ARGS['roles_group'])
     add_args_to_parser(start_roles_group, DEFAULT_CLI_ARGS['roles_group'])
     add_args_to_parser(stop_roles_group, DEFAULT_CLI_ARGS['roles_group'])
     add_args_to_parser(isalive_roles_group, DEFAULT_CLI_ARGS['roles_group'])
+    add_args_to_parser(transmit_roles_group, DEFAULT_CLI_ARGS['roles_group'])
 
     # modules groups
 
@@ -758,10 +753,12 @@ def main(sys_args=None):
     start_modules_group = start_subparser.add_argument_group(*modules_group_options)
     stop_modules_group = stop_subparser.add_argument_group(*modules_group_options)
     isalive_modules_group = isalive_subparser.add_argument_group(*modules_group_options)
+    transmit_modules_group = transmit_subparser.add_argument_group(*modules_group_options)
     add_args_to_parser(run_modules_group, DEFAULT_CLI_ARGS['modules_group'])
     add_args_to_parser(start_modules_group, DEFAULT_CLI_ARGS['modules_group'])
     add_args_to_parser(stop_modules_group, DEFAULT_CLI_ARGS['modules_group'])
     add_args_to_parser(isalive_modules_group, DEFAULT_CLI_ARGS['modules_group'])
+    add_args_to_parser(transmit_modules_group, DEFAULT_CLI_ARGS['modules_group'])
 
     # playbook options
     playbook_group_options = (
@@ -772,10 +769,12 @@ def main(sys_args=None):
     start_playbook_group = start_subparser.add_argument_group(*playbook_group_options)
     stop_playbook_group = stop_subparser.add_argument_group(*playbook_group_options)
     isalive_playbook_group = isalive_subparser.add_argument_group(*playbook_group_options)
+    transmit_playbook_group = transmit_subparser.add_argument_group(*playbook_group_options)
     add_args_to_parser(run_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
     add_args_to_parser(start_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
     add_args_to_parser(stop_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
     add_args_to_parser(isalive_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
+    add_args_to_parser(transmit_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
 
     # container group
     container_group_options = (
@@ -786,12 +785,14 @@ def main(sys_args=None):
     start_container_group = start_subparser.add_argument_group(*container_group_options)
     stop_container_group = stop_subparser.add_argument_group(*container_group_options)
     isalive_container_group = isalive_subparser.add_argument_group(*container_group_options)
+    transmit_container_group = transmit_subparser.add_argument_group(*container_group_options)
     adhoc_container_group = adhoc_subparser.add_argument_group(*container_group_options)
     playbook_container_group = playbook_subparser.add_argument_group(*container_group_options)
     add_args_to_parser(run_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(start_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(stop_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(isalive_container_group, DEFAULT_CLI_ARGS['container_group'])
+    add_args_to_parser(transmit_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(adhoc_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(playbook_container_group, DEFAULT_CLI_ARGS['container_group'])
 
@@ -813,6 +814,16 @@ def main(sys_args=None):
 
     if vargs.get('command') in ('adhoc', 'playbook'):
         cli_execenv_cmd = vargs.get('command')
+
+        if not leftover_args:
+            parser.exit(
+                status=1,
+                message="The {} subcommand requires arguments to pass to Ansible inside the container.\n".format(
+                    vargs.get('command')
+                )
+            )
+
+    if vargs.get('command') in ('worker', 'process', 'adhoc', 'playbook'):
         if not vargs.get('private_data_dir'):
             temp_private_dir = tempfile.mkdtemp()
             vargs['private_data_dir'] = temp_private_dir
@@ -823,25 +834,11 @@ def main(sys_args=None):
                 def conditonally_clean_cli_execenv_tempdir():
                     shutil.rmtree(temp_private_dir)
 
-        if not leftover_args:
-            parser.exit(
-                status=1,
-                message="The {} subcommand requires arguments to pass to Ansible inside the container.\n".format(
-                    vargs.get('command')
-                )
-            )
-
-    if vargs.get('command') in ('start', 'run'):
+    if vargs.get('command') in ('start', 'run', 'transmit'):
         if vargs.get('hosts') and not (vargs.get('module') or vargs.get('role')):
             parser.exit(status=1, message="The --hosts option can only be used with -m or -r\n")
         if not (vargs.get('module') or vargs.get('role')) and not vargs.get('playbook'):
             parser.exit(status=1, message="The -p option must be specified when not using -m or -r\n")
-
-    if vargs.get('via_receptor') and not receptor_import:
-        parser.exit(status=1, message="The --via-receptor option requires Receptor to be installed.\n")
-
-    if vargs.get('via_receptor') and vargs.get('command') != 'run':
-        parser.exit(status=1, message="Only the 'run' command is supported via Receptor.\n")
 
     output.configure()
 
@@ -869,12 +866,12 @@ def main(sys_args=None):
 
     stderr_path = None
     context = None
-    if vargs.get('command') not in ('run', 'adhoc', 'playbook'):
+    if vargs.get('command') not in ('run', 'transmit', 'worker', 'adhoc', 'playbook'):
         stderr_path = os.path.join(vargs.get('private_data_dir'), 'daemon.log')
         if not os.path.exists(stderr_path):
             os.close(os.open(stderr_path, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
 
-    if vargs.get('command') in ('start', 'run', 'adhoc', 'playbook'):
+    if vargs.get('command') in ('start', 'run', 'transmit', 'worker', 'process', 'adhoc', 'playbook'):
 
         if vargs.get('command') == 'start':
             import daemon
@@ -882,6 +879,10 @@ def main(sys_args=None):
             context = daemon.DaemonContext(pidfile=TimeoutPIDLockFile(pidfile))
         else:
             context = threading.Lock()
+
+        streamer = None
+        if vargs.get('command') in ('transmit', 'worker', 'process'):
+            streamer = vargs.get('command')
 
         with context:
             with role_manager(vargs) as vargs:
@@ -921,9 +922,7 @@ def main(sys_args=None):
                                    resource_profiling_pid_poll_interval=vargs.get('resource_profiling_pid_poll_interval'),
                                    resource_profiling_results_dir=vargs.get('resource_profiling_results_dir'),
                                    limit=vargs.get('limit'),
-                                   via_receptor=vargs.get('via_receptor'),
-                                   receptor_peer=vargs.get('receptor_peer'),
-                                   receptor_node_id=vargs.get('receptor_node_id'),
+                                   streamer=streamer,
                                    cli_execenv_cmd=cli_execenv_cmd
                                    )
                 if vargs.get('command') in ('adhoc', 'playbook'):

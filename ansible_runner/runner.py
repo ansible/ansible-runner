@@ -26,11 +26,12 @@ logger = logging.getLogger('ansible-runner')
 
 class Runner(object):
 
-    def __init__(self, config, cancel_callback=None, remove_partials=True,
-                 event_handler=None, finished_callback=None, status_handler=None):
+    def __init__(self, config, cancel_callback=None, remove_partials=True, event_handler=None,
+                 artifacts_handler=None, finished_callback=None, status_handler=None):
         self.config = config
         self.cancel_callback = cancel_callback
         self.event_handler = event_handler
+        self.artifacts_handler = artifacts_handler
         self.finished_callback = finished_callback
         self.status_handler = status_handler
         self.canceled = False
@@ -80,7 +81,9 @@ class Runner(object):
 
     def status_callback(self, status):
         self.status = status
-        status_data = dict(status=status, runner_ident=str(self.config.ident))
+        status_data = {'status': status, 'runner_ident': str(self.config.ident)}
+        if status == 'starting':
+            status_data.update({'command': self.config.command, 'env': self.config.env, 'cwd': self.config.cwd})
         for plugin in ansible_runner.plugins:
             ansible_runner.plugins[plugin].status_handler(self.config, status_data)
         if self.status_handler is not None:
@@ -282,6 +285,12 @@ class Runner(object):
             if proc.returncode:
                 logger.error('Failed to delete cgroup: {}'.format(stderr))
                 raise RuntimeError('Failed to delete cgroup: {}'.format(stderr))
+
+        if self.artifacts_handler is not None:
+            try:
+                self.artifacts_handler(self.config.artifact_dir)
+            except Exception as e:
+                raise CallbackError("Exception in Artifact Callback: {}".format(e))
 
         if self.finished_callback is not None:
             try:

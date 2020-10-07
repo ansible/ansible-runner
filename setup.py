@@ -26,7 +26,6 @@ setup(
     ],
     zip_safe=False,
     entry_points={
-        'receptor.worker': 'ansible_runner = ansible_runner.receptor_plugin',
         'console_scripts': [
             'ansible-runner = ansible_runner.__main__:main'
         ]

@@ -24,15 +24,11 @@ import logging
 from ansible_runner import output
 from ansible_runner.runner_config import RunnerConfig
 from ansible_runner.runner import Runner
+from ansible_runner.streaming import Transmitter, Worker, Processor
 from ansible_runner.utils import (
     dump_artifacts,
     check_isolation_executable_installed,
 )
-
-if sys.version_info >= (3, 0):
-    from ansible_runner.receptor_plugin import run_via_receptor, receptor_import
-else:
-    receptor_import = False
 
 logging.getLogger('ansible-runner').addHandler(logging.NullHandler())
 
@@ -68,8 +64,28 @@ def init_runner(**kwargs):
 
     event_callback_handler = kwargs.pop('event_handler', None)
     status_callback_handler = kwargs.pop('status_handler', None)
+    artifacts_handler = kwargs.pop('artifacts_handler', None)
     cancel_callback = kwargs.pop('cancel_callback', None)
-    finished_callback = kwargs.pop('finished_callback',  None)
+    finished_callback = kwargs.pop('finished_callback', None)
+
+    streamer = kwargs.pop('streamer', None)
+    if streamer:
+        if streamer == 'transmit':
+            stream_transmitter = Transmitter(**kwargs)
+            return stream_transmitter
+
+        if streamer == 'worker':
+            stream_worker = Worker(**kwargs)
+            return stream_worker
+
+        if streamer == 'process':
+            stream_processor = Processor(event_handler=event_callback_handler,
+                                         status_handler=status_callback_handler,
+                                         artifacts_handler=artifacts_handler,
+                                         cancel_callback=cancel_callback,
+                                         finished_callback=finished_callback,
+                                         **kwargs)
+            return stream_processor
 
     rc = RunnerConfig(**kwargs)
     rc.prepare()
@@ -77,6 +93,7 @@ def init_runner(**kwargs):
     return Runner(rc,
                   event_handler=event_callback_handler,
                   status_handler=status_callback_handler,
+                  artifacts_handler=artifacts_handler,
                   cancel_callback=cancel_callback,
                   finished_callback=finished_callback)
 
@@ -95,7 +112,7 @@ def run(**kwargs):
     :param module: The module that will be invoked in ad-hoc mode by runner when executing Ansible.
     :param module_args: The module arguments that will be supplied to ad-hoc mode.
     :param host_pattern: The host pattern to match when running in ad-hoc mode.
-    :param inventory: Overridees the inventory directory/file (supplied at ``private_data_dir/inventory``) with
+    :param inventory: Overrides the inventory directory/file (supplied at ``private_data_dir/inventory``) with
                       a specific host or list of hosts. This can take the form of
       - Path to the inventory file in the ``private_data_dir``
       - Native python dict supporting the YAML/json inventory structure
@@ -119,10 +136,12 @@ def run(**kwargs):
     :param artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
     :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
+    :param streamer: Optionally invoke ansible-runner as one of the steps in the streaming pipeline
     :param event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
     :param cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
     :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
     :param status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
+    :param artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
     :param process_isolation: Enable process isolation, using either a container engine (e.g. podman) or a sandbox (e.g. bwrap).
     :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
     :param process_isolation_path: Path that an isolated playbook run will use for staging. (default: /tmp)
@@ -145,9 +164,6 @@ def run(**kwargs):
     :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
     :param omit_event_data: Omits extra ansible event data from event payload (stdout and event still included)
     :param only_failed_event_data: Omits extra ansible event data unless it's a failed event (stdout and event still included)
-    :param via_receptor: If set, specifies a Receptor node-id on which the job will be run remotely
-    :param receptor_peer: Specifies the Receptor listener, in URL format, to use to connect to the Receptor network
-    :param receptor_node_id: Specifies the node-id to assign to the local Receptor ephemeral node
     :param cli_execenv_cmd: Tells Ansible Runner to emulate the CLI of Ansible by prepping an Execution Environment and then passing the user provided cmdline
     :type private_data_dir: str
     :type ident: str
@@ -167,10 +183,12 @@ def run(**kwargs):
     :type forks: int
     :type quiet: bool
     :type verbosity: int
+    :type streamer: str
     :type event_handler: function
     :type cancel_callback: function
     :type finished_callback: function
     :type status_handler: function
+    :type artifacts_handler: function
     :type process_isolation: bool
     :type process_isolation_executable: str
     :type process_isolation_path: str
@@ -191,25 +209,13 @@ def run(**kwargs):
     :type fact_cache_type: str
     :type omit_event_data: bool
     :type only_failed_event_data: bool
-    :type via_receptor: str
-    :type receptor_peer: str
-    :type receptor_node_id: str
     :type cli_execenv_cmd: str
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object, or a simple object containing `rc` if run remotely
     '''
-    via_receptor = kwargs.pop('via_receptor', None)
-    receptor_peer = kwargs.pop('receptor_peer', None)
-    receptor_node_id = kwargs.pop('receptor_node_id', None)
-    if via_receptor:
-        if not receptor_import:
-            raise RuntimeError('Receptor is not installed or could not be imported')
-        r = run_via_receptor(via_receptor, receptor_peer, receptor_node_id, kwargs)
-        return r
-    else:
-        r = init_runner(**kwargs)
-        r.run()
-        return r
+    r = init_runner(**kwargs)
+    r.run()
+    return r
 
 
 def run_async(**kwargs):

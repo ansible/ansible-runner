@@ -306,7 +306,10 @@ class RunnerConfig(object):
         with existing values so the :py:class:`ansible_runner.runner.Runner` object can read and use them easily
         """
         try:
-            passwords = self.loader.load_file('env/passwords', Mapping)
+            if 'ANSIBLE_RUNNER_PASSWORDS' in os.environ:
+                passwords = self.loader.load_env('ANSIBLE_RUNNER_PASSWORDS', Mapping)
+            else:
+                passwords = self.loader.load_file('env/passwords', Mapping)
             self.expect_passwords = {
                 re.compile(pattern, re.M): password
                 for pattern, password in iteritems(passwords)
@@ -318,7 +321,10 @@ class RunnerConfig(object):
         self.expect_passwords[pexpect.EOF] = None
 
         try:
-            self.settings = self.loader.load_file('env/settings', Mapping)
+            if 'ANSIBLE_RUNNER_SETTINGS' in os.environ:
+                self.settings = self.loader.load_env('ANSIBLE_RUNNER_SETTINGS', Mapping)
+            else:
+                self.settings = self.loader.load_file('env/settings', Mapping)
         except ConfigurationError:
             output.debug("Not loading settings")
             self.settings = dict()
@@ -343,7 +349,10 @@ class RunnerConfig(object):
             self.env.update(self.envvars)
 
         try:
-            envvars = self.loader.load_file('env/envvars', Mapping)
+            if 'ANSIBLE_RUNNER_ENVVARS' in os.environ:
+                envvars = self.loader.load_env('ANSIBLE_RUNNER_ENVVARS', Mapping)
+            else:
+                envvars = self.loader.load_file('env/envvars', Mapping)
             if envvars:
                 self.env.update({str(k):str(v) for k, v in envvars.items()})
         except ConfigurationError:
@@ -352,7 +361,10 @@ class RunnerConfig(object):
 
         try:
             if self.ssh_key_data is None:
-                self.ssh_key_data = self.loader.load_file('env/ssh_key', string_types)
+                if 'ANSIBLE_RUNNER_SSH_KEY' in os.environ:
+                    self.ssh_key_data = self.loader.load_env('ANSIBLE_RUNNER_SSH_KEY', Mapping)
+                else:
+                    self.ssh_key_data = self.loader.load_file('env/ssh_key', string_types)
         except ConfigurationError:
             output.debug("Not loading ssh key")
             self.ssh_key_data = None

@@ -4,13 +4,6 @@ import io
 from ansible_runner.streaming import Transmitter, Worker, Processor
 
 
-def peek_contents(buffer):
-    pos = buffer.tell()
-    content = buffer.read()
-    buffer.seek(pos)
-    return content
-
-
 def test_remote_job_interface(tmpdir, test_data_dir):
     worker_dir = str(tmpdir.mkdir('for_worker'))
     process_dir = str(tmpdir.mkdir('for_process'))
@@ -35,7 +28,7 @@ def test_remote_job_interface(tmpdir, test_data_dir):
 
     outgoing_buffer.seek(0)  # rewind so we can start reading
 
-    sent = peek_contents(outgoing_buffer)
+    sent = outgoing_buffer.getvalue()
     assert sent  # should not be blank at least
     assert b'zipfile' in sent
 
@@ -58,4 +51,4 @@ def test_remote_job_interface(tmpdir, test_data_dir):
     )
     processor.run()
 
-    assert os.listdir(process_dir) == ['project', 'artifacts'], outgoing_buffer.getvalue()
+    assert set(os.listdir(process_dir)) == set(['artifacts']), outgoing_buffer.getvalue()

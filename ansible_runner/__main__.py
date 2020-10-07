@@ -137,7 +137,7 @@ DEFAULT_CLI_ARGS = {
             ("--forks",),
             dict(
                 help="matches Ansible's ```--forks``` parameter to set the number "
-                     "of conconurent processes (default=None)"
+                     "of concurrent processes (default=None)"
             ),
         ),
     ),

@@ -198,7 +198,7 @@ class Processor(object):
                 json.dump(event_data, write_file)
 
     def artifacts_callback(self, artifacts_data):
-        buf = io.BytesIO(artifacts_data)
+        buf = io.BytesIO(self._input.read(artifacts_data['zipfile']))
         with zipfile.ZipFile(buf, 'r') as archive:
             archive.extractall(path=self.config.artifact_dir)
 
@@ -217,7 +217,7 @@ class Processor(object):
             if 'status' in data:
                 self.status_callback(data)
             elif 'zipfile' in data:
-                self.artifacts_callback(self._input.read(data['zipfile']))
+                self.artifacts_callback(data)
             elif 'eof' in data:
                 break
             else:

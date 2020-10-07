@@ -36,6 +36,7 @@ class Transmitter(object):
         if _output is None:
             _output = sys.stdout.buffer
         self._output = _output
+        self.private_data_dir = kwargs.pop('private_data_dir')
         self.kwargs = kwargs
 
         self.status = "unstarted"
@@ -48,8 +49,7 @@ class Transmitter(object):
         self._output.write(b'\n')
         self._output.flush()
 
-        private_data_dir = self.kwargs.get('private_data_dir')
-        self._output.write(utils.stream_dir(private_data_dir))
+        self._output.write(utils.stream_dir(self.private_data_dir))
         self._output.write(json.dumps({'eof': True}).encode('utf-8'))
         self._output.write(b'\n')
         self._output.flush()

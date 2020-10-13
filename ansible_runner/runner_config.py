@@ -257,7 +257,10 @@ class RunnerConfig(object):
             self.env['CGROUP_DISPLAY_RECAP'] = 'False'
 
         if self.roles_path:
-            self.env['ANSIBLE_ROLES_PATH'] = ':'.join(self.roles_path)
+            if isinstance(self.roles_path, list):
+                self.env['ANSIBLE_ROLES_PATH'] = ':'.join(self.roles_path)
+            else:
+                self.env['ANSIBLE_ROLES_PATH'] = self.roles_path
 
         if self.sandboxed:
             debug('sandbox enabled')

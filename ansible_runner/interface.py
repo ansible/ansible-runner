@@ -87,6 +87,8 @@ def init_runner(**kwargs):
                                          **kwargs)
             return stream_processor
 
+    kwargs.pop('_input', None)
+    kwargs.pop('_output', None)
     rc = RunnerConfig(**kwargs)
     rc.prepare()
 
@@ -137,6 +139,8 @@ def run(**kwargs):
     :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
     :param streamer: Optionally invoke ansible-runner as one of the steps in the streaming pipeline
+    :param _input: An optional file or file-like object for use as input in a streaming pipeline
+    :param _output: An optional file or file-like object for use as output in a streaming pipeline
     :param event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
     :param cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
     :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
@@ -184,6 +188,8 @@ def run(**kwargs):
     :type quiet: bool
     :type verbosity: int
     :type streamer: str
+    :type _input: file
+    :type _output: file
     :type event_handler: function
     :type cancel_callback: function
     :type finished_callback: function

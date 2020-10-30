@@ -30,7 +30,7 @@ def test_remote_job_interface(tmpdir, test_data_dir):
 
     sent = outgoing_buffer.getvalue()
     assert sent  # should not be blank at least
-    assert b'zipfile' in sent
+    assert b'tarfile' in sent
 
     incoming_buffer = io.BytesIO()
 

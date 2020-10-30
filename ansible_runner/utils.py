@@ -14,7 +14,7 @@ import threading
 import pipes
 import uuid
 import codecs
-import zipfile
+import tarfile
 
 try:
     from collections.abc import Iterable, Mapping
@@ -85,18 +85,22 @@ def check_isolation_executable_installed(isolation_executable):
 
 def stream_dir(directory):
     buf = BytesIO()
-    with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
-        if directory:
-            for dirpath, dirs, files in os.walk(directory):
-                relpath = os.path.relpath(dirpath, directory)
-                if relpath == ".":
-                    relpath = ""
-                for fname in files:
-                    archive.write(os.path.join(dirpath, fname), arcname=os.path.join(relpath, fname))
-        archive.close()
+    archive = tarfile.open('archive', 'w:xz', buf)
+    if directory:
+        old_dir = os.getcwd()
+        os.chdir(directory)
+        archive.add('.')
+        os.chdir(old_dir)
+    archive.close()
 
     payload = buf.getvalue()
-    return b'\n'.join((json.dumps({'zipfile': len(payload)}).encode('utf-8'), payload))
+    return b'\n'.join((json.dumps({'tarfile': len(payload), 'compression': 'xz'}).encode('utf-8'), payload))
+
+
+def unstream_dir(data, directory):
+    buf = BytesIO(data)
+    archive = tarfile.open('archive', 'r', buf)
+    archive.extractall(directory)
 
 
 def dump_artifact(obj, path, filename=None):

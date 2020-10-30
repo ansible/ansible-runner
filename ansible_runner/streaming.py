@@ -88,7 +88,13 @@ class Worker(object):
                 zip_data = self._input.read(data['zipfile'])
                 buf = io.BytesIO(zip_data)
                 with zipfile.ZipFile(buf, 'r') as archive:
-                    archive.extractall(path=self.private_data_dir)
+                    # Fancy extraction in order to preserve permissions
+                    # https://www.burgundywall.com/post/preserving-file-perms-with-python-zipfile-module
+                    for info in archive.infolist():
+                        archive.extract(info.filename, path=self.private_data_dir)
+                        out_path = os.path.join(self.private_data_dir, info.filename)
+                        perm = info.external_attr >> 16
+                        os.chmod(out_path, perm)
             elif 'eof' in data:
                 break
 

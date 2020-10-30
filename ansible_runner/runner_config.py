@@ -36,6 +36,7 @@ from distutils.dir_util import copy_tree
 
 from six import iteritems, string_types, text_type
 
+from ansible_runner import defaults
 from ansible_runner import output
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.loader import ArtifactLoader
@@ -80,10 +81,9 @@ class RunnerConfig(object):
                  inventory=None, roles_path=None, limit=None, module=None, module_args=None,
                  verbosity=None, quiet=False, json_mode=False, artifact_dir=None,
                  rotate_artifacts=0, host_pattern=None, binary=None, extravars=None, suppress_ansible_output=False,
-                 process_isolation=False, process_isolation_executable='podman', process_isolation_path=None,
+                 process_isolation=False, process_isolation_executable=None, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None, process_isolation_ro_paths=None,
-                 container_image='quay.io/ansible/ansible-runner:devel',
-                 container_volume_mounts=None, container_options=None,
+                 container_image=None, container_volume_mounts=None, container_options=None,
                  resource_profiling=False, resource_profiling_base_cgroup='ansible-runner', resource_profiling_cpu_poll_interval=0.25,
                  resource_profiling_memory_poll_interval=0.25, resource_profiling_pid_poll_interval=0.25,
                  resource_profiling_results_dir=None,
@@ -118,14 +118,14 @@ class RunnerConfig(object):
 
         self.extra_vars = extravars
         self.process_isolation = process_isolation
-        self.process_isolation_executable = process_isolation_executable
+        self.process_isolation_executable = process_isolation_executable or defaults.default_process_isolation_executable
         self.process_isolation_path = process_isolation_path
         self.container_name = None  # like other properties, not accurate until prepare is called
         self.process_isolation_path_actual = None
         self.process_isolation_hide_paths = process_isolation_hide_paths
         self.process_isolation_show_paths = process_isolation_show_paths
         self.process_isolation_ro_paths = process_isolation_ro_paths
-        self.container_image = container_image
+        self.container_image = container_image or defaults.default_container_image
         self.container_volume_mounts = container_volume_mounts
         self.container_options = container_options
         self.resource_profiling = resource_profiling

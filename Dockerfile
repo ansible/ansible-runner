@@ -15,6 +15,8 @@ RUN dnf install -y \
     https://github.com/krallin/tini/releases/download/v0.19.0/tini_0.19.0-amd64.rpm && \
     rm -rf /var/cache/dnf
 
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
+
 # Install python packages for use in all images
 RUN pip3 install --no-cache-dir bindep
 

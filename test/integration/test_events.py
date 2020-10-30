@@ -4,7 +4,7 @@ from distutils.spawn import find_executable
 import json
 import os
 
-from ansible_runner import run, run_async
+from ansible_runner import defaults, run, run_async
 
 
 @pytest.mark.parametrize('containerized', [True, False])
@@ -26,7 +26,7 @@ def test_basic_events(containerized, container_runtime_available, is_pre_ansible
     if containerized:
         run_args.update({'process_isolation': True,
                          'process_isolation_executable': 'podman',
-                         'container_image': 'localhost/ansible/ansible-runner',
+                         'container_image': defaults.default_container_image,
                          'container_volume_mounts': [f'{tdir}:{tdir}']})
 
     if not is_run_async:

@@ -99,6 +99,18 @@ def stream_dir(directory):
     return b'\n'.join((json.dumps({'zipfile': len(payload)}).encode('utf-8'), payload))
 
 
+def unstream_dir(data, directory):
+    buf = BytesIO(data)
+    with zipfile.ZipFile(buf, 'r') as archive:
+        # Fancy extraction in order to preserve permissions
+        # https://www.burgundywall.com/post/preserving-file-perms-with-python-zipfile-module
+        for info in archive.infolist():
+            archive.extract(info.filename, path=directory)
+            out_path = os.path.join(directory, info.filename)
+            perm = info.external_attr >> 16
+            os.chmod(out_path, perm)
+
+
 def dump_artifact(obj, path, filename=None):
     '''
     Write the artifact to disk at the specified path

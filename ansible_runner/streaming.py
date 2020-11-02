@@ -1,12 +1,10 @@
 import codecs
-import io
 import json
 import os
 import stat
 import sys
 import tempfile
 import uuid
-import zipfile
 try:
     from collections.abc import Mapping
 except ImportError:
@@ -86,15 +84,7 @@ class Worker(object):
                 self.job_kwargs = data['kwargs']
             elif 'zipfile' in data:
                 zip_data = self._input.read(data['zipfile'])
-                buf = io.BytesIO(zip_data)
-                with zipfile.ZipFile(buf, 'r') as archive:
-                    # Fancy extraction in order to preserve permissions
-                    # https://www.burgundywall.com/post/preserving-file-perms-with-python-zipfile-module
-                    for info in archive.infolist():
-                        archive.extract(info.filename, path=self.private_data_dir)
-                        out_path = os.path.join(self.private_data_dir, info.filename)
-                        perm = info.external_attr >> 16
-                        os.chmod(out_path, perm)
+                utils.unstream_dir(zip_data, self.private_data_dir)
             elif 'eof' in data:
                 break
 
@@ -204,15 +194,8 @@ class Processor(object):
                 json.dump(event_data, write_file)
 
     def artifacts_callback(self, artifacts_data):
-        buf = io.BytesIO(self._input.read(artifacts_data['zipfile']))
-        with zipfile.ZipFile(buf, 'r') as archive:
-            # Fancy extraction in order to preserve permissions
-            # https://www.burgundywall.com/post/preserving-file-perms-with-python-zipfile-module
-            for info in archive.infolist():
-                archive.extract(info.filename, path=self.private_data_dir)
-                out_path = os.path.join(self.private_data_dir, info.filename)
-                perm = info.external_attr >> 16
-                os.chmod(out_path, perm)
+        zip_data = self._input.read(artifacts_data['zipfile'])
+        utils.unstream_dir(zip_data, self.artifact_dir)
 
         if self.artifacts_handler is not None:
             self.artifacts_handler(self.artifact_dir)

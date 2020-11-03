@@ -13,7 +13,6 @@ import logging
 
 import six
 import pexpect
-import psutil
 
 import ansible_runner.plugins
 
@@ -429,23 +428,15 @@ class Runner(object):
         '''
 
         try:
-            main_proc = psutil.Process(pid=pid)
-            child_procs = main_proc.children(recursive=True)
-            for child_proc in child_procs:
-                try:
-                    os.kill(child_proc.pid, signal.SIGKILL)
-                except (TypeError, OSError):
-                    pass
-            os.kill(main_proc.pid, signal.SIGKILL)
-            try:
-                os.remove(pidfile)
-            except (OSError):
-                pass
-        except (TypeError, psutil.Error, OSError):
-            try:
-                os.kill(pid, signal.SIGKILL)
-            except (OSError):
-                pass
+            pgroup = os.getpgid(pid)
+            os.killpg(pgroup, signal.SIGKILL)
+        except (OSError, ProcessLookupError):
+            pass
+        try:
+            os.remove(pidfile)
+        except (TypeError, OSError):
+            pass
+
 
     def get_fact_cache(self, host):
         '''

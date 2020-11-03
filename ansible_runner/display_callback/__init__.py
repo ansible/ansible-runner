@@ -18,7 +18,6 @@
 from __future__ import (absolute_import, division, print_function)
 
 # AWX Display Callback
-from . import cleanup  # noqa (registers control persistent cleanup)
 from . import display  # noqa (wraps ansible.display.Display methods)
 from .module import AWXDefaultCallbackModule, AWXMinimalCallbackModule
 

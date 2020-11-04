@@ -9,7 +9,7 @@ Vcs-Git: https://github.com/ansible/ansible-runner.git
 
 Package: ansible-runner
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, python-psutil, python-pexpect (>= 4.5)
+Depends: ${python:Depends}, ${misc:Depends}, python-pexpect (>= 4.5)
 Recommends: ansible (>= 2.1)
 Description: interfaces with Ansible from other systems (Python 2)
  A tool and python library that helps when interfacing with Ansible

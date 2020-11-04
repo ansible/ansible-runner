@@ -5,7 +5,6 @@ FROM ${BASE_IMAGE}
 # Install system packages for use in all images
 RUN dnf install -y \
     python3-pip \
-    python3-devel \
     gcc \
     rsync \
     openssh-clients \

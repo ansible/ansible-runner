@@ -94,7 +94,8 @@ class Worker(object):
                 self.job_kwargs = self.update_paths(data['kwargs'])
             elif 'zipfile' in data:
                 zip_data = self._input.read(data['zipfile'])
-                utils.unstream_dir(zip_data, self.private_data_dir)
+                if not utils.unstream_dir(zip_data, self.private_data_dir):
+                    break
             elif 'eof' in data:
                 break
 
@@ -205,7 +206,8 @@ class Processor(object):
 
     def artifacts_callback(self, artifacts_data):
         zip_data = self._input.read(artifacts_data['zipfile'])
-        utils.unstream_dir(zip_data, self.artifact_dir)
+        if not utils.unstream_dir(zip_data, self.artifact_dir):
+            return  # FIXME?
 
         if self.artifacts_handler is not None:
             self.artifacts_handler(self.artifact_dir)

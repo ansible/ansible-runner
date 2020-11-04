@@ -70,3 +70,20 @@ def test_missing_private_dir_transmit(tmpdir):
         )
 
     assert "private_data_dir path is either invalid or does not exist" in str(excinfo.value)
+
+
+def test_garbage_private_dir_worker(tmpdir):
+    worker_dir = str(tmpdir.mkdir('for_worker'))
+    incoming_buffer = io.BytesIO(
+        b'{"kwargs": {"playbook": "debug.yml"}}\n{"zipfile": 5}\n\x01\x02\x03\x04\x05{"eof": true}\n')
+    outgoing_buffer = io.BytesIO()
+
+    # Worker
+    run(
+        streamer='worker',
+        _input=incoming_buffer,
+        _output=outgoing_buffer,
+        private_data_dir=worker_dir,
+    )
+    sent = outgoing_buffer.getvalue()
+    assert b'"status": "failed"' in sent

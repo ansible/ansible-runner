@@ -341,9 +341,9 @@ class OutputEventFilter(object):
             self._counter += 1
             event_data['counter'] = self._counter
             event_data['stdout'] = stdout_chunk[:-2] if len(stdout_chunk) > 2 else ""
-            n_lines = stdout_chunk.count('\n')
+            n_lines = stdout_chunk.strip().count('\n') + 1
             event_data['start_line'] = self._start_line
-            event_data['end_line'] = self._start_line + n_lines
+            event_data['end_line'] = self._start_line + n_lines - 1
             self._start_line += n_lines
             if self._event_callback:
                 self._event_callback(event_data)

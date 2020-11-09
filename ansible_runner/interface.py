@@ -17,6 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+import os
 import sys
 import threading
 import logging
@@ -44,6 +45,23 @@ def init_runner(**kwargs):
     '''
     if not kwargs.get('cli_execenv_cmd'):
         dump_artifacts(kwargs)
+
+    if kwargs.get('streamer'):
+        # undo any full paths that were dumped by dump_artifacts above in the streamer case
+        private_data_dir = kwargs['private_data_dir']
+        project_dir = os.path.join(private_data_dir, 'project')
+
+        playbook_path = kwargs.get('playbook') or ''
+        if os.path.isabs(playbook_path) and playbook_path.startswith(project_dir):
+            kwargs['playbook'] = os.path.relpath(playbook_path, project_dir)
+
+        inventory_path =  kwargs.get('inventory') or ''
+        if os.path.isabs(inventory_path) and inventory_path.startswith(private_data_dir):
+            kwargs['inventory'] = os.path.relpath(inventory_path, private_data_dir)
+
+        roles_path = kwargs.get('envvars', {}).get('ANSIBLE_ROLES_PATH') or ''
+        if os.path.isabs(roles_path) and roles_path.startswith(private_data_dir):
+            kwargs['envvars']['ANSIBLE_ROLES_PATH'] = os.path.relpath(roles_path, private_data_dir)
 
     debug = kwargs.pop('debug', None)
     logfile = kwargs.pop('logfile', None)

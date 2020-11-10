@@ -17,7 +17,7 @@ import psutil
 
 import ansible_runner.plugins
 
-from .utils import OutputEventFilter, cleanup_artifact_dir, ensure_str, collect_new_events
+from .utils import OutputEventFilter, cleanup_artifact_dir, ensure_str, collect_new_events, dump_artifact
 from .exceptions import CallbackError, AnsibleRunnerException
 from ansible_runner.output import debug
 
@@ -88,6 +88,10 @@ class Runner(object):
             ansible_runner.plugins[plugin].status_handler(self.config, status_data)
         if self.status_handler is not None:
             self.status_handler(status_data, runner_config=self.config)
+
+        # serialize status artifact to file
+        artifact_path = os.path.join(self.config.artifact_dir, 'status')
+        dump_artifact(self.status, artifact_path, 'status')
 
     def run(self):
         '''
@@ -254,15 +258,9 @@ class Runner(object):
         else:
             self.status_callback('failed')
         self.rc = child.exitstatus if not (self.timed_out or self.canceled) else 254
-        for filename, data in [
-            ('status', self.status),
-            ('rc', self.rc),
-        ]:
-            artifact_path = os.path.join(self.config.artifact_dir, filename)
-            if not os.path.exists(artifact_path):
-                os.close(os.open(artifact_path, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
-            with open(artifact_path, 'w') as f:
-                f.write(str(data))
+        artifact_path = os.path.join(self.config.artifact_dir, 'rc')
+        dump_artifact(self.status, artifact_path, 'rc')
+
         if self.config.directory_isolation_path and self.config.directory_isolation_cleanup:
             shutil.rmtree(self.config.directory_isolation_path)
         if self.config.process_isolation and self.config.process_isolation_path_actual:

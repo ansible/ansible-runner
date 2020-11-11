@@ -34,7 +34,7 @@ class Transmitter(object):
         if _output is None:
             _output = sys.stdout.buffer
         self._output = _output
-        self.private_data_dir = kwargs.pop('private_data_dir')
+        self.private_data_dir = os.path.abspath(kwargs.pop('private_data_dir'))
         self.kwargs = kwargs
 
         self.status = "unstarted"
@@ -75,13 +75,23 @@ class Worker(object):
         self.status = "unstarted"
         self.rc = None
 
+    def update_paths(self, kwargs):
+        if kwargs.get('envvars'):
+            roles_path = kwargs['envvars']['ANSIBLE_ROLES_PATH']
+            roles_dir = os.path.join(self.private_data_dir, 'roles')
+            kwargs['envvars']['ANSIBLE_ROLES_PATH'] = os.path.join(roles_dir, roles_path)
+        if kwargs.get('inventory'):
+            kwargs['inventory'] = os.path.join(self.private_data_dir, kwargs['inventory'])
+
+        return kwargs
+
     def run(self):
         while True:
             line = self._input.readline()
             data = json.loads(line)
 
             if 'kwargs' in data:
-                self.job_kwargs = data['kwargs']
+                self.job_kwargs = self.update_paths(data['kwargs'])
             elif 'zipfile' in data:
                 zip_data = self._input.read(data['zipfile'])
                 utils.unstream_dir(zip_data, self.private_data_dir)

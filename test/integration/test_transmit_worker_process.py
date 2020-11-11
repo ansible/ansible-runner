@@ -1,6 +1,9 @@
-import os
 import io
+import os
 
+import pytest
+
+from ansible_runner import run
 from ansible_runner.streaming import Transmitter, Worker, Processor
 
 
@@ -14,9 +17,9 @@ def test_remote_job_interface(tmpdir, test_data_dir):
 
     # Intended AWX and Tower use case
     transmitter = Transmitter(
-        _output = outgoing_buffer,
-        private_data_dir = original_dir,
-        playbook = 'debug.yml'
+        _output=outgoing_buffer,
+        private_data_dir=original_dir,
+        playbook='debug.yml'
     )
 
     print(transmitter.kwargs)
@@ -35,20 +38,35 @@ def test_remote_job_interface(tmpdir, test_data_dir):
     incoming_buffer = io.BytesIO()
 
     worker = Worker(
-        _input = outgoing_buffer,
-        _output = incoming_buffer,
-        private_data_dir = worker_dir
+        _input=outgoing_buffer,
+        _output=incoming_buffer,
+        private_data_dir=worker_dir
     )
     worker.run()
 
-    assert set(os.listdir(worker_dir)) == set(['artifacts', 'inventory', 'project']), outgoing_buffer.getvalue()
+    assert set(os.listdir(worker_dir)) == {'artifacts', 'inventory', 'project'}, outgoing_buffer.getvalue()
 
     incoming_buffer.seek(0)  # again, be kind, rewind
 
     processor = Processor(
-        _input = incoming_buffer,
-        private_data_dir = process_dir
+        _input=incoming_buffer,
+        private_data_dir=process_dir
     )
     processor.run()
 
-    assert set(os.listdir(process_dir)) == set(['artifacts']), outgoing_buffer.getvalue()
+    assert set(os.listdir(process_dir)) == {'artifacts',}, outgoing_buffer.getvalue()
+
+
+def test_missing_private_dir_transmit(tmpdir):
+    outgoing_buffer = io.BytesIO()
+
+    # Transmit
+    with pytest.raises(ValueError) as excinfo:
+        run(
+            streamer='transmit',
+            _output=outgoing_buffer,
+            private_data_dir='/foo/bar/baz',
+            playbook='debug.yml',
+        )
+
+    assert "private_data_dir path is either invalid or does not exist" in str(excinfo.value)

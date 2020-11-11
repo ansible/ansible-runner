@@ -1,0 +1,13 @@
+---
+- hosts: all
+  tasks:
+    - name: Setup ensure-podman role
+      include_role:
+        name: ensure-podman
+
+    - name: Setup use-buildset-registry role
+      include_role:
+        name: use-buildset-registry
+
+    - name: pull docker image
+      shell: podman pull quay.io/ansible/ansible-runner:devel

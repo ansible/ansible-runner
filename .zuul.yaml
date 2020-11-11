@@ -1,0 +1,15 @@
+---
+- job:
+    name: ansible-runner-test-container-image
+    run: playbooks/test-container-image/run.yaml
+    dependencies:
+      - name: ansible-runner-build-container-image
+    requires: ansible-runner-container-image
+    nodeset: ubuntu-bionic-1vcpu
+
+- project:
+    templates:
+      - ansible-runner-container-image-jobs
+    check:
+      jobs:
+        - ansible-runner-test-container-image

@@ -55,7 +55,7 @@ def init_runner(**kwargs):
         if os.path.isabs(playbook_path) and playbook_path.startswith(project_dir):
             kwargs['playbook'] = os.path.relpath(playbook_path, project_dir)
 
-        inventory_path =  kwargs.get('inventory') or ''
+        inventory_path = kwargs.get('inventory') or ''
         if os.path.isabs(inventory_path) and inventory_path.startswith(private_data_dir):
             kwargs['inventory'] = os.path.relpath(inventory_path, private_data_dir)
 

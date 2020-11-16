@@ -1,0 +1,13 @@
+---
+- project:
+    check:
+      jobs:
+        - ansible-buildset-registry
+        - ansible-runner-build-container-image
+    gate:
+      jobs:
+        - ansible-buildset-registry
+        - ansible-runner-build-container-image
+    post:
+      jobs:
+        - ansible-runner-upload-container-image

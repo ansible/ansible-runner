@@ -5,7 +5,7 @@ Introduction to Ansible Runner
 
 **Runner** is intended to be most useful as part of automation and tooling that needs to invoke Ansible and consume its results.
 Most of the parameterization of the **Ansible** command line is also available on the **Runner** command line but **Runner** also
-can rely on an input interface that is mapped onto a directory structure, an example of which can be seen in `the source tree <https://github.com/ansible/ansible-runner/tree/master/demo>`_.
+can rely on an input interface that is mapped onto a directory structure, an example of which can be seen in `the source tree <https://github.com/ansible/ansible-runner/tree/devel/demo>`_.
 
 Further sections in this document refer to the configuration and layout of that hierarchy. This isn't the only way to interface with **Runner**
 itself. The Python module interface allows supplying these details as direct module parameters in many forms, and the command line interface allows
@@ -20,7 +20,7 @@ ultimately needs to be brought together in a single place when launching the **A
 Runner Input Directory Hierarchy
 --------------------------------
 
-This directory contains all necessary inputs. Here's a view of the `demo directory <https://github.com/ansible/ansible-runner/tree/master/demo>`_ showing
+This directory contains all necessary inputs. Here's a view of the `demo directory <https://github.com/ansible/ansible-runner/tree/devel/demo>`_ showing
 an active configuration.
 
 Note that not everything is required. Defaults will be used or values will be omitted if they are not provided.
@@ -53,7 +53,7 @@ The ``env`` directory
 ---------------------
 
 The **env** directory contains settings and sensitive files that inform certain aspects of the invocation of the **Ansible** process, an example of which can
-be found in `the demo env directory <https://github.com/ansible/ansible-runner/tree/master/demo/env>`_. Each of these files can also be represented by a named
+be found in `the demo env directory <https://github.com/ansible/ansible-runner/tree/devel/demo/env>`_. Each of these files can also be represented by a named
 pipe providing a bit of an extra layer of security. The formatting and expectation of these files differs slightly depending on what they are representing.
 
 ``env/envvars``
@@ -61,7 +61,7 @@ pipe providing a bit of an extra layer of security. The formatting and expectati
 
 .. note::
 
-   For an example see `the demo envvars <https://github.com/ansible/ansible-runner/blob/master/demo/env/envvars>`_.
+   For an example see `the demo envvars <https://github.com/ansible/ansible-runner/blob/devel/demo/env/envvars>`_.
 
 **Ansible Runner** will inherit the environment of the launching shell (or container, or system itself). This file (which can be in json or yaml format) represents
 the environment variables that will be added to the environment at run-time::
@@ -74,7 +74,7 @@ the environment variables that will be added to the environment at run-time::
 
 .. note::
 
-   For an example see `the demo extravars <https://github.com/ansible/ansible-runner/blob/master/demo/env/extravars>`_.
+   For an example see `the demo extravars <https://github.com/ansible/ansible-runner/blob/devel/demo/env/extravars>`_.
 
 **Ansible Runner** gathers the extra vars provided here and supplies them to the **Ansible Process** itself. This file can be in either json or yaml format::
 
@@ -87,7 +87,7 @@ the environment variables that will be added to the environment at run-time::
 
 .. note::
 
-   For an example see `the demo passwords <https://github.com/ansible/ansible-runner/blob/master/demo/env/passwords>`_.
+   For an example see `the demo passwords <https://github.com/ansible/ansible-runner/blob/devel/demo/env/passwords>`_.
 
 .. warning::
 

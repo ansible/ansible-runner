@@ -10,4 +10,6 @@
         - ansible-runner-build-container-image
     post:
       jobs:
-        - ansible-runner-upload-container-image
+        - ansible-runner-upload-container-image:
+          vars:
+            upload_container_image_promote: false

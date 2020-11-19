@@ -91,8 +91,12 @@ class Worker(object):
 
     def run(self):
         while True:
-            line = self._input.readline()
-            data = json.loads(line)
+            try:
+                line = self._input.readline()
+                data = json.loads(line)
+            except (json.decoder.JSONDecodeError, IOError):
+                self.status_handler({'status': 'error'}, None)
+                return self.status, self.rc
 
             if 'kwargs' in data:
                 self.job_kwargs = self.update_paths(data['kwargs'])
@@ -222,8 +226,12 @@ class Processor(object):
             os.makedirs(job_events_path, 0o700, exist_ok=True)
 
         while True:
-            line = self._input.readline()
-            data = json.loads(line)
+            try:
+                line = self._input.readline()
+                data = json.loads(line)
+            except (json.decoder.JSONDecodeError, IOError):
+                self.status_callback({'status': 'error'})
+                return self.status, self.rc
 
             if 'status' in data:
                 self.status_callback(data)

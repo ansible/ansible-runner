@@ -7,7 +7,7 @@
     timeout: 2700
     provides: ansible-runner-container-image
     vars: &ansible_runner_image_vars
-      container_images:
+      container_images: &container_images
         - context: .
           registry: quay.io
           repository: quay.io/ansible/ansible-runner
@@ -15,6 +15,7 @@
             # If zuul.tag is defined: [ '3', '3.19', '3.19.0' ].  Only works for 3-component tags.
             # Otherwise: ['latest']
             &imagetag "{{ zuul.tag is defined | ternary([zuul.get('tag', '').split('.')[0], '.'.join(zuul.get('tag', '').split('.')[:2]), zuul.get('tag', '')], ['devel']) }}"
+      docker_images: *container_images
 
 - job:
     name: ansible-runner-upload-container-image

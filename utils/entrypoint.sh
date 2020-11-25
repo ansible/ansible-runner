@@ -32,4 +32,4 @@ if [[ -n "${LAUNCHED_BY_RUNNER}" ]]; then
     export ANSIBLE_CALLBACK_PLUGINS="$(dirname $RUNNER_CALLBACKS)"
 fi
 
-exec tini -- "${@}"
+exec /usr/local/bin/dumb-init -- "${@}"

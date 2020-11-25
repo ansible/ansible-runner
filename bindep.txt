@@ -2,7 +2,11 @@
 # see https://docs.openstack.org/infra/bindep/ for additional information.
 
 gcc-c++ [test platform:rpm]
+git
+openssh-clients
 python3-devel [test !platform:centos-7 platform:rpm]
 python3 [test !platform:centos-7 platform:rpm]
 python36 [test !platform:centos-7 !platform:fedora-28]
 podman [test platform:rpm]
+sshpass [epel]
+rsync

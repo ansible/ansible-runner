@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+# Copyright (c) 2019 Red Hat, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import configparser
+import os
+import sys
+
+
+def get_extras_packages(path):
+    config = configparser.ConfigParser()
+    config.read('setup.cfg')
+    config = dict(dict(config.items()).get('extras', {}).items())
+
+    extras = set()
+    for name, packages in config.items():
+        for package in packages.split('\n'):
+            package = package.strip()
+            if '#' in package:
+                package = package.split('#')[0]
+            if not package:
+                continue
+            extras.add(package)
+        outpath = os.path.join(path, name, 'requirements.txt')
+        os.mkdir(os.path.dirname(outpath))
+        with open(outpath, 'w') as outfile:
+            outfile.write(packages)
+
+    return " ".join(extras)
+
+
+if __name__ == '__main__':
+    path = '/output'
+    if len(sys.argv) > 1:
+        path = sys.argv[1]
+    print(get_extras_packages(path))

@@ -3,9 +3,11 @@
     check:
       jobs:
         - ansible-runner-build-container-image
+        - python-builder-build-container-image
     gate:
       jobs:
         - ansible-runner-build-container-image
+        - python-builder-build-container-image
     post:
       jobs:
         - ansible-runner-upload-container-image:

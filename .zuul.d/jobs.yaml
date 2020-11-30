@@ -1,5 +1,31 @@
 ---
 - job:
+    name: python-builder-build-container-image
+    parent: ansible-build-container-image
+    description: Build python-builder container image
+    timeout: 2700
+    provides: python-builder-container-image
+    vars: &python_builder_image_vars
+      container_images: &python_builder_container_images
+        - context: containers/python-builder
+          container_filename: Containerfile
+          registry: quay.io
+          repository: quay.io/ansible/python-builder
+          tags:
+            # If zuul.tag is defined: [ '3', '3.19', '3.19.0' ].  Only works for 3-component tags.
+            # Otherwise: ['latest']
+            "{{ zuul.tag is defined | ternary([zuul.get('tag', '').split('.')[0], '.'.join(zuul.get('tag', '').split('.')[:2]), zuul.get('tag', '')], ['latest']) }}"
+      docker_images: *python_builder_container_images
+
+- job:
+    name: python-builder-upload-container-image
+    parent: ansible-upload-container-image
+    description: Build python-builder container image and upload to quay.io
+    timeout: 2700
+    provides: python-builder-container-image
+    vars: *python_builder_image_vars
+
+- job:
     name: ansible-runner-build-container-image
     parent: ansible-build-container-image
     description: Build ansible-runner container image

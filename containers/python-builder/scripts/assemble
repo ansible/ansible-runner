@@ -1,0 +1,131 @@
+#!/bin/bash
+# Copyright (c) 2019 Red Hat, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Make a list of bindep dependencies and a collection of built binary
+# wheels for the repo in question as well as its python dependencies.
+# Install javascript tools as well to support python that needs javascript
+# at build time.
+set -ex
+
+mkdir -p /output/bindep
+mkdir -p /output/wheels
+
+cd /tmp/src
+
+PKGMGR=dnf
+
+$PKGMGR update -y
+
+function install_bindep {
+    # Protect from the bindep builder image use of the assemble script
+    # to produce a wheel.  Note we append because we want all
+    # sibling packages in here too
+    if [ -f bindep.txt -o -f other-requirements.txt ] ; then
+        bindep -l newline >> /output/bindep/run.txt || true
+        compile_packages=$(bindep -b compile || true)
+        if [ ! -z "$compile_packages" ] ; then
+            DEBIAN_FRONTEND=noninteractive ${PKGMGR} install -y ${compile_packages}
+        fi
+    fi
+}
+
+function install_wheels {
+    # Build a wheel so that we have an install target.
+    # pip install . in the container context with the mounted
+    # source dir gets ... exciting.
+    # We run sdist first to trigger code generation steps such
+    # as are found in zuul, since the sequencing otherwise
+    # happens in a way that makes wheel content copying unhappy.
+    # pip wheel isn't used here because it puts all of the output
+    # in the output dir and not the wheel cache, so it's not
+    # possible to tell what is the wheel for the project and
+    # what is the wheel cache.
+    if [ -f /tmp/src/setup.py ] ; then
+        python3 setup.py sdist bdist_wheel -d /output/wheels
+    fi
+
+    # Install everything so that the wheel cache is populated with
+    # transitive depends. If a requirements.txt file exists, install
+    # it directly so that people can use git url syntax to do things
+    # like pick up patched but unreleased versions of dependencies.
+    # Only do this for the main package (i.e. only write requirements
+    # once).
+    if [ -f /tmp/src/requirements.txt ] && [ ! -f /output/requirements.txt ] ; then
+        /tmp/venv/bin/pip install $CONSTRAINTS --cache-dir=/output/wheels -r /tmp/src/requirements.txt
+        cp /tmp/src/requirements.txt /output/requirements.txt
+    fi
+    if [ -f /tmp/src/setup.py ] ; then
+        /tmp/venv/bin/pip install $CONSTRAINTS --cache-dir=/output/wheels /output/wheels/*whl
+    fi
+
+    # Install each of the extras so that we collect all possibly
+    # needed wheels in the wheel cache. get-extras-packages also
+    # writes out the req files into /output/$extra/requirements.txt.
+    for req in $(get-extras-packages) ; do
+        /tmp/venv/bin/pip install $CONSTRAINTS --cache-dir=/output/wheels "$req"
+    done
+}
+
+PACKAGES=$*
+
+# bindep the main package
+install_bindep
+
+# go through ZUUL_SIBLINGS, if any, and build those wheels too
+for sibling in ${ZUUL_SIBLINGS:-}; do
+    pushd .zuul-siblings/${sibling}
+    install_bindep
+    popd
+done
+
+# Use a clean virtualenv for install steps to prevent things from the
+# current environment making us not build a wheel.
+python3 -m venv /tmp/venv
+/tmp/venv/bin/pip install -U pip wheel
+
+# If there is an upper-constraints.txt file in the source tree,
+# use it in the pip commands.
+if [ -f /tmp/src/upper-constraints.txt ] ; then
+    cp /tmp/src/upper-constraints.txt /output/upper-constraints.txt
+    CONSTRAINTS="-c /tmp/src/upper-constraints.txt"
+fi
+
+# If we got a list of packages, install them, otherwise install the
+# main package.
+if [[ $PACKAGES ]] ; then
+    /tmp/venv/bin/pip install $CONSTRAINTS --cache-dir=/output/wheels $PACKAGES
+    for package in $PACKAGES ; do
+      echo "$package" >> /output/packages.txt
+    done
+else
+    # pbr needs git installed, else nothing will work. Do this in between
+    # bindep and wheel so that we don't miss git in target images.
+    ${PKGMGR} install -y git
+
+    install_wheels
+fi
+
+# go through ZUUL_SIBLINGS, if any, and build those wheels too
+for sibling in ${ZUUL_SIBLINGS:-}; do
+    pushd .zuul-siblings/${sibling}
+    install_wheels
+    popd
+done
+
+${PKGMGR} clean all
+rm -rf /var/cache/${PKGMGR}
+
+rm -rf /tmp/venv

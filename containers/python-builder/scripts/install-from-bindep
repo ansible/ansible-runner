@@ -1,0 +1,60 @@
+#!/bin/bash
+# Copyright (c) 2019 Red Hat, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -ex
+
+PKGMGR=dnf
+
+${PKGMGR} update -y
+PACKAGES=$(cat /output/bindep/run.txt)
+if [ ! -z "$PACKAGES" ]; then
+    ${PKGMGR} install -y $PACKAGES
+fi
+
+# If there's a constraints file, use it.
+if [ -f /output/upper-constraints.txt ] ; then
+    CONSTRAINTS="-c /output/upper-constraints.txt"
+fi
+
+# If a requirements.txt file exists,
+# install it directly so that people can use git url syntax
+# to do things like pick up patched but unreleased versions
+# of dependencies.
+if [ -f /output/requirements.txt ] ; then
+    pip3 install $CONSTRAINTS --cache-dir=/output/wheels -r /output/requirements.txt
+fi
+
+# Add any requested extras to the list of things to install
+EXTRAS=""
+for extra in $* ; do
+    EXTRAS="${EXTRAS} -r /output/$extra/requirements.txt"
+done
+
+if [ -f /output/packages.txt ] ; then
+  # If a package list was passed to assemble, install that in the final
+  # image.
+  pip3 install $CONSTRAINTS --cache-dir=/output/wheels -r /output/packages.txt $EXTRAS
+else
+  # Install the wheels.  Use --force here because sibling wheels might
+  # be built with the same version number as the latest release, but we
+  # really want the speculatively built wheels installed over any
+  # automatic dependencies.
+  pip3 install $CONSTRAINTS --force --cache-dir=/output/wheels /output/wheels/*.whl $EXTRAS
+fi
+
+# clean up after ourselves
+${PKGMGR} clean all
+rm -rf /var/cache/${PKGMGR}

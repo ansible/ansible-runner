@@ -226,3 +226,31 @@ def test_garbage_private_dir_worker(tmpdir):
     )
     sent = outgoing_buffer.getvalue()
     assert b'"status": "failed"' in sent
+
+
+def test_unparsable_private_dir_worker(tmpdir):
+    worker_dir = str(tmpdir.mkdir('for_worker'))
+    incoming_buffer = io.BytesIO(b'')
+    outgoing_buffer = io.BytesIO()
+
+    # Worker
+    run(
+        streamer='worker',
+        _input=incoming_buffer,
+        _output=outgoing_buffer,
+        private_data_dir=worker_dir,
+    )
+    sent = outgoing_buffer.getvalue()
+    assert b'"status": "error"' in sent
+
+
+def test_unparsable_private_dir_processor(tmpdir):
+    process_dir = str(tmpdir.mkdir('for_process'))
+    incoming_buffer = io.BytesIO(b'')
+
+    processor = run(
+        streamer='process',
+        _input=incoming_buffer,
+        private_data_dir=process_dir,
+    )
+    assert processor.status == 'error'

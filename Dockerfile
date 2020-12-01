@@ -1,20 +1,23 @@
-ARG BASE_IMAGE=docker.io/fedora:32
+ARG BASE_IMAGE=quay.io/centos/centos:8
 
 FROM ${BASE_IMAGE}
 
 # Install system packages for use in all images
 RUN dnf install -y \
+    epel-release \
+    dnf-plugins-core && \
+    dnf config-manager --set-disabled epel && \
+    dnf install -y --enablerepo epel \
+    sshpass && \
+    dnf install -y \
     python3-pip \
     gcc \
     rsync \
     openssh-clients \
-    sshpass \
     glibc-langpack-en \
     git \
     https://github.com/krallin/tini/releases/download/v0.19.0/tini_0.19.0-amd64.rpm && \
     rm -rf /var/cache/dnf
-
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 
 # Install python packages for use in all images
 RUN pip3 install --no-cache-dir bindep

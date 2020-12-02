@@ -43,7 +43,6 @@ DEBUILD_BIN ?= debuild
 DEBUILD_OPTS ?=
 DPUT_BIN ?= dput
 DPUT_OPTS ?=
-DEB_DIST ?= xenial
 
 GPG_KEY_ID ?=
 
@@ -163,7 +162,7 @@ rpm-build: sdist
 deb:
 	docker-compose -f packaging/debian/docker/docker-compose.yml \
 		run --rm \
-		-e OFFICIAL=$(OFFICIAL) -e DEB_DIST=$(DEB_DIST) -e RELEASE=$(RELEASE) \
+		-e OFFICIAL=$(OFFICIAL) -e RELEASE=$(RELEASE) \
 		-e GPG_KEY_ID=$(GPG_KEY_ID) -e GPG_SIGNING_KEY=$(GPG_SIGNING_KEY) \
 		deb-builder "make debian"
 
@@ -193,7 +192,7 @@ deb-build/$(NAME)-$(VERSION): dist/$(NAME)-$(VERSION).tar.gz
 	fi
 	cd deb-build && tar -xf $(DEB_TAR_FILE)
 	cp -a packaging/debian deb-build/$(NAME)-$(VERSION)/
-	sed -ie "s|%VERSION%|$(VERSION)|g;s|%RELEASE%|$(RELEASE)|;s|%DEB_DIST%|$(DEB_DIST)|g;s|%DATE%|$(DEB_DATE)|g" $@/debian/changelog
+	sed -ie "s|%VERSION%|$(VERSION)|g;s|%RELEASE%|$(RELEASE)|g;s|%DATE%|$(DEB_DATE)|g" $@/debian/changelog
 
 print-%:
 	@echo $($*)

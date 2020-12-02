@@ -1,4 +1,4 @@
-ansible-runner (%VERSION%-%RELEASE%) %DEB_DIST%; urgency=low
+ansible-runner (%VERSION%-%RELEASE%) unstable; urgency=low
 
   * %VERSION% release
 

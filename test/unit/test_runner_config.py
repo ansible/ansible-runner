@@ -9,7 +9,7 @@ import six
 from pexpect import TIMEOUT, EOF
 
 import pytest
-from mock import (Mock, patch, PropertyMock)
+from unittest.mock import (Mock, patch, PropertyMock)
 
 from ansible_runner.runner_config import RunnerConfig, ExecutionMode
 from ansible_runner.interface import init_runner

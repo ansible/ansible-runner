@@ -9,7 +9,7 @@ import sys
 try:
     from unittest.mock import MagicMock
 except ImportError:
-    from mock import MagicMock
+    from unittest.mock import MagicMock
 from ansible_runner import Runner
 
 from ansible_runner.exceptions import AnsibleRunnerException

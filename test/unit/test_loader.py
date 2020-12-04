@@ -1,7 +1,7 @@
 from io import BytesIO
 
 from pytest import raises, fixture
-from mock import patch
+from unittest.mock import patch
 from six import string_types
 
 import ansible_runner.loader

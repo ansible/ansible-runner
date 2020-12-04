@@ -416,9 +416,9 @@ class RunnerConfig(object):
         else:
             if self.cli_execenv_cmd:
                 if self.cli_execenv_cmd == 'adhoc':
-                    self.command = ['ansible'] + self.cmdline_args 
+                    self.command = ['ansible'] + self.cmdline_args
                 elif self.cli_execenv_cmd == 'playbook':
-                    self.command = ['ansible-playbook'] + self.cmdline_args 
+                    self.command = ['ansible-playbook'] + self.cmdline_args
                 self.execution_mode = ExecutionMode.CLI_EXECENV
 
 
@@ -625,7 +625,9 @@ class RunnerConfig(object):
     def wrap_args_for_containerization(self, args):
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm', '--tty', '--interactive'])
-        new_args.extend(["--workdir", "/runner/project"])
+        container_workdir = "/runner/project"
+        new_args.extend(["--workdir", container_workdir])
+        self.cwd = container_workdir
 
         def _ensure_path_safe_to_mount(path):
             if path in ('/home', '/usr'):

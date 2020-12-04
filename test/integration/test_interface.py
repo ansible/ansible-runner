@@ -88,7 +88,8 @@ def test_env_accuracy_inside_container(request, printenv_example, container_runt
     )
     assert res.rc == 0, res.stdout.read()
 
-    actual_env = get_env_data(res)['environment']
+    env_data = get_env_data(res)
+    actual_env = env_data['environment']
 
     expected_env = res.config.env.copy()
 
@@ -98,7 +99,7 @@ def test_env_accuracy_inside_container(request, printenv_example, container_runt
         assert key in actual_env
         assert actual_env[key] == value, 'Reported value wrong for {0} env var'.format(key)
 
-    assert '/tmp' == res.config.cwd
+    assert env_data['cwd'] == res.config.cwd
 
 
 def test_multiple_inventories(test_data_dir):

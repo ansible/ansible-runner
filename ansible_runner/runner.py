@@ -140,6 +140,8 @@ class Runner(object):
 
         # Use a copy so as not to cause problems when serializing the job_env.
         if self.config.containerized:
+            # We call the actual docker or podman executable right where we are
+            cwd = os.getcwd()
             # If this is containerized, the shell environment calling podman has little
             # to do with the actual job environment, but still needs PATH, auth, etc.
             pexpect_env = os.environ.copy()
@@ -151,6 +153,7 @@ class Runner(object):
             with open(env_file_host, 'w') as f:
                 f.write('\n'.join(list(self.config.env.keys())))
         else:
+            cwd = self.config.cwd
             pexpect_env = self.config.env
         env = {
             ensure_str(k): ensure_str(v) if k != 'PATH' and isinstance(v, six.text_type) else v
@@ -183,7 +186,7 @@ class Runner(object):
             child = pexpect.spawn(
                 command[0],
                 command[1:],
-                cwd=self.config.cwd,
+                cwd=cwd,
                 env=env,
                 ignore_sighup=True,
                 encoding='utf-8',

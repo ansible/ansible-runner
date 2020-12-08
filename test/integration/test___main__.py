@@ -8,7 +8,7 @@ import tempfile
 import shutil
 
 from pytest import raises
-from mock import patch
+from unittest.mock import patch
 
 from ansible_runner.__main__ import main
 

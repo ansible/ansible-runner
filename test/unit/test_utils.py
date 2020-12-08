@@ -3,7 +3,7 @@ import shutil
 import tempfile
 
 import pytest
-from mock import patch
+from unittest.mock import patch
 
 from ansible_runner.utils import (
     isplaybook,

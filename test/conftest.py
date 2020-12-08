@@ -15,7 +15,7 @@ def is_pre_ansible28():
         if LooseVersion(pkg_resources.get_distribution('ansible').version) < LooseVersion('2.8'):
             return True
     except pkg_resources.DistributionNotFound:
-        # ansible-base (e.g. ansible 2.10 and beyond) is not accessible in this way
+        # ansible-base and ansible-core (e.g. ansible 2.10 and beyond) is not accessible in this way
         pass
 
 

@@ -11,3 +11,8 @@
         - ansible-runner-upload-container-image:
             vars:
               upload_container_image_promote: false
+    periodic:
+      jobs:
+        - ansible-runner-upload-container-image:
+            vars:
+              upload_container_image_promote: false

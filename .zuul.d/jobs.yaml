@@ -17,7 +17,7 @@
     parent: ansible-upload-container-image
     abstract: true
     description: Build ansible-runner container image and upload to quay.io
-    pre-run: playbooks/ansible-runner-build-container-image/pre.yaml
+    pre-run: playbooks/ansible-runner-build-container-image-base/pre.yaml
     required-projects:
       - github.com/ansible/ansible
     timeout: 2700

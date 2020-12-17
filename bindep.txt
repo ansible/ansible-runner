@@ -3,6 +3,7 @@
 
 gcc-c++ [test platform:rpm]
 git
+glibc-langpack-en [platform:rpm]
 openssh-clients
 python3-devel [test !platform:centos-7 platform:rpm]
 python3 [test !platform:centos-7 platform:rpm]

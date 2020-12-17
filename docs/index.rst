@@ -44,7 +44,7 @@ Examples of this could include:
    python_interface
    execution_environments
    container
-   receptor
+   remote_jobs
 
 
 Indices and tables

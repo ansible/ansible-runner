@@ -1,1 +1,0 @@
-git+https://github.com/ansible/ansible.git@devel#egg=ansible-core

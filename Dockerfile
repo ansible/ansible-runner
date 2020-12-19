@@ -1,17 +1,13 @@
+ARG ANSIBLE_CORE_IMAGE=quay.io/pabelanger/ansible-core:latest
+
 FROM quay.io/ansible/python-builder:latest as builder
 # =============================================================================
 
-ARG ANSIBLE_BRANCH=""
 ARG ZUUL_SIBLINGS=""
 COPY . /tmp/src
-RUN if [ "$ANSIBLE_BRANCH" != "" ] ; then \
-      echo "Installing requirements.txt / upper-constraints.txt for Ansible $ANSIBLE_BRANCH" ; \
-      cp /tmp/src/tools/requirements-$ANSIBLE_BRANCH.txt /tmp/src/requirements.txt ; \
-      cp /tmp/src/tools/upper-constraints-$ANSIBLE_BRANCH.txt /tmp/src/upper-constraints.txt ; \
-    fi
 RUN assemble
 
-FROM quay.io/ansible/python-base:latest as base
+FROM $ANSIBLE_CORE_IMAGE
 # =============================================================================
 
 COPY --from=builder /output/ /output

@@ -4,9 +4,6 @@
     parent: ansible-build-container-image
     abstract: true
     description: Build ansible-runner container image
-    pre-run: playbooks/ansible-runner-build-container-image-base/pre.yaml
-    required-projects:
-      - github.com/ansible/ansible
     timeout: 2700
     requires:
       - python-builder-container-image
@@ -17,9 +14,6 @@
     parent: ansible-upload-container-image
     abstract: true
     description: Build ansible-runner container image and upload to quay.io
-    pre-run: playbooks/ansible-runner-build-container-image-base/pre.yaml
-    required-projects:
-      - github.com/ansible/ansible
     timeout: 2700
     requires:
       - python-builder-container-image
@@ -34,8 +28,6 @@
         - context: .
           registry: quay.io
           repository: quay.io/ansible/ansible-runner
-          siblings:
-            - github.com/ansible/ansible
           tags:
             # If zuul.tag is defined: [ '3', '3.19', '3.19.0' ].  Only works for 3-component tags.
             # Otherwise: ['devel']
@@ -52,9 +44,6 @@
     name: ansible-runner-build-container-image-stable-2.9
     parent: ansible-runner-build-container-image-base
     provides: ansible-runner-stable-2.9-container-image
-    required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: stable-2.9
     vars: &ansible_runner_image_vars_stable_2_9
       container_images: &container_images_stable_2_9
         - context: .
@@ -62,8 +51,6 @@
             - ANSIBLE_BRANCH=stable-2.9
           registry: quay.io
           repository: quay.io/ansible/ansible-runner
-          siblings:
-            - github.com/ansible/ansible
           tags: ['stable-2.9-devel']
       docker_images: *container_images_stable_2_9
 
@@ -71,7 +58,4 @@
     name: ansible-runner-upload-container-image-stable-2.9
     parent: ansible-runner-upload-container-image-base
     provides: ansible-runner-stable-2.9-container-image
-    required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: stable-2.9
     vars: *ansible_runner_image_vars_stable_2_9

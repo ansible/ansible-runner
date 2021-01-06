@@ -15,6 +15,7 @@ import pipes
 import uuid
 import codecs
 import zipfile
+from pathlib import Path
 
 try:
     from collections.abc import Iterable, Mapping
@@ -84,8 +85,9 @@ def check_isolation_executable_installed(isolation_executable):
 
 
 def stream_dir(directory, buf):
-    local_buf = BytesIO()
-    with zipfile.ZipFile(local_buf, 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
+    fd, zip_file = tempfile.mkstemp(suffix='.zip')
+
+    with zipfile.ZipFile(zip_file, 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
         if directory:
             for dirpath, dirs, files in os.walk(directory):
                 relpath = os.path.relpath(dirpath, directory)
@@ -95,9 +97,21 @@ def stream_dir(directory, buf):
                     archive.write(os.path.join(dirpath, fname), arcname=os.path.join(relpath, fname))
         archive.close()
 
-    payload = local_buf.getvalue()
-    data = b'\n'.join((json.dumps({'zipfile': len(payload)}).encode('utf-8'), payload))
-    buf.write(data)
+    zip_size = Path(zip_file).stat().st_size
+
+    buf.write(json.dumps({'zipfile': zip_size}).encode('utf-8'))
+    buf.write(b'\n')
+
+    buffer_size = 1024 * 1000  # 1 MB
+
+    with open(zip_file, 'rb') as f:
+        while True:
+            new_bytes = f.read(buffer_size)
+            if not new_bytes:
+                break
+            buf.write(new_bytes)
+
+    os.remove(zip_file)
 
 
 def unstream_dir(data, directory):

@@ -1,5 +1,6 @@
 # Ansible Runner Contributing Guidelines
 
+
 Hi there! We're excited to have you as a contributor.
 
 If you have questions about this document or anything not covered here? Come chat with us `#ansible-awx` on irc.freenode.net

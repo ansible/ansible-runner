@@ -83,9 +83,9 @@ def check_isolation_executable_installed(isolation_executable):
         return False
 
 
-def stream_dir(directory):
-    buf = BytesIO()
-    with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
+def stream_dir(directory, buf):
+    local_buf = BytesIO()
+    with zipfile.ZipFile(local_buf, 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
         if directory:
             for dirpath, dirs, files in os.walk(directory):
                 relpath = os.path.relpath(dirpath, directory)
@@ -95,8 +95,9 @@ def stream_dir(directory):
                     archive.write(os.path.join(dirpath, fname), arcname=os.path.join(relpath, fname))
         archive.close()
 
-    payload = buf.getvalue()
-    return b'\n'.join((json.dumps({'zipfile': len(payload)}).encode('utf-8'), payload))
+    payload = local_buf.getvalue()
+    data = b'\n'.join((json.dumps({'zipfile': len(payload)}).encode('utf-8'), payload))
+    buf.write(data)
 
 
 def unstream_dir(data, directory):

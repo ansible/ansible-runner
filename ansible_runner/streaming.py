@@ -50,7 +50,7 @@ class Transmitter(object):
         self._output.flush()
 
         if not self.only_transmit_kwargs:
-            self._output.write(utils.stream_dir(self.private_data_dir))
+            utils.stream_dir(self.private_data_dir, self._output)
 
         self._output.write(json.dumps({'eof': True}).encode('utf-8'))
         self._output.write(b'\n')
@@ -145,7 +145,7 @@ class Worker(object):
         self._output.flush()
 
     def artifacts_handler(self, artifact_dir):
-        self._output.write(utils.stream_dir(artifact_dir))
+        utils.stream_dir(artifact_dir, self._output)
         self._output.flush()
 
     def finished_callback(self, runner_obj):

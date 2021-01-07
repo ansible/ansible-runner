@@ -2,12 +2,14 @@ import io
 import os
 
 import pytest
+import json
 
 from ansible_runner import run
 from ansible_runner.streaming import Transmitter, Worker, Processor
 
 
-def test_remote_job_interface(tmpdir, test_data_dir):
+@pytest.mark.parametrize("job_type", ['run', 'adhoc'])
+def test_remote_job_interface(tmpdir, test_data_dir, job_type):
     worker_dir = str(tmpdir.mkdir('for_worker'))
     process_dir = str(tmpdir.mkdir('for_process'))
 
@@ -16,14 +18,21 @@ def test_remote_job_interface(tmpdir, test_data_dir):
     outgoing_buffer = io.BytesIO()
 
     # Intended AWX and Tower use case
+    if job_type == 'run':
+        job_kwargs = dict(playbook='debug.yml')
+    else:
+        job_kwargs = dict(
+            module='setup',
+            host_pattern='localhost'
+        )
     transmitter = Transmitter(
         _output=outgoing_buffer,
         private_data_dir=original_dir,
-        playbook='debug.yml'
+        **job_kwargs
     )
 
-    print(transmitter.kwargs)
-    assert transmitter.kwargs.get('playbook', '') == 'debug.yml'
+    for key, value in job_kwargs.items():
+        assert transmitter.kwargs.get(key, '') == value
 
     status, rc = transmitter.run()
     assert rc in (None, 0)
@@ -56,6 +65,20 @@ def test_remote_job_interface(tmpdir, test_data_dir):
 
     assert set(os.listdir(process_dir)) == {'artifacts',}, outgoing_buffer.getvalue()
 
+    events_dir = os.path.join(process_dir, 'artifacts', 'job_events')
+    events = []
+    for file in os.listdir(events_dir):
+        with open(os.path.join(events_dir, file), 'r') as f:
+            if file in ('status', 'rc'):
+                continue
+            content = f.read()
+            events.append(json.loads(content))
+    stdout = '\n'.join(event['stdout'] for event in events)
+
+    if 'job_type' == 'run':
+        assert 'Hello world!' in stdout
+    else:
+        assert '"ansible_facts"' in stdout
 
 def test_missing_private_dir_transmit(tmpdir):
     outgoing_buffer = io.BytesIO()

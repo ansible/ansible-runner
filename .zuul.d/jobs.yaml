@@ -4,38 +4,25 @@
     parent: ansible-build-container-image
     abstract: true
     description: Build ansible-runner container image
-    pre-run: playbooks/ansible-runner-build-container-image-base/pre.yaml
-    required-projects:
-      - github.com/ansible/ansible
     timeout: 2700
-    requires:
-      - python-builder-container-image
-      - python-base-container-image
 
 - job:
     name: ansible-runner-upload-container-image-base
     parent: ansible-upload-container-image
     abstract: true
     description: Build ansible-runner container image and upload to quay.io
-    pre-run: playbooks/ansible-runner-build-container-image-base/pre.yaml
-    required-projects:
-      - github.com/ansible/ansible
     timeout: 2700
-    requires:
-      - python-builder-container-image
-      - python-base-container-image
 
 - job:
     name: ansible-runner-build-container-image
     parent: ansible-runner-build-container-image-base
     provides: ansible-runner-container-image
+    requires: ansible-core-container-image
     vars: &ansible_runner_image_vars
       container_images: &container_images
         - context: .
           registry: quay.io
           repository: quay.io/ansible/ansible-runner
-          siblings:
-            - github.com/ansible/ansible
           tags:
             # If zuul.tag is defined: [ '3', '3.19', '3.19.0' ].  Only works for 3-component tags.
             # Otherwise: ['devel']
@@ -46,12 +33,16 @@
     name: ansible-runner-upload-container-image
     parent: ansible-runner-upload-container-image-base
     provides: ansible-runner-container-image
+    requires: ansible-core-container-image
     vars: *ansible_runner_image_vars
 
 - job:
     name: ansible-runner-build-container-image-stable-2.9
     parent: ansible-runner-build-container-image-base
     provides: ansible-runner-stable-2.9-container-image
+    requires:
+      - python-base-container-image
+      - python-builder-container-image
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.9
@@ -60,6 +51,8 @@
         - context: .
           build_args:
             - ANSIBLE_BRANCH=stable-2.9
+            # NOTE(pabelanger): There is no ansible-core 2.9, so we have to build ansible 2.9 ourself.
+            - ANSIBLE_CORE_IMAGE=quay.io/ansible/python-base:latest
           registry: quay.io
           repository: quay.io/ansible/ansible-runner
           siblings:
@@ -71,6 +64,9 @@
     name: ansible-runner-upload-container-image-stable-2.9
     parent: ansible-runner-upload-container-image-base
     provides: ansible-runner-stable-2.9-container-image
+    requires:
+      - python-base-container-image
+      - python-builder-container-image
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.9

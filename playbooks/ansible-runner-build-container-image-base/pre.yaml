@@ -1,9 +1,0 @@
----
-- hosts: all
-  tasks:
-    # NOTE(pabelanger): Remove option to download ansible-core from github
-    # directly. We've already cloned the contents locally.
-    - name: Update requirements.txt file
-      args:
-        chdir: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}"
-      shell: sed -e 's|.*egg=||g' -i requirements.txt

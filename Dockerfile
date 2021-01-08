@@ -4,14 +4,16 @@ FROM quay.io/ansible/python-builder:latest as builder
 ARG ANSIBLE_BRANCH=""
 ARG ZUUL_SIBLINGS=""
 COPY . /tmp/src
-RUN if [ "$ANSIBLE_BRANCH" != "" ] ; then \
+RUN if [ "$ANSIBLE_BRANCH" == "stable-2.9" ] ; then \
       echo "Installing requirements.txt / upper-constraints.txt for Ansible $ANSIBLE_BRANCH" ; \
+      cp /tmp/src/tools/bindep-$ANSIBLE_BRANCH.txt /tmp/src/bindep.txt ; \
       cp /tmp/src/tools/requirements-$ANSIBLE_BRANCH.txt /tmp/src/requirements.txt ; \
       cp /tmp/src/tools/upper-constraints-$ANSIBLE_BRANCH.txt /tmp/src/upper-constraints.txt ; \
     fi
 RUN assemble
 
-FROM quay.io/ansible/python-base:latest as base
+ARG ANSIBLE_CORE_IMAGE=quay.io/ansible/ansible-core:latest
+FROM $ANSIBLE_CORE_IMAGE as ansible-core
 # =============================================================================
 
 COPY --from=builder /output/ /output

@@ -75,10 +75,11 @@ def test_remote_job_interface(tmpdir, test_data_dir, job_type):
             events.append(json.loads(content))
     stdout = '\n'.join(event['stdout'] for event in events)
 
-    if 'job_type' == 'run':
+    if job_type == 'run':
         assert 'Hello world!' in stdout
     else:
         assert '"ansible_facts"' in stdout
+
 
 def test_missing_private_dir_transmit(tmpdir):
     outgoing_buffer = io.BytesIO()

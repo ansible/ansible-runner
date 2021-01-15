@@ -35,6 +35,7 @@ class Transmitter(object):
             _output = sys.stdout.buffer
         self._output = _output
         self.private_data_dir = os.path.abspath(kwargs.pop('private_data_dir'))
+        self.only_transmit_kwargs = kwargs.pop('only_transmit_kwargs', False)
         self.kwargs = kwargs
 
         self.status = "unstarted"
@@ -47,7 +48,9 @@ class Transmitter(object):
         self._output.write(b'\n')
         self._output.flush()
 
-        self._output.write(utils.stream_dir(self.private_data_dir))
+        if not self.only_transmit_kwargs:
+            self._output.write(utils.stream_dir(self.private_data_dir))
+
         self._output.write(json.dumps({'eof': True}).encode('utf-8'))
         self._output.write(b'\n')
         self._output.flush()

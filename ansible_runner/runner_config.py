@@ -866,8 +866,13 @@ class RunnerConfig(object):
             ssh_add_command = args2cmdline('ssh-add', ssh_key_path)
             if silence_ssh_add:
                 ssh_add_command = ' '.join([ssh_add_command, '2>/dev/null'])
-            cmd = ' && '.join([ssh_add_command,
-                               args2cmdline('rm', '-f', ssh_key_path),
+            ssh_key_cleanup_command = 'rm -f {}'.format(ssh_key_path)
+            # The trap ensures the fifo is cleaned up even if the call to ssh-add fails.
+            # This prevents getting into certain scenarios where subsequent reads will
+            # hang forever.
+            cmd = ' && '.join([args2cmdline('trap', ssh_key_cleanup_command, 'EXIT'),
+                               ssh_add_command,
+                               ssh_key_cleanup_command,
                                args2cmdline(*args)])
             args = ['ssh-agent']
             if ssh_auth_sock:

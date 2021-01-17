@@ -407,19 +407,31 @@ def test_prepare_with_ssh_key(open_fifo_write_mock):
 def test_wrap_args_with_ssh_agent_defaults():
     rc = RunnerConfig('/')
     res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], '/tmp/sshkey')
-    assert res == ['ssh-agent', 'sh', '-c', 'ssh-add /tmp/sshkey && rm -f /tmp/sshkey && ansible-playbook main.yaml']
+    assert res == [
+        'ssh-agent',
+        'sh', '-c',
+        "trap 'rm -f /tmp/sshkey' EXIT && ssh-add /tmp/sshkey && rm -f /tmp/sshkey && ansible-playbook main.yaml"
+    ]
 
 
 def test_wrap_args_with_ssh_agent_with_auth():
     rc = RunnerConfig('/')
     res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], '/tmp/sshkey', '/tmp/sshauth')
-    assert res == ['ssh-agent', '-a', '/tmp/sshauth', 'sh', '-c', 'ssh-add /tmp/sshkey && rm -f /tmp/sshkey && ansible-playbook main.yaml']
+    assert res == [
+        'ssh-agent', '-a', '/tmp/sshauth',
+        'sh', '-c',
+        "trap 'rm -f /tmp/sshkey' EXIT && ssh-add /tmp/sshkey && rm -f /tmp/sshkey && ansible-playbook main.yaml"
+    ]
 
 
 def test_wrap_args_with_ssh_agent_silent():
     rc = RunnerConfig('/')
     res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], '/tmp/sshkey', silence_ssh_add=True)
-    assert res == ['ssh-agent', 'sh', '-c', 'ssh-add /tmp/sshkey 2>/dev/null && rm -f /tmp/sshkey && ansible-playbook main.yaml']
+    assert res == [
+        'ssh-agent',
+        'sh', '-c',
+        "trap 'rm -f /tmp/sshkey' EXIT && ssh-add /tmp/sshkey 2>/dev/null && rm -f /tmp/sshkey && ansible-playbook main.yaml"
+    ]
 
 
 @patch('ansible_runner.runner_config.RunnerConfig.prepare')

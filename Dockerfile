@@ -1,8 +1,10 @@
+ARG ANSIBLE_BRANCH=""
+ARG ZUUL_SIBLINGS=""
+ARG ANSIBLE_CORE_IMAGE=quay.io/ansible/ansible-core:latest
+
 FROM quay.io/ansible/python-builder:latest as builder
 # =============================================================================
 
-ARG ANSIBLE_BRANCH=""
-ARG ZUUL_SIBLINGS=""
 COPY . /tmp/src
 RUN if [ "$ANSIBLE_BRANCH" == "stable-2.9" ] ; then \
       echo "Installing requirements.txt / upper-constraints.txt for Ansible $ANSIBLE_BRANCH" ; \
@@ -12,7 +14,6 @@ RUN if [ "$ANSIBLE_BRANCH" == "stable-2.9" ] ; then \
     fi
 RUN assemble
 
-ARG ANSIBLE_CORE_IMAGE=quay.io/ansible/ansible-core:latest
 FROM $ANSIBLE_CORE_IMAGE as ansible-core
 # =============================================================================
 

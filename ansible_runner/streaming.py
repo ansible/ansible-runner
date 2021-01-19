@@ -80,9 +80,10 @@ class Worker(object):
 
     def update_paths(self, kwargs):
         if kwargs.get('envvars'):
-            roles_path = kwargs['envvars']['ANSIBLE_ROLES_PATH']
-            roles_dir = os.path.join(self.private_data_dir, 'roles')
-            kwargs['envvars']['ANSIBLE_ROLES_PATH'] = os.path.join(roles_dir, roles_path)
+            if 'ANSIBLE_ROLES_PATH' in kwargs['envvars']:
+                roles_path = kwargs['envvars']['ANSIBLE_ROLES_PATH']
+                roles_dir = os.path.join(self.private_data_dir, 'roles')
+                kwargs['envvars']['ANSIBLE_ROLES_PATH'] = os.path.join(roles_dir, roles_path)
         if kwargs.get('inventory'):
             kwargs['inventory'] = os.path.join(self.private_data_dir, kwargs['inventory'])
 

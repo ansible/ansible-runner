@@ -158,7 +158,7 @@ class Runner(object):
             env_file_host = os.path.join(env_dir, 'env.list')
             with open(env_file_host, 'w') as f:
                 f.write('\n'.join(
-                     [f"{k}={v}" for k, v in self.config.env.items()]
+                    [f"{k}={v}" for k, v in self.config.env.items()]
                 ))
 
             # This here is the magic sauce. The user inside of the container is in the root

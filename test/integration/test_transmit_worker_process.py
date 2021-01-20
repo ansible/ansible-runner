@@ -3,6 +3,7 @@ import os
 import socket
 import concurrent
 import time
+import traceback
 
 import pytest
 import json
@@ -114,13 +115,18 @@ def test_remote_job_by_sockets(tmpdir, test_data_dir, job_type):
 
 
     def worker_method(transmit_sockfile_read, results_sockfile_write):
-        ansible_runner.interface.run(
-            streamer='worker',
-            _input=transmit_sockfile_read,
-            _output=results_sockfile_write,
-            private_data_dir=worker_dir,
-            **job_kwargs
-        )
+        # ThreadPoolExecutor does not handle tracebacks nicely
+        try:
+            ansible_runner.interface.run(
+                streamer='worker',
+                _input=transmit_sockfile_read,
+                _output=results_sockfile_write,
+                private_data_dir=worker_dir,
+                **job_kwargs
+            )
+        except Exception:
+            traceback.print_exc()
+            raise
 
 
     def process_method(results_sockfile_read):
@@ -135,20 +141,25 @@ def test_remote_job_by_sockets(tmpdir, test_data_dir, job_type):
     transmit_socket_write, transmit_socket_read = socket.socketpair()
     results_socket_write, results_socket_read = socket.socketpair()
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         transmit_future = executor.submit(transmit_method, transmit_socket_write.makefile('wb'))
         # we will not make assertions on, or manage, worker directly
-        executor.submit(worker_method, transmit_socket_read.makefile('rb'), results_socket_write.makefile('wb'))
+        worker_future = executor.submit(worker_method, transmit_socket_read.makefile('rb'), results_socket_write.makefile('wb'))
 
         while True:
             # In AWX this loop is where the cancel callback is checked, but here we just check transmit
             transmit_finished = transmit_future.done()
             if transmit_finished:
-                # transmit_result = transmit_future.result()
                 break
             time.sleep(0.05)
 
         process_future = executor.submit(process_method, results_socket_read.makefile('rb'))
+
+        while True:
+            worker_finished = worker_future.done()
+            if worker_finished:
+                break
+            time.sleep(0.05)
 
         while True:
             # this is the second cancel loop, which is still pretty similar to the first

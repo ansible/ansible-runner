@@ -15,12 +15,12 @@ cat << EOF > /etc/passwd
 root:x:0:0:root:/root:/bin/bash
 runner:x:`id -u`:`id -g`:,,,:/home/runner:/bin/bash
 EOF
-    fi
 
 cat <<EOF > /etc/group
 root:x:0:runner
 runner:x:`id -g`:
 EOF
+    fi
 
 fi
 

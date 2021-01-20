@@ -186,7 +186,9 @@ class RunnerConfig(object):
         if self.module and self.playbook:
             raise ConfigurationError("Only one of playbook and module options are allowed")
         if not os.path.exists(self.artifact_dir):
-            os.makedirs(self.artifact_dir, mode=0o700)
+            original_umask = os.umask(0)
+            os.makedirs(self.artifact_dir, mode=0o750)
+            os.umask(original_umask)
         if self.sandboxed and self.directory_isolation_path is not None:
             self.directory_isolation_path = tempfile.mkdtemp(prefix='runner_di_', dir=self.directory_isolation_path)
             if os.path.exists(self.project_dir):
@@ -273,7 +275,11 @@ class RunnerConfig(object):
 
         if self.fact_cache_type == 'jsonfile':
             self.env['ANSIBLE_CACHE_PLUGIN'] = 'jsonfile'
-            if not self.containerized:
+            if self.containerized:
+                original_umask = os.umask(0)
+                os.makedirs(self.fact_cache, mode=0o770)
+                os.umask(original_umask)
+            else:
                 self.env['ANSIBLE_CACHE_PLUGIN_CONNECTION'] = self.fact_cache
 
         self.env["RUNNER_OMIT_EVENTS"] = str(self.omit_event_data)
@@ -798,7 +804,6 @@ class RunnerConfig(object):
 
             if 'podman' in self.process_isolation_executable:
                 # container namespace stuff
-                new_args.extend(["--group-add=root"])
                 new_args.extend(["--userns=keep-id"])
                 new_args.extend(["--ipc=host"])
 

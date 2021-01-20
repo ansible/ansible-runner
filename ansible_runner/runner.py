@@ -157,6 +157,22 @@ class Runner(object):
             env_file_host = os.path.join(self.config.artifact_dir, 'env.list')
             with open(env_file_host, 'w') as f:
                 f.write('\n'.join(list(self.config.env.keys())))
+
+            if 'podman' in self.config.process_isolation_executable:
+                for root, dirs, files in os.walk(self.config.artifact_dir):
+                    dir_perms = (stat.S_IRUSR |
+                                 stat.S_IWUSR |
+                                 stat.S_IXUSR |
+                                 stat.S_IRGRP |
+                                 stat.S_IWGRP |
+                                 stat.S_IXGRP |
+                                 stat.S_ISGID)
+
+                    os.chmod(root, dir_perms)
+
+                    for d in dirs:
+                        os.chmod(os.path.join(root, d), dir_perms)
+
         else:
             cwd = self.config.cwd
             pexpect_env = self.config.env

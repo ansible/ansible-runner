@@ -69,7 +69,12 @@ class IsolatedFileWrite:
         dropoff_location = os.path.join(self.private_data_dir, 'job_events', filename)
         write_location = '.'.join([dropoff_location, 'tmp'])
         partial_data = json.dumps(value, cls=AnsibleJSONEncoderLocal)
-        with os.fdopen(os.open(write_location, os.O_WRONLY | os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR), 'w') as f:
+        perms = (stat.S_IRUSR |
+                 stat.S_IWUSR |
+                 stat.S_IRGRP |
+                 stat.S_IWGRP)
+
+        with os.fdopen(os.open(write_location, os.O_WRONLY | os.O_CREAT, perms), 'w') as f:
             f.write(partial_data)
         os.rename(write_location, dropoff_location)
 

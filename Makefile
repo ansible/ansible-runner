@@ -101,11 +101,8 @@ test:
 docs:
 	cd docs && make html
 
-image: sdist
-	$(CONTAINER_ENGINE) pull $(BASE_IMAGE)
+image:
 	$(CONTAINER_ENGINE) build --rm=true \
-		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
-		--build-arg RUNNER_VERSION=$(VERSION) \
 		--build-arg ANSIBLE_BRANCH=$(ANSIBLE_BRANCH) \
 		-t $(IMAGE_NAME) -f Dockerfile .
 	$(CONTAINER_ENGINE) tag $(IMAGE_NAME) $(IMAGE_NAME_STRIPPED):$(GIT_BRANCH)

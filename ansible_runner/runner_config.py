@@ -837,7 +837,7 @@ class RunnerConfig(object):
 
         # Reference the file with list of keys to pass into container
         # this file will be written in ansible_runner.runner
-        env_file_host = os.path.join(self.artifact_dir, 'env.list')
+        env_file_host = os.path.join(self.private_data_dir, 'env', 'env.list')
         new_args.extend(['--env-file', env_file_host])
 
         if 'podman' in self.process_isolation_executable:

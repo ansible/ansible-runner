@@ -154,9 +154,11 @@ class Runner(object):
             pexpect_env.update(self.config.env)
             # Write the keys to pass into container to expected file in artifacts dir
             # option expecting should have already been written in ansible_runner.runner_config
-            env_file_host = os.path.join(self.config.artifact_dir, 'env.list')
+            env_file_host = os.path.join(self.config.private_data_dir, 'env', 'env.list')
             with open(env_file_host, 'w') as f:
-                f.write('\n'.join(list(self.config.env.keys())))
+                f.write('\n'.join(
+                     [f"{k}={v}" for k, v in self.config.env.items()]
+                ))
 
             # This here is the magic sauce. The user inside of the container is in the root
             # group, which is mapped to the host user's gid. By setting setgid on the artifacts

@@ -158,6 +158,12 @@ class Runner(object):
             with open(env_file_host, 'w') as f:
                 f.write('\n'.join(list(self.config.env.keys())))
 
+            # This here is the magic sauce. The user inside of the container is in the root
+            # group, which is mapped to the host user's gid. By setting setgid on the artifacts
+            # dir + any subdirectories, any files created inside them will belong to the
+            # (in-container) root / host user's group, rather than the container user's gid.
+            # This allows runner's event_handler function to interact with these files outside
+            # the container.
             if 'podman' in self.config.process_isolation_executable:
                 for root, dirs, files in os.walk(self.config.artifact_dir):
                     dir_perms = (stat.S_IRUSR |

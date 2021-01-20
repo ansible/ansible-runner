@@ -25,8 +25,7 @@ RUN /output/install-from-bindep \
 # Prepare the /runner folder, seed the folder with demo data
 ADD demo /runner
 
-RUN groupadd -g 555 runner && useradd -u 555 -g 555 runner && \
-    usermod -aG root runner
+RUN useradd runner && usermod -aG root runner
 
 # In OpenShift, container will run as a random uid number and gid 0. Make sure things
 # are writeable by the root group.

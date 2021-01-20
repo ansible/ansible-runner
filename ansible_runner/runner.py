@@ -152,7 +152,10 @@ class Runner(object):
             pexpect_env = os.environ.copy()
             # Write the keys to pass into container to expected file in artifacts dir
             # option expecting should have already been written in ansible_runner.runner_config
-            env_file_host = os.path.join(self.config.private_data_dir, 'env', 'env.list')
+            env_dir = os.path.join(self.config.private_data_dir, 'env')
+            if not os.path.exists(env_dir):
+                os.mkdir(env_dir, 0o700)
+            env_file_host = os.path.join(env_dir, 'env.list')
             with open(env_file_host, 'w') as f:
                 f.write('\n'.join(
                      [f"{k}={v}" for k, v in self.config.env.items()]

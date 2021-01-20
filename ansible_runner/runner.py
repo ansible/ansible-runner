@@ -168,17 +168,18 @@ class Runner(object):
             # This allows runner's event_handler function to interact with these files outside
             # the container.
             if 'podman' in self.config.process_isolation_executable:
-                for root, dirs, files in os.walk(self.config.artifact_dir):
-                    dir_perms = (stat.S_IRUSR |
-                                 stat.S_IWUSR |
-                                 stat.S_IXUSR |
-                                 stat.S_IRGRP |
-                                 stat.S_IWGRP |
-                                 stat.S_IXGRP |
-                                 stat.S_ISGID)
+                dir_perms = (stat.S_IRUSR |
+                             stat.S_IWUSR |
+                             stat.S_IXUSR |
+                             stat.S_IRGRP |
+                             stat.S_IWGRP |
+                             stat.S_IXGRP |
+                             stat.S_ISGID)
 
-                    os.chmod(root, dir_perms)
+                artifact_dir = os.path.join(self.config.artifact_dir)
+                os.chmod(artifact_dir, dir_perms)
 
+                for root, dirs, _ in os.walk(artifact_dir):
                     for d in dirs:
                         os.chmod(os.path.join(root, d), dir_perms)
 

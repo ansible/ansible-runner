@@ -5,6 +5,8 @@
     abstract: true
     description: Build ansible-runner container image
     timeout: 2700
+    vars:
+      zuul_work_dir: "{{ zuul.projects['github.com/ansible/ansible-runner'].src_dir }}"
 
 - job:
     name: ansible-runner-upload-container-image-base
@@ -12,6 +14,8 @@
     abstract: true
     description: Build ansible-runner container image and upload to quay.io
     timeout: 2700
+    vars:
+      zuul_work_dir: "{{ zuul.projects['github.com/ansible/ansible-runner'].src_dir }}"
 
 - job:
     name: ansible-runner-build-container-image

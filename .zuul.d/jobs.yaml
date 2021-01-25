@@ -4,6 +4,8 @@
     parent: ansible-build-container-image
     abstract: true
     description: Build ansible-runner container image
+    required-projects:
+      - name: github.com/ansible/ansible-runner
     timeout: 2700
     vars:
       zuul_work_dir: "{{ zuul.projects['github.com/ansible/ansible-runner'].src_dir }}"
@@ -13,6 +15,8 @@
     parent: ansible-upload-container-image
     abstract: true
     description: Build ansible-runner container image and upload to quay.io
+    required-projects:
+      - name: github.com/ansible/ansible-runner
     timeout: 2700
     vars:
       zuul_work_dir: "{{ zuul.projects['github.com/ansible/ansible-runner'].src_dir }}"

@@ -43,7 +43,9 @@ def init_runner(**kwargs):
 
     See parameters given to :py:func:`ansible_runner.interface.run`
     '''
-    if not kwargs.get('cli_execenv_cmd'):
+    # If running via the transmit-worker-process method, we must only extract things as read-only
+    # inside of one of these commands. That could be either transmit or worker.
+    if not kwargs.get('cli_execenv_cmd') and (kwargs.get('streamer') not in ('worker', 'process')):
         dump_artifacts(kwargs)
 
     if kwargs.get('streamer'):

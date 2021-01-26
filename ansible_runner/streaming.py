@@ -5,6 +5,7 @@ import stat
 import sys
 import tempfile
 import uuid
+import traceback
 try:
     from collections.abc import Mapping
 except ImportError:
@@ -80,9 +81,10 @@ class Worker(object):
 
     def update_paths(self, kwargs):
         if kwargs.get('envvars'):
-            roles_path = kwargs['envvars']['ANSIBLE_ROLES_PATH']
-            roles_dir = os.path.join(self.private_data_dir, 'roles')
-            kwargs['envvars']['ANSIBLE_ROLES_PATH'] = os.path.join(roles_dir, roles_path)
+            if 'ANSIBLE_ROLES_PATH' in kwargs['envvars']:
+                roles_path = kwargs['envvars']['ANSIBLE_ROLES_PATH']
+                roles_dir = os.path.join(self.private_data_dir, 'roles')
+                kwargs['envvars']['ANSIBLE_ROLES_PATH'] = os.path.join(roles_dir, roles_path)
         if kwargs.get('inventory'):
             kwargs['inventory'] = os.path.join(self.private_data_dir, kwargs['inventory'])
 
@@ -90,15 +92,28 @@ class Worker(object):
 
     def run(self):
         while True:
-            line = self._input.readline()
-            data = json.loads(line)
+            try:
+                line = self._input.readline()
+                data = json.loads(line)
+            except (json.decoder.JSONDecodeError, IOError):
+                self.status_handler({'status': 'error', 'job_explanation': 'Failed to JSON parse a line from transmit stream.'}, None)
+                self.finished_callback(None)  # send eof line
+                return self.status, self.rc
 
             if 'kwargs' in data:
                 self.job_kwargs = self.update_paths(data['kwargs'])
             elif 'zipfile' in data:
                 zip_data = self._input.read(data['zipfile'])
-                if not utils.unstream_dir(zip_data, self.private_data_dir):
-                    break
+                try:
+                    utils.unstream_dir(zip_data, self.private_data_dir)
+                except Exception:
+                    self.status_handler({
+                        'status': 'error',
+                        'job_explanation': 'Failed to extract private data directory on worker.',
+                        'result_traceback': traceback.format_exc()
+                    }, None)
+                    self.finished_callback(None)  # send eof line
+                    return self.status, self.rc
             elif 'eof' in data:
                 break
 
@@ -209,7 +224,10 @@ class Processor(object):
 
     def artifacts_callback(self, artifacts_data):
         zip_data = self._input.read(artifacts_data['zipfile'])
-        if not utils.unstream_dir(zip_data, self.artifact_dir):
+
+        try:
+            utils.unstream_dir(zip_data, self.artifact_dir)
+        except Exception:
             return  # FIXME?
 
         if self.artifacts_handler is not None:
@@ -221,8 +239,12 @@ class Processor(object):
             os.makedirs(job_events_path, 0o700, exist_ok=True)
 
         while True:
-            line = self._input.readline()
-            data = json.loads(line)
+            try:
+                line = self._input.readline()
+                data = json.loads(line)
+            except (json.decoder.JSONDecodeError, IOError):
+                self.status_callback({'status': 'error', 'job_explanation': 'Failed to JSON parse a line from worker stream.'})
+                break
 
             if 'status' in data:
                 self.status_callback(data)

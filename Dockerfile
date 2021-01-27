@@ -6,7 +6,7 @@ FROM quay.io/ansible/python-builder:latest as builder
 ARG ANSIBLE_BRANCH=""
 ARG ZUUL_SIBLINGS=""
 COPY . /tmp/src
-RUN if [ "$ANSIBLE_BRANCH" == "stable-2.9" ] ; then \
+RUN if [ "$ANSIBLE_BRANCH" != "" ] ; then \
       echo "Installing requirements.txt / upper-constraints.txt for Ansible $ANSIBLE_BRANCH" ; \
       cp /tmp/src/tools/bindep-$ANSIBLE_BRANCH.txt /tmp/src/bindep.txt ; \
       cp /tmp/src/tools/requirements-$ANSIBLE_BRANCH.txt /tmp/src/requirements.txt ; \

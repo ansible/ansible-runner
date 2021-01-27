@@ -45,6 +45,42 @@
     vars: *ansible_runner_image_vars
 
 - job:
+    name: ansible-runner-build-container-image-stable-2.10
+    parent: ansible-runner-build-container-image-base
+    provides: ansible-runner-stable-2.10-container-image
+    requires:
+      - python-base-container-image
+      - python-builder-container-image
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.10
+    vars: &ansible_runner_image_vars_stable_2_10
+      container_images: &container_images_stable_2_10
+        - context: .
+          build_args:
+            - ANSIBLE_BRANCH=stable-2.10
+            # NOTE(pabelanger): There is no ansible-core 2.10, so we have to build ansible-base 2.10 ourself.
+            - ANSIBLE_CORE_IMAGE=quay.io/ansible/python-base:latest
+          registry: quay.io
+          repository: quay.io/ansible/ansible-runner
+          siblings:
+            - github.com/ansible/ansible
+          tags: ['stable-2.10-devel']
+      docker_images: *container_images_stable_2_10
+
+- job:
+    name: ansible-runner-upload-container-image-stable-2.10
+    parent: ansible-runner-upload-container-image-base
+    provides: ansible-runner-stable-2.10-container-image
+    requires:
+      - python-base-container-image
+      - python-builder-container-image
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.10
+    vars: *ansible_runner_image_vars_stable_2_10
+
+- job:
     name: ansible-runner-build-container-image-stable-2.9
     parent: ansible-runner-build-container-image-base
     provides: ansible-runner-stable-2.9-container-image

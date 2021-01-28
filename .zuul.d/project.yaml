@@ -4,10 +4,12 @@
       jobs:
         - ansible-runner-build-container-image
         - ansible-runner-build-container-image-stable-2.9
+        - ansible-runner-build-container-image-stable-2.10
     gate:
       jobs:
         - ansible-runner-build-container-image
         - ansible-runner-build-container-image-stable-2.9
+        - ansible-runner-build-container-image-stable-2.10
     post:
       jobs:
         - ansible-runner-upload-container-image:
@@ -16,11 +18,17 @@
         - ansible-runner-upload-container-image-stable-2.9:
             vars:
               upload_container_image_promote: false
+        - ansible-runner-upload-container-image-stable-2.10:
+            vars:
+              upload_container_image_promote: false
     periodic:
       jobs:
         - ansible-runner-upload-container-image:
             vars:
               upload_container_image_promote: false
         - ansible-runner-upload-container-image-stable-2.9:
+            vars:
+              upload_container_image_promote: false
+        - ansible-runner-upload-container-image-stable-2.10:
             vars:
               upload_container_image_promote: false

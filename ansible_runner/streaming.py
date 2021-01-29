@@ -225,10 +225,7 @@ class Processor(object):
     def artifacts_callback(self, artifacts_data):
         zip_data = self._input.read(artifacts_data['zipfile'])
 
-        try:
-            utils.unstream_dir(zip_data, self.artifact_dir)
-        except Exception:
-            return  # FIXME?
+        utils.unstream_dir(zip_data, self.artifact_dir)
 
         if self.artifacts_handler is not None:
             self.artifacts_handler(self.artifact_dir)

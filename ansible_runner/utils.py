@@ -95,12 +95,13 @@ def stream_dir(directory):
                     archive.write(os.path.join(dirpath, fname), arcname=os.path.join(relpath, fname))
         archive.close()
 
-    payload = buf.getvalue()
+    payload = base64.b85encode(buf.getvalue())
     return b'\n'.join((json.dumps({'zipfile': len(payload)}).encode('utf-8'), payload))
 
 
 def unstream_dir(data, directory):
     # NOTE: caller needs to process exceptions
+    data = base64.b85decode(data)
     buf = BytesIO(data)
     with zipfile.ZipFile(buf, 'r') as archive:
         # Fancy extraction in order to preserve permissions

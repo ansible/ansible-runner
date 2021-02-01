@@ -1,6 +1,7 @@
 ARG ANSIBLE_CORE_IMAGE=quay.io/ansible/ansible-core:latest
+ARG PYTHON_BUILDER_IMAGE=quay.io/ansible/python-builder:latest
 
-FROM quay.io/ansible/python-builder:latest as builder
+FROM $PYTHON_BUILDER_IMAGE as builder
 # =============================================================================
 
 ARG ANSIBLE_BRANCH=""

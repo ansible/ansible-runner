@@ -195,6 +195,7 @@ class Runner(object):
                 env=env,
                 ignore_sighup=True,
                 encoding='utf-8',
+                codec_errors='replace',
                 echo=False,
                 use_poll=self.config.pexpect_use_poll,
             )

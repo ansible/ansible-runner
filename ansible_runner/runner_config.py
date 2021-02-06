@@ -822,7 +822,9 @@ class RunnerConfig(object):
         else:
             subdir_path = os.path.join(self.private_data_dir, 'artifacts')
             if not os.path.exists(subdir_path):
-                os.mkdir(subdir_path, 0o700)
+                original_umask = os.umask(0)
+                os.mkdir(subdir_path, 0o770)
+                os.umask(original_umask)
 
             # Mount the entire private_data_dir
             # custom show paths inside private_data_dir do not make sense
@@ -843,6 +845,9 @@ class RunnerConfig(object):
         if 'podman' in self.process_isolation_executable:
             # docker doesnt support this option
             new_args.extend(['--quiet'])
+
+            # Podman < 2.2 does not respect extra groups added in the Dockerfile
+            new_args.extend(['--group-add=root'])
 
         if 'docker' in self.process_isolation_executable:
             new_args.extend([f'--user={os.getuid()}'])

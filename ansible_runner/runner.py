@@ -103,7 +103,9 @@ class Runner(object):
         command_filename = os.path.join(self.config.artifact_dir, 'command')
 
         try:
-            os.makedirs(self.config.artifact_dir, mode=0o700)
+            original_umask = os.umask(0)
+            os.makedirs(self.config.artifact_dir, mode=0o770)
+            os.umask(original_umask)
         except OSError as exc:
             if exc.errno == errno.EEXIST and os.path.isdir(self.config.artifact_dir):
                 pass
@@ -113,7 +115,9 @@ class Runner(object):
 
         job_events_path = os.path.join(self.config.artifact_dir, 'job_events')
         if not os.path.exists(job_events_path):
-            os.mkdir(job_events_path, 0o700)
+            original_umask = os.umask(0)
+            os.mkdir(job_events_path, 0o770)
+            os.umask(original_umask)
 
         command = self.config.command
         with codecs.open(command_filename, 'w', encoding='utf-8') as f:

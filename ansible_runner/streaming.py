@@ -233,7 +233,9 @@ class Processor(object):
     def run(self):
         job_events_path = os.path.join(self.artifact_dir, 'job_events')
         if not os.path.exists(job_events_path):
-            os.makedirs(job_events_path, 0o700, exist_ok=True)
+            original_umask = os.umask(0)
+            os.makedirs(job_events_path, 0o770, exist_ok=True)
+            os.umask(original_umask)
 
         while True:
             try:

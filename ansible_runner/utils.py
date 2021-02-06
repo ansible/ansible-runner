@@ -132,7 +132,9 @@ def dump_artifact(obj, path, filename=None):
     p_sha1 = None
 
     if not os.path.exists(path):
-        os.makedirs(path, mode=0o700)
+        original_umask = os.umask(0)
+        os.makedirs(path, mode=0o770)
+        os.umask(original_umask)
     else:
         p_sha1 = hashlib.sha1()
         p_sha1.update(obj.encode(encoding='UTF-8'))
@@ -150,12 +152,12 @@ def dump_artifact(obj, path, filename=None):
 
     if not os.path.exists(fn) or p_sha1.hexdigest() != c_sha1.hexdigest():
         lock_fp = os.path.join(path, '.artifact_write_lock')
-        lock_fd = os.open(lock_fp, os.O_RDWR | os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR)
+        lock_fd = os.open(lock_fp, os.O_RDWR | os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP)
         fcntl.lockf(lock_fd, fcntl.LOCK_EX)
 
         try:
             with open(fn, 'w') as f:
-                os.chmod(fn, stat.S_IRUSR)
+                os.chmod(fn, stat.S_IRUSR | stat.S_IRGRP)
                 f.write(str(obj))
         finally:
             fcntl.lockf(lock_fd, fcntl.LOCK_UN)

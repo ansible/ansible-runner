@@ -32,4 +32,10 @@ if [[ -n "${LAUNCHED_BY_RUNNER}" ]]; then
     export ANSIBLE_CALLBACK_PLUGINS="$(dirname $RUNNER_CALLBACKS)"
 fi
 
+if [[ -n "${AWX_ISOLATED_DATA_DIR}" ]]; then
+    if output=$(ansible-galaxy collection list --format json 2> /dev/null); then
+        echo $output > "${AWX_ISOLATED_DATA_DIR}/collections.json"
+    fi
+fi
+
 exec /usr/local/bin/dumb-init -- "${@}"

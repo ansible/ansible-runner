@@ -3,6 +3,11 @@
 Changelog
 ---------
 
+1.4.7 (2021-02-11)
+++++++++++++++++++
+- Fixed an issue where byte sequences in the output that are not
+  interpretable as UTF-8 would break the job execution.
+
 1.4.6 (2020-03-26)
 ++++++++++++++++++
 - Fixed a bug that broke Ansible playbook execution prior to version 2.8 of
@@ -16,7 +21,6 @@ Changelog
 - Make sure job events folder is created earlier to prevent errors when
   using immediately after starting a runner job
 - Annotate all runner_on events with start/end/duration times
-
 
 1.4.4 (2019-10-25)
 ++++++++++++++++++

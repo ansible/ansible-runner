@@ -49,6 +49,43 @@
 # =============================================================================
 
 - job:
+    name: ansible-runner-ubi8-build-container-image
+    parent: ansible-build-container-image
+    provides:
+      - ansible-runner-ubi8-container-image
+    requires:
+      - ansible-core-ubi8-container-image
+    vars: &ansible_runner_ubi8_image_vars
+      container_images: &container_images_ubi8
+        - context: .
+          build_args:
+            - ANSIBLE_CORE_IMAGE=quay.io/ansible/ansible-core:ubi8
+            - PYTHON_BUILDER_IMAGE=quay.io/ansible/python-builder:ubi8
+          registry: quay.io
+          repository: quay.io/ansible/ansible-runner
+          tags: ['ubi8']
+      docker_images: *container_images_ubi8
+
+- job:
+    name: ansible-runner-ubi8-build-container-image
+    parent: ansible-runner-container-image-base
+
+- job:
+    name: ansible-runner-ubi8-upload-container-image
+    parent: ansible-upload-container-image
+    provides:
+      - ansible-runner-ubi8-container-image
+    requires:
+      - ansible-core-ubi8-container-image
+    vars: *ansible_runner_ubi8_image_vars
+
+- job:
+    name: ansible-runner-upload-container-image
+    parent: ansible-runner-container-image-base
+
+# =============================================================================
+
+- job:
     name: ansible-runner-build-container-image-stable-2.10
     parent: ansible-build-container-image
     provides:

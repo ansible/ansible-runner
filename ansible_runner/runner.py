@@ -77,9 +77,11 @@ class Runner(object):
                 for plugin in ansible_runner.plugins:
                     ansible_runner.plugins[plugin].event_handler(self.config, event_data)
                 if should_write:
-                    with codecs.open(full_filename, 'w', encoding='utf-8') as write_file:
-                        os.chmod(full_filename, stat.S_IRUSR | stat.S_IWUSR)
+                    temporary_filename = full_filename + '.tmp'
+                    with codecs.open(temporary_filename, 'w', encoding='utf-8') as write_file:
+                        os.chmod(temporary_filename, stat.S_IRUSR | stat.S_IWUSR)
                         json.dump(event_data, write_file)
+                    os.rename(temporary_filename, full_filename)
             except IOError as e:
                 debug("Failed writing event data: {}".format(e))
 

@@ -1,31 +1,23 @@
 ---
 - job:
-    name: ansible-runner-build-container-image-base
-    parent: ansible-build-container-image
+    name: ansible-runner-container-image-base
     abstract: true
-    description: Build ansible-runner container image
+    description: Base ansible-runner container image
     required-projects:
       - name: github.com/ansible/ansible-runner
     timeout: 2700
     vars:
       zuul_work_dir: "{{ zuul.projects['github.com/ansible/ansible-runner'].src_dir }}"
 
-- job:
-    name: ansible-runner-upload-container-image-base
-    parent: ansible-upload-container-image
-    abstract: true
-    description: Build ansible-runner container image and upload to quay.io
-    required-projects:
-      - name: github.com/ansible/ansible-runner
-    timeout: 2700
-    vars:
-      zuul_work_dir: "{{ zuul.projects['github.com/ansible/ansible-runner'].src_dir }}"
+# =============================================================================
 
 - job:
     name: ansible-runner-build-container-image
-    parent: ansible-runner-build-container-image-base
-    provides: ansible-runner-container-image
-    requires: ansible-core-container-image
+    parent: ansible-build-container-image
+    provides:
+      - ansible-runner-container-image
+    requires:
+      - ansible-core-container-image
     vars: &ansible_runner_image_vars
       container_images: &container_images
         - context: .
@@ -38,16 +30,66 @@
       docker_images: *container_images
 
 - job:
+    name: ansible-runner-build-container-image
+    parent: ansible-runner-container-image-base
+
+- job:
     name: ansible-runner-upload-container-image
-    parent: ansible-runner-upload-container-image-base
-    provides: ansible-runner-container-image
-    requires: ansible-core-container-image
+    parent: ansible-upload-container-image
+    provides:
+      - ansible-runner-container-image
+    requires:
+      - ansible-core-container-image
     vars: *ansible_runner_image_vars
 
 - job:
+    name: ansible-runner-upload-container-image
+    parent: ansible-runner-container-image-base
+
+# =============================================================================
+
+- job:
+    name: ansible-runner-ubi8-build-container-image
+    parent: ansible-build-container-image
+    provides:
+      - ansible-runner-ubi8-container-image
+    requires:
+      - ansible-core-ubi8-container-image
+    vars: &ansible_runner_ubi8_image_vars
+      container_images: &container_images_ubi8
+        - context: .
+          build_args:
+            - ANSIBLE_CORE_IMAGE=quay.io/ansible/ansible-core:ubi8
+            - PYTHON_BUILDER_IMAGE=quay.io/ansible/python-builder:ubi8
+          registry: quay.io
+          repository: quay.io/ansible/ansible-runner
+          tags: ['ubi8']
+      docker_images: *container_images_ubi8
+
+- job:
+    name: ansible-runner-ubi8-build-container-image
+    parent: ansible-runner-container-image-base
+
+- job:
+    name: ansible-runner-ubi8-upload-container-image
+    parent: ansible-upload-container-image
+    provides:
+      - ansible-runner-ubi8-container-image
+    requires:
+      - ansible-core-ubi8-container-image
+    vars: *ansible_runner_ubi8_image_vars
+
+- job:
+    name: ansible-runner-upload-container-image
+    parent: ansible-runner-container-image-base
+
+# =============================================================================
+
+- job:
     name: ansible-runner-build-container-image-stable-2.10
-    parent: ansible-runner-build-container-image-base
-    provides: ansible-runner-stable-2.10-container-image
+    parent: ansible-build-container-image
+    provides:
+      - ansible-runner-stable-2.10-container-image
     requires:
       - python-base-container-image
       - python-builder-container-image
@@ -69,9 +111,14 @@
       docker_images: *container_images_stable_2_10
 
 - job:
+    name: ansible-runner-build-container-image-stable-2.10
+    parent: ansible-runner-container-image-base
+
+- job:
     name: ansible-runner-upload-container-image-stable-2.10
-    parent: ansible-runner-upload-container-image-base
-    provides: ansible-runner-stable-2.10-container-image
+    parent: ansible-upload-container-image
+    provides:
+      - ansible-runner-stable-2.10-container-image
     requires:
       - python-base-container-image
       - python-builder-container-image
@@ -81,9 +128,16 @@
     vars: *ansible_runner_image_vars_stable_2_10
 
 - job:
+    name: ansible-runner-upload-container-image-stable-2.10
+    parent: ansible-runner-container-image-base
+
+# =============================================================================
+
+- job:
     name: ansible-runner-build-container-image-stable-2.9
-    parent: ansible-runner-build-container-image-base
-    provides: ansible-runner-stable-2.9-container-image
+    parent: ansible-build-container-image
+    provides:
+      - ansible-runner-stable-2.9-container-image
     requires:
       - python-base-container-image
       - python-builder-container-image
@@ -105,9 +159,14 @@
       docker_images: *container_images_stable_2_9
 
 - job:
+    name: ansible-runner-build-container-image-stable-2.9
+    parent: ansible-runner-container-image-base
+
+- job:
     name: ansible-runner-upload-container-image-stable-2.9
-    parent: ansible-runner-upload-container-image-base
-    provides: ansible-runner-stable-2.9-container-image
+    parent: ansible-upload-container-image
+    provides:
+      - ansible-runner-stable-2.9-container-image
     requires:
       - python-base-container-image
       - python-builder-container-image
@@ -115,3 +174,7 @@
       - name: github.com/ansible/ansible
         override-checkout: stable-2.9
     vars: *ansible_runner_image_vars_stable_2_9
+
+- job:
+    name: ansible-runner-upload-container-image-stable-2.9
+    parent: ansible-runner-container-image-base

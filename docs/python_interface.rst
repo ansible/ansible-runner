@@ -11,6 +11,8 @@ interface to the results of executing the **Ansible** command.
 **Ansible Runner** itself is a wrapper around **Ansible** execution and so adds plugins and interfaces to the system in order to gather extra information and
 process/store it for use later.
 
+**Ansible Runner** can be used to execute ansible command line utilities either within an execution enviornment or on the local system usinf API.
+
 Helper Interfaces
 -----------------
 
@@ -51,6 +53,14 @@ properties:
 
 The :class:`Runner <ansible_runner.runner.Runner>` object contains a property :attr:`ansible_runner.runner.Runner.stdout` which will return an open file
 handle containing the ``stdout`` of the **Ansible** process.
+
+``Runner.stderr``
+-----------------
+
+The :class:`Runner <ansible_runner.runner.Runner>` object contains a property :attr:`ansible_runner.runner.Runner.stderr` which will return an open file
+handle containing the ``stderr`` of the **Ansible** process to output the error. This is applicable only when runner is used to run command line utilites in non interactive mode 
+like ``ansible-config``, ``ansible-doc``, ``ansible-galaxy``, ``ansible-inventory``, ``ansible-vault`` and ``ansible`` --version that does not require handling of CLI
+prompts.
 
 ``Runner.events``
 -----------------
@@ -127,6 +137,74 @@ Usage examples
       print(each_host_event['event'])
   print("Final status:")
   print(r.stats)
+
+.. code-block:: python
+
+  # run ansible-doc command within execution enviornment in non interactive mode
+  import ansible_runner
+  r = ansible_runner.run(
+      private_data_dir='/tmp/demo',
+      cli_execenv_cmd='ansible-doc',
+      cmdline=['-j', '-F'],
+      process_isolation=True,
+      container_image='network-ee'
+    )
+  print("STDOUT: {}".format(r.stdout.read()))
+  print("STDERR: {}".format(r.stderr.read()))
+
+.. code-block:: python
+
+  # run ansible-doc command within local environment
+  import ansible_runner
+  r = ansible_runner.run(
+      private_data_dir='/tmp/demo',
+      cli_execenv_cmd='ansible-doc',
+      cmdline=['-j', '-F'],
+    )
+  print("STDOUT: {}".format(r.stdout.read()))
+  print("STDERR: {}".format(r.stderr.read()))
+
+.. code-block:: python
+
+  # run python script within execution environment in non interactive mode
+  import ansible_runner
+  r = ansible_runner.run(
+      private_data_dir='/tmp/demo',
+      cli_execenv_cmd='/usr/bin/python3.8',
+      cmdline=['test_ee.py'],
+      process_isolation=True,
+      container_image='network-ee'
+    )
+  print("STDOUT: {}".format(r.stdout.read()))
+  print("STDERR: {}".format(r.stderr.read()))
+
+.. code-block:: python
+
+  # run command within execution environment in non interactive mode
+  import ansible_runner
+  r = ansible_runner.run(
+      private_data_dir='/tmp/demo',
+      cli_execenv_cmd='/usr/bin/cat',
+      cmdline=['/etc/os-release'],
+      process_isolation=True,
+      container_image='network-ee'
+    )
+  print("STDOUT: {}".format(r.stdout.read()))
+  print("STDERR: {}".format(r.stderr.read()))
+
+.. code-block:: python
+
+  # run command within execution environment in non interactive mode
+  import ansible_runner
+  r = ansible_runner.run(
+      private_data_dir='/tmp/demo',
+      cli_execenv_cmd='/usr/bin/cat',
+      cmdline=['/etc/os-release'],
+      process_isolation=True,
+      container_image='network-ee'
+    )
+  print("STDOUT: {}".format(r.stdout.read()))
+  print("STDERR: {}".format(r.stderr.read()))
 
 Providing custom behavior and inputs
 ------------------------------------

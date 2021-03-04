@@ -40,7 +40,6 @@ from ansible_runner import defaults
 from ansible_runner import output
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.loader import ArtifactLoader
-from ansible_runner.output import debug
 from ansible_runner.utils import (
     open_fifo_write,
     args2cmdline,
@@ -55,7 +54,16 @@ class ExecutionMode():
     ANSIBLE = 1
     ANSIBLE_PLAYBOOK = 2
     RAW = 3
+    # run 'ansible adhoc' and 'ansible playbook' command within EE
     CLI_EXECENV = 4
+    # run ansible commandline utilities (doc, config, inventory, vault)
+    # either locally or within EE
+    CLI_EXECENV_NON_INTERACTIVE = 5
+    # arbitrary run python script within EE
+    CLI_EXECENV_SCRIPT_EXECUTION = 6
+    # execute generic command (w/o volume mount in case EE)
+    CLI_EXECENV_PASS_THROUGH_COMMAND = 7
+
 
 
 class RunnerConfig(object):
@@ -89,7 +97,7 @@ class RunnerConfig(object):
                  resource_profiling_results_dir=None,
                  tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None, ssh_key=None,
                  project_dir=None, directory_isolation_base_path=None, envvars=None, forks=None, cmdline=None, omit_event_data=False,
-                 only_failed_event_data=False, cli_execenv_cmd=""):
+                 only_failed_event_data=False, cli_execenv_cmd="", cli_execenv_cmd_cwd=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         if ident is None:
             self.ident = str(uuid4())
@@ -103,6 +111,7 @@ class RunnerConfig(object):
         self.module = module
         self.module_args = module_args
         self.cli_execenv_cmd = cli_execenv_cmd
+        self.cli_execenv_cmd_cwd = cli_execenv_cmd_cwd
         self.host_pattern = host_pattern
         self.binary = binary
         self.rotate_artifacts = rotate_artifacts
@@ -156,8 +165,28 @@ class RunnerConfig(object):
 
         self.omit_event_data = omit_event_data
         self.only_failed_event_data = only_failed_event_data
+        self._volume_mount_paths = []
 
     _CONTAINER_ENGINES = ('docker', 'podman')
+    _ANSIBLE_INERACTIVE_CMDS = (
+        'ansible adhoc',
+        'ansible-playbook',
+    )
+    _ANSIBLE_NON_INERACTIVE_CMDS = (
+        'ansible-config',
+        'ansible-doc',
+        'ansible-galaxy',
+        'ansible-inventory',
+        'ansible-vault',
+        'ansible-test',
+        # run ansible command w/o cli prompt handling (eg: ansible --version)
+        'ansible'
+    )
+    COMMAND_EXEC_NON_INTERACTIVE_MODES = (
+        ExecutionMode.CLI_EXECENV_NON_INTERACTIVE,
+        ExecutionMode.CLI_EXECENV_SCRIPT_EXECUTION,
+        ExecutionMode.CLI_EXECENV_PASS_THROUGH_COMMAND
+    )
 
     @property
     def sandboxed(self):
@@ -202,8 +231,8 @@ class RunnerConfig(object):
             raise ConfigurationError("Runner playbook required when running ansible-playbook")
         elif self.execution_mode == ExecutionMode.ANSIBLE and self.module is None:
             raise ConfigurationError("Runner module required when running ansible")
-        elif self.execution_mode == ExecutionMode.CLI_EXECENV and self.cmdline_args is None:
-            raise ConfigurationError("Runner requires arguments to pass to ansible, try '-h' for ansible help output")
+        elif self.execution_mode == ExecutionMode.CLI_EXECENV_SCRIPT_EXECUTION and self.cmdline_args is None:
+            raise ConfigurationError("Runner requires python filename for execution")
         elif self.execution_mode == ExecutionMode.NONE:
             raise ConfigurationError("No executable for runner to run")
 
@@ -263,10 +292,10 @@ class RunnerConfig(object):
                 self.env['ANSIBLE_ROLES_PATH'] = self.roles_path
 
         if self.sandboxed:
-            debug('sandbox enabled')
+            output.debug('sandbox enabled')
             self.command = self.wrap_args_for_sandbox(self.command)
         else:
-            debug('sandbox disabled')
+            output.debug('sandbox disabled')
 
         if self.resource_profiling and self.execution_mode == ExecutionMode.ANSIBLE_PLAYBOOK:
             self.command = self.wrap_args_with_cgexec(self.command)
@@ -280,16 +309,16 @@ class RunnerConfig(object):
         self.env["RUNNER_ONLY_FAILED_EVENTS"] = str(self.only_failed_event_data)
 
         if self.containerized:
-            debug('containerization enabled')
+            output.debug('containerization enabled')
             self.command = self.wrap_args_for_containerization(self.command)
         else:
-            debug('containerization disabled')
+            output.debug('containerization disabled')
 
-        debug('env:')
+        output.debug('env:')
         for k,v in sorted(self.env.items()):
-            debug(f' {k}: {v}')
+            output.debug(f' {k}: {v}')
         if hasattr(self, 'command') and isinstance(self.command, list):
-            debug(f"command: {' '.join(self.command)}")
+            output.debug(f"command: {' '.join(self.command)}")
 
     def prepare_inventory(self):
         """
@@ -385,6 +414,11 @@ class RunnerConfig(object):
 
         if 'AD_HOC_COMMAND_ID' in self.env or not os.path.exists(self.project_dir):
             self.cwd = self.private_data_dir
+        elif self.cli_execenv_cmd:
+            if self.cli_execenv_cmd_cwd:
+                self.cwd = self.cli_execenv_cmd_cwd
+            else:
+                self.cwd = self.project_dir
         else:
             if self.directory_isolation_path is not None:
                 self.cwd = self.directory_isolation_path
@@ -414,13 +448,19 @@ class RunnerConfig(object):
             except ConfigurationError:
                 self.command = self.generate_ansible_command()
         else:
-            if self.cli_execenv_cmd:
-                if self.cli_execenv_cmd == 'adhoc':
-                    self.command = ['ansible'] + self.cmdline_args
-                elif self.cli_execenv_cmd == 'playbook':
-                    self.command = ['ansible-playbook'] + self.cmdline_args
+            if self.cli_execenv_cmd in self._ANSIBLE_INERACTIVE_CMDS:
                 self.execution_mode = ExecutionMode.CLI_EXECENV
+            elif self.cli_execenv_cmd in self._ANSIBLE_NON_INERACTIVE_CMDS:
+                self.execution_mode = ExecutionMode.CLI_EXECENV_NON_INTERACTIVE
+            elif 'python' in self.cli_execenv_cmd.split(os.path.sep)[-1]:
+                self.execution_mode = ExecutionMode.CLI_EXECENV_SCRIPT_EXECUTION
+            else:
+                self.execution_mode = ExecutionMode.CLI_EXECENV_PASS_THROUGH_COMMAND
 
+            if self.cmdline_args:
+                self.command = [self.cli_execenv_cmd] + self.cmdline_args
+            else:
+                self.command = [self.cli_execenv_cmd]
 
     def generate_ansible_command(self):
         """
@@ -428,16 +468,7 @@ class RunnerConfig(object):
         will generate the ``ansible`` or ``ansible-playbook`` command that will be used by the
         :py:class:`ansible_runner.runner.Runner` object to start the process
         """
-        # FIXME - this never happens because the conditional in prepare_command
-        #         "branches around it" and I need to figure out if that's the
-        #         correct course of action or not.
-        if self.cli_execenv_cmd:
-            if self.cli_execenv_cmd == 'adhoc':
-                base_command = 'ansible'
-            elif self.cli_execenv_cmd == 'playbook':
-                base_command = 'ansible-playbook'
-            self.execution_mode = ExecutionMode.CLI_EXECENV
-        elif self.binary is not None:
+        if self.binary is not None:
             base_command = self.binary
             self.execution_mode = ExecutionMode.RAW
         elif self.module is not None:
@@ -622,161 +653,135 @@ class RunnerConfig(object):
         new_args.extend(args)
         return new_args
 
+    def _ensure_path_safe_to_mount(self, path):
+        if path in ('/home', '/usr'):
+            raise ConfigurationError("When using containerized execution, cannot mount /home or /usr")
+
+    def _get_playbook_path(self):
+        _playbook = ""
+        _book_keeping_copy = self.cmdline_args.copy()
+        for arg in self.cmdline_args:
+            if arg in ['-i', '--inventory', '--inventory-file']:
+                _book_keeping_copy_inventory_index = _book_keeping_copy.index(arg)
+                _book_keeping_copy.pop(_book_keeping_copy_inventory_index)
+                try:
+                    _book_keeping_copy.pop(_book_keeping_copy_inventory_index)
+                except IndexError:
+                    # invalid command, pass through for execution
+                    # to return correct error from ansible-core
+                    return None
+
+        if len(_book_keeping_copy) == 1:
+            # it's probably safe to assume this is the playbook
+            _playbook = _book_keeping_copy[0]
+        elif _book_keeping_copy[0][0] != '-':
+            # this should be the playbook, it's the only "naked" arg
+            _playbook = _book_keeping_copy[0]
+        else:
+            # parse everything beyond the first arg because we checked that
+            # in the previous case already
+            for arg in _book_keeping_copy[1:]:
+                if arg[0] == '-':
+                    continue
+                elif _book_keeping_copy[(_book_keeping_copy.index(arg) - 1)][0] != '-':
+                    _playbook = arg
+                    break
+
+        return _playbook
+
+    def _update_volume_mount_paths(self, args_list, src_mount_path, dest_mount_path=None,
+                                   base_mount_dir_path=None, labels=None):
+
+        if src_mount_path is None or not os.path.exists(src_mount_path):
+            logger.debug(f"command: {self.command}: path does not exit {src_mount_path}")
+            return
+
+        if dest_mount_path is None:
+            dest_mount_path = src_mount_path
+
+        self._ensure_path_safe_to_mount(src_mount_path)
+
+        if os.path.isabs(src_mount_path) and (os.path.dirname(src_mount_path) != '/'):
+            volume_mount_path = "{}:{}".format(
+                os.path.dirname(src_mount_path),
+                os.path.dirname(dest_mount_path),
+            )
+        else:
+            if base_mount_dir_path:
+                dest_mount_path = os.path.join(base_mount_dir_path, dest_mount_path)
+
+            volume_mount_path = "{}:{}".format(
+                os.path.dirname(os.path.abspath(src_mount_path)),
+                os.path.dirname(os.path.abspath(dest_mount_path)),
+            )
+            if labels:
+                volume_mount_path += '%s' % labels
+
+        # check if mount path already added in args list
+        if ', '.join(map(str, ['-v', volume_mount_path])) not in ', '.join(map(str, args_list)):
+            args_list.extend(['-v', volume_mount_path])
+
+    def _handle_ansible_cmd_options_bind_mounts(self, args_list):
+        inventory_file_options = ['-i', '--inventory', '--inventory-file']
+        vault_file_options = ['--vault-password-file', '--vault-pass-file']
+        private_key_file_options = ['--private-key', '--key-file']
+
+        optional_mount_args = inventory_file_options + vault_file_options + private_key_file_options
+
+        if not self.cmdline_args or '-h' in self.cmdline_args or '--help' in self.cmdline_args:
+            return
+
+        if self.cli_execenv_cmd_cwd is not None:
+            self._update_volume_mount_paths(args_list, self.cli_execenv_cmd_cwd, base_mount_dir_path='/runner/project')
+
+        if self.cli_execenv_cmd == 'playbook':
+            playbook_file_path = self._get_playbook_path()
+            if playbook_file_path:
+                self._update_volume_mount_paths(args_list, playbook_file_path, base_mount_dir_path=self.cwd)
+
+        cmdline_args_copy = self.cmdline_args.copy()
+        optional_arg_paths = []
+        for arg in self.cmdline_args:
+
+            if arg not in optional_mount_args:
+                continue
+
+            optional_arg_index = cmdline_args_copy.index(arg)
+            optional_arg_paths.append(self.cmdline_args[optional_arg_index + 1])
+            cmdline_args_copy.pop(optional_arg_index)
+            try:
+                optional_arg_value = cmdline_args_copy.pop(optional_arg_index)
+            except IndexError:
+                # invalid command, pass through for execution
+                # to return valid error from ansible-core
+                return
+
+            if arg in inventory_file_options and optional_arg_value.endswith(','):
+                # comma separated host list provided as value
+                continue
+
+            self._update_volume_mount_paths(args_list, optional_arg_value, base_mount_dir_path='/runner/project')
+
     def wrap_args_for_containerization(self, args):
         new_args = [self.process_isolation_executable]
-        new_args.extend(['run', '--rm', '--tty', '--interactive'])
+        new_args.extend(['run', '--rm', '--interactive'])
+        if self.execution_mode != ExecutionMode.CLI_EXECENV_NON_INTERACTIVE:
+            new_args.extend(['--tty'])
+
         container_workdir = "/runner/project"
         new_args.extend(["--workdir", container_workdir])
         self.cwd = container_workdir
 
-        def _ensure_path_safe_to_mount(path):
-            if path in ('/home', '/usr'):
-                raise ConfigurationError("When using containerized execution, cannot mount /home or /usr")
-
-        _ensure_path_safe_to_mount(self.private_data_dir)
-
-        def _parse_cli_execenv_cmd_playbook_args():
-
-            # Determine all inventory file paths, accounting for the possibility of multiple
-            # inventory files provided
-            _inventory_paths = []
-            _playbook = ""
-            _book_keeping_copy = self.cmdline_args.copy()
-            for arg in self.cmdline_args:
-                if arg == '-i':
-                    _book_keeping_copy_inventory_index = _book_keeping_copy.index('-i')
-                    _inventory_paths.append(self.cmdline_args[_book_keeping_copy_inventory_index + 1])
-                    _book_keeping_copy.pop(_book_keeping_copy_inventory_index)
-                    _book_keeping_copy.pop(_book_keeping_copy_inventory_index)
-
-            if len(_book_keeping_copy) == 1:
-                # it's probably safe to assume this is the playbook
-                _playbook = _book_keeping_copy[0]
-            elif _book_keeping_copy[0][0] != '-':
-                # this should be the playbook, it's the only "naked" arg
-                _playbook = _book_keeping_copy[0]
-            else:
-                # parse everything beyond the first arg because we checked that
-                # in the previous case already
-                for arg in _book_keeping_copy[1:]:
-                    if arg[0] == '-':
-                        continue
-                    elif _book_keeping_copy[(_book_keeping_copy.index(arg) - 1)][0] != '-':
-                        _playbook = arg
-                        break
-
-            return (_playbook, _inventory_paths)
+        self._ensure_path_safe_to_mount(self.private_data_dir)
 
         if self.cli_execenv_cmd:
-            _parsed_playbook_path, _parsed_inventory_paths = _parse_cli_execenv_cmd_playbook_args()
-            if self.cli_execenv_cmd == 'playbook':
-                playbook_file_path = _parsed_playbook_path
-                _ensure_path_safe_to_mount(playbook_file_path)
-                if os.path.isabs(playbook_file_path) and (os.path.dirname(playbook_file_path) != '/'):
-                    new_args.extend([
-                        "-v", "{}:{}".format(
-                            os.path.dirname(playbook_file_path),
-                            os.path.dirname(playbook_file_path),
-                        )
-                    ])
-                else:
-                    new_args.extend([
-                        "-v", "{}:/runner/project/{}".format(
-                            os.path.dirname(os.path.abspath(playbook_file_path)),
-                            os.path.dirname(playbook_file_path),
-                        )
-                    ])
-
-            # volume mount inventory into the exec env container if provided at cli
-            if '-i' in self.cmdline_args:
-                inventory_file_paths = _parsed_inventory_paths
-                inventory_playbook_share_parent = False
-                for inventory_file_path in inventory_file_paths:
-                    _ensure_path_safe_to_mount(inventory_file_path)
-                    if self.cli_execenv_cmd == 'playbook':
-                        if os.path.dirname(os.path.abspath(inventory_file_path)) == \
-                                os.path.dirname(os.path.abspath(playbook_file_path)):
-                            inventory_playbook_share_parent = True
-                    if not inventory_file_path.endswith(',') and not inventory_playbook_share_parent:
-                        if os.path.isabs(inventory_file_path) and (os.path.dirname(inventory_file_path) != '/'):
-                            new_args.extend([
-                                "-v", "{}:{}".format(
-                                    os.path.dirname(inventory_file_path),
-                                    os.path.dirname(inventory_file_path),
-                                )
-                            ])
-                        else:
-                            new_args.extend([
-                                "-v", "{}:/runner/project/{}".format(
-                                    os.path.dirname(os.path.abspath(inventory_file_path)),
-                                    os.path.dirname(inventory_file_path),
-                                )
-                            ])
-
+            if self.execution_mode in [ExecutionMode.CLI_EXECENV, ExecutionMode.CLI_EXECENV_NON_INTERACTIVE]:
+                self._handle_ansible_cmd_options_bind_mounts(new_args)
+            elif self.execution_mode == ExecutionMode.CLI_EXECENV_SCRIPT_EXECUTION:
+                self._update_volume_mount_paths(new_args, self.cmdline_args[0], base_mount_dir_path='/runner/project')
 
             # Handle automounts
-            cli_automounts = [
-                {
-                    'ENVS': ['SSH_AUTH_SOCK'],
-                    'PATHS': [
-                        {
-                            'src': '{}/.ssh/'.format(os.environ['HOME']),
-                            'dest': '/home/runner/.ssh/'
-                        },
-                        {
-                            'src': '/etc/ssh/ssh_known_hosts',
-                            'dest': '/etc/ssh/ssh_known_hosts'
-                        }
-                    ]
-                },
-                {
-                    "ENVS": ['K8S_AUTH_KUBECONFIG'],
-                    "PATHS": [
-                        {
-                            'src': '{}/.kube/'.format(os.environ['HOME']),
-                            'dest': '/home/runner/.kube/'
-                        },
-                    ]
-                },
-                {
-                    "ENVS": [
-                        'AWS_URL', 'EC2_URL', 'AWS_ACCESS_KEY_ID', 'AWS_ACCESS_KEY',
-                        'EC2_ACCESS_KEY', 'AWS_SECRET_ACCESS_KEY', 'AWS_SECRET_KEY', 'EC2_SECRET_KEY',
-                        'AWS_SECURITY_TOKEN', 'EC2_SECURITY_TOKEN', 'AWS_REGION', 'EC2_REGION'
-                    ],
-                    "PATHS": [
-                        {
-                            'src': '{}/.boto/'.format(os.environ['HOME']),
-                            'dest': '/home/runner/.boto/'
-                        },
-                    ]
-                },
-                {
-                    "ENVS": [
-                        'AZURE_SUBSCRIPTION_ID', 'AZURE_CLIENT_ID', 'AZURE_SECRET', 'AZURE_TENANT',
-                        'AZURE_AD_USER', 'AZURE_PASSWORD'
-                    ],
-                    "PATHS": [
-                        {
-                            'src': '{}/.azure/'.format(os.environ['HOME']),
-                            'dest': '/home/runner/.azure/'
-                        },
-                    ]
-                },
-                {
-                    "ENVS": [
-                        'gcp_service_account_file', 'GCP_SERVICE_ACCOUNT_FILE', 'GCP_SERVICE_ACCOUNT_CONTENTS',
-                        'GCP_SERVICE_ACCOUNT_EMAIL', 'GCP_AUTH_KIND', 'GCP_SCOPES'
-                    ],
-                    "PATHS": [
-                        {
-                            'src': '{}/.gcp/'.format(os.environ['HOME']),
-                            'dest': '/home/runner/.gcp/'
-                        },
-                    ]
-                }
-            ]
-            for cli_automount in cli_automounts:
+            for cli_automount in self.cli_mounts:
                 for env in cli_automount['ENVS']:
                     if env in os.environ:
                         dest_path = os.environ[env]
@@ -788,13 +793,15 @@ class RunnerConfig(object):
                                 dest_path = '/home/runner/{}'.format(os.environ[env].lstrip('~/'))
                             else:
                                 dest_path = os.environ[env]
-                            new_args.extend(["-v", "{}:{}".format(os.environ[env], dest_path)])
+
+                            self._update_volume_mount_paths(new_args, os.environ[env], dest_mount_path=dest_path)
+
 
                         new_args.extend(["-e", "{}={}".format(env, dest_path)])
 
                 for paths in cli_automount['PATHS']:
                     if os.path.exists(paths['src']):
-                        new_args.extend(["-v", "{}:{}".format(paths['src'], paths['dest'])])
+                        self._update_volume_mount_paths(new_args, paths['src'], dest_mount_path=paths['dest'])
 
             if 'podman' in self.process_isolation_executable:
                 # container namespace stuff
@@ -802,7 +809,7 @@ class RunnerConfig(object):
                 new_args.extend(["--userns=keep-id"])
                 new_args.extend(["--ipc=host"])
 
-        # the playbook / adhoc cases (cli_execenv_cmd) are handled separately
+        # the ansible command pass through cases (cli_execenv_cmd) are handled separately
         # because they have pre-existing mounts already in new_args
         if self.cli_execenv_cmd:
             # Relative paths are mounted relative to /runner/project
@@ -811,8 +818,8 @@ class RunnerConfig(object):
                 if not os.path.exists(subdir_path):
                     os.mkdir(subdir_path, 0o700)
 
-            # playbook / adhoc commands need artifacts mounted to output data
-            new_args.extend(["-v", "{}/artifacts:/runner/artifacts:Z".format(self.private_data_dir)])
+            # pass through commands need artifacts mounted to output data
+            self._update_volume_mount_paths(new_args, "{}/artifacts".format(self.private_data_dir), dest_mount_path="/runner/artifacts:Z")
         else:
             subdir_path = os.path.join(self.private_data_dir, 'artifacts')
             if not os.path.exists(subdir_path):
@@ -820,14 +827,14 @@ class RunnerConfig(object):
 
             # Mount the entire private_data_dir
             # custom show paths inside private_data_dir do not make sense
-            new_args.extend(["-v", "{}:/runner:Z".format(self.private_data_dir)])
+            self._update_volume_mount_paths(new_args, "{}".format(self.private_data_dir), dest_mount_path="/runner:Z")
 
         container_volume_mounts = self.container_volume_mounts
         if container_volume_mounts:
             for mapping in container_volume_mounts:
                 host_path, container_path = mapping.split(':', 1)
-                _ensure_path_safe_to_mount(host_path)
-                new_args.extend(["-v", "{}:{}".format(host_path, container_path)])
+                self._ensure_path_safe_to_mount(host_path)
+                self._update_volume_mount_paths(new_args, host_path, dest_mount_path=container_path)
 
         # Reference the file with list of keys to pass into container
         # this file will be written in ansible_runner.runner
@@ -847,10 +854,8 @@ class RunnerConfig(object):
             new_args.extend(self.container_options)
 
         new_args.extend([self.container_image])
-
         new_args.extend(args)
-        debug(f"container engine invocation: {' '.join(new_args)}")
-
+        logger.debug(f"container engine invocation: {' '.join(new_args)}")
         return new_args
 
     def wrap_args_with_ssh_agent(self, args, ssh_key_path, ssh_auth_sock=None, silence_ssh_add=False):
@@ -879,3 +884,75 @@ class RunnerConfig(object):
                 args.extend(['-a', ssh_auth_sock])
             args.extend(['sh', '-c', cmd])
         return args
+
+    @property
+    def cli_mounts(self):
+        return [
+            {
+                'ENVS': ['SSH_AUTH_SOCK'],
+                'PATHS': [
+                    {
+                        'src': '{}/.ssh/'.format(os.environ['HOME']),
+                        'dest': '/home/runner/.ssh/'
+                    },
+                    {
+                        'src': '/etc/ssh/ssh_known_hosts',
+                        'dest': '/etc/ssh/ssh_known_hosts'
+                    }
+                ]
+            },
+            {
+                "ENVS": ['K8S_AUTH_KUBECONFIG'],
+                "PATHS": [
+                    {
+                        'src': '{}/.kube/'.format(os.environ['HOME']),
+                        'dest': '/home/runner/.kube/'
+                    },
+                ]
+            },
+            {
+                "ENVS": [
+                    'AWS_URL', 'EC2_URL', 'AWS_ACCESS_KEY_ID', 'AWS_ACCESS_KEY',
+                    'EC2_ACCESS_KEY', 'AWS_SECRET_ACCESS_KEY', 'AWS_SECRET_KEY', 'EC2_SECRET_KEY',
+                    'AWS_SECURITY_TOKEN', 'EC2_SECURITY_TOKEN', 'AWS_REGION', 'EC2_REGION'
+                ],
+                "PATHS": [
+                    {
+                        'src': '{}/.boto/'.format(os.environ['HOME']),
+                        'dest': '/home/runner/.boto/'
+                    },
+                ]
+            },
+            {
+                "ENVS": [
+                    'AZURE_SUBSCRIPTION_ID', 'AZURE_CLIENT_ID', 'AZURE_SECRET', 'AZURE_TENANT',
+                    'AZURE_AD_USER', 'AZURE_PASSWORD'
+                ],
+                "PATHS": [
+                    {
+                        'src': '{}/.azure/'.format(os.environ['HOME']),
+                        'dest': '/home/runner/.azure/'
+                    },
+                ]
+            },
+            {
+                "ENVS": [
+                    'gcp_service_account_file', 'GCP_SERVICE_ACCOUNT_FILE', 'GCP_SERVICE_ACCOUNT_CONTENTS',
+                    'GCP_SERVICE_ACCOUNT_EMAIL', 'GCP_AUTH_KIND', 'GCP_SCOPES'
+                ],
+                "PATHS": [
+                    {
+                        'src': '{}/.gcp/'.format(os.environ['HOME']),
+                        'dest': '/home/runner/.gcp/'
+                    },
+                ]
+            }
+        ]
+
+
+def get_cli_execenv_interactive_cmds():
+    return RunnerConfig._ANSIBLE_INERACTIVE_CMDS
+
+
+def get_cli_execenv_non_interactive_cmds():
+    return RunnerConfig._ANSIBLE_NON_INERACTIVE_CMDS

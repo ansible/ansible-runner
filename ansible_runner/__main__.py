@@ -813,7 +813,10 @@ def main(sys_args=None):
     cli_execenv_cmd = ""
 
     if vargs.get('command') in ('adhoc', 'playbook'):
-        cli_execenv_cmd = vargs.get('command')
+        cli_execenv_cmd = {
+            'adhoc': 'ansible adhoc',
+            'playbook': 'ansible-playbook'
+        }.get(vargs['command'])
 
         if not leftover_args:
             parser.exit(

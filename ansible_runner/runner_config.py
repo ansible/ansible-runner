@@ -97,7 +97,7 @@ class RunnerConfig(object):
                  resource_profiling_results_dir=None,
                  tags=None, skip_tags=None, fact_cache_type='jsonfile', fact_cache=None, ssh_key=None,
                  project_dir=None, directory_isolation_base_path=None, envvars=None, forks=None, cmdline=None, omit_event_data=False,
-                 only_failed_event_data=False, cli_execenv_cmd="", cli_execenv_cmd_cwd=None):
+                 only_failed_event_data=False, cli_execenv_cmd="", cli_execenv_cmd_cwd=None, cli_execenv_cmd_containter_workdir=None):
         self.private_data_dir = os.path.abspath(private_data_dir)
         if ident is None:
             self.ident = str(uuid4())
@@ -112,6 +112,7 @@ class RunnerConfig(object):
         self.module_args = module_args
         self.cli_execenv_cmd = cli_execenv_cmd
         self.cli_execenv_cmd_cwd = cli_execenv_cmd_cwd
+        self.cli_execenv_cmd_containter_workdir = cli_execenv_cmd_containter_workdir
         self.host_pattern = host_pattern
         self.binary = binary
         self.rotate_artifacts = rotate_artifacts
@@ -169,18 +170,16 @@ class RunnerConfig(object):
 
     _CONTAINER_ENGINES = ('docker', 'podman')
     _ANSIBLE_INERACTIVE_CMDS = (
-        'ansible adhoc',
+        'ansible',
         'ansible-playbook',
+        'ansible-inventory',
+        'ansible-vault',
+        'ansible-test'
     )
     _ANSIBLE_NON_INERACTIVE_CMDS = (
         'ansible-config',
         'ansible-doc',
         'ansible-galaxy',
-        'ansible-inventory',
-        'ansible-vault',
-        'ansible-test',
-        # run ansible command w/o cli prompt handling (eg: ansible --version)
-        'ansible'
     )
     COMMAND_EXEC_NON_INTERACTIVE_MODES = (
         ExecutionMode.CLI_EXECENV_NON_INTERACTIVE,
@@ -767,6 +766,11 @@ class RunnerConfig(object):
         new_args.extend(['run', '--rm', '--interactive'])
         if self.execution_mode != ExecutionMode.CLI_EXECENV_NON_INTERACTIVE:
             new_args.extend(['--tty'])
+
+        new_args.extend(["-u", 'root'])
+
+        if self.cli_execenv_cmd_containter_workdir:
+            container_workdir = self.cli_execenv_cmd_containter_workdir
 
         container_workdir = "/runner/project"
         new_args.extend(["--workdir", container_workdir])

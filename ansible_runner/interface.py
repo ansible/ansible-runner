@@ -190,7 +190,9 @@ def run(**kwargs):
     :param only_failed_event_data: Omits extra ansible event data unless it's a failed event (stdout and event still included)
     :param cli_execenv_cmd: Tells Ansible Runner to emulate the CLI of Ansible by prepping an Execution Environment and then passing the user provided cmdline.
                             Allows executing a python script by passing the full executable path and aribary pass through commands.
-    :param cli_execenv_cmd_cwd: Tells Ansible Runner the current working directory for the command provided by ``cli_execenv_cmd``.
+    :param cli_execenv_cmd_cwd: Tells Ansible Runner the current local working directory for the command provided by ``cli_execenv_cmd``.
+    :param cli_execenv_cmd_containter_workdir: Applicable only for command provided by ``cli_execenv_cmd`` parameter and running within a container.
+                                               Tells Ansible Runner the work directory to use within container.
     :type private_data_dir: str
     :type ident: str
     :type json_mode: bool
@@ -239,6 +241,7 @@ def run(**kwargs):
     :type only_failed_event_data: bool
     :type cli_execenv_cmd: str
     :type cli_execenv_cmd_cwd: str
+    : type cli_execenv_cmd_containter_workdir: str
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object, or a simple object containing `rc` if run remotely
     '''

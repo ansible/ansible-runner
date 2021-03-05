@@ -814,7 +814,7 @@ def main(sys_args=None):
 
     if vargs.get('command') in ('adhoc', 'playbook'):
         cli_execenv_cmd = {
-            'adhoc': 'ansible adhoc',
+            'adhoc': 'ansible',
             'playbook': 'ansible-playbook'
         }.get(vargs['command'])
 
@@ -929,7 +929,10 @@ def main(sys_args=None):
                                    cli_execenv_cmd=cli_execenv_cmd
                                    )
                 if vargs.get('command') in ('adhoc', 'playbook'):
-                    run_options['cmdline'] = sys.argv[sys.argv.index(leftover_args[0]):]
+                    if vargs.get('command') == 'adhoc':
+                        run_options['cmdline'] = 'adhoc' + sys.argv[sys.argv.index(leftover_args[0]):]
+                    else:
+                        run_options['cmdline'] = sys.argv[sys.argv.index(leftover_args[0]):]
                     run_options['process_isolation']=True
                     run_options['process_isolation_executable']=vargs.get('container_runtime')
 

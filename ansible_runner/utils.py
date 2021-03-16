@@ -429,3 +429,21 @@ def sanitize_container_name(original_name):
     invalid characters so it can be used in docker/podman CLI commands
     """
     return re.sub('[^a-zA-Z0-9_-]', '_', text_type(original_name))
+
+
+def cli_mounts():
+    return [
+        {
+            'ENVS': ['SSH_AUTH_SOCK'],
+            'PATHS': [
+                {
+                    'src': '{}/.ssh/'.format(os.environ['HOME']),
+                    'dest': '/home/runner/.ssh/'
+                },
+                {
+                    'src': '/etc/ssh/ssh_known_hosts',
+                    'dest': '/etc/ssh/ssh_known_hosts'
+                }
+            ]
+        },
+    ]

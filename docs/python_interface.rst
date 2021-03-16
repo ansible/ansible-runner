@@ -5,8 +5,8 @@ Using Runner as a Python Module Interface to Ansible
 
 **Ansible Runner** is intended to provide a directly importable and usable API for interfacing with **Ansible** itself and exposes a few helper interfaces.
 
-The modules center around the :class:`Runner <ansible_runner.runner.Runner>` object. The helper methods will return an instance of this object which provides an
-interface to the results of executing the **Ansible** command.
+The modules center around the :class:`Runner <ansible_runner.runner.Runner>` object. The helper methods will either return an instance of this object which provides an
+interface to the results of executing the **Ansible** command or a tuple the actual output and error response based on the interface.
 
 **Ansible Runner** itself is a wrapper around **Ansible** execution and so adds plugins and interfaces to the system in order to gather extra information and
 process/store it for use later.
@@ -33,6 +33,72 @@ foreground and return the :class:`Runner <ansible_runner.runner.Runner>` object 
 Takes the same arguments as :meth:`ansible_runner.interface.run` but will launch **Ansible** asynchronously and return a tuple containing
 the ``thread`` object and a :class:`Runner <ansible_runner.runner.Runner>` object. The **Runner** object can be inspected during execution.
 
+``run_command()`` helper function
+---------------------------------
+
+:meth:`ansible_runner.interface.run_command`
+
+When called, this function will take the inputs (either provided as direct inputs to the function or from the :ref:`inputdir`), and execute the command passed either
+locally or within an container based on the parameters passed. It will run in the foreground and return a tuple of output and error response when finished. While running
+the within container image command the current local working diretory will be volume mounted within the container, in addition to this for any of ansible command line
+utilities the inventory, vault-password-file, private-key file path will be volume mounted if provided in the ``cmdline_args`` parameters.
+
+``run_command_async()`` helper function
+---------------------------------------
+
+:meth:`ansible_runner.interface.run_command_async`
+
+Takes the same arguments as :meth:`ansible_runner.interface.run_command` but will launch asynchronously and return a tuple containing
+the ``thread`` object and a :class:`Runner <ansible_runner.runner.Runner>` object. The **Runner** object can be inspected during execution.
+
+``get_plugin_docs()`` helper function
+-------------------------------------
+
+:meth:`ansible_runner.interface.get_plugin_docs`
+
+When called, this function will take the inputs, and execute the ansible-doc command to return the either the plugin-docs or playbook snippet for the passed
+list of plugin names. The plugin docs can be fetched either from locally installed plugins or from within an container image based on the parameters passed.
+It will run in the foreground and return a tuple of output and error response when finished. While running the command within the container the current local
+working diretory will be volume mounted within the container.
+
+``get_plugin_docs_async()`` helper function
+-------------------------------------------
+
+:meth:`ansible_runner.interface.get_plugin_docs_async`
+
+Takes the same arguments as :meth:`ansible_runner.interface.get_plugin_docs_async` but will launch asynchronously and return a tuple containing
+the ``thread`` object and a :class:`Runner <ansible_runner.runner.Runner>` object. The **Runner** object can be inspected during execution.
+
+``get_plugin_list()`` helper function
+-------------------------------------
+
+:meth:`ansible_runner.interface.get_plugin_list`
+
+When called, this function will take the inputs, and execute the ansible-doc command to return the list of installed plugins. The installed plugin can be fetched
+either from local environment or from within an container image based on the parameters passed. It will run in the foreground and return a tuple of output and error
+response when finished. While running the command within the container the current local working diretory will be volume mounted within the container.
+
+``get_inventory()`` helper function
+-----------------------------------
+
+:meth:`ansible_runner.interface.get_inventory`
+
+When called, this function will take the inputs, and execute the ansible-inventory command to return the inventory releated information based on the action.
+If `action` is `list` it will return all the applicable configuration options for ansible, for `host` action it will return information
+of a single host andf for `graph` action it will return the inventory. The exectuin will be in the foreground and return a tuple of output and error
+response when finished. While running the command within the container the current local working diretory will be volume mounted within the container.
+
+``get_ansible_config()`` helper function
+----------------------------------------
+
+:meth:`ansible_runner.interface.get_ansible_config`
+
+When called, this function will take the inputs, and execute the ansible-config command to return the Ansible configuration releated information based on the action.
+If `action` is `list` it will return all the hosts related information including the host and group variables, for `dump` action it will return the enitre active configuration
+and it can be customized to return only the changed configuration value by settingg the `only_changed` boolean parameter to `True`. For `view` action it will return the
+view of the active configuration file. The exectuin will be in the foreground and return a tuple of output and error response when finished.
+While running the command within the container the current local working diretory will be volume mounted within the container.
+
 The ``Runner`` object
 ---------------------
 
@@ -51,6 +117,12 @@ properties:
 
 The :class:`Runner <ansible_runner.runner.Runner>` object contains a property :attr:`ansible_runner.runner.Runner.stdout` which will return an open file
 handle containing the ``stdout`` of the **Ansible** process.
+
+``Runner.stderr``
+-----------------
+
+When the ``runner_mode`` is set to ``subprocess`` the :class:`Runner <ansible_runner.runner.Runner>` object uses a property :attr:`ansible_runner.runner.Runner.stderr` which
+will return an open file handle containing the ``stderr`` of the **Ansible** process.
 
 ``Runner.events``
 -----------------
@@ -127,6 +199,98 @@ Usage examples
       print(each_host_event['event'])
   print("Final status:")
   print(r.stats)
+
+.. code-block:: python
+
+# run ansible/generic commands in interactive mode within container
+out, err = ansible_runner.run_command(
+    executable_cmd='ansible-playbook',
+    cmdline_args=['gather.yaml', '-i', 'inventory', '-vvvv', '-k'],
+    input_fd=sys.stdin,
+    output_fd=sys.stdout,
+    error_fd=sys.stderr,
+    cwd='/home/demo',
+    process_isolation=True,
+    container_image='network-ee'
+    )
+print("out: {}".format(out))
+print("err: {}".format(err))
+
+.. code-block:: python
+
+# run ansible/generic commands in interactive mode locally
+out, err = ansible_runner.run_command(
+    executable_cmd='ansible-playbook',
+    cmdline_args=['gather.yaml', '-i', 'inventory', '-vvvv', '-k'],
+    input_fd=sys.stdin,
+    output_fd=sys.stdout,
+    error_fd=sys.stderr,
+    cwd='/home/demo',
+    )
+print("out: {}".format(out))
+print("err: {}".format(err))
+
+.. code-block:: python
+
+# get plugin docs from within container
+out, err = ansible_runner.get_plugin_docs(
+    plugin_names=['vyos.vyos.vyos_command'],
+    plugin_type='module',
+    response_format='json',
+    process_isolation=True,
+    container_image='network-ee'
+)
+print("out: {}".format(out))
+print("err: {}".format(err))
+
+.. code-block:: python
+
+# get plugin docs from within container in async mode
+thread_obj, runner_obj = ansible_runner.get_plugin_docs_async(
+    plugin_names=['ansible.netcommon.cli_config', 'ansible.netcommon.cli_command'],
+    plugin_type='module',
+    response_format='json',
+    process_isolation=True,
+    container_image='network-ee'
+)
+while runner_obj.status not in ['canceled', 'successful', 'timeout', 'failed']:
+    time.sleep(0.01)
+    continue
+
+print("out: {}".format(runner_obj.stdout.read()))
+print("err: {}".format(runner_obj.stderr.read()))
+
+.. code-block:: python
+
+# get plugin list installed on local system
+out, err = ansible_runner.get_plugin_list()
+print("out: {}".format(out))
+print("err: {}".format(err))
+
+.. code-block:: python
+
+# get plugins with file list from within container
+out, err = ansible_runner.get_plugin_list(list_files=True, process_isolation=True, container_image='network-ee')
+print("out: {}".format(out))
+print("err: {}".format(err))
+
+.. code-block:: python
+
+# get list of changed ansible configuration values
+out, err = ansible_runner.get_ansible_config(action='dump',  config_file='/home/demo/ansible.cfg', only_changed=True)
+print("out: {}".format(out))
+print("err: {}".format(err))
+
+# get ansible inventory information
+out, err = ansible_runner.get_inventory(
+    action='list',
+    inventories=['/home/demo/inventory1', '/home/demo/inventory2'],
+    response_format='json',
+    process_isolation=True,
+    container_image='network-ee'
+)
+print("out: {}".format(out))
+print("err: {}".format(err))
 
 Providing custom behavior and inputs
 ------------------------------------

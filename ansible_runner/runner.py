@@ -4,7 +4,7 @@ import time
 import json
 import errno
 import signal
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, CalledProcessError, TimeoutExpired, run as run_subprocess
 import shutil
 import codecs
 import collections
@@ -39,6 +39,15 @@ class Runner(object):
         self.status = "unstarted"
         self.rc = None
         self.remove_partials = remove_partials
+        
+        # default runner mode to pexpect
+        self.runner_mode = self.config.runner_mode if hasattr(self.config, 'runner_mode') else 'pexpect'
+
+        self.resource_profiling = self.config.resource_profiling if hasattr(self.config, 'resource_profiling') else False
+        self.directory_isolation_path = self.config.directory_isolation_path if hasattr(self.config, 'directory_isolation_path') else None
+        self.directory_isolation_cleanup = self.config.directory_isolation_cleanup if hasattr(self.config, 'directory_isolation_cleanup') else None
+        self.process_isolation = self.config.process_isolation if hasattr(self.config, 'process_isolation') else None
+        self.process_isolation_path_actual = self.config.process_isolation_path_actual if hasattr(self.config, 'process_isolation_path_actual') else None
 
     def event_callback(self, event_data):
         '''
@@ -98,9 +107,13 @@ class Runner(object):
         Launch the Ansible task configured in self.config (A RunnerConfig object), returns once the
         invocation is complete
         '''
+        password_patterns = []
+        password_values = []
+
         self.status_callback('starting')
         stdout_filename = os.path.join(self.config.artifact_dir, 'stdout')
         command_filename = os.path.join(self.config.artifact_dir, 'command')
+        stderr_filename = os.path.join(self.config.artifact_dir, 'stderr')
 
         try:
             os.makedirs(self.config.artifact_dir, mode=0o700)
@@ -127,18 +140,30 @@ class Runner(object):
         if self.config.ident is not None:
             cleanup_artifact_dir(os.path.join(self.config.artifact_dir, ".."), self.config.rotate_artifacts)
 
-        stdout_handle = codecs.open(stdout_filename, 'w', encoding='utf-8')
-        stdout_handle = OutputEventFilter(stdout_handle, self.event_callback, self.config.suppress_ansible_output, output_json=self.config.json_mode)
+        if hasattr(self.config, 'suppress_ansible_output'):
+            suppress_ansible_output = self.config.suppress_ansible_output
+        else:
+            suppress_ansible_output = False
 
-        if not isinstance(self.config.expect_passwords, collections.OrderedDict):
+        if hasattr(self.config, 'json_mode'):
+            output_json = self.config.json_mode
+        else:
+            output_json = False
+    
+        stdout_handle = codecs.open(stdout_filename, 'w', encoding='utf-8')
+        stdout_handle = OutputEventFilter(stdout_handle, self.event_callback, suppress_ansible_output, output_json=output_json)
+        stderr_handle = codecs.open(stderr_filename, 'w', encoding='utf-8')
+        stderr_handle = OutputEventFilter(stderr_handle, self.event_callback, suppress_ansible_output, output_json=output_json)
+
+        if self.runner_mode == 'pexpect' and not isinstance(self.config.expect_passwords, collections.OrderedDict):
             # We iterate over `expect_passwords.keys()` and
             # `expect_passwords.values()` separately to map matched inputs to
             # patterns and choose the proper string to send to the subprocess;
             # enforce usage of an OrderedDict so that the ordering of elements in
             # `keys()` matches `values()`.
             expect_passwords = collections.OrderedDict(self.config.expect_passwords)
-        password_patterns = list(expect_passwords.keys())
-        password_values = list(expect_passwords.values())
+            password_patterns = list(expect_passwords.keys())
+            password_values = list(expect_passwords.values())
 
         # pexpect needs all env vars to be utf-8 encoded bytes
         # https://github.com/pexpect/pexpect/issues/512
@@ -166,7 +191,7 @@ class Runner(object):
         }
 
         # Prepare to collect performance data
-        if self.config.resource_profiling:
+        if self.resource_profiling:
             cgroup_path = '{0}/{1}'.format(self.config.resource_profiling_base_cgroup, self.config.ident)
 
             import getpass
@@ -187,81 +212,153 @@ class Runner(object):
 
         self.status_callback('running')
         self.last_stdout_update = time.time()
-        try:
-            child = pexpect.spawn(
-                command[0],
-                command[1:],
-                cwd=cwd,
-                env=env,
-                ignore_sighup=True,
-                encoding='utf-8',
-                codec_errors='replace',
-                echo=False,
-                use_poll=self.config.pexpect_use_poll,
-            )
-            child.logfile_read = stdout_handle
-        except pexpect.exceptions.ExceptionPexpect as e:
-            child = collections.namedtuple(
-                'MissingProcess', 'exitstatus isalive close'
-            )(
-                exitstatus=127,
-                isalive=lambda: False,
-                close=lambda: None,
-            )
 
-            def _decode(x):
-                return x.decode('utf-8') if six.PY2 else x
+        # The subprocess runner interface provides stdin/stdout/stderr with streaming capability
+        # to the caller if input_fd/output_fd/error_fd is passed to config class.
+        # Alsp, provides an workaround for known issue in pexpect for long running non-interactive process
+        # https://pexpect.readthedocs.io/en/stable/commonissues.html#truncated-output-just-before-child-exits
+        if self.runner_mode == 'subprocess':
+            if hasattr(self.config, 'input_fd') and self.config.input_fd:
+                input_fd = self.config.input_fd
+            else:
+                input_fd = None
 
-            # create the events directory (the callback plugin won't run, so it
-            # won't get created)
-            events_directory = os.path.join(self.config.artifact_dir, 'job_events')
-            if not os.path.exists(events_directory):
-                os.mkdir(events_directory, 0o700)
-            stdout_handle.write(_decode(str(e)))
-            stdout_handle.write(_decode('\n'))
+            if hasattr(self.config, 'output_fd') and self.config.output_fd:
+                output_fd = self.config.output_fd
+            else:
+                output_fd = PIPE
 
-        job_start = time.time()
-        while child.isalive():
-            result_id = child.expect(password_patterns,
-                                     timeout=self.config.pexpect_timeout,
-                                     searchwindowsize=100)
-            password = password_values[result_id]
-            if password is not None:
-                child.sendline(password)
-                self.last_stdout_update = time.time()
-            if self.cancel_callback:
-                try:
-                    self.canceled = self.cancel_callback()
-                except Exception as e:
-                    # TODO: logger.exception('Could not check cancel callback - cancelling immediately')
-                    #if isinstance(extra_update_fields, dict):
-                    #    extra_update_fields['job_explanation'] = "System error during job execution, check system logs"
-                    raise CallbackError("Exception in Cancel Callback: {}".format(e))
-            if self.config.job_timeout and not self.canceled and (time.time() - job_start) > self.config.job_timeout:
+            if hasattr(self.config, 'error_fd') and self.config.error_fd:
+                error_fd = self.config.error_fd
+            else:
+                error_fd = PIPE
+
+            subprocess_timeout = self.config.subprocess_timeout if hasattr(self.config, 'subprocess_timeout') else None
+            try:
+                stdout_response = ''
+                stderr_response = ''
+                proc_out = run_subprocess(
+                    " ".join(command),
+                    cwd=cwd,
+                    env=env,
+                    stdin=input_fd,
+                    stdout=output_fd,
+                    stderr=error_fd,
+                    timeout=subprocess_timeout,
+                    check=True,
+                    universal_newlines=True,
+                    shell=True,
+                )
+                stdout_response = proc_out.stdout
+                stderr_response = proc_out.stderr
+                self.rc = proc_out.returncode
+            except CalledProcessError as exc:
+                logger.debug("{cmd} execution failed, returncode: {rc}, output: {output}, stdout: {stdout}, stderr: {stderr}".format(
+                    cmd=exc.cmd, rc=exc.returncode, output=exc.output, stdout=exc.stdout, stderr=exc.stderr))
+                self.rc = exc.returncode
+                self.errored = True
+                stdout_response = exc.stdout
+                stderr_response = exc.stderr
+            except TimeoutExpired as exc:
+                logger.debug("{cmd} execution timedout, timeout: {timeout}, output: {output}, stdout: {stdout}, stderr: {stderr}".format(
+                    cmd=exc.cmd, timeout=exc.timeout, output=exc.output, stdout=exc.stdout, stderr=exc.stderr))
+                self.rc = 254
+                stdout_response = exc.stdout
+                stderr_response = exc.stderr
                 self.timed_out = True
-                # if isinstance(extra_update_fields, dict):
-                #     extra_update_fields['job_explanation'] = "Job terminated due to timeout"
-            if self.canceled or self.timed_out or self.errored:
+            except Exception as exc:
+                import traceback
+                stderr_response = traceback.format_exc()
+                self.rc = 254
+                self.errored = True           
+                logger.debug("received execption: {exc}".format(exc=str(exc)))
+                
+            if self.timed_out or self.errored:
                 self.kill_container()
-                Runner.handle_termination(child.pid, is_cancel=self.canceled)
-            if self.config.idle_timeout and (time.time() - self.last_stdout_update) > self.config.idle_timeout:
-                self.kill_container()
-                Runner.handle_termination(child.pid, is_cancel=False)
-                self.timed_out = True
 
-        stdout_handle.flush()
-        stdout_handle.close()
-        child.close()
+            if stdout_response:
+                if isinstance(stdout_response, bytes):
+                    stdout_response = stdout_response.decode()
+                stdout_handle.write(stdout_response)
+            if stderr_response:
+                if isinstance(stderr_response, bytes):
+                    stderr_response = stderr_response.decode()
+                stderr_handle.write(stderr_response)
+        else:
+            try:
+                child = pexpect.spawn(
+                    command[0],
+                    command[1:],
+                    cwd=cwd,
+                    env=env,
+                    ignore_sighup=True,
+                    encoding='utf-8',
+                    codec_errors='replace',
+                    echo=False,
+                    use_poll=self.config.pexpect_use_poll,
+                )
+                child.logfile_read = stdout_handle
+            except pexpect.exceptions.ExceptionPexpect as e:
+                child = collections.namedtuple(
+                    'MissingProcess', 'exitstatus isalive close'
+                )(
+                    exitstatus=127,
+                    isalive=lambda: False,
+                    close=lambda: None,
+                )
+
+                def _decode(x):
+                    return x.decode('utf-8') if six.PY2 else x
+
+                # create the events directory (the callback plugin won't run, so it
+                # won't get created)
+                events_directory = os.path.join(self.config.artifact_dir, 'job_events')
+                if not os.path.exists(events_directory):
+                    os.mkdir(events_directory, 0o700)
+                stdout_handle.write(_decode(str(e)))
+                stdout_handle.write(_decode('\n'))
+
+            job_start = time.time()
+            while child.isalive():
+                result_id = child.expect(password_patterns, timeout=self.config.pexpect_timeout, searchwindowsize=100)
+                password = password_values[result_id]
+                if password is not None:
+                    child.sendline(password)
+                    self.last_stdout_update = time.time()
+                if self.cancel_callback:
+                    try:
+                        self.canceled = self.cancel_callback()
+                    except Exception as e:
+                        # TODO: logger.exception('Could not check cancel callback - cancelling immediately')
+                        #if isinstance(extra_update_fields, dict):
+                        #    extra_update_fields['job_explanation'] = "System error during job execution, check system logs"
+                        raise CallbackError("Exception in Cancel Callback: {}".format(e))
+                if self.config.job_timeout and not self.canceled and (time.time() - job_start) > self.config.job_timeout:
+                    self.timed_out = True
+                    # if isinstance(extra_update_fields, dict):
+                    #     extra_update_fields['job_explanation'] = "Job terminated due to timeout"
+                if self.canceled or self.timed_out or self.errored:
+                    self.kill_container()
+                    Runner.handle_termination(child.pid, is_cancel=self.canceled)
+                if self.config.idle_timeout and (time.time() - self.last_stdout_update) > self.config.idle_timeout:
+                    self.kill_container()
+                    Runner.handle_termination(child.pid, is_cancel=False)
+                    self.timed_out = True
+
+            stdout_handle.flush()
+            stdout_handle.close()
+            child.close()
+            self.rc = child.exitstatus if not (self.timed_out or self.canceled) else 254
 
         if self.canceled:
             self.status_callback('canceled')
-        elif child.exitstatus == 0 and not self.timed_out:
+        elif self.rc == 0 and not self.timed_out:
             self.status_callback('successful')
         elif self.timed_out:
             self.status_callback('timeout')
         else:
             self.status_callback('failed')
-        self.rc = child.exitstatus if not (self.timed_out or self.canceled) else 254
+
         for filename, data in [
             ('status', self.status),
             ('rc', self.rc),
@@ -271,12 +368,12 @@ class Runner(object):
                 os.close(os.open(artifact_path, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
             with open(artifact_path, 'w') as f:
                 f.write(str(data))
-        if self.config.directory_isolation_path and self.config.directory_isolation_cleanup:
-            shutil.rmtree(self.config.directory_isolation_path)
-        if self.config.process_isolation and self.config.process_isolation_path_actual:
+        if self.directory_isolation_path and self.directory_isolation_cleanup:
+            shutil.rmtree(self.directory_isolation_path)
+        if self.process_isolation and self.process_isolation_path_actual:
             def _delete(retries=15):
                 try:
-                    shutil.rmtree(self.config.process_isolation_path_actual)
+                    shutil.rmtree(self.process_isolation_path_actual)
                 except OSError as e:
                     res = False
                     if e.errno == 16 and retries > 0:
@@ -286,7 +383,7 @@ class Runner(object):
                         raise
                 return True
             _delete()
-        if self.config.resource_profiling:
+        if self.resource_profiling:
             cmd = 'cgdelete -g cpuacct,memory,pids:{}'.format(cgroup_path)
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
             _, stderr = proc.communicate()
@@ -316,6 +413,16 @@ class Runner(object):
         if not os.path.exists(stdout_path):
             raise AnsibleRunnerException("stdout missing")
         return open(os.path.join(self.config.artifact_dir, 'stdout'), 'r')
+
+    @property
+    def stderr(self):
+        '''
+        Returns an open file handle to the stderr representing the Ansible run
+        '''
+        stderr_path = os.path.join(self.config.artifact_dir, 'stderr')
+        if not os.path.exists(stderr_path):
+            raise AnsibleRunnerException("stderr missing")
+        return open(os.path.join(self.config.artifact_dir, 'stderr'), 'r')
 
     @property
     def events(self):

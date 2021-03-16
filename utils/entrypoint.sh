@@ -36,6 +36,7 @@ if [[ -d ${AWX_ISOLATED_DATA_DIR} ]]; then
     if output=$(ansible-galaxy collection list --format json 2> /dev/null); then
         echo $output > ${AWX_ISOLATED_DATA_DIR}/collections.json
     fi
+    ansible --version | head -n 1 > ${AWX_ISOLATED_DATA_DIR}/ansible_version.txt
 fi
 
 exec /usr/local/bin/dumb-init -- "${@}"

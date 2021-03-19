@@ -39,7 +39,7 @@ class Runner(object):
         self.status = "unstarted"
         self.rc = None
         self.remove_partials = remove_partials
-        
+
         # default runner mode to pexpect
         self.runner_mode = self.config.runner_mode if hasattr(self.config, 'runner_mode') else 'pexpect'
 
@@ -145,15 +145,10 @@ class Runner(object):
         else:
             suppress_ansible_output = False
 
-        if hasattr(self.config, 'json_mode'):
-            output_json = self.config.json_mode
-        else:
-            output_json = False
-    
         stdout_handle = codecs.open(stdout_filename, 'w', encoding='utf-8')
-        stdout_handle = OutputEventFilter(stdout_handle, self.event_callback, suppress_ansible_output, output_json=output_json)
+        stdout_handle = OutputEventFilter(stdout_handle, self.event_callback, suppress_ansible_output, output_json=self.config.json_mode)
         stderr_handle = codecs.open(stderr_filename, 'w', encoding='utf-8')
-        stderr_handle = OutputEventFilter(stderr_handle, self.event_callback, suppress_ansible_output, output_json=output_json)
+        stderr_handle = OutputEventFilter(stderr_handle, self.event_callback, suppress_ansible_output, output_json=self.config.json_mode)
 
         if self.runner_mode == 'pexpect' and not isinstance(self.config.expect_passwords, collections.OrderedDict):
             # We iterate over `expect_passwords.keys()` and
@@ -270,9 +265,9 @@ class Runner(object):
                 import traceback
                 stderr_response = traceback.format_exc()
                 self.rc = 254
-                self.errored = True           
+                self.errored = True
                 logger.debug("received execption: {exc}".format(exc=str(exc)))
-                
+
             if self.timed_out or self.errored:
                 self.kill_container()
 

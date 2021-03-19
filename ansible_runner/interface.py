@@ -310,6 +310,7 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
                      be read from ``env/settings`` in ``private_data_dir``.
     :param ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
     :param quiet: Disable all output
+    :param json_mode: Store event data in place of stdout on the console and in the stdout file
     :param artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
     :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
@@ -356,6 +357,7 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
     :type rotate_artifacts: int
     :type ssh_key: str
     :type quiet: bool
+    :type json_mode: bool
     :type event_handler: function
     :type cancel_callback: function
     :type finished_callback: function
@@ -432,6 +434,7 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format='json', snip
                      be read from ``env/settings`` in ``private_data_dir``.
     :param ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
     :param quiet: Disable all output
+    :param json_mode: Store event data in place of stdout on the console and in the stdout file
     :param artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
     :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
@@ -479,6 +482,7 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format='json', snip
     :type rotate_artifacts: int
     :type ssh_key: str
     :type quiet: bool
+    :type json_mode: bool
     :type event_handler: function
     :type cancel_callback: function
     :type finished_callback: function
@@ -532,6 +536,7 @@ def get_plugin_list(list_files=None, response_format='json', plugin_type=None, p
                      be read from ``env/settings`` in ``private_data_dir``.
     :param ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
     :param quiet: Disable all output
+    :param json_mode: Store event data in place of stdout on the console and in the stdout file
     :param artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
     :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
@@ -578,6 +583,7 @@ def get_plugin_list(list_files=None, response_format='json', plugin_type=None, p
     :type rotate_artifacts: int
     :type ssh_key: str
     :type quiet: bool
+    :type json_mode: bool
     :type event_handler: function
     :type cancel_callback: function
     :type finished_callback: function
@@ -632,6 +638,7 @@ def get_inventory(action, inventories, response_format='json', host=None, playbo
                      be read from ``env/settings`` in ``private_data_dir``.
     :param ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
     :param quiet: Disable all output
+    :param json_mode: Store event data in place of stdout on the console and in the stdout file
     :param artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
     :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
@@ -680,13 +687,14 @@ def get_inventory(action, inventories, response_format='json', host=None, playbo
     :type rotate_artifacts: int
     :type ssh_key: str
     :type quiet: bool
+    :type json_mode: bool
     :type event_handler: function
     :type cancel_callback: function
     :type finished_callback: function
     :type status_handler: function
     :type artifacts_handler: function
 
-    :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is 
+    :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is
               empty as ``pexpect`` uses same output descriptor for stdout and stderr.
     '''
 
@@ -731,6 +739,7 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
                      be read from ``env/settings`` in ``private_data_dir``.
     :param ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
     :param quiet: Disable all output
+    :param json_mode: Store event data in place of stdout on the console and in the stdout file
     :param artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
     :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
@@ -775,13 +784,14 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     :type rotate_artifacts: int
     :type ssh_key: str
     :type quiet: bool
+    :type: json_mode: bool
     :type event_handler: function
     :type cancel_callback: function
     :type finished_callback: function
     :type status_handler: function
     :type artifacts_handler: function
 
-    :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is 
+    :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is
               empty as ``pexpect`` uses same output descriptor for stdout and stderr.
     '''
     event_callback_handler = kwargs.pop('event_handler', None)

@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+import json
 import logging
 import os
 import pexpect
@@ -58,7 +59,7 @@ class BaseConfig(object):
                  private_data_dir=None, project_dir=None, artifact_dir=None, fact_cache_type='jsonfile', fact_cache=None,
                  process_isolation=False, process_isolation_executable=None,
                  container_image=None, container_volume_mounts=None, container_options=None, containter_workdir=None,
-                 ident=None, rotate_artifacts=0, ssh_key=None, quiet=False):
+                 ident=None, rotate_artifacts=0, ssh_key=None, quiet=False, json_mode=False):
         # common params
         self.cwd = cwd
         self.envvars = envvars
@@ -80,6 +81,7 @@ class BaseConfig(object):
         self.artifact_dir = artifact_dir
         self.rotate_artifacts = rotate_artifacts
         self.quiet = quiet
+        self.json_mode=json_mode
         self.passwords = passwords
         self.settings = settings
 
@@ -143,7 +145,7 @@ class BaseConfig(object):
             debug("Not loading settings")
             self.settings = dict()
 
-        if self.runner_mode == 'pexpect': 
+        if self.runner_mode == 'pexpect':
             try:
                 passwords = self.loader.load_file('env/passwords', Mapping)
                 self.expect_passwords = {
@@ -273,7 +275,7 @@ class BaseConfig(object):
             path = os.path.dirname(path)
         if path in ('/', '/home', '/usr'):
             raise ConfigurationError("When using containerized execution, cannot mount '/' or '/home' or '/usr'")
-    
+
     def _get_playbook_path(self):
         _playbook = ""
         _book_keeping_copy = self.cmdline_args.copy()
@@ -307,14 +309,14 @@ class BaseConfig(object):
         return _playbook
 
     def _update_volume_mount_paths(self, args_list, src_mount_path, dest_mount_path=None, labels=None):
-        
+
         if src_mount_path is None or not os.path.exists(src_mount_path):
             logger.debug("Source volume mount path does not exit {0}".format(src_mount_path))
             return
 
         if dest_mount_path is None:
             dest_mount_path = src_mount_path
-            
+
         self._ensure_path_safe_to_mount(src_mount_path)
 
         if os.path.isabs(src_mount_path):
@@ -375,7 +377,7 @@ class BaseConfig(object):
                 # invalid command, pass through for execution
                 # to return valid error from ansible-core
                 return
-            
+
             if arg in inventory_file_options and optional_arg_value.endswith(','):
                 # comma separated host list provided as value
                 continue
@@ -401,7 +403,7 @@ class BaseConfig(object):
 
         self._ensure_path_safe_to_mount(workdir)
         new_args.extend(["--workdir", workdir])
-        
+
         self._ensure_path_safe_to_mount(self.private_data_dir)
 
         if self.execution_mode == ExecutionMode.ANSIBLE_COMMANDS:
@@ -415,7 +417,7 @@ class BaseConfig(object):
             new_args.extend(["--group-add=root"])
             new_args.extend(["--userns=keep-id"])
             new_args.extend(["--ipc=host"])
-            
+
         self._update_volume_mount_paths(new_args, "{}".format(self.private_data_dir), dest_mount_path="/runner", labels=":Z")
 
         if self.container_volume_mounts:

@@ -499,7 +499,7 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format='json', snip
     r.run()
     response = r.stdout.read()
     error = r.stderr.read()
-    if response_format == 'json':
+    if response and response_format == 'json':
         response = json.loads(santize_json_response(response))
     return response, error
 
@@ -617,7 +617,7 @@ def get_plugin_list(list_files=None, response_format='json', plugin_type=None, p
     r.run()
     response = r.stdout.read()
     error = r.stderr.read()
-    if response_format == 'json':
+    if response and response_format == 'json':
         response = json.loads(santize_json_response(response))
     return response, error
 
@@ -725,7 +725,7 @@ def get_inventory(action, inventories, response_format='json', host=None, playbo
     r.run()
     response = r.stdout.read()
     error = r.stderr.read()
-    if response_format == 'json':
+    if response and response_format == 'json':
         response = json.loads(santize_json_response(response))
     return response, error
 

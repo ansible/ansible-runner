@@ -206,26 +206,26 @@ def test_run_command_async(test_data_dir):
 
 def test_get_plugin_docs():
     out, _ = get_plugin_docs(
-        plugin_names=['ansible.builtin.file', 'ansible.builtin.copy'],
+        plugin_names=['file', 'copy'],
         plugin_type='module',
         response_format='json',
         quiet=True
     )
-    assert out['ansible.builtin.copy'] is not None
-    assert out['ansible.builtin.file'] is not None
+    assert out['copy'] is not None
+    assert out['file'] is not None
 
 
 def test_get_plugin_docs_async():
     thread, r = get_plugin_docs_async(
-        plugin_names=['ansible.builtin.file', 'ansible.builtin.copy'],
+        plugin_names=['file', 'copy'],
         plugin_type='module',
         response_format='json',
         quiet=True
     )
     thread.join()
     out = r.stdout.read()
-    assert 'ansible.builtin.copy' in out
-    assert 'ansible.builtin.file' in out
+    assert 'copy' in out
+    assert 'file' in out
     assert r.status == 'successful'
 
 
@@ -236,14 +236,14 @@ def test_get_plugin_docs_within_container(container_runtime_installed):
         'container_image': 'quay.io/ansible/ansible-runner:devel'
     }
     out, _ = get_plugin_docs(
-        plugin_names=['ansible.builtin.file', 'ansible.builtin.copy'],
+        plugin_names=['file', 'copy'],
         plugin_type='module',
         response_format='json',
         quiet=True,
         **container_kwargs
     )
-    assert out['ansible.builtin.copy'] is not None
-    assert out['ansible.builtin.file'] is not None
+    assert out['copy'] is not None
+    assert out['file'] is not None
 
 
 def test_get_plugin_docs_list():

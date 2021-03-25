@@ -50,6 +50,8 @@ from ansible_runner.utils import (
 logger = logging.getLogger('ansible-runner')
 
 
+# TODO: Remove CLI_EXECENV execution mode and relevant changes as
+# the newly added run_command interface can provide this functionality
 class ExecutionMode():
     NONE = 0
     ANSIBLE = 1
@@ -58,6 +60,7 @@ class ExecutionMode():
     CLI_EXECENV = 4
 
 
+# TODO: Refactor RunnerConfig class to use BaseConfig class
 class RunnerConfig(object):
     """
     A ``Runner`` configuration object that's meant to encapsulate the configuration used by the

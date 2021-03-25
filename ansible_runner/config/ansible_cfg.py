@@ -17,25 +17,25 @@
 # under the License.
 #
 import logging
-from ansible_runner import base_config
+from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
 
 logger = logging.getLogger('ansible-runner')
 
 
-class AnsibleConfig(base_config.BaseConfig):
+class AnsibleCfgConfig(BaseConfig):
     """
     A ``Runner`` configuration object that's meant to encapsulate the configuration used by the
-    :py:mod:`ansible_runner.runner.AnsibleConfig` object to launch and manage the invocation of
+    :py:mod:`ansible_runner.runner.AnsibleCfgConfig` object to launch and manage the invocation of
     command execution.
 
     Typically this object is initialized for you when using the standard ``get_ansible_config`` interfaces in :py:mod:`ansible_runner.interface`
-    but can be used to construct the ``AnsibleConfig`` configuration to be invoked elsewhere. It can also be overridden to provide different
-    functionality to the AnsibleConfig object.
+    but can be used to construct the ``AnsibleCfgConfig`` configuration to be invoked elsewhere. It can also be overridden to provide different
+    functionality to the AnsibleCfgConfig object.
 
     :Example:
 
-    >>> ac = AnsibleConfig(...)
+    >>> ac = AnsibleCfgConfig(...)
     >>> r = Runner(config=ac)
     >>> r.run()
 
@@ -47,20 +47,20 @@ class AnsibleConfig(base_config.BaseConfig):
         if self.runner_mode not in ['pexpect', 'subprocess']:
             raise ConfigurationError("Invalid runner mode {0}, valid value is either 'pexpect' or 'subprocess'".format(self.runner_mode))
 
-        self.execution_mode = base_config.ExecutionMode.ANSIBLE_COMMANDS
-        super(AnsibleConfig, self).__init__(**kwargs)
+        self.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
+        super(AnsibleCfgConfig, self).__init__(**kwargs)
 
     _supported_actions = ('list', 'dump', 'view')
 
 
-    def get_ansible_config(self, action, config_file=None, only_changed=None):
+    def prepare_ansible_config_command(self, action, config_file=None, only_changed=None):
 
-        if action not in AnsibleConfig._supported_actions:
-            raise ConfigurationError("Invalid action {0}, valid value is one of either {1}".format(action, " ".join(AnsibleConfig._supported_actions)))
-        
+        if action not in AnsibleCfgConfig._supported_actions:
+            raise ConfigurationError("Invalid action {0}, valid value is one of either {1}".format(action, ", ".join(AnsibleCfgConfig._supported_actions)))
+
         if action != 'dump' and only_changed:
             raise ConfigurationError("only_changed is applicable for action 'dump'")
-        self._prepare_env()
+        self._prepare_env(runner_mode=self.runner_mode)
         self.cmdline_args = []
 
         self.cmdline_args.append(action)
@@ -69,6 +69,6 @@ class AnsibleConfig(base_config.BaseConfig):
 
         if only_changed:
             self.cmdline_args.append('--only-changed')
-        
+
         self.command = ['ansible-config'] + self.cmdline_args
-        self._handle_command_wrap()
+        self._handle_command_wrap(self.execution_mode, self.cmdline_args)

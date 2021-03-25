@@ -447,3 +447,15 @@ def cli_mounts():
             ]
         },
     ]
+
+
+def santize_json_response(data):
+    '''
+    Removes warning message from response message emitted by ansible
+    command line utilities.
+    :param action: The string data to be santizied
+    :type action: str
+    '''
+    start_re = re.compile("{(.|\n)*", re.MULTILINE)
+    data = start_re.search(data).group().strip()
+    return data

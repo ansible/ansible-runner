@@ -17,13 +17,13 @@
 # under the License.
 #
 import logging
-from ansible_runner import base_config
+from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
 
 logger = logging.getLogger('ansible-runner')
 
 
-class InventoryConfig(base_config.BaseConfig):
+class InventoryConfig(BaseConfig):
     """
     A ``Runner`` configuration object that's meant to encapsulate the configuration used by the
     :py:mod:`ansible_runner.runner.InventoryConfig` object to launch and manage the invocation of
@@ -47,31 +47,31 @@ class InventoryConfig(base_config.BaseConfig):
         if self.runner_mode not in ['pexpect', 'subprocess']:
             raise ConfigurationError("Invalid runner mode {0}, valid value is either 'pexpect' or 'subprocess'".format(self.runner_mode))
 
-        self.execution_mode = base_config.ExecutionMode.ANSIBLE_COMMANDS
+        self.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
         super(InventoryConfig, self).__init__(**kwargs)
 
     _supported_response_formats = ('json', 'yaml', 'toml')
     _supported_actions = ('graph', 'host', 'list')
 
-    def get_inventory(self, action, inventories, response_format='json', host=None, playbook_dir=None, vault_ids=None, vault_password_file=None):
+    def prepare_inventory_command(self, action, inventories, response_format='json', host=None, playbook_dir=None, vault_ids=None, vault_password_file=None):
 
         if action not in InventoryConfig._supported_actions:
-            raise ConfigurationError("Invalid action {0}, valid value is one of either {1}".format(action, " ".join(InventoryConfig._supported_actions)))
+            raise ConfigurationError("Invalid action {0}, valid value is one of either {1}".format(action, ", ".join(InventoryConfig._supported_actions)))
 
         if response_format and response_format not in InventoryConfig._supported_response_formats:
             raise ConfigurationError("Invalid response_format {0}, valid value is one of "
-                                     "either {1}".format(response_format, " ".join(InventoryConfig._supported_output_formats)))
+                                     "either {1}".format(response_format, ", ".join(InventoryConfig._supported_response_formats)))
 
         if not isinstance(inventories, list):
             raise ConfigurationError("inventories should be of type list, instead received {0} of type {1}".format(inventories, type(inventories)))
-        
+
         if action == "host" and host is None:
-            raise ConfigurationError("Value of host paramter is required when action in 'host'")
+            raise ConfigurationError("Value of host parameter is required when action in 'host'")
 
         if action == "graph" and response_format and response_format != 'json':
             raise ConfigurationError("'graph' action supports only 'json' response format")
 
-        self._prepare_env()
+        self._prepare_env(runner_mode=self.runner_mode)
         self.cmdline_args = []
 
         self.cmdline_args.append('--{0}'.format(action))
@@ -86,7 +86,7 @@ class InventoryConfig(base_config.BaseConfig):
 
         if playbook_dir:
             self.cmdline_args.extend(['--playbook-dir', playbook_dir])
-        
+
         if vault_ids:
             self.cmdline_args.extend(['--vault-id', vault_ids])
 
@@ -94,4 +94,4 @@ class InventoryConfig(base_config.BaseConfig):
             self.cmdline_args.extend(['--vault-password-file', vault_password_file])
 
         self.command = ['ansible-inventory'] + self.cmdline_args
-        self._handle_command_wrap()
+        self._handle_command_wrap(self.execution_mode, self.cmdline_args)

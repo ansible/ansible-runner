@@ -16,7 +16,6 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import json
 import logging
 import os
 import pexpect
@@ -44,7 +43,7 @@ from ansible_runner.utils import (
 logger = logging.getLogger('ansible-runner')
 
 
-class ExecutionMode():
+class BaseExecutionMode():
     NONE = 0
     # run ansible commands either locally or within EE
     ANSIBLE_COMMANDS = 1
@@ -55,10 +54,10 @@ class ExecutionMode():
 class BaseConfig(object):
 
     def __init__(self,
-                 cwd=None, envvars=None, passwords=None, settings=None,
-                 private_data_dir=None, project_dir=None, artifact_dir=None, fact_cache_type='jsonfile', fact_cache=None,
+                 private_data_dir=None, cwd=None, envvars=None, passwords=None, settings=None,
+                 project_dir=None, artifact_dir=None, fact_cache_type='jsonfile', fact_cache=None,
                  process_isolation=False, process_isolation_executable=None,
-                 container_image=None, container_volume_mounts=None, container_options=None, containter_workdir=None,
+                 container_image=None, container_volume_mounts=None, container_options=None, container_workdir=None,
                  ident=None, rotate_artifacts=0, ssh_key=None, quiet=False, json_mode=False):
         # common params
         self.cwd = cwd
@@ -70,7 +69,7 @@ class BaseConfig(object):
         self.process_isolation_executable = process_isolation_executable or defaults.default_process_isolation_executable
         self.container_image = container_image
         self.container_volume_mounts = container_volume_mounts
-        self.containter_workdir = containter_workdir
+        self.container_workdir = container_workdir
         self.container_name = None  # like other properties, not accurate until prepare is called
         self.container_options = container_options
         self._volume_mount_paths = []
@@ -113,12 +112,11 @@ class BaseConfig(object):
         self.fact_cache = os.path.join(self.artifact_dir, fact_cache or 'fact_cache') if self.fact_cache_type == 'jsonfile' else None
 
         self.loader = ArtifactLoader(self.private_data_dir)
-
-        if not self.cwd:
-            if os.path.exists(self.project_dir):
-                self.cwd = self.project_dir
-            else:
-                self.cwd = os.getcwd()
+        self.cwd = cwd
+        if not self.cwd and os.path.exists(self.project_dir):
+            self.cwd = self.project_dir
+        if self.cwd:
+            self.cwd = os.path.abspath(self.cwd)
 
         if not os.path.exists(self.private_data_dir):
             os.makedirs(self.private_data_dir, mode=0o700)
@@ -131,7 +129,7 @@ class BaseConfig(object):
     def containerized(self):
         return self.process_isolation and self.process_isolation_executable in self._CONTAINER_ENGINES
 
-    def _prepare_env(self):
+    def _prepare_env(self, runner_mode='pexpect'):
         """
         Manages reading environment metadata files under ``private_data_dir`` and merging/updating
         with existing values so the :py:class:`ansible_runner.runner.Runner` object can read and use them easily
@@ -145,7 +143,7 @@ class BaseConfig(object):
             debug("Not loading settings")
             self.settings = dict()
 
-        if self.runner_mode == 'pexpect':
+        if runner_mode == 'pexpect':
             try:
                 passwords = self.loader.load_file('env/passwords', Mapping)
                 self.expect_passwords = {
@@ -167,7 +165,7 @@ class BaseConfig(object):
             self.idle_timeout = self.settings.get('idle_timeout', None)
             self.job_timeout = self.settings.get('job_timeout', None)
 
-        elif self.runner_mode == 'subprocess':
+        elif runner_mode == 'subprocess':
             self.subprocess_timeout = self.settings.get('subprocess_timeout', 300)
 
         self.process_isolation = self.settings.get('process_isolation', self.process_isolation)
@@ -230,7 +228,7 @@ class BaseConfig(object):
         if not self.containerized:
             callback_dir = self.env.get('AWX_LIB_DIRECTORY', os.getenv('AWX_LIB_DIRECTORY'))
             if callback_dir is None:
-                callback_dir = os.path.join(os.path.split(os.path.abspath(__file__))[0], "callbacks")
+                callback_dir = os.path.join(os.path.split(os.path.abspath(__file__))[0], "..", "callbacks")
             python_path = self.env.get('PYTHONPATH', os.getenv('PYTHONPATH', ''))
             self.env['PYTHONPATH'] = ':'.join([python_path, callback_dir])
             if python_path and not python_path.endswith(':'):
@@ -256,14 +254,14 @@ class BaseConfig(object):
         for k,v in sorted(self.env.items()):
             debug(f' {k}: {v}')
 
-    def _handle_command_wrap(self):
+    def _handle_command_wrap(self, execution_mode, cmdline_args):
         if self.ssh_key_data:
             logger.debug('ssh key data added')
             self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path)
 
         if self.containerized:
             logger.debug('containerization enabled')
-            self.command = self.wrap_args_for_containerization(self.command)
+            self.command = self.wrap_args_for_containerization(self.command, execution_mode, cmdline_args)
         else:
             logger.debug('containerization disabled')
 
@@ -276,10 +274,10 @@ class BaseConfig(object):
         if path in ('/', '/home', '/usr'):
             raise ConfigurationError("When using containerized execution, cannot mount '/' or '/home' or '/usr'")
 
-    def _get_playbook_path(self):
+    def _get_playbook_path(self, cmdline_args):
         _playbook = ""
-        _book_keeping_copy = self.cmdline_args.copy()
-        for arg in self.cmdline_args:
+        _book_keeping_copy = cmdline_args.copy()
+        for arg in cmdline_args:
             if arg in ['-i', '--inventory', '--inventory-file']:
                 _book_keeping_copy_inventory_index = _book_keeping_copy.index(arg)
                 _book_keeping_copy.pop(_book_keeping_copy_inventory_index)
@@ -325,13 +323,10 @@ class BaseConfig(object):
             else:
                 volume_mount_path = "{}:{}".format(os.path.dirname(src_mount_path), os.path.dirname(dest_mount_path))
         else:
-            if self.containter_workdir and not os.path.isabs(dest_mount_path):
-                dest_mount_path = os.path.join(self.containter_workdir, dest_mount_path)
+            if self.container_workdir and not os.path.isabs(dest_mount_path):
+                dest_mount_path = os.path.join(self.container_workdir, dest_mount_path)
 
-            src_mount_path = os.path.abspath(src_mount_path)
-            dest_mount_path = os.path.abspath(dest_mount_path)
-
-            if os.path.isdir(src_mount_path):
+            if os.path.isdir(os.path.abspath(src_mount_path)):
                 volume_mount_path = "{}:{}".format(src_mount_path, dest_mount_path)
             else:
                 volume_mount_path = "{}:{}".format(os.path.dirname(src_mount_path), os.path.dirname(dest_mount_path))
@@ -343,33 +338,33 @@ class BaseConfig(object):
         if ', '.join(map(str, ['-v', volume_mount_path])) not in ', '.join(map(str, args_list)):
             args_list.extend(['-v', volume_mount_path])
 
-    def _handle_ansible_cmd_options_bind_mounts(self, args_list):
+    def _handle_ansible_cmd_options_bind_mounts(self, args_list, cmdline_args):
         inventory_file_options = ['-i', '--inventory', '--inventory-file']
         vault_file_options = ['--vault-password-file', '--vault-pass-file']
         private_key_file_options = ['--private-key', '--key-file']
 
         optional_mount_args = inventory_file_options + vault_file_options + private_key_file_options
 
-        if not self.cmdline_args:
+        if not cmdline_args:
             return
 
-        if '-h' in self.cmdline_args or '--help' in self.cmdline_args:
+        if '-h' in cmdline_args or '--help' in cmdline_args:
             return
 
         if 'ansible-playbook' in self.command[0]:
-            playbook_file_path = self._get_playbook_path()
+            playbook_file_path = self._get_playbook_path(cmdline_args)
             if playbook_file_path:
                 self._update_volume_mount_paths(args_list, playbook_file_path)
 
-        cmdline_args_copy = self.cmdline_args.copy()
+        cmdline_args_copy = cmdline_args.copy()
         optional_arg_paths = []
-        for arg in self.cmdline_args:
+        for arg in cmdline_args:
 
             if arg not in optional_mount_args:
                 continue
 
             optional_arg_index = cmdline_args_copy.index(arg)
-            optional_arg_paths.append(self.cmdline_args[optional_arg_index + 1])
+            optional_arg_paths.append(cmdline_args[optional_arg_index + 1])
             cmdline_args_copy.pop(optional_arg_index)
             try:
                 optional_arg_value = cmdline_args_copy.pop(optional_arg_index)
@@ -384,30 +379,26 @@ class BaseConfig(object):
 
             self._update_volume_mount_paths(args_list, optional_arg_value)
 
-    def wrap_args_for_containerization(self, args):
+    def wrap_args_for_containerization(self, args, execution_mode, cmdline_args):
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm', '--interactive', '--tty'])
-        if self.runner_mode == 'pexpect':
-            new_args.extend(['--tty'])
 
-        #new_args.extend(["-u", 'root'])
-
-        if not self.containter_workdir:
-            self.container_workdir = "/runner/project"
-
-        workdir = self.container_workdir
-        if self.cwd is not None:
+        if self.container_workdir:
+            workdir = self.container_workdir
+        elif self.cwd is not None and os.path.exists(self.cwd):
+            # mount current local working diretory if passed and exist
             self._update_volume_mount_paths(new_args, self.cwd)
-            if os.path.isabs(self.cwd):
-                workdir = self.cwd
+            workdir = self.cwd
+        else:
+            workdir = "/runner/project"
 
         self._ensure_path_safe_to_mount(workdir)
         new_args.extend(["--workdir", workdir])
 
         self._ensure_path_safe_to_mount(self.private_data_dir)
 
-        if self.execution_mode == ExecutionMode.ANSIBLE_COMMANDS:
-            self._handle_ansible_cmd_options_bind_mounts(new_args)
+        if execution_mode == BaseExecutionMode.ANSIBLE_COMMANDS:
+            self._handle_ansible_cmd_options_bind_mounts(new_args, cmdline_args)
 
         # Handle automounts
         self._handle_automounts(new_args)
@@ -418,6 +409,17 @@ class BaseConfig(object):
             new_args.extend(["--userns=keep-id"])
             new_args.extend(["--ipc=host"])
 
+        # Relative paths are mounted relative to /runner/project
+        for subdir in ('project', 'artifacts'):
+            subdir_path = os.path.join(self.private_data_dir, subdir)
+            if not os.path.exists(subdir_path):
+                os.mkdir(subdir_path, 0o700)
+
+        # playbook / adhoc commands need artifacts mounted to output data
+        self._update_volume_mount_paths(new_args, "{}/artifacts".format(self.private_data_dir), dest_mount_path="/runner/artifacts", labels=":Z")
+
+        # Mount the entire private_data_dir
+        # custom show paths inside private_data_dir do not make sense
         self._update_volume_mount_paths(new_args, "{}".format(self.private_data_dir), dest_mount_path="/runner", labels=":Z")
 
         if self.container_volume_mounts:
@@ -448,6 +450,7 @@ class BaseConfig(object):
 
         new_args.extend([self.container_image])
         new_args.extend(args)
+        print(new_args)
         logger.debug(f"container engine invocation: {' '.join(new_args)}")
         return new_args
 

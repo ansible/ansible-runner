@@ -19,13 +19,13 @@
 import logging
 import os
 
-from ansible_runner import base_config
+from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
 
 logger = logging.getLogger('ansible-runner')
 
 
-class CommandConfig(base_config.BaseConfig):
+class CommandConfig(BaseConfig):
     """
     A ``Runner`` configuration object that's meant to encapsulate the configuration used by the
     :py:mod:`ansible_runner.runner.CommandConfig` object to launch and manage the invocation of
@@ -51,12 +51,12 @@ class CommandConfig(base_config.BaseConfig):
             raise ConfigurationError("input_fd is applicable only with 'subprocess' runner mode")
 
         if runner_mode and runner_mode not in ['pexpect', 'subprocess']:
-            raise ConfigurationError("Invalid runner mode {0}, valid value is either 'pexpect' or 'subprocess'".format(self.runner_mode))
+            raise ConfigurationError("Invalid runner mode {0}, valid value is either 'pexpect' or 'subprocess'".format(runner_mode))
 
         # runner params
         self.runner_mode = runner_mode
 
-        self.execution_mode = base_config.ExecutionMode.NONE
+        self.execution_mode = BaseExecutionMode.NONE
 
         super(CommandConfig, self).__init__(**kwargs)
 
@@ -72,37 +72,37 @@ class CommandConfig(base_config.BaseConfig):
         else:
             self.runner_mode = 'pexpect'
 
-    def run_command(self, executable_cmd, cmdline_args=None):
+    def prepare_run_command(self, executable_cmd, cmdline_args=None):
         self.executable_cmd = executable_cmd
         self.cmdline_args = cmdline_args
 
         if self.runner_mode is None:
             self._set_runner_mode()
 
-        self._prepare_env()
+        self._prepare_env(runner_mode=self.runner_mode)
         self._prepare_command()
 
-        self._handle_command_wrap()
-    
+        self._handle_command_wrap(self.execution_mode, self.cmdline_args)
+
     def _prepare_command(self):
         """
         Determines if it is ``ansible`` command or ``generic`` command and generate the command line
         """
         if not self.executable_cmd:
             raise ConfigurationError("For CommandRunner 'executable_cmd' value is required")
-        
+
         if self.executable_cmd.split(os.pathsep)[-1].startswith('ansible'):
-            self.execution_mode = base_config.ExecutionMode.ANSIBLE_COMMANDS
+            self.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
         else:
-            self.execution_mode = base_config.ExecutionMode.GENERIC_COMMANDS
+            self.execution_mode = BaseExecutionMode.GENERIC_COMMANDS
 
         if self.cmdline_args:
             self.command = [self.executable_cmd] + self.cmdline_args
         else:
             self.command = [self.executable_cmd]
 
-        if self.execution_mode == base_config.ExecutionMode.GENERIC_COMMANDS \
+        if self.execution_mode == BaseExecutionMode.GENERIC_COMMANDS \
            and 'python' in self.executable_cmd.split(os.pathsep)[-1] and self.cmdline_args is None:
             raise ConfigurationError("Runner requires python filename for execution")
-        elif self.execution_mode == base_config.ExecutionMode.NONE:
+        elif self.execution_mode == BaseExecutionMode.NONE:
             raise ConfigurationError("No executable for runner to run")

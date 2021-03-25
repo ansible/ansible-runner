@@ -18,13 +18,13 @@
 #
 import logging
 
-from ansible_runner import base_config
+from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
 
 logger = logging.getLogger('ansible-runner')
 
 
-class DocConfig(base_config.BaseConfig):
+class DocConfig(BaseConfig):
     """
     A ``Runner`` configuration object that's meant to encapsulate the configuration used by the
     :py:mod:`ansible_runner.runner.DocConfig` object to launch and manage the invocation of
@@ -48,22 +48,22 @@ class DocConfig(base_config.BaseConfig):
         if self.runner_mode not in ['pexpect', 'subprocess']:
             raise ConfigurationError("Invalid runner mode {0}, valid value is either 'pexpect' or 'subprocess'".format(self.runner_mode))
 
-        self.execution_mode = base_config.ExecutionMode.ANSIBLE_COMMANDS
+        self.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
         super(DocConfig, self).__init__(**kwargs)
 
     _supported_response_formats = ('json', 'human')
 
-    def get_plugin_docs(self, plugin_names, plugin_type=None, response_format='json',
-                        snippet=False, playbook_dir=None, module_path=None):
+    def prepare_plugin_docs_command(self, plugin_names, plugin_type=None, response_format='json',
+                                    snippet=False, playbook_dir=None, module_path=None):
 
         if response_format and response_format not in DocConfig._supported_response_formats:
             raise ConfigurationError("Invalid response_format {0}, valid value is one of either {1}".format(response_format,
-                                                                                                            " ".join(DocConfig._supported_output_formats)))
+                                                                                                            ", ".join(DocConfig._supported_response_formats)))
 
         if not isinstance(plugin_names, list):
             raise ConfigurationError("plugin_names should be of type list, instead received {0} of type {1}".format(plugin_names, type(plugin_names)))
 
-        self._prepare_env()
+        self._prepare_env(runner_mode=self.runner_mode)
         self.command = ['ansible-doc']
         self.cmdline_args = []
 
@@ -85,14 +85,14 @@ class DocConfig(base_config.BaseConfig):
         self.cmdline_args.append(" ".join(plugin_names))
 
         self.command = ['ansible-doc'] + self.cmdline_args
-        self._handle_command_wrap()
+        self._handle_command_wrap(self.execution_mode, self.cmdline_args)
 
-    def get_plugin_list(self, list_files=None, response_format='json', plugin_type=None,
-                        playbook_dir=None, module_path=None):
+    def prepare_plugin_list_command(self, list_files=None, response_format='json', plugin_type=None,
+                                    playbook_dir=None, module_path=None):
 
         if response_format and response_format not in DocConfig._supported_response_formats:
             raise ConfigurationError("Invalid response_format {0}, valid value is one of either {1}".format(response_format,
-                                                                                                            " ".join(DocConfig._supported_output_formats)))
+                                                                                                            ", ".join(DocConfig._supported_response_formats)))
 
         self._prepare_env()
         self.cmdline_args = []
@@ -115,4 +115,4 @@ class DocConfig(base_config.BaseConfig):
             self.cmdline_args.extend(['-M', module_path])
 
         self.command = ['ansible-doc'] + self.cmdline_args
-        self._handle_command_wrap()
+        self._handle_command_wrap(self.execution_mode, self.cmdline_args)

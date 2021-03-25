@@ -18,21 +18,23 @@
 # under the License.
 #
 import os
+import json
 import sys
 import threading
 import logging
 
 from ansible_runner import output
-from ansible_runner.runner_config import RunnerConfig
-from ansible_runner.command_config import CommandConfig
-from ansible_runner.inventory_config import InventoryConfig
-from ansible_runner.ansible_config import AnsibleConfig
-from ansible_runner.doc_config import DocConfig
+from ansible_runner.config.runner import RunnerConfig
+from ansible_runner.config.command import CommandConfig
+from ansible_runner.config.inventory import InventoryConfig
+from ansible_runner.config.ansible_cfg import AnsibleCfgConfig
+from ansible_runner.config.doc import DocConfig
 from ansible_runner.runner import Runner
 from ansible_runner.streaming import Transmitter, Worker, Processor
 from ansible_runner.utils import (
     dump_artifacts,
     check_isolation_executable_installed,
+    santize_json_response
 )
 
 logging.getLogger('ansible-runner').addHandler(logging.NullHandler())
@@ -278,7 +280,7 @@ def init_command_config(executable_cmd, cmdline_args=None, **kwargs):
     finished_callback = kwargs.pop('finished_callback', None)
 
     rc = CommandConfig(**kwargs)
-    rc.run_command(executable_cmd, cmdline_args=cmdline_args)
+    rc.prepare_run_command(executable_cmd, cmdline_args=cmdline_args)
     return Runner(rc,
                   event_handler=event_callback_handler,
                   status_handler=status_callback_handler,
@@ -301,7 +303,7 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
     :param runner_mode: The applicable values are ``pexpect`` and ``subprocess``. If the value of ``input_fd`` parameter
                         is set or the executable command is one of ``ansible-config``, ``ansible-doc`` or ``ansible-galaxy``
                         the default value is set to ``subprocess`` else in other cases it is set to ``pexpect``.
-    :param cwd: The current working directory from which the command in executable_cmd shoulbe be executed.
+    :param cwd: The current working directory from which the command in executable_cmd shoul be be executed.
     :param envvars: Environment variables to be used when running Ansible. Environment variables will also be
                     read from ``env/envvars`` in ``private_data_dir``
     :param passwords: A dictionary containing password prompt patterns and response values used when processing output from
@@ -319,7 +321,7 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
     :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
     :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
     :param container_options: List of container options to pass to execution engine.
-    :param containter_workdir: The working directory within the container.
+    :param container_workdir: The working directory within the container.
     :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
                        This is only used for 'jsonfile' type fact caches.
     :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
@@ -344,7 +346,7 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
     :type settings: dict
     :type private_data_dir: str
     :type project_dir: str
-    :type artifact_dir: int
+    :type artifact_dir: str
     :type fact_cache_type: str
     :type fact_cache: str
     :type process_isolation: bool
@@ -352,7 +354,7 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
     :type container_image: str
     :type container_volume_mounts: list
     :type container_options: list
-    :type containter_workdir: str
+    :type container_workdir: str
     :type ident: str
     :type rotate_artifacts: int
     :type ssh_key: str
@@ -405,7 +407,7 @@ def init_plugin_docs_config(plugin_names, plugin_type=None, response_format=None
     finished_callback = kwargs.pop('finished_callback', None)
 
     rd = DocConfig(**kwargs)
-    rd.get_plugin_docs(plugin_names, plugin_type=plugin_type, response_format=response_format, snippet=snippet, playbook_dir=playbook_dir)
+    rd.prepare_plugin_docs_command(plugin_names, plugin_type=plugin_type, response_format=response_format, snippet=snippet, playbook_dir=playbook_dir)
     return Runner(rd, event_handler=event_callback_handler, status_handler=status_callback_handler, artifacts_handler=artifacts_handler,
                   cancel_callback=cancel_callback, finished_callback=finished_callback)
 
@@ -443,7 +445,7 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format='json', snip
     :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
     :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
     :param container_options: List of container options to pass to execution engine.
-    :param containter_workdir: The working directory within the container.
+    :param container_workdir: The working directory within the container.
     :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
                        This is only used for 'jsonfile' type fact caches.
     :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
@@ -469,7 +471,7 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format='json', snip
     :type settings: dict
     :type private_data_dir: str
     :type project_dir: str
-    :type artifact_dir: int
+    :type artifact_dir: str
     :type fact_cache_type: str
     :type fact_cache: str
     :type process_isolation: bool
@@ -477,7 +479,7 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format='json', snip
     :type container_image: str
     :type container_volume_mounts: list
     :type container_options: list
-    :type containter_workdir: str
+    :type container_workdir: str
     :type ident: str
     :type rotate_artifacts: int
     :type ssh_key: str
@@ -490,12 +492,15 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format='json', snip
     :type artifacts_handler: function
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is empty as
-              ``pexpect`` uses same output descriptor for stdout and stderr.
+              ``pexpect`` uses same output descriptor for stdout and stderr. If the vaue of ``response_format`` is ``json``
+              it returns a python dictionary object.
     '''
     r = init_plugin_docs_config(plugin_names, plugin_type=plugin_type, response_format=response_format, snippet=snippet, playbook_dir=snippet, **kwargs)
     r.run()
     response = r.stdout.read()
     error = r.stderr.read()
+    if response_format == 'json':
+        response = json.loads(santize_json_response(response))
     return response, error
 
 
@@ -545,7 +550,7 @@ def get_plugin_list(list_files=None, response_format='json', plugin_type=None, p
     :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
     :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
     :param container_options: List of container options to pass to execution engine.
-    :param containter_workdir: The working directory within the container.
+    :param container_workdir: The working directory within the container.
     :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
                        This is only used for 'jsonfile' type fact caches.
     :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
@@ -570,7 +575,7 @@ def get_plugin_list(list_files=None, response_format='json', plugin_type=None, p
     :type settings: dict
     :type private_data_dir: str
     :type project_dir: str
-    :type artifact_dir: int
+    :type artifact_dir: str
     :type fact_cache_type: str
     :type fact_cache: str
     :type process_isolation: bool
@@ -578,7 +583,7 @@ def get_plugin_list(list_files=None, response_format='json', plugin_type=None, p
     :type container_image: str
     :type container_volume_mounts: list
     :type container_options: list
-    :type containter_workdir: str
+    :type container_workdir: str
     :type ident: str
     :type rotate_artifacts: int
     :type ssh_key: str
@@ -591,7 +596,8 @@ def get_plugin_list(list_files=None, response_format='json', plugin_type=None, p
     :type artifacts_handler: function
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is empty as
-              ``pexpect`` uses same output descriptor for stdout and stderr.
+              ``pexpect`` uses same output descriptor for stdout and stderr. If the vaue of ``response_format`` is ``json``
+              it returns a python dictionary object.
     '''
     event_callback_handler = kwargs.pop('event_handler', None)
     status_callback_handler = kwargs.pop('status_handler', None)
@@ -600,8 +606,8 @@ def get_plugin_list(list_files=None, response_format='json', plugin_type=None, p
     finished_callback = kwargs.pop('finished_callback', None)
 
     rd = DocConfig(**kwargs)
-    rd.get_plugin_list(list_files=list_files, response_format=response_format, plugin_type=plugin_type,
-                       playbook_dir=playbook_dir, module_path=module_path)
+    rd.prepare_plugin_list_command(list_files=list_files, response_format=response_format, plugin_type=plugin_type,
+                                   playbook_dir=playbook_dir, module_path=module_path)
     r = Runner(rd,
                event_handler=event_callback_handler,
                status_handler=status_callback_handler,
@@ -611,6 +617,8 @@ def get_plugin_list(list_files=None, response_format='json', plugin_type=None, p
     r.run()
     response = r.stdout.read()
     error = r.stderr.read()
+    if response_format == 'json':
+        response = json.loads(santize_json_response(response))
     return response, error
 
 
@@ -647,7 +655,7 @@ def get_inventory(action, inventories, response_format='json', host=None, playbo
     :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
     :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
     :param container_options: List of container options to pass to execution engine.
-    :param containter_workdir: The working directory within the container.
+    :param container_workdir: The working directory within the container.
     :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
                        This is only used for 'jsonfile' type fact caches.
     :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
@@ -674,7 +682,7 @@ def get_inventory(action, inventories, response_format='json', host=None, playbo
     :type settings: dict
     :type private_data_dir: str
     :type project_dir: str
-    :type artifact_dir: int
+    :type artifact_dir: str
     :type fact_cache_type: str
     :type fact_cache: str
     :type process_isolation: bool
@@ -682,7 +690,7 @@ def get_inventory(action, inventories, response_format='json', host=None, playbo
     :type container_image: str
     :type container_volume_mounts: list
     :type container_options: list
-    :type containter_workdir: str
+    :type container_workdir: str
     :type ident: str
     :type rotate_artifacts: int
     :type ssh_key: str
@@ -695,7 +703,8 @@ def get_inventory(action, inventories, response_format='json', host=None, playbo
     :type artifacts_handler: function
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is
-              empty as ``pexpect`` uses same output descriptor for stdout and stderr.
+              empty as ``pexpect`` uses same output descriptor for stdout and stderr. If the vaue of ``response_format`` is ``json``
+              it returns a python dictionary object.
     '''
 
     event_callback_handler = kwargs.pop('event_handler', None)
@@ -705,8 +714,8 @@ def get_inventory(action, inventories, response_format='json', host=None, playbo
     finished_callback = kwargs.pop('finished_callback', None)
 
     rd = InventoryConfig(**kwargs)
-    rd.get_inventory(action=action, inventories=inventories, response_format=response_format, host=host, playbook_dir=playbook_dir,
-                     vault_ids=vault_ids, vault_password_file=vault_password_file)
+    rd.prepare_inventory_command(action=action, inventories=inventories, response_format=response_format, host=host, playbook_dir=playbook_dir,
+                                 vault_ids=vault_ids, vault_password_file=vault_password_file)
     r = Runner(rd,
                event_handler=event_callback_handler,
                status_handler=status_callback_handler,
@@ -716,6 +725,8 @@ def get_inventory(action, inventories, response_format='json', host=None, playbo
     r.run()
     response = r.stdout.read()
     error = r.stderr.read()
+    if response_format == 'json':
+        response = json.loads(santize_json_response(response))
     return response, error
 
 
@@ -748,7 +759,7 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
     :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
     :param container_options: List of container options to pass to execution engine.
-    :param containter_workdir: The working directory within the container.
+    :param container_workdir: The working directory within the container.
     :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
                        This is only used for 'jsonfile' type fact caches.
     :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
@@ -771,7 +782,7 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     :type settings: dict
     :type private_data_dir: str
     :type project_dir: str
-    :type artifact_dir: int
+    :type artifact_dir: str
     :type fact_cache_type: str
     :type fact_cache: str
     :type process_isolation: bool
@@ -779,7 +790,7 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     :type container_image: str
     :type container_volume_mounts: list
     :type container_options: list
-    :type containter_workdir: str
+    :type container_workdir: str
     :type ident: str
     :type rotate_artifacts: int
     :type ssh_key: str
@@ -800,8 +811,8 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     cancel_callback = kwargs.pop('cancel_callback', None)
     finished_callback = kwargs.pop('finished_callback', None)
 
-    rd = AnsibleConfig(**kwargs)
-    rd.get_ansible_config(action=action, config_file=config_file, only_changed=only_changed)
+    rd = AnsibleCfgConfig(**kwargs)
+    rd.prepare_ansible_config_command(action=action, config_file=config_file, only_changed=only_changed)
     r = Runner(rd,
                event_handler=event_callback_handler,
                status_handler=status_callback_handler,

@@ -3,7 +3,6 @@
     check:
       jobs: &id001
         - ansible-runner-build-container-image
-        - ansible-runner-ubi8-build-container-image
         - ansible-runner-build-container-image-stable-2.9
         - ansible-runner-build-container-image-stable-2.10
     gate:
@@ -11,9 +10,6 @@
     post:
       jobs: &id002
         - ansible-runner-upload-container-image:
-            vars:
-              upload_container_image_promote: false
-        - ansible-runner-ubi8-upload-container-image:
             vars:
               upload_container_image_promote: false
         - ansible-runner-upload-container-image-stable-2.9:

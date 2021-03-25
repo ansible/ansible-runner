@@ -29,8 +29,8 @@ def load_file_side_effect(path, value=None, *args, **kwargs):
 
 
 def test_base_config_init_defaults():
-    rc = BaseConfig(private_data_dir='/')
-    assert rc.private_data_dir == '/'
+    rc = BaseConfig(private_data_dir='/tmp')
+    assert rc.private_data_dir == '/tmp'
     assert rc.ident is not None
     assert rc.process_isolation is False
     assert rc.fact_cache_type == 'jsonfile'
@@ -38,33 +38,33 @@ def test_base_config_init_defaults():
     assert rc.quiet is False
     assert rc.quiet is False
     assert rc.rotate_artifacts == 0
-    assert rc.artifact_dir == os.path.join('/artifacts/%s' % rc.ident)
+    assert rc.artifact_dir == os.path.join('/tmp/artifacts/%s' % rc.ident)
     assert isinstance(rc.loader, ArtifactLoader)
 
 
 def test_base_config_with_artifact_dir():
-    rc = BaseConfig(artifact_dir='/this-is-some-dir')
-    assert rc.artifact_dir == os.path.join('/this-is-some-dir', rc.ident)
+    rc = BaseConfig(artifact_dir='/tmp/this-is-some-dir')
+    assert rc.artifact_dir == os.path.join('/tmp/this-is-some-dir', rc.ident)
     assert rc.private_data_dir == os.path.abspath(os.path.expanduser('~/.ansible-runner'))
 
 
 def test_base_config_init_with_ident():
-    rc = BaseConfig(private_data_dir='/', ident='test')
-    assert rc.private_data_dir == '/'
+    rc = BaseConfig(private_data_dir='/tmp', ident='test')
+    assert rc.private_data_dir == '/tmp'
     assert rc.ident == 'test'
-    assert rc.artifact_dir == os.path.join('/artifacts/test')
+    assert rc.artifact_dir == os.path.join('/tmp/artifacts/test')
     assert isinstance(rc.loader, ArtifactLoader)
 
 
 def test_base_config_project_dir():
-    rc = BaseConfig(private_data_dir='/', project_dir='/another/path')
+    rc = BaseConfig(private_data_dir='/tmp', project_dir='/another/path')
     assert rc.project_dir == '/another/path'
-    rc = BaseConfig(private_data_dir='/')
-    assert rc.project_dir == '/project'
+    rc = BaseConfig(private_data_dir='/tmp')
+    assert rc.project_dir == '/tmp/project'
 
 
 def test_prepare_environment_vars_only_strings():
-    rc = BaseConfig(private_data_dir="/", envvars=dict(D='D'))
+    rc = BaseConfig(private_data_dir="/tmp", envvars=dict(D='D'))
 
     value = dict(A=1, B=True, C="foo")
     envvar_side_effect = partial(load_file_side_effect, 'env/envvars', value)
@@ -82,7 +82,7 @@ def test_prepare_environment_vars_only_strings():
 
 
 def test_prepare_environment_pexpect_defaults():
-    rc = BaseConfig(private_data_dir="/")
+    rc = BaseConfig(private_data_dir="/tmp")
     rc._prepare_env()
 
     assert len(rc.expect_passwords) == 2
@@ -93,7 +93,7 @@ def test_prepare_environment_pexpect_defaults():
 
 
 def test_prepare_env_passwords():
-    rc = BaseConfig(private_data_dir='/')
+    rc = BaseConfig(private_data_dir='/tmp')
 
     value = {'^SSH [pP]assword.*$': 'secret'}
     password_side_effect = partial(load_file_side_effect, 'env/passwords', value)
@@ -108,20 +108,20 @@ def test_prepare_env_passwords():
 
 
 def test_prepare_environment_subprocess_defaults():
-    rc = BaseConfig(private_data_dir="/")
+    rc = BaseConfig(private_data_dir="/tmp")
     rc._prepare_env(runner_mode="subprocess")
 
     assert rc.subprocess_timeout == 300
 
 
 def test_prepare_env_settings_defaults():
-    rc = BaseConfig(private_data_dir='/')
+    rc = BaseConfig(private_data_dir='/tmp')
     rc._prepare_env()
     assert rc.settings == {}
 
 
 def test_prepare_env_settings():
-    rc = BaseConfig(private_data_dir='/')
+    rc = BaseConfig(private_data_dir='/tmp')
 
     value = {'test': 'string'}
     settings_side_effect = partial(load_file_side_effect, 'env/settings', value)
@@ -132,13 +132,13 @@ def test_prepare_env_settings():
 
 
 def test_prepare_env_sshkey_defaults():
-    rc = BaseConfig(private_data_dir='/')
+    rc = BaseConfig(private_data_dir='/tmp')
     rc._prepare_env()
     assert rc.ssh_key_data is None
 
 
 def test_prepare_env_sshkey():
-    rc = BaseConfig(private_data_dir='/')
+    rc = BaseConfig(private_data_dir='/tmp')
 
     value = '01234567890'
     sshkey_side_effect = partial(load_file_side_effect, 'env/ssh_key', value)
@@ -151,20 +151,20 @@ def test_prepare_env_sshkey():
 def test_prepare_env_defaults():
     with patch('os.path.exists') as path_exists:
         path_exists.return_value=True
-        rc = BaseConfig('/')
+        rc = BaseConfig(private_data_dir='/tmp')
         rc._prepare_env()
         assert rc.idle_timeout is None
         assert rc.job_timeout is None
         assert rc.pexpect_timeout == 5
-        assert rc.cwd == '/project'
+        assert rc.cwd == '/tmp/project'
 
 
 @patch.dict('os.environ', {'PYTHONPATH': '/python_path_via_environ',
                            'AWX_LIB_DIRECTORY': '/awx_lib_directory_via_environ'})
 def test_prepare_env_ansible_vars():
-    rc = BaseConfig(private_data_dir='/')
+    rc = BaseConfig(private_data_dir='/tmp')
     rc.ssh_key_data = None
-    rc.artifact_dir = '/'
+    rc.artifact_dir = '/tmp/artifact'
     rc.env = {}
     rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
 
@@ -176,7 +176,7 @@ def test_prepare_env_ansible_vars():
     assert rc.env['ANSIBLE_STDOUT_CALLBACK'] == 'awx_display'
     assert rc.env['ANSIBLE_RETRY_FILES_ENABLED'] == 'False'
     assert rc.env['ANSIBLE_HOST_KEY_CHECKING'] == 'False'
-    assert rc.env['AWX_ISOLATED_DATA_DIR'] == '/'
+    assert rc.env['AWX_ISOLATED_DATA_DIR'] == '/tmp/artifact'
     assert rc.env['PYTHONPATH'] == '/python_path_via_environ:/awx_lib_directory_via_environ', \
         "PYTHONPATH is the union of the env PYTHONPATH and AWX_LIB_DIRECTORY"
 
@@ -189,23 +189,23 @@ def test_prepare_env_ansible_vars():
 
 @patch('ansible_runner.config._base.open_fifo_write')
 def test_prepare_with_ssh_key(open_fifo_write_mock):
-    rc = BaseConfig(private_data_dir='/')
-    rc.artifact_dir = '/'
+    rc = BaseConfig(private_data_dir='/tmp')
+    rc.artifact_dir = '/tmp/artifact'
     rc.env = {}
     rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
     rc.ssh_key_data = '01234567890'
     rc.command = 'ansible-playbook'
     rc.cmdline_args = []
 
-    with patch.dict('os.environ', {'AWX_LIB_DIRECTORY': '/'}):
+    with patch.dict('os.environ', {'AWX_LIB_DIRECTORY': '/tmp/artifact'}):
         rc._prepare_env()
 
-    assert rc.ssh_key_path == '/ssh_key_data'
+    assert rc.ssh_key_path == '/tmp/artifact/ssh_key_data'
     assert open_fifo_write_mock.called
 
 
 def test_wrap_args_with_ssh_agent_defaults():
-    rc = BaseConfig(private_data_dir='/')
+    rc = BaseConfig(private_data_dir='/tmp')
     res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], '/tmp/sshkey')
     assert res == [
         'ssh-agent',
@@ -215,7 +215,7 @@ def test_wrap_args_with_ssh_agent_defaults():
 
 
 def test_wrap_args_with_ssh_agent_with_auth():
-    rc = BaseConfig(private_data_dir='/')
+    rc = BaseConfig(private_data_dir='/tmp')
     res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], '/tmp/sshkey', '/tmp/sshauth')
     assert res == [
         'ssh-agent', '-a', '/tmp/sshauth',
@@ -225,7 +225,7 @@ def test_wrap_args_with_ssh_agent_with_auth():
 
 
 def test_wrap_args_with_ssh_agent_silent():
-    rc = BaseConfig(private_data_dir='/')
+    rc = BaseConfig(private_data_dir='/tmp')
     res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], '/tmp/sshkey', silence_ssh_add=True)
     assert res == [
         'ssh-agent',
@@ -281,7 +281,8 @@ def test_containerization_settings(tmpdir, container_runtime):
     else:
         extra_container_args = ['--user={os.getuid()}']
 
-    expected_command_start = [container_runtime, 'run', '--rm', '--interactive', '--tty', '--workdir', '/runner/project']
+    expected_command_start = [container_runtime, 'run', '--rm', '--interactive', '--tty', '--workdir', '/runner/project'] + \
+                             ['-v', '{}/.ssh/:/home/runner/.ssh/'.format(os.environ['HOME'])]
     if container_runtime == 'podman':
         expected_command_start +=['--group-add=root', '--userns=keep-id', '--ipc=host']
 

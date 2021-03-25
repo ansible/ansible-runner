@@ -1,3 +1,3 @@
 import os
 
-print('this is execution environment {}'.format(os.environ['HOSTNAME']))
+print("os-release: %s" % os.system("cat /etc/os-release"))

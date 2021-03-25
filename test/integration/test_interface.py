@@ -179,15 +179,14 @@ def test_run_script_within_container(test_data_dir, container_runtime_installed)
         'container_image': 'quay.io/ansible/ansible-runner:devel',
         'container_volume_mounts': container_volume_mounts
     }
-    out, err = run_command(
+    out, _ = run_command(
         private_data_dir=private_data_dir,
         executable_cmd='python3',
         cmdline_args=[os.path.join(script_path, 'test_ee.py')],
         **container_kwargs
     )
 
-    assert "this is execution environment" in out
-    assert err == ''
+    assert "os-release" in out
 
 
 def test_run_command_async(test_data_dir):

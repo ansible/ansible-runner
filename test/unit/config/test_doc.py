@@ -74,7 +74,8 @@ def test_prepare_plugin_docs_command_with_containerization(tmpdir, container_run
     else:
         extra_container_args = ['--user={os.getuid()}']
 
-    expected_command_start = [container_runtime, 'run', '--rm', '--interactive', '--tty', '--workdir', '/runner/project']
+    expected_command_start = [container_runtime, 'run', '--rm', '--interactive', '--tty', '--workdir', '/runner/project'] + \
+                             ['-v', '{}/.ssh/:/home/runner/.ssh/'.format(os.environ['HOME'])]
     if container_runtime == 'podman':
         expected_command_start +=['--group-add=root', '--userns=keep-id', '--ipc=host']
 
@@ -121,7 +122,8 @@ def test_prepare_plugin_list_command_with_containerization(tmpdir, container_run
     else:
         extra_container_args = ['--user={os.getuid()}']
 
-    expected_command_start = [container_runtime, 'run', '--rm', '--interactive', '--tty', '--workdir', '/runner/project']
+    expected_command_start = [container_runtime, 'run', '--rm', '--interactive', '--tty', '--workdir', '/runner/project'] + \
+                             ['-v', '{}/.ssh/:/home/runner/.ssh/'.format(os.environ['HOME'])]
     if container_runtime == 'podman':
         expected_command_start +=['--group-add=root', '--userns=keep-id', '--ipc=host']
 

@@ -241,6 +241,7 @@ def test_container_volume_mounting_with_Z(mock_isdir, mock_exists, tmpdir):
     os.path.isdir = Mock()
     rc.container_volume_mounts = ['project_path:project_path:Z']
     rc.container_name = 'foo'
+    rc.runner_mode = 'pexpect'
     rc.env = {}
     rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
     rc.command = ['ansible-playbook', 'foo.yml']
@@ -267,6 +268,7 @@ def test_containerization_settings(tmpdir, container_runtime):
         rc.cmdline_args = ['main.yaml', '-i', '/tmp/inventory']
         rc.command = ['ansible-playbook'] + rc.cmdline_args
         rc.process_isolation = True
+        rc.runner_mode = 'pexpect'
         rc.process_isolation_executable=container_runtime
         rc.container_image = 'my_container'
         rc.container_volume_mounts=['/host1:/container1', 'host2:/container2']

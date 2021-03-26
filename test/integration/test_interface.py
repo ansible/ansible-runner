@@ -2,6 +2,7 @@ import os
 import pytest
 import shutil
 
+from ansible_runner import defaults
 from ansible_runner.interface import run, run_async, run_command, run_command_async, get_plugin_docs, \
     get_plugin_docs_async, get_plugin_list, get_ansible_config, get_inventory
 
@@ -157,7 +158,7 @@ def test_run_ansible_command_within_container(test_data_dir, container_runtime_i
     container_kwargs = {
         'process_isolation_executable': container_runtime_installed,
         'process_isolation': True,
-        'container_image': 'quay.io/ansible/ansible-runner:devel'
+        'container_image': defaults.default_container_image
     }
     out, err = run_command(
         private_data_dir=private_data_dir,
@@ -176,7 +177,7 @@ def test_run_script_within_container(test_data_dir, container_runtime_installed)
     container_kwargs = {
         'process_isolation_executable': container_runtime_installed,
         'process_isolation': True,
-        'container_image': 'quay.io/ansible/ansible-runner:devel',
+        'container_image': defaults.default_container_image,
         'container_volume_mounts': container_volume_mounts
     }
     out, _ = run_command(
@@ -231,7 +232,7 @@ def test_get_plugin_docs_within_container(container_runtime_installed):
     container_kwargs = {
         'process_isolation_executable': container_runtime_installed,
         'process_isolation': True,
-        'container_image': 'quay.io/ansible/ansible-runner:devel'
+        'container_image': defaults.default_container_image
     }
     out, _ = get_plugin_docs(
         plugin_names=['file', 'copy'],
@@ -256,16 +257,15 @@ def test_get_plugin_docs_list_within_container(container_runtime_installed):
     container_kwargs = {
         'process_isolation_executable': container_runtime_installed,
         'process_isolation': True,
-        'container_image': 'quay.io/ansible/ansible-runner:devel'
+        'container_image': defaults.default_container_image
     }
     out, _ = get_plugin_list(
         list_files=True,
-        response_format='json',
         quiet=True,
         **container_kwargs
     )
-    assert out['copy'] is not None
-    assert out['file'] is not None
+    assert 'copy' in out
+    assert 'file' in out
 
 
 def test_ansible_config():
@@ -295,7 +295,7 @@ def test_get_inventory_within_container(test_data_dir, container_runtime_install
     container_kwargs = {
         'process_isolation_executable': container_runtime_installed,
         'process_isolation': True,
-        'container_image': 'quay.io/ansible/ansible-runner:devel'
+        'container_image': defaults.default_container_image
     }
     private_data_dir = os.path.join(test_data_dir, 'debug')
     inventory1 = os.path.join(private_data_dir, 'inventory', 'inv_1')

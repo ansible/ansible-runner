@@ -381,7 +381,10 @@ class BaseConfig(object):
 
     def wrap_args_for_containerization(self, args, execution_mode, cmdline_args):
         new_args = [self.process_isolation_executable]
-        new_args.extend(['run', '--rm', '--interactive', '--tty'])
+        new_args.extend(['run', '--rm', '--interactive'])
+
+        if self.runner_mode == 'pexpect':
+            new_args.extend(['--tty'])
 
         if self.container_workdir:
             workdir = self.container_workdir

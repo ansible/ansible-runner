@@ -36,9 +36,9 @@ def test_prepare_run_command_interactive():
 def test_prepare_run_command_non_interactive():
     rc = CommandConfig()
     executable_cmd = 'ansible-doc'
-    cmdline_args = ['-l', '-j']
+    cmdline_args = ['-l']
     rc.prepare_run_command(executable_cmd, cmdline_args=cmdline_args)
-    expected_command = ['ansible-doc', '-l', '-j']
+    expected_command = ['ansible-doc', '-l']
     assert rc.command == expected_command
     assert rc.runner_mode == 'subprocess'
     assert rc.execution_mode == BaseExecutionMode.ANSIBLE_COMMANDS

@@ -53,7 +53,7 @@ class DocConfig(BaseConfig):
 
     _supported_response_formats = ('json', 'human')
 
-    def prepare_plugin_docs_command(self, plugin_names, plugin_type=None, response_format='json',
+    def prepare_plugin_docs_command(self, plugin_names, plugin_type=None, response_format=None,
                                     snippet=False, playbook_dir=None, module_path=None):
 
         if response_format and response_format not in DocConfig._supported_response_formats:
@@ -87,7 +87,7 @@ class DocConfig(BaseConfig):
         self.command = ['ansible-doc'] + self.cmdline_args
         self._handle_command_wrap(self.execution_mode, self.cmdline_args)
 
-    def prepare_plugin_list_command(self, list_files=None, response_format='json', plugin_type=None,
+    def prepare_plugin_list_command(self, list_files=None, response_format=None, plugin_type=None,
                                     playbook_dir=None, module_path=None):
 
         if response_format and response_format not in DocConfig._supported_response_formats:

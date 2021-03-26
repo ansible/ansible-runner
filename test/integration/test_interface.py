@@ -208,18 +208,16 @@ def test_get_plugin_docs():
     out, _ = get_plugin_docs(
         plugin_names=['file', 'copy'],
         plugin_type='module',
-        response_format='json',
         quiet=True
     )
-    assert out['copy'] is not None
-    assert out['file'] is not None
+    assert 'copy' in out
+    assert 'file' in out
 
 
 def test_get_plugin_docs_async():
     thread, r = get_plugin_docs_async(
         plugin_names=['file', 'copy'],
         plugin_type='module',
-        response_format='json',
         quiet=True
     )
     thread.join()
@@ -238,22 +236,20 @@ def test_get_plugin_docs_within_container(container_runtime_installed):
     out, _ = get_plugin_docs(
         plugin_names=['file', 'copy'],
         plugin_type='module',
-        response_format='json',
         quiet=True,
         **container_kwargs
     )
-    assert out['copy'] is not None
-    assert out['file'] is not None
+    assert 'copy' in out
+    assert 'file' in out
 
 
 def test_get_plugin_docs_list():
     out, _ = get_plugin_list(
         list_files=True,
-        response_format='json',
         quiet=True
     )
-    assert out['copy'] is not None
-    assert out['file'] is not None
+    assert 'copy' in out
+    assert 'file' in out
 
 
 def test_get_plugin_docs_list_within_container(container_runtime_installed):

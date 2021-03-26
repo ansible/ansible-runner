@@ -17,5 +17,5 @@
 # under the License.
 #
 
-# to maintian backward compatiblity
+# to maintain backward compatibility
 from ansible_runner.config.runner import *  # noqa

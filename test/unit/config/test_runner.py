@@ -378,7 +378,7 @@ def test_prepare():
         "PYTHONPATH is the union of the explicit env['PYTHONPATH'] override and AWX_LIB_DIRECTORY"
 
 
-@patch('ansible_runner.runner_config.open_fifo_write')
+@patch('ansible_runner.config.runner.open_fifo_write')
 def test_prepare_with_ssh_key(open_fifo_write_mock):
     rc = RunnerConfig('/')
 

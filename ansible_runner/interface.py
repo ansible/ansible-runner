@@ -412,7 +412,7 @@ def init_plugin_docs_config(plugin_names, plugin_type=None, response_format=None
                   cancel_callback=cancel_callback, finished_callback=finished_callback)
 
 
-def get_plugin_docs(plugin_names, plugin_type=None, response_format='json', snippet=False, playbook_dir=None, module_path=None, **kwargs):
+def get_plugin_docs(plugin_names, plugin_type=None, response_format=None, snippet=False, playbook_dir=None, module_path=None, **kwargs):
     '''
     Run an ansible-doc command to get plugin docs  in the foreground and return a Runner object when complete.
 
@@ -426,8 +426,8 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format='json', snip
     :param playbook_dir: This parameter is used to sets the relative path to handle playbook adjacent installed plugins.
     :param module_path: This parameter is prepend colon-separated path(s) to module library
                         (default=~/.ansible/plugins/modules:/usr/share/ansible/plugins/modules).
-    :param runner_mode: The applicable values are ``pexpect`` and ``subprocess``. Default is set to ``subporcess``.
-    :param cwd: The current working directory from which the command in executable_cmd shoulbe be executed.
+    :param runner_mode: The applicable values are ``pexpect`` and ``subprocess``. Default is set to ``subprocess``.
+    :param cwd: The current working directory from which the command in executable_cmd should be be executed.
     :param envvars: Environment variables to be used when running Ansible. Environment variables will also be
                     read from ``env/envvars`` in ``private_data_dir``
     :param passwords: A dictionary containing password prompt patterns and response values used when processing output from
@@ -518,7 +518,7 @@ def get_plugin_docs_async(plugin_names, plugin_type=None, response_format=None, 
     return doc_runner_thread, r
 
 
-def get_plugin_list(list_files=None, response_format='json', plugin_type=None, playbook_dir=None, module_path=None, **kwargs):
+def get_plugin_list(list_files=None, response_format=None, plugin_type=None, playbook_dir=None, module_path=None, **kwargs):
     '''
     Run an ansible-doc command to get list of installed Ansible plugins.
 
@@ -531,8 +531,8 @@ def get_plugin_list(list_files=None, response_format='json', plugin_type=None, p
     :param playbook_dir: This parameter is used to sets the relative path to handle playbook adjacent installed plugins.
     :param module_path: This parameter is prepend colon-separated path(s) to module library
                         (default=~/.ansible/plugins/modules:/usr/share/ansible/plugins/modules).
-    :param runner_mode: The applicable values are ``pexpect`` and ``subprocess``. Default is set to ``subporcess``.
-    :param cwd: The current working directory from which the command in executable_cmd shoulbe be executed.
+    :param runner_mode: The applicable values are ``pexpect`` and ``subprocess``. Default is set to ``subprocess``.
+    :param cwd: The current working directory from which the command in executable_cmd should be be executed.
     :param envvars: Environment variables to be used when running Ansible. Environment variables will also be
                     read from ``env/envvars`` in ``private_data_dir``
     :param passwords: A dictionary containing password prompt patterns and response values used when processing output from
@@ -622,9 +622,9 @@ def get_plugin_list(list_files=None, response_format='json', plugin_type=None, p
     return response, error
 
 
-def get_inventory(action, inventories, response_format='json', host=None, playbook_dir=None, vault_ids=None, vault_password_file=None, **kwargs):
+def get_inventory(action, inventories, response_format=None, host=None, playbook_dir=None, vault_ids=None, vault_password_file=None, **kwargs):
     '''
-    Run an ansible-inventory command to get inventory releated details.
+    Run an ansible-inventory command to get inventory related details.
 
     :param action: Valid values are one of ``graph``, ``host``, ``list``
                    ``graph`` create inventory graph, ``host`` returns specific host info and works as inventory script and
@@ -636,8 +636,8 @@ def get_inventory(action, inventories, response_format='json', host=None, playbo
     :param playbook_dir: This parameter is used to sets the relative path for the inventory.
     :param vault_ids: The vault identity to use.
     :param vault_password_file: The vault password files to use.
-    :param runner_mode: The applicable values are ``pexpect`` and ``subprocess``. Default is set to ``subporcess``.
-    :param cwd: The current working directory from which the command in executable_cmd shoulbe be executed.
+    :param runner_mode: The applicable values are ``pexpect`` and ``subprocess``. Default is set to ``subprocess``.
+    :param cwd: The current working directory from which the command in executable_cmd should be be executed.
     :param envvars: Environment variables to be used when running Ansible. Environment variables will also be
                     read from ``env/envvars`` in ``private_data_dir``
     :param passwords: A dictionary containing password prompt patterns and response values used when processing output from
@@ -740,8 +740,8 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     :param config_file: Path to configuration file, defaults to first file found in precedence.                         .
     :param only_changed: The boolean value when set to ``True`` returns only the configurations that have changed
                          from the default. This parameter is applicable only when ``action`` is set to ``dump``.
-    :param runner_mode: The applicable values are ``pexpect`` and ``subprocess``. Default is set to ``subporcess``.
-    :param cwd: The current working directory from which the command in executable_cmd shoulbe be executed.
+    :param runner_mode: The applicable values are ``pexpect`` and ``subprocess``. Default is set to ``subprocess``.
+    :param cwd: The current working directory from which the command in executable_cmd should be be executed.
     :param envvars: Environment variables to be used when running Ansible. Environment variables will also be
                     read from ``env/envvars`` in ``private_data_dir``
     :param passwords: A dictionary containing password prompt patterns and response values used when processing output from Ansible.

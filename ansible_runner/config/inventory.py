@@ -53,7 +53,7 @@ class InventoryConfig(BaseConfig):
     _supported_response_formats = ('json', 'yaml', 'toml')
     _supported_actions = ('graph', 'host', 'list')
 
-    def prepare_inventory_command(self, action, inventories, response_format='json', host=None, playbook_dir=None, vault_ids=None, vault_password_file=None):
+    def prepare_inventory_command(self, action, inventories, response_format=None, host=None, playbook_dir=None, vault_ids=None, vault_password_file=None):
 
         if action not in InventoryConfig._supported_actions:
             raise ConfigurationError("Invalid action {0}, valid value is one of either {1}".format(action, ", ".join(InventoryConfig._supported_actions)))

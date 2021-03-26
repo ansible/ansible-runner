@@ -45,7 +45,7 @@ def test_prepare_plugin_docs_command():
     plugin_names = ['copy', 'file']
     plugin_type = 'module'
     rc.prepare_plugin_docs_command(plugin_names, plugin_type=plugin_type, snippet=True, playbook_dir='/tmp/test')
-    expected_command = ['ansible-doc', '-j', '-s', '-t', 'module', '--playbook-dir', '/tmp/test', 'copy file']
+    expected_command = ['ansible-doc', '-s', '-t', 'module', '--playbook-dir', '/tmp/test', 'copy file']
     assert rc.command == expected_command
     assert rc.runner_mode == 'subprocess'
     assert rc.execution_mode == BaseExecutionMode.ANSIBLE_COMMANDS

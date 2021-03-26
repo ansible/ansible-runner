@@ -10,7 +10,7 @@ with open('README.md', 'r') as f:
 
 setup(
     name="ansible-runner",
-    version="2.0.0",
+    version="2.0.0a1",
     author='Red Hat Ansible',
     url="https://github.com/ansible/ansible-runner",
     license='Apache',

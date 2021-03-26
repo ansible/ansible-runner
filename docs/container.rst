@@ -9,10 +9,7 @@ is also published to `DockerHub <https://hub.docker.com/r/ansible/ansible-runner
 
 .. code-block:: console
 
-  $ docker run --rm -e RUNNER_PLAYBOOK=test.yml ansible/ansible-runner:latest
-    Unable to find image 'ansible/ansible-runner:latest' locally                                          
-    latest: Pulling from ansible/ansible-runner
-    [...]
+  $ docker run --rm -e RUNNER_PLAYBOOK=test.yml -v $PWD/demo:/runner quay.io/ansible/ansible-runner:latest
     PLAY [all] *********************************************************************
     
     TASK [Gathering Facts] *********************************************************

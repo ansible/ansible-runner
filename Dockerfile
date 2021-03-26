@@ -22,9 +22,6 @@ COPY --from=builder /output/ /output
 RUN /output/install-from-bindep \
   && rm -rf /output
 
-# Prepare the /runner folder, seed the folder with demo data
-ADD demo /runner
-
 # In OpenShift, container will run as a random uid number and gid 0. Make sure things
 # are writeable by the root group.
 RUN for dir in \

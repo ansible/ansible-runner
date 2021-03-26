@@ -5,6 +5,7 @@
         - ansible-runner-build-container-image
         - ansible-runner-build-container-image-stable-2.9
         - ansible-runner-build-container-image-stable-2.10
+        - ansible-runner-build-container-image-stable-2.11
     gate:
       jobs: *id001
     post:
@@ -16,6 +17,9 @@
             vars:
               upload_container_image_promote: false
         - ansible-runner-upload-container-image-stable-2.10:
+            vars:
+              upload_container_image_promote: false
+        - ansible-runner-upload-container-image-stable-2.11:
             vars:
               upload_container_image_promote: false
     periodic:

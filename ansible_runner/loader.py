@@ -162,24 +162,86 @@ class ArtifactLoader(object):
 
         try:
             debug('cache miss, attempting to load file from disk: %s' % path)
-            contents = parsed_data = self.get_contents(path)
-            if encoding:
-                parsed_data = contents.encode(encoding)
+            contents = self.get_contents(path)
         except ConfigurationError as exc:
             debug(exc)
             raise
-        except UnicodeEncodeError:
-            raise ConfigurationError('unable to encode file contents')
+
+        return self.deserialize(contents, objtype, encoding, key=path)
+
+
+    def load_env(self, key, objtype=None, encoding='utf-8'):
+        '''
+        Load the object specified by env key
+
+        This method will try to load object contents from environment
+
+        Args:
+            key  (string): the key that contains the serialized data
+
+            encoding (string): The file contents text encoding
+
+            objtype (object): The object type of the file contents.  This
+                is used to type check the deserialized content against the
+                contents loaded from disk.
+                Ignore serializing if objtype is string_types
+
+        Returns:
+            object: The deserialized file contents which could be either a
+                string object or a dict object
+
+        Raises:
+            ConfigurationError:
+        '''
+        try:
+            debug('cache miss, attempting to key from env %s' % key)
+            contents = os.environ[key]
+        except KeyError as exc:
+            debug(exc)
+            raise ConfigurationError('key %s is not in environment' % key)
+
+        return self.deserialize(contents, objtype, encoding)
+
+
+    def deserialize(self, data, objtype=None, encoding='utf-8', key=None):
+        '''
+        deserialize and type check data
+
+        Args:
+            data (string): The possibly encoded data to be deserialized
+
+            key (string): if specified, a key to use to memoize/cache deserialized contents
+
+            encoding (string): The data text encoding
+
+            objtype (object): The object type of the deserialized data.  This
+                is used to type check the deserialized content is as expected.
+                Ignore serializing if objtype is string_types
+
+        Returns:
+            object: The deserialized data which could be either a
+                string object or a dict object
+
+        Raises:
+            ConfigurationError:
+        '''
+        parsed_data = data
+        if encoding:
+            try:
+                parsed_data = data.encode(encoding)
+            except UnicodeEncodeError:
+                raise ConfigurationError('unable to encode file contents')
 
         if objtype is not string_types:
             for deserializer in (self._load_json, self._load_yaml):
-                parsed_data = deserializer(contents)
+                parsed_data = deserializer(data)
                 if parsed_data:
                     break
 
             if objtype and not isinstance(parsed_data, objtype):
-                debug('specified file %s is not of type %s' % (path, objtype))
-                raise ConfigurationError('invalid file serialization type for contents')
+                debug('specified data %s is not of type %s' % (data, objtype))
+                raise ConfigurationError('invalid file serialization type for data')
 
-        self._cache[path] = parsed_data
+        if key:
+            self._cache[key] = parsed_data
         return parsed_data

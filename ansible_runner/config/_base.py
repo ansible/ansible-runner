@@ -134,6 +134,7 @@ class BaseConfig(object):
         Manages reading environment metadata files under ``private_data_dir`` and merging/updating
         with existing values so the :py:class:`ansible_runner.runner.Runner` object can read and use them easily
         """
+        self.runner_mode = runner_mode
         try:
             if self.settings:
                 self.settings = self.settings.update(self.loader.load_file('env/settings', Mapping))
@@ -143,7 +144,7 @@ class BaseConfig(object):
             debug("Not loading settings")
             self.settings = dict()
 
-        if runner_mode == 'pexpect':
+        if self.runner_mode == 'pexpect':
             try:
                 passwords = self.loader.load_file('env/passwords', Mapping)
                 self.expect_passwords = {
@@ -165,7 +166,7 @@ class BaseConfig(object):
             self.idle_timeout = self.settings.get('idle_timeout', None)
             self.job_timeout = self.settings.get('job_timeout', None)
 
-        elif runner_mode == 'subprocess':
+        elif self.runner_mode == 'subprocess':
             self.subprocess_timeout = self.settings.get('subprocess_timeout', 300)
 
         self.process_isolation = self.settings.get('process_isolation', self.process_isolation)
@@ -453,7 +454,6 @@ class BaseConfig(object):
 
         new_args.extend([self.container_image])
         new_args.extend(args)
-        print(new_args)
         logger.debug(f"container engine invocation: {' '.join(new_args)}")
         return new_args
 

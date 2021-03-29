@@ -17,7 +17,10 @@
     provides:
       - ansible-runner-container-image
     requires:
-      - ansible-core-container-image
+      - python-base-container-image
+      - python-builder-container-image
+    required-projects:
+      - name: github.com/ansible/ansible
     vars: &ansible_runner_image_vars
       container_images: &container_images
         - context: .
@@ -39,7 +42,8 @@
     provides:
       - ansible-runner-container-image
     requires:
-      - ansible-core-container-image
+      - python-base-container-image
+      - python-builder-container-image
     vars: *ansible_runner_image_vars
 
 - job:
@@ -64,8 +68,6 @@
         - context: .
           build_args:
             - ANSIBLE_BRANCH=stable-2.10
-            # NOTE(pabelanger): There is no ansible-core 2.10, so we have to build ansible-base 2.10 ourself.
-            - ANSIBLE_CORE_IMAGE=quay.io/ansible/python-base:latest
           registry: quay.io
           repository: quay.io/ansible/ansible-runner
           siblings:
@@ -102,7 +104,8 @@
     provides:
       - ansible-runner-stable-2.11-container-image
     requires:
-      - ansible-core-container-image
+      - python-base-container-image
+      - python-builder-container-image
     required-projects:
       - name: github.com/ansible/ansible
         # NOTE (amhatre): Switch to stable-2.11 once branch is created.
@@ -127,7 +130,8 @@
     provides:
       - ansible-runner-stable-2.11-container-image
     requires:
-      - ansible-core-container-image
+      - python-base-container-image
+      - python-builder-container-image
     required-projects:
       - name: github.com/ansible/ansible
         # NOTE (amhatre): Switch to stable-2.11 once branch is created.
@@ -156,8 +160,6 @@
         - context: .
           build_args:
             - ANSIBLE_BRANCH=stable-2.9
-            # NOTE(pabelanger): There is no ansible-core 2.9, so we have to build ansible 2.9 ourself.
-            - ANSIBLE_CORE_IMAGE=quay.io/ansible/python-base:latest
           registry: quay.io
           repository: quay.io/ansible/ansible-runner
           siblings:

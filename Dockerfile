@@ -1,4 +1,4 @@
-ARG ANSIBLE_CORE_IMAGE=quay.io/ansible/ansible-core:latest
+ARG PYTHON_BASE_IMAGE=quay.io/ansible/python-base:latest
 ARG PYTHON_BUILDER_IMAGE=quay.io/ansible/python-builder:latest
 ARG ANSIBLE_BRANCH=""
 ARG ZUUL_SIBLINGS=""
@@ -9,13 +9,15 @@ FROM $PYTHON_BUILDER_IMAGE as builder
 COPY . /tmp/src
 RUN if [ "$ANSIBLE_BRANCH" != "" ] ; then \
       echo "Installing requirements.txt / upper-constraints.txt for Ansible $ANSIBLE_BRANCH" ; \
-      cp /tmp/src/tools/bindep-$ANSIBLE_BRANCH.txt /tmp/src/bindep.txt ; \
       cp /tmp/src/tools/requirements-$ANSIBLE_BRANCH.txt /tmp/src/requirements.txt ; \
       cp /tmp/src/tools/upper-constraints-$ANSIBLE_BRANCH.txt /tmp/src/upper-constraints.txt ; \
+    else \
+      echo "Installing requirements.txt" ; \
+      cp /tmp/src/tools/requirements.txt /tmp/src/requirements.txt ; \
     fi
 RUN assemble
 
-FROM $ANSIBLE_CORE_IMAGE as ansible-core
+FROM $PYTHON_BASE_IMAGE
 # =============================================================================
 
 COPY --from=builder /output/ /output

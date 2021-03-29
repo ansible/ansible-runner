@@ -384,7 +384,7 @@ class BaseConfig(object):
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm', '--interactive'])
 
-        if self.runner_mode == 'pexpect':
+        if self.runner_mode == 'pexpect' or hasattr(self, 'input_fd') and self.input_fd is not None:
             new_args.extend(['--tty'])
 
         if self.container_workdir:

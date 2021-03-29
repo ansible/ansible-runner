@@ -94,7 +94,7 @@ class DocConfig(BaseConfig):
             raise ConfigurationError("Invalid response_format {0}, valid value is one of either {1}".format(response_format,
                                                                                                             ", ".join(DocConfig._supported_response_formats)))
 
-        self._prepare_env()
+        self._prepare_env(runner_mode=self.runner_mode)
         self.cmdline_args = []
 
         if list_files:

@@ -3,7 +3,7 @@ import shutil
 
 import pytest
 import pexpect
-from ansible_runner.runner_config import RunnerConfig
+from ansible_runner.config.runner import RunnerConfig
 
 
 @pytest.fixture(scope='function')

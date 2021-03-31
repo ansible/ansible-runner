@@ -11,7 +11,7 @@ from pexpect import TIMEOUT, EOF
 import pytest
 from unittest.mock import (Mock, patch, PropertyMock)
 
-from ansible_runner.runner_config import RunnerConfig, ExecutionMode
+from ansible_runner.config.runner import RunnerConfig, ExecutionMode
 from ansible_runner.interface import init_runner
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError

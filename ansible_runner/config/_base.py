@@ -212,10 +212,6 @@ class BaseConfig(object):
             self.ssh_key_path = os.path.join(self.artifact_dir, 'ssh_key_data')
             open_fifo_write(self.ssh_key_path, self.ssh_key_data)
 
-        self.container_image = self.settings.get('container_image', self.container_image)
-        self.container_volume_mounts = self.settings.get('container_volume_mounts', self.container_volume_mounts)
-        self.container_options = self.settings.get('container_options', self.container_options)
-
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
 
         if 'fact_cache' in self.settings:

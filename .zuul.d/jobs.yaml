@@ -46,6 +46,8 @@
     requires:
       - python-base-container-image
       - python-builder-container-image
+    required-projects:
+      - name: github.com/ansible/ansible
     vars: *ansible_runner_image_vars
 
 - job:

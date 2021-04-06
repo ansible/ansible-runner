@@ -5,6 +5,8 @@ ARG ZUUL_SIBLINGS=""
 
 FROM $PYTHON_BUILDER_IMAGE as builder
 # =============================================================================
+ARG ANSIBLE_BRANCH
+ARG ZUUL_SIBLINGS
 
 COPY . /tmp/src
 RUN if [ "$ANSIBLE_BRANCH" != "" ] ; then \

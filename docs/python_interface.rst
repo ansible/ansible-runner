@@ -202,95 +202,95 @@ Usage examples
 
 .. code-block:: python
 
-# run ansible/generic commands in interactive mode within container
-out, err = ansible_runner.run_command(
-    executable_cmd='ansible-playbook',
-    cmdline_args=['gather.yaml', '-i', 'inventory', '-vvvv', '-k'],
-    input_fd=sys.stdin,
-    output_fd=sys.stdout,
-    error_fd=sys.stderr,
-    cwd='/home/demo',
-    process_isolation=True,
-    container_image='network-ee'
-    )
-print("out: {}".format(out))
-print("err: {}".format(err))
+  # run ansible/generic commands in interactive mode within container
+  out, err = ansible_runner.run_command(
+      executable_cmd='ansible-playbook',
+      cmdline_args=['gather.yaml', '-i', 'inventory', '-vvvv', '-k'],
+      input_fd=sys.stdin,
+      output_fd=sys.stdout,
+      error_fd=sys.stderr,
+      cwd='/home/demo',
+      process_isolation=True,
+      container_image='network-ee'
+  )
+  print("out: {}".format(out))
+  print("err: {}".format(err))
 
 .. code-block:: python
 
-# run ansible/generic commands in interactive mode locally
-out, err = ansible_runner.run_command(
-    executable_cmd='ansible-playbook',
-    cmdline_args=['gather.yaml', '-i', 'inventory', '-vvvv', '-k'],
-    input_fd=sys.stdin,
-    output_fd=sys.stdout,
-    error_fd=sys.stderr,
-    cwd='/home/demo',
-    )
-print("out: {}".format(out))
-print("err: {}".format(err))
+  # run ansible/generic commands in interactive mode locally  
+  out, err = ansible_runner.run_command(
+      executable_cmd='ansible-playbook',
+      cmdline_args=['gather.yaml', '-i', 'inventory', '-vvvv', '-k'],
+      input_fd=sys.stdin,
+      output_fd=sys.stdout,
+      error_fd=sys.stderr,
+      cwd='/home/demo',
+  )
+  print("out: {}".format(out))
+  print("err: {}".format(err))
 
 .. code-block:: python
 
-# get plugin docs from within container
-out, err = ansible_runner.get_plugin_docs(
-    plugin_names=['vyos.vyos.vyos_command'],
-    plugin_type='module',
-    response_format='json',
-    process_isolation=True,
-    container_image='network-ee'
-)
-print("out: {}".format(out))
-print("err: {}".format(err))
+  # get plugin docs from within container  
+  out, err = ansible_runner.get_plugin_docs(
+      plugin_names=['vyos.vyos.vyos_command'],
+      plugin_type='module',
+      response_format='json',
+      process_isolation=True,
+      container_image='network-ee'
+  )
+  print("out: {}".format(out))
+  print("err: {}".format(err))
 
 .. code-block:: python
 
-# get plugin docs from within container in async mode
-thread_obj, runner_obj = ansible_runner.get_plugin_docs_async(
-    plugin_names=['ansible.netcommon.cli_config', 'ansible.netcommon.cli_command'],
-    plugin_type='module',
-    response_format='json',
-    process_isolation=True,
-    container_image='network-ee'
-)
-while runner_obj.status not in ['canceled', 'successful', 'timeout', 'failed']:
-    time.sleep(0.01)
-    continue
+  # get plugin docs from within container in async mode  
+  thread_obj, runner_obj = ansible_runner.get_plugin_docs_async(
+      plugin_names=['ansible.netcommon.cli_config', 'ansible.netcommon.cli_command'],
+      plugin_type='module',
+      response_format='json',
+      process_isolation=True,
+      container_image='network-ee'
+  )
+  while runner_obj.status not in ['canceled', 'successful', 'timeout', 'failed']:
+      time.sleep(0.01)
+      continue
 
-print("out: {}".format(runner_obj.stdout.read()))
-print("err: {}".format(runner_obj.stderr.read()))
-
-.. code-block:: python
-
-# get plugin list installed on local system
-out, err = ansible_runner.get_plugin_list()
-print("out: {}".format(out))
-print("err: {}".format(err))
+  print("out: {}".format(runner_obj.stdout.read()))
+  print("err: {}".format(runner_obj.stderr.read()))
 
 .. code-block:: python
 
-# get plugins with file list from within container
-out, err = ansible_runner.get_plugin_list(list_files=True, process_isolation=True, container_image='network-ee')
-print("out: {}".format(out))
-print("err: {}".format(err))
+  # get plugin list installed on local system
+  out, err = ansible_runner.get_plugin_list()
+  print("out: {}".format(out))
+  print("err: {}".format(err))
 
 .. code-block:: python
 
-# get list of changed ansible configuration values
-out, err = ansible_runner.get_ansible_config(action='dump',  config_file='/home/demo/ansible.cfg', only_changed=True)
-print("out: {}".format(out))
-print("err: {}".format(err))
+  # get plugins with file list from within container
+  out, err = ansible_runner.get_plugin_list(list_files=True, process_isolation=True, container_image='network-ee')
+  print("out: {}".format(out))
+  print("err: {}".format(err))
 
-# get ansible inventory information
-out, err = ansible_runner.get_inventory(
-    action='list',
-    inventories=['/home/demo/inventory1', '/home/demo/inventory2'],
-    response_format='json',
-    process_isolation=True,
-    container_image='network-ee'
-)
-print("out: {}".format(out))
-print("err: {}".format(err))
+.. code-block:: python
+
+  # get list of changed ansible configuration values
+  out, err = ansible_runner.get_ansible_config(action='dump',  config_file='/home/demo/ansible.cfg', only_changed=True)
+  print("out: {}".format(out))
+  print("err: {}".format(err))
+
+  # get ansible inventory information
+  out, err = ansible_runner.get_inventory(
+      action='list',
+      inventories=['/home/demo/inventory1', '/home/demo/inventory2'],
+      response_format='json',
+      process_isolation=True,
+      container_image='network-ee'
+  )
+  print("out: {}".format(out))
+  print("err: {}".format(err))
 
 Providing custom behavior and inputs
 ------------------------------------

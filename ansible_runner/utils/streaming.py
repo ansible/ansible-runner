@@ -7,6 +7,7 @@ import sys
 from .base64io import Base64IO
 from pathlib import Path
 
+
 def stream_dir(source_directory, stream):
     with tempfile.NamedTemporaryFile() as tmp:
         with zipfile.ZipFile(tmp.name, 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
@@ -36,18 +37,17 @@ def unstream_dir(stream, length, target_directory):
     # NOTE: caller needs to process exceptions
     with tempfile.NamedTemporaryFile() as tmp:
         with open(tmp.name, "wb") as target:
-            with Base64IO(stream) as source:                
-                while True:
-                    remaining = length
-                    chunk_size = 1024 * 1000  # 1 MB
+            with Base64IO(stream) as source:
+                remaining = length
+                chunk_size = 1024 * 1000  # 1 MB
+                while remaining != 0:
                     if chunk_size >= remaining:
                         chunk_size = remaining
+
                     data = source.read(chunk_size)
                     target.write(data)
-                    remaining -= chunk_size
 
-                    if remaining == 0:
-                        break
+                    remaining -= chunk_size
 
         with zipfile.ZipFile(tmp.name, 'r') as archive:
             # Fancy extraction in order to preserve permissions

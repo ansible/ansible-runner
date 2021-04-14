@@ -14,14 +14,12 @@ import threading
 import pipes
 import uuid
 import codecs
-import zipfile
-import math
 
 try:
     from collections.abc import Iterable, Mapping
 except ImportError:
     from collections import Iterable, Mapping
-from io import BytesIO, StringIO
+from io import StringIO
 from six import string_types, PY2, PY3, text_type, binary_type
 
 
@@ -82,6 +80,7 @@ def check_isolation_executable_installed(isolation_executable):
         if isinstance(e, ValueError) or getattr(e, 'errno', 1) != 2:  # ENOENT, no such file or directory
             raise RuntimeError(f'{isolation_executable} unavailable for unexpected reason.')
         return False
+
 
 def dump_artifact(obj, path, filename=None):
     '''

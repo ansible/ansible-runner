@@ -223,7 +223,7 @@ class Processor(object):
 
     def artifacts_callback(self, artifacts_data):
         length = artifacts_data['zipfile']
-        utils.unstream_dir(self._input, length, self.artifact_dir)
+        unstream_dir(self._input, length, self.artifact_dir)
 
         if self.artifacts_handler is not None:
             self.artifacts_handler(self.artifact_dir)

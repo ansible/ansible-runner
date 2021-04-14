@@ -17,7 +17,6 @@ import base64
 import io
 import logging
 import string
-import sys
 
 LOGGER_NAME = "base64io"
 
@@ -31,8 +30,7 @@ try:  # Python 3.5.0 and 3.5.1 have incompatible typing modules
         Literal,
         Optional,
         Type,
-        Union,
-    )  # noqa pylint: disable=unused-import
+    )
 except ImportError:  # pragma: no cover
     # We only actually need these imports when running the mypy checks
     pass
@@ -40,25 +38,6 @@ except ImportError:  # pragma: no cover
 __all__ = ("Base64IO",)
 __version__ = "1.0.3"
 _LOGGER = logging.getLogger(LOGGER_NAME)
-
-
-def _py2():
-    # type: () -> bool
-    """Determine if runtime is Python 2.
-
-    :returns: decision:
-    :rtype: bool
-    """
-    return sys.version_info[0] == 2
-
-
-if not _py2():
-    # The "file" object does not exist in Python 3, but we need to reference
-    # it in Python 2 code paths. Defining this here accomplishes two things:
-    # First, it allows linters to accept "file" as a defined object in Python 3.
-    # Second, it will serve as a canary to ensure that there are no references
-    # to "file" in Python 3 code paths.
-    file = NotImplemented  # pylint: disable=invalid-name
 
 
 def _to_bytes(data):
@@ -137,31 +116,18 @@ class Base64IO(io.IOBase):
             self.__write_buffer = b""
         self.closed = True
 
-    def _passthrough_interactive_check(self, method_name, mode):
+    def _passthrough_interactive_check(self, method_name):
         # type: (str, str) -> bool
         """Attempt to call the specified method on the wrapped stream and return the result.
 
         If the method is not found on the wrapped stream, return False.
 
-        .. note::
-
-            Special Case: If wrapped stream is a Python 2 file, inspect the file mode.
-
         :param str method_name: Name of method to call
-        :param str mode: Python 2 mode character
         :rtype: bool
         """
         try:
             method = getattr(self.__wrapped, method_name)
         except AttributeError:
-            if (
-                _py2()
-                and isinstance(
-                    self.__wrapped, file
-                )  # pylint: disable=isinstance-second-argument-not-valid-type
-                and mode in self.__wrapped.mode
-            ):
-                return True
             return False
         else:
             return method()
@@ -175,7 +141,7 @@ class Base64IO(io.IOBase):
 
         :rtype: bool
         """
-        return self._passthrough_interactive_check("writable", "w")
+        return self._passthrough_interactive_check("writable")
 
     def readable(self):
         # type: () -> bool
@@ -186,7 +152,7 @@ class Base64IO(io.IOBase):
 
         :rtype: bool
         """
-        return self._passthrough_interactive_check("readable", "r")
+        return self._passthrough_interactive_check("readable")
 
     def flush(self):
         # type: () -> None
@@ -375,8 +341,3 @@ class Base64IO(io.IOBase):
         if line:
             return line
         raise StopIteration()
-
-    def next(self):
-        # type: () -> bytes
-        """Python 2 iterator hook."""
-        return self.__next__()

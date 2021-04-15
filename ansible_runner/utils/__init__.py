@@ -15,6 +15,9 @@ import pipes
 import uuid
 import codecs
 
+from distutils.spawn import find_executable
+from ansible_runner.exceptions import ConfigurationError
+
 try:
     from collections.abc import Iterable, Mapping
 except ImportError:
@@ -428,3 +431,10 @@ def santize_json_response(data):
     start_re = re.compile("{(.|\n)*", re.MULTILINE)
     data = start_re.search(data).group().strip()
     return data
+
+
+def get_executable_path(name):
+    exec_path = find_executable(name)
+    if exec_path is None:
+        raise ConfigurationError(f"{name} command not found")
+    return exec_path

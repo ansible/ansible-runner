@@ -19,6 +19,7 @@
 import logging
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
+from ansible_runner.utils import get_executable_path
 
 logger = logging.getLogger('ansible-runner')
 
@@ -93,5 +94,5 @@ class InventoryConfig(BaseConfig):
         if vault_password_file:
             self.cmdline_args.extend(['--vault-password-file', vault_password_file])
 
-        self.command = ['ansible-inventory'] + self.cmdline_args
+        self.command = [get_executable_path('ansible-inventory')] + self.cmdline_args
         self._handle_command_wrap(self.execution_mode, self.cmdline_args)

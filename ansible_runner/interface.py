@@ -390,7 +390,8 @@ def run_command_async(executable_cmd, cmdline_args=None, **kwargs):
     return runner_thread, r
 
 
-def init_plugin_docs_config(plugin_names, plugin_type=None, response_format=None, snippet=False, playbook_dir=None, **kwargs):
+def init_plugin_docs_config(plugin_names, plugin_type=None, response_format=None,
+                            snippet=False, playbook_dir=None, module_path=None, **kwargs):
     '''
     Initialize the Runner() instance
 
@@ -407,7 +408,8 @@ def init_plugin_docs_config(plugin_names, plugin_type=None, response_format=None
     finished_callback = kwargs.pop('finished_callback', None)
 
     rd = DocConfig(**kwargs)
-    rd.prepare_plugin_docs_command(plugin_names, plugin_type=plugin_type, response_format=response_format, snippet=snippet, playbook_dir=playbook_dir)
+    rd.prepare_plugin_docs_command(plugin_names, plugin_type=plugin_type, response_format=response_format,
+                                   snippet=snippet, playbook_dir=playbook_dir, module_path=module_path)
     return Runner(rd, event_handler=event_callback_handler, status_handler=status_callback_handler, artifacts_handler=artifacts_handler,
                   cancel_callback=cancel_callback, finished_callback=finished_callback)
 
@@ -492,10 +494,11 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format=None, snippe
     :type artifacts_handler: function
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is empty as
-              ``pexpect`` uses same output descriptor for stdout and stderr. If the vaue of ``response_format`` is ``json``
+              ``pexpect`` uses same output descriptor for stdout and stderr. If the value of ``response_format`` is ``json``
               it returns a python dictionary object.
     '''
-    r = init_plugin_docs_config(plugin_names, plugin_type=plugin_type, response_format=response_format, snippet=snippet, playbook_dir=snippet, **kwargs)
+    r = init_plugin_docs_config(plugin_names, plugin_type=plugin_type, response_format=response_format,
+                                snippet=snippet, playbook_dir=playbook_dir, module_path=module_path, **kwargs)
     r.run()
     response = r.stdout.read()
     error = r.stderr.read()
@@ -504,7 +507,7 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format=None, snippe
     return response, error
 
 
-def get_plugin_docs_async(plugin_names, plugin_type=None, response_format=None, snippet=False, playbook_dir=None, **kwargs):
+def get_plugin_docs_async(plugin_names, plugin_type=None, response_format=None, snippet=False, playbook_dir=None, module_path=None, **kwargs):
     '''
     Run an ansible-doc command in the background which will start immediately. Returns the thread object and a Runner object.
 
@@ -512,7 +515,8 @@ def get_plugin_docs_async(plugin_names, plugin_type=None, response_format=None, 
 
     :returns: A tuple containing a :py:class:`threading.Thread` object and a :py:class:`ansible_runner.runner.Runner` object
     '''
-    r = init_plugin_docs_config(plugin_names, plugin_type=plugin_type, response_format=response_format, snippet=snippet, playbook_dir=snippet, **kwargs)
+    r = init_plugin_docs_config(plugin_names, plugin_type=plugin_type, response_format=response_format,
+                                snippet=snippet, playbook_dir=playbook_dir, module_path=module_path, **kwargs)
     doc_runner_thread = threading.Thread(target=r.run)
     doc_runner_thread.start()
     return doc_runner_thread, r

@@ -17,8 +17,10 @@
 # under the License.
 #
 import logging
+
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
+from ansible_runner.utils import get_executable_path
 
 logger = logging.getLogger('ansible-runner')
 
@@ -70,5 +72,5 @@ class AnsibleCfgConfig(BaseConfig):
         if only_changed:
             self.cmdline_args.append('--only-changed')
 
-        self.command = ['ansible-config'] + self.cmdline_args
+        self.command = [get_executable_path('ansible-config')] + self.cmdline_args
         self._handle_command_wrap(self.execution_mode, self.cmdline_args)

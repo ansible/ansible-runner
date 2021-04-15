@@ -17,6 +17,7 @@ import base64
 import io
 import logging
 import string
+import math
 
 LOGGER_NAME = "base64io"
 
@@ -264,7 +265,7 @@ class Base64IO(io.IOBase):
         elif b > 0:
             # Calculate number of encoded bytes that must be read to get b raw bytes.
             _bytes_to_read = int((b - len(self.__read_buffer)) * 4 / 3)
-            _bytes_to_read += 4 - _bytes_to_read % 4
+            _bytes_to_read = int(math.ceil(_bytes_to_read / 4.0) * 4.0)
 
         # Read encoded bytes from wrapped stream.
         data = _to_bytes(self.__wrapped.read(_bytes_to_read))

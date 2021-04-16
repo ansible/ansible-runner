@@ -3,6 +3,7 @@ import os
 import socket
 import concurrent.futures
 import time
+import tempfile
 
 import pytest
 import json
@@ -58,7 +59,7 @@ class TestStreamingUsage:
         process_dir = str(tmpdir.mkdir('for_process'))
         job_kwargs = self.get_job_kwargs(job_type)
 
-        outgoing_buffer = io.BytesIO()
+        outgoing_buffer = tempfile.NamedTemporaryFile()
 
         transmitter = Transmitter(_output=outgoing_buffer, private_data_dir=transmit_dir, **job_kwargs)
 
@@ -69,18 +70,20 @@ class TestStreamingUsage:
         assert rc in (None, 0)
         assert status == 'unstarted'
 
-        outgoing_buffer.seek(0)  # rewind so we can start reading
-
-        sent = outgoing_buffer.getvalue()
+        outgoing_buffer.seek(0)
+        sent = outgoing_buffer.read()
         assert sent  # should not be blank at least
         assert b'zipfile' in sent
 
-        incoming_buffer = io.BytesIO()
+        incoming_buffer = tempfile.NamedTemporaryFile()
+
+        outgoing_buffer.seek(0)
 
         worker = Worker(_input=outgoing_buffer, _output=incoming_buffer, private_data_dir=worker_dir)
         worker.run()
 
-        assert set(os.listdir(worker_dir)) == {'artifacts', 'inventory', 'project', 'env'}, outgoing_buffer.getvalue()
+        outgoing_buffer.seek(0)
+        assert set(os.listdir(worker_dir)) == {'artifacts', 'inventory', 'project', 'env'}, outgoing_buffer.read()
 
         incoming_buffer.seek(0)  # again, be kind, rewind
 

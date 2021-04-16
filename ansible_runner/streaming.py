@@ -15,7 +15,7 @@ import ansible_runner
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.loader import ArtifactLoader
 import ansible_runner.plugins
-from ansible_runner import utils
+from ansible_runner.utils.streaming import stream_dir, unstream_dir
 
 
 class UUIDEncoder(json.JSONEncoder):
@@ -50,7 +50,7 @@ class Transmitter(object):
         self._output.flush()
 
         if not self.only_transmit_kwargs:
-            self._output.write(utils.stream_dir(self.private_data_dir))
+            stream_dir(self.private_data_dir, self._output)
 
         self._output.write(json.dumps({'eof': True}).encode('utf-8'))
         self._output.write(b'\n')
@@ -103,9 +103,8 @@ class Worker(object):
             if 'kwargs' in data:
                 self.job_kwargs = self.update_paths(data['kwargs'])
             elif 'zipfile' in data:
-                zip_data = self._input.read(data['zipfile'])
                 try:
-                    utils.unstream_dir(zip_data, self.private_data_dir)
+                    unstream_dir(self._input, data['zipfile'], self.private_data_dir)
                 except Exception:
                     self.status_handler({
                         'status': 'error',
@@ -145,7 +144,7 @@ class Worker(object):
         self._output.flush()
 
     def artifacts_handler(self, artifact_dir):
-        self._output.write(utils.stream_dir(artifact_dir))
+        stream_dir(artifact_dir, self._output)
         self._output.flush()
 
     def finished_callback(self, runner_obj):
@@ -223,9 +222,8 @@ class Processor(object):
                 json.dump(event_data, write_file)
 
     def artifacts_callback(self, artifacts_data):
-        zip_data = self._input.read(artifacts_data['zipfile'])
-
-        utils.unstream_dir(zip_data, self.artifact_dir)
+        length = artifacts_data['zipfile']
+        unstream_dir(self._input, length, self.artifact_dir)
 
         if self.artifacts_handler is not None:
             self.artifacts_handler(self.artifact_dir)

@@ -6,6 +6,7 @@ import pytest
 from ansible_runner.config.inventory import InventoryConfig
 from ansible_runner.config._base import BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
+from ansible_runner.utils import get_executable_path
 
 
 def test_ansible_cfg_init_defaults():
@@ -26,7 +27,7 @@ def test_prepare_inventory_command():
     inventories = ['/tmp/inventory1', '/tmp/inventory2']
     rc.prepare_inventory_command('list', inventories, response_format='yaml', playbook_dir='/tmp',
                                  vault_ids='1234', vault_password_file='/tmp/password')
-    expected_command = ['ansible-inventory', '--list', '-i', '/tmp/inventory1', '-i', '/tmp/inventory2', '--yaml', '--playbook-dir'] + \
+    expected_command = [get_executable_path('ansible-inventory'), '--list', '-i', '/tmp/inventory1', '-i', '/tmp/inventory2', '--yaml', '--playbook-dir'] + \
                        ['/tmp', '--vault-id', '1234', '--vault-password-file', '/tmp/password']
     assert rc.command == expected_command
     assert rc.runner_mode == 'subprocess'
@@ -108,7 +109,7 @@ def test_prepare_config_command_with_containerization(tmpdir, container_runtime)
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \
         ['--name', 'ansible_runner_foo', 'my_container'] + \
-        ['ansible-inventory', '--list', '-i', '/tmp/inventory1', '-i', '/tmp/inventory2', '--yaml', '--playbook-dir'] + \
+        [get_executable_path('ansible-inventory'), '--list', '-i', '/tmp/inventory1', '-i', '/tmp/inventory2', '--yaml', '--playbook-dir'] + \
         ['/tmp', '--vault-id', '1234', '--vault-password-file', '/tmp/password']
 
     for index, element in enumerate(expected_command_start):

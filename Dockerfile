@@ -5,6 +5,8 @@ ARG ZUUL_SIBLINGS=""
 
 FROM $PYTHON_BUILDER_IMAGE as builder
 # =============================================================================
+ARG ANSIBLE_BRANCH
+ARG ZUUL_SIBLINGS
 
 COPY . /tmp/src
 RUN if [ "$ANSIBLE_BRANCH" != "" ] ; then \
@@ -14,6 +16,7 @@ RUN if [ "$ANSIBLE_BRANCH" != "" ] ; then \
     else \
       echo "Installing requirements.txt" ; \
       cp /tmp/src/tools/requirements.txt /tmp/src/requirements.txt ; \
+      cp /tmp/src/tools/build-requirements.txt /tmp/src/build-requirements.txt ; \
     fi
 RUN assemble
 

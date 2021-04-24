@@ -1,0 +1,1 @@
+setuptools_scm==5.0.2

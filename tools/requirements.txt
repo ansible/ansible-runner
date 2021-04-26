@@ -1,2 +1,5 @@
 ansible-core
+ncclient
 paramiko
+pypsrp
+pywinrm

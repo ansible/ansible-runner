@@ -1,1 +1,2 @@
 ansible-base
+paramiko

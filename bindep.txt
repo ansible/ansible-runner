@@ -13,7 +13,13 @@ python38-pycparser [platform:centos-8]
 python38-six [platform:centos-8]
 python38-yaml [platform:centos-8]
 
+# ncclient
+python38-lxml [platform:centos-8 platform:rhel-8]
+
 # paramiko
 gcc [compile platform:centos-8 platform:rhel-8]
 make [compile platform:centos-8 platform:rhel-8]
 python38-devel [compile platform:centos-8 platform:rhel-8]
+
+# pypsrp
+python38-requests [platform:centos-8 platform:rhel-8]

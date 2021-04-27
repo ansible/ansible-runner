@@ -19,7 +19,7 @@ setup(
     long_description_content_type='text/markdown',
     install_requires=[
         'pexpect>=4.5',
-        'python-daemon',
+        'fasteners==0.16',
         'PyYAML',
         'six',
     ],

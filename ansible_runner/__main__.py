@@ -41,6 +41,7 @@ from yaml import safe_load
 from ansible_runner import run
 from ansible_runner import output
 from ansible_runner.utils import dump_artifact, Bunch
+from ansible_runner.utils.locks import TimeoutProcessLock
 from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
 
@@ -874,9 +875,7 @@ def main(sys_args=None):
     if vargs.get('command') in ('start', 'run', 'transmit', 'worker', 'process', 'adhoc', 'playbook'):
 
         if vargs.get('command') == 'start':
-            import daemon
-            from daemon.pidfile import TimeoutPIDLockFile
-            context = daemon.DaemonContext(pidfile=TimeoutPIDLockFile(pidfile))
+            context = TimeoutProcessLock(pidfile, timeout=5)
         else:
             context = threading.Lock()
 

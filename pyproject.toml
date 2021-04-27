@@ -34,9 +34,9 @@ exclude = '''
 [tool.poetry.dependencies]
 python = "~2.7 || >=3.6"
 pexpect = ">=4.5"
-python-daemon = "*"
 pyyaml = "*"
 six = "*"
+fasteners = "^0.16"
 
 [tool.poetry.scripts]
 ansible-runner = 'ansible_runner.__main__:main'
@@ -54,6 +54,7 @@ funcsigs = "*"
 mock = "*"
 pathlib2 = "*"
 scandir = "*"
+tox = "^3.23.0"
 
 [build-system]
 requires = ["setuptools", "poetry>=1.0.5"]

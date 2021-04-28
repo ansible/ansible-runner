@@ -314,6 +314,14 @@ class BaseConfig(object):
 
         self._ensure_path_safe_to_mount(src_mount_path)
 
+        def _add_trailing_slash_if_neeeded(some_path):
+            if os.path.isdir(src_mount_path):
+                return some_path + '/' if (some_path[-1] != '/') else some_path
+            else:
+                return some_path
+
+        src_mount_path = _add_trailing_slash_if_neeeded(src_mount_path)
+
         if os.path.isabs(src_mount_path):
             if os.path.isdir(src_mount_path):
                 volume_mount_path = "{}:{}".format(src_mount_path, dest_mount_path)
@@ -332,7 +340,7 @@ class BaseConfig(object):
             volume_mount_path += labels
 
         # check if mount path already added in args list
-        if ', '.join(map(str, ['-v', volume_mount_path])) not in ', '.join(map(str, args_list)):
+        if volume_mount_path not in args_list:
             args_list.extend(['-v', volume_mount_path])
 
     def _handle_ansible_cmd_options_bind_mounts(self, args_list, cmdline_args):

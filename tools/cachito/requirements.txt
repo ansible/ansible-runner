@@ -7,4 +7,5 @@ pypsrp==0.5.0
 pyspnego==0.1.5
 pywinrm==0.4.1
 requests-ntlm==1.1.0
+toml==0.10.2
 xmltodict==0.12.0

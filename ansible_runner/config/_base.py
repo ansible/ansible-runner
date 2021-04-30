@@ -303,6 +303,14 @@ class BaseConfig(object):
 
         return _playbook
 
+
+    def _add_trailing_slash_if_neeeded(self, some_path):
+        if os.path.isdir(some_path):
+            return some_path + '/' if (some_path[-1] != '/') else some_path
+        else:
+            return some_path
+
+
     def _update_volume_mount_paths(self, args_list, src_mount_path, dest_mount_path=None, labels=None):
 
         if src_mount_path is None or not os.path.exists(src_mount_path):
@@ -314,13 +322,7 @@ class BaseConfig(object):
 
         self._ensure_path_safe_to_mount(src_mount_path)
 
-        def _add_trailing_slash_if_neeeded(some_path):
-            if os.path.isdir(src_mount_path):
-                return some_path + '/' if (some_path[-1] != '/') else some_path
-            else:
-                return some_path
-
-        src_mount_path = _add_trailing_slash_if_neeeded(src_mount_path)
+        src_mount_path = self._add_trailing_slash_if_neeeded(src_mount_path)
 
         if os.path.isabs(src_mount_path):
             if os.path.isdir(src_mount_path):

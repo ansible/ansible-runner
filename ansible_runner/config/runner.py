@@ -170,6 +170,38 @@ class RunnerConfig(object):
     def containerized(self):
         return self.process_isolation and self.process_isolation_executable in self._CONTAINER_ENGINES
 
+    def __str__(self):
+        attrs = (
+            'artifact_dir', 'binary', 'cmdline_args',
+            'container_image', 'container_volume_mounts', 'container_options',
+            'directory_isolation_path', 'envvars', 'execution_mode',
+            'extra_vars', 'fact_cache', 'fact_cache_type', 'forks',
+            'host_pattern', 'ident', 'inventory', 'json_mode', 'limit',
+            'loader', 'module', 'module_args', 'omit_event_data',
+            'only_failed_event_data', 'playbook', 'private_data_dir',
+            'process_isolation', 'process_isolation_executable',
+            'process_isolation_hide_paths', 'process_isolation_path',
+            'process_isolation_path_actual', 'process_isolation_ro_paths',
+            'process_isolation_show_paths', 'project_dir', 'quiet',
+            'resource_profiling', 'resource_profiling_base_cgroup',
+            'resource_profiling_cpu_poll_interval',
+            'resource_profiling_memory_poll_interval',
+            'resource_profiling_pid_poll_interval',
+            'resource_profiling_results_dir', 'roles_path',
+            'rotate_artifacts', 'skip_tags', 'ssh_key_data',
+            'suppress_ansible_output', 'tags', 'verbosity',
+        )
+        return 'ansible_runner.config.runner.RunnerConfig<{attrs}>'.format(
+            attrs=', '.join(
+                '{attr}={val}'.format(
+                    attr=attr,
+                    val=getattr(self, attr)
+                )
+                for attr in attrs
+                if hasattr(self, attr) and getattr(self, attr) is not None
+            )
+        )
+
     def prepare(self):
         """
         Performs basic checks and then properly invokes

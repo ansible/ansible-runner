@@ -16,7 +16,13 @@ RUN if [ "$ANSIBLE_BRANCH" != "" ] ; then \
     else \
       echo "Installing requirements.txt" ; \
       cp /tmp/src/tools/requirements.txt /tmp/src/requirements.txt ; \
-    fi
+    fi \
+    && cp /tmp/src/tools/build-requirements.txt /tmp/src/build-requirements.txt
+
+# NOTE(pabelanger): For downstream builds, we compile everything from source
+# over using existing wheels. Do this upstream too so we can better catch
+# issues.
+ENV PIP_OPTS="--no-binary :all: --no-build-isolation"
 RUN assemble
 
 FROM $PYTHON_BASE_IMAGE

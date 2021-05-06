@@ -178,7 +178,11 @@ class Runner(object):
             # option expecting should have already been written in ansible_runner.runner_config
             env_file_host = os.path.join(self.config.artifact_dir, 'env.list')
             with open(env_file_host, 'w') as f:
-                f.write('\n'.join(list(self.config.env.keys())))
+                f.write(
+                    '\n'.join(
+                        ["{}={}".format(key, value) for key, value in self.config.env.items()]
+                    )
+                )
         else:
             cwd = self.config.cwd
             pexpect_env = self.config.env

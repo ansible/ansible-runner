@@ -22,4 +22,6 @@ make [compile platform:centos-8 platform:rhel-8]
 python38-devel [compile platform:centos-8 platform:rhel-8]
 
 # pypsrp
+krb5-devel [compile platform:centos-8 platform:rhel-8]
+krb5-workstation [platform:centos-8 platform:rhel-8]
 python38-requests [platform:centos-8 platform:rhel-8]

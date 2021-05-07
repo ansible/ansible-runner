@@ -1,6 +1,6 @@
 ansible-base
 ncclient
 paramiko
-pypsrp
-pywinrm
+pypsrp[kerberos]
+pywinrm[kerberos]
 toml

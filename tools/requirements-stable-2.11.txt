@@ -1,6 +1,7 @@
 ansible-core
 ncclient
 paramiko
-pypsrp[kerberos]
-pywinrm[kerberos]
+pyOpenSSL<20.0.0  # Transient dependency for credssp support.
+pypsrp[kerberos,credssp]
+pywinrm[kerberos,credssp]
 toml

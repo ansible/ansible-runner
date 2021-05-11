@@ -17,7 +17,11 @@ def stream_dir(source_directory, stream):
                     if relpath == ".":
                         relpath = ""
                     for fname in files:
-                        archive.write(os.path.join(dirpath, fname), arcname=os.path.join(relpath, fname))
+                        try:
+                            archive.write(os.path.join(dirpath, fname), arcname=os.path.join(relpath, fname))
+                        except FileNotFoundError as e:
+                            e.strerror = "invalid symlink detected"
+                            raise e
             archive.close()
 
         zip_size = Path(tmp.name).stat().st_size

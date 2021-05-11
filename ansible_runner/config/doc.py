@@ -49,6 +49,11 @@ class DocConfig(BaseConfig):
         if self.runner_mode not in ['pexpect', 'subprocess']:
             raise ConfigurationError("Invalid runner mode {0}, valid value is either 'pexpect' or 'subprocess'".format(self.runner_mode))
 
+        if kwargs.get("process_isolation"):
+            self._ansible_doc_exec_path = "ansible-doc"
+        else:
+            self._ansible_doc_exec_path = get_executable_path("ansible-doc")
+
         self.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
         super(DocConfig, self).__init__(**kwargs)
 
@@ -84,7 +89,7 @@ class DocConfig(BaseConfig):
 
         self.cmdline_args.append(" ".join(plugin_names))
 
-        self.command = [get_executable_path('ansible-doc')] + self.cmdline_args
+        self.command = [self._ansible_doc_exec_path] + self.cmdline_args
         self._handle_command_wrap(self.execution_mode, self.cmdline_args)
 
     def prepare_plugin_list_command(self, list_files=None, response_format=None, plugin_type=None,
@@ -114,5 +119,5 @@ class DocConfig(BaseConfig):
         if module_path:
             self.cmdline_args.extend(['-M', module_path])
 
-        self.command = [get_executable_path('ansible-doc')] + self.cmdline_args
+        self.command = [self._ansible_doc_exec_path] + self.cmdline_args
         self._handle_command_wrap(self.execution_mode, self.cmdline_args)

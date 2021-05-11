@@ -85,7 +85,7 @@ def test_prepare_plugin_docs_command_with_containerization(tmpdir, container_run
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \
         ['--name', 'ansible_runner_foo'] + \
-        ['my_container'] + [get_executable_path('ansible-doc'), '-s', '-t', 'module', '--playbook-dir', '/tmp/test', 'copy file']
+        ['my_container'] + ['ansible-doc', '-s', '-t', 'module', '--playbook-dir', '/tmp/test', 'copy file']
 
     for index, element in enumerate(expected_command_start):
         if '--user=' in element:
@@ -133,7 +133,7 @@ def test_prepare_plugin_list_command_with_containerization(tmpdir, container_run
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \
         ['--name', 'ansible_runner_foo'] + \
-        ['my_container'] + [get_executable_path('ansible-doc'), '-F', '-t', 'module', '--playbook-dir', '/tmp/test', '-M', '/test/module']
+        ['my_container'] + ['ansible-doc', '-F', '-t', 'module', '--playbook-dir', '/tmp/test', '-M', '/test/module']
 
     for index, element in enumerate(expected_command_start):
         if '--user=' in element:

@@ -75,7 +75,7 @@ def test_prepare_config_command_with_containerization(tmpdir, container_runtime)
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \
         ['--name', 'ansible_runner_foo'] + \
-        ['my_container', get_executable_path('ansible-config'), 'list', '-c', '/tmp/ansible.cfg']
+        ['my_container', 'ansible-config', 'list', '-c', '/tmp/ansible.cfg']
 
     for index, element in enumerate(expected_command_start):
         if '--user=' in element:

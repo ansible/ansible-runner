@@ -387,7 +387,7 @@ class BaseConfig(object):
             workdir = self.container_workdir
         elif self.cwd is not None and os.path.exists(self.cwd):
             # mount current local working diretory if passed and exist
-            self._update_volume_mount_paths(new_args, self.cwd)
+            self._update_volume_mount_paths(new_args, self.cwd, labels=":Z")
             workdir = self.cwd
         else:
             workdir = "/runner/project"

@@ -49,6 +49,11 @@ class AnsibleCfgConfig(BaseConfig):
         if self.runner_mode not in ['pexpect', 'subprocess']:
             raise ConfigurationError("Invalid runner mode {0}, valid value is either 'pexpect' or 'subprocess'".format(self.runner_mode))
 
+        if kwargs.get("process_isolation"):
+            self._ansible_config_exec_path = "ansible-config"
+        else:
+            self._ansible_config_exec_path = get_executable_path("ansible-config")
+
         self.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
         super(AnsibleCfgConfig, self).__init__(**kwargs)
 
@@ -72,5 +77,5 @@ class AnsibleCfgConfig(BaseConfig):
         if only_changed:
             self.cmdline_args.append('--only-changed')
 
-        self.command = [get_executable_path('ansible-config')] + self.cmdline_args
+        self.command = [self._ansible_config_exec_path] + self.cmdline_args
         self._handle_command_wrap(self.execution_mode, self.cmdline_args)

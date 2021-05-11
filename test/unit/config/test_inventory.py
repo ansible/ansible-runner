@@ -109,7 +109,7 @@ def test_prepare_config_command_with_containerization(tmpdir, container_runtime)
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \
         ['--name', 'ansible_runner_foo', 'my_container'] + \
-        [get_executable_path('ansible-inventory'), '--list', '-i', '/tmp/inventory1', '-i', '/tmp/inventory2', '--yaml', '--playbook-dir'] + \
+        ['ansible-inventory', '--list', '-i', '/tmp/inventory1', '-i', '/tmp/inventory2', '--yaml', '--playbook-dir'] + \
         ['/tmp', '--vault-id', '1234', '--vault-password-file', '/tmp/password']
 
     for index, element in enumerate(expected_command_start):

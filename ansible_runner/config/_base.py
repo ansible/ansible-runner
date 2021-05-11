@@ -453,7 +453,7 @@ class BaseConfig(object):
 
             # Mount the entire private_data_dir
             # custom show paths inside private_data_dir do not make sense
-            new_args.extend(["-v", "{}:/runner:Z".format(self.private_data_dir)])
+            self._update_volume_mount_paths(new_args, "{}".format(self.private_data_dir), dest_mount_path="/runner", labels=":Z")
     
         if self.container_volume_mounts:
             for mapping in self.container_volume_mounts:

@@ -425,7 +425,7 @@ class BaseConfig(object):
             if not os.path.exists(subdir_path):
                 os.mkdir(subdir_path, 0o700)
 
-        # playbook / adhoc commands need artifacts mounted to output data
+        # runtime commands need artifacts mounted to output data
         self._update_volume_mount_paths(new_args, "{}/artifacts".format(self.private_data_dir), dest_mount_path="/runner/artifacts", labels=":Z")
 
         # Mount the entire private_data_dir

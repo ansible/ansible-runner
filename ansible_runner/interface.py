@@ -51,7 +51,7 @@ def init_runner(**kwargs):
     '''
     # If running via the transmit-worker-process method, we must only extract things as read-only
     # inside of one of these commands. That could be either transmit or worker.
-    if not kwargs.get('cli_execenv_cmd') and (kwargs.get('streamer') not in ('worker', 'process')):
+    if kwargs.get('streamer') not in ('worker', 'process'):
         dump_artifacts(kwargs)
 
     if kwargs.get('streamer'):
@@ -194,7 +194,6 @@ def run(**kwargs):
     :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
     :param omit_event_data: Omits extra ansible event data from event payload (stdout and event still included)
     :param only_failed_event_data: Omits extra ansible event data unless it's a failed event (stdout and event still included)
-    :param cli_execenv_cmd: Tells Ansible Runner to emulate the CLI of Ansible by prepping an Execution Environment and then passing the user provided cmdline
     :type private_data_dir: str
     :type ident: str
     :type json_mode: bool
@@ -241,7 +240,6 @@ def run(**kwargs):
     :type fact_cache_type: str
     :type omit_event_data: bool
     :type only_failed_event_data: bool
-    :type cli_execenv_cmd: str
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object, or a simple object containing `rc` if run remotely
     '''

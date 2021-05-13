@@ -9,7 +9,7 @@ from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.utils import get_executable_path
 
 
-def test_ansible_cfg_init_defaults():
+def test_ansible_inventory_init_defaults():
     rc = InventoryConfig()
     assert rc.private_data_dir == os.path.abspath(os.path.expanduser('~/.ansible-runner'))
     assert rc.execution_mode == BaseExecutionMode.ANSIBLE_COMMANDS
@@ -79,7 +79,7 @@ def test_prepare_inventory_invalid_graph_response_format():
 
 
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_prepare_config_command_with_containerization(tmpdir, container_runtime):
+def test_prepare_inventory_command_with_containerization(tmpdir, container_runtime):
     kwargs = {
         'private_data_dir': tmpdir,
         'process_isolation': True,
@@ -90,7 +90,8 @@ def test_prepare_config_command_with_containerization(tmpdir, container_runtime)
     rc.ident = 'foo'
     inventories = ['/tmp/inventory1', '/tmp/inventory2']
     rc.prepare_inventory_command('list', inventories, response_format='yaml', playbook_dir='/tmp',
-                                 vault_ids='1234', vault_password_file='/tmp/password')
+                                 vault_ids='1234', vault_password_file='/tmp/password', output_file='/tmp/inv_out.txt',
+                                 export=True)
 
     assert rc.runner_mode == 'subprocess'
     extra_container_args = []
@@ -110,7 +111,10 @@ def test_prepare_config_command_with_containerization(tmpdir, container_runtime)
         extra_container_args + \
         ['--name', 'ansible_runner_foo', 'my_container'] + \
         ['ansible-inventory', '--list', '-i', '/tmp/inventory1', '-i', '/tmp/inventory2', '--yaml', '--playbook-dir'] + \
-        ['/tmp', '--vault-id', '1234', '--vault-password-file', '/tmp/password']
+        ['/tmp', '--vault-id', '1234', '--vault-password-file', '/tmp/password', '--output', '/tmp/inv_out.txt'] + \
+        ['--export']
+
+    assert len(expected_command_start) == len(rc.command)
 
     for index, element in enumerate(expected_command_start):
         if '--user=' in element:

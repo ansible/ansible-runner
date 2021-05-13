@@ -59,7 +59,9 @@ class InventoryConfig(BaseConfig):
     _supported_response_formats = ('json', 'yaml', 'toml')
     _supported_actions = ('graph', 'host', 'list')
 
-    def prepare_inventory_command(self, action, inventories, response_format=None, host=None, playbook_dir=None, vault_ids=None, vault_password_file=None):
+    def prepare_inventory_command(self, action, inventories, response_format=None, host=None,
+                                  playbook_dir=None, vault_ids=None, vault_password_file=None,
+                                  output_file=None, export=None):
 
         if action not in InventoryConfig._supported_actions:
             raise ConfigurationError("Invalid action {0}, valid value is one of either {1}".format(action, ", ".join(InventoryConfig._supported_actions)))
@@ -98,6 +100,12 @@ class InventoryConfig(BaseConfig):
 
         if vault_password_file:
             self.cmdline_args.extend(['--vault-password-file', vault_password_file])
+
+        if output_file:
+            self.cmdline_args.extend(['--output', output_file])
+
+        if export:
+            self.cmdline_args.append('--export')
 
         self.command = [self._ansible_inventory_exec_path] + self.cmdline_args
         self._handle_command_wrap(self.execution_mode, self.cmdline_args)

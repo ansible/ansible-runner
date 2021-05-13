@@ -20,6 +20,7 @@ import logging
 
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
+from ansible_runner.utils import get_executable_path
 
 logger = logging.getLogger('ansible-runner')
 
@@ -48,6 +49,11 @@ class DocConfig(BaseConfig):
         if self.runner_mode not in ['pexpect', 'subprocess']:
             raise ConfigurationError("Invalid runner mode {0}, valid value is either 'pexpect' or 'subprocess'".format(self.runner_mode))
 
+        if kwargs.get("process_isolation"):
+            self._ansible_doc_exec_path = "ansible-doc"
+        else:
+            self._ansible_doc_exec_path = get_executable_path("ansible-doc")
+
         self.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
         super(DocConfig, self).__init__(**kwargs)
 
@@ -64,7 +70,6 @@ class DocConfig(BaseConfig):
             raise ConfigurationError("plugin_names should be of type list, instead received {0} of type {1}".format(plugin_names, type(plugin_names)))
 
         self._prepare_env(runner_mode=self.runner_mode)
-        self.command = ['ansible-doc']
         self.cmdline_args = []
 
         if response_format == 'json':
@@ -84,7 +89,7 @@ class DocConfig(BaseConfig):
 
         self.cmdline_args.append(" ".join(plugin_names))
 
-        self.command = ['ansible-doc'] + self.cmdline_args
+        self.command = [self._ansible_doc_exec_path] + self.cmdline_args
         self._handle_command_wrap(self.execution_mode, self.cmdline_args)
 
     def prepare_plugin_list_command(self, list_files=None, response_format=None, plugin_type=None,
@@ -114,5 +119,5 @@ class DocConfig(BaseConfig):
         if module_path:
             self.cmdline_args.extend(['-M', module_path])
 
-        self.command = ['ansible-doc'] + self.cmdline_args
+        self.command = [self._ansible_doc_exec_path] + self.cmdline_args
         self._handle_command_wrap(self.execution_mode, self.cmdline_args)

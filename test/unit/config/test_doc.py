@@ -6,6 +6,7 @@ import pytest
 from ansible_runner.config.doc import DocConfig
 from ansible_runner.config._base import BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
+from ansible_runner.utils import get_executable_path
 
 
 def test_ansible_doc_defaults():
@@ -45,7 +46,7 @@ def test_prepare_plugin_docs_command():
     plugin_names = ['copy', 'file']
     plugin_type = 'module'
     rc.prepare_plugin_docs_command(plugin_names, plugin_type=plugin_type, snippet=True, playbook_dir='/tmp/test')
-    expected_command = ['ansible-doc', '-s', '-t', 'module', '--playbook-dir', '/tmp/test', 'copy file']
+    expected_command = [get_executable_path('ansible-doc'), '-s', '-t', 'module', '--playbook-dir', '/tmp/test', 'copy file']
     assert rc.command == expected_command
     assert rc.runner_mode == 'subprocess'
     assert rc.execution_mode == BaseExecutionMode.ANSIBLE_COMMANDS
@@ -96,7 +97,7 @@ def test_prepare_plugin_docs_command_with_containerization(tmpdir, container_run
 def test_prepare_plugin_list_command():
     rc = DocConfig()
     rc.prepare_plugin_list_command(list_files=True, plugin_type='module', playbook_dir='/tmp/test', module_path='/test/module')
-    expected_command = ['ansible-doc', '-F', '-t', 'module', '--playbook-dir', '/tmp/test', '-M', '/test/module']
+    expected_command = [get_executable_path('ansible-doc'), '-F', '-t', 'module', '--playbook-dir', '/tmp/test', '-M', '/test/module']
     assert rc.command == expected_command
     assert rc.runner_mode == 'subprocess'
     assert rc.execution_mode == BaseExecutionMode.ANSIBLE_COMMANDS

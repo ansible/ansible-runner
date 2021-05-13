@@ -626,7 +626,8 @@ def get_plugin_list(list_files=None, response_format=None, plugin_type=None, pla
     return response, error
 
 
-def get_inventory(action, inventories, response_format=None, host=None, playbook_dir=None, vault_ids=None, vault_password_file=None, **kwargs):
+def get_inventory(action, inventories, response_format=None, host=None, playbook_dir=None,
+                  vault_ids=None, vault_password_file=None, output_file=None, export=None, **kwargs):
     '''
     Run an ansible-inventory command to get inventory related details.
 
@@ -640,6 +641,9 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
     :param playbook_dir: This parameter is used to sets the relative path for the inventory.
     :param vault_ids: The vault identity to use.
     :param vault_password_file: The vault password files to use.
+    :param output_file: The file path in which inventory details should be sent to.
+    :param export: The boolean value if set represent in a way that is optimized for export,not as an accurate
+                   representation of how Ansible has processed it.
     :param runner_mode: The applicable values are ``pexpect`` and ``subprocess``. Default is set to ``subprocess``.
     :param cwd: The current working directory from which the command in executable_cmd should be be executed.
     :param envvars: Environment variables to be used when running Ansible. Environment variables will also be
@@ -679,6 +683,8 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
     :type playbook_dir: str
     :type vault_ids: str
     :type vault_password_file: str
+    :type output_file: str
+    :type: export: bool
     :type runner_mode: str
     :type cwd: str
     :type envvars: dict
@@ -719,7 +725,7 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
 
     rd = InventoryConfig(**kwargs)
     rd.prepare_inventory_command(action=action, inventories=inventories, response_format=response_format, host=host, playbook_dir=playbook_dir,
-                                 vault_ids=vault_ids, vault_password_file=vault_password_file)
+                                 vault_ids=vault_ids, vault_password_file=vault_password_file, output_file=output_file, export=export)
     r = Runner(rd,
                event_handler=event_callback_handler,
                status_handler=status_callback_handler,

@@ -209,7 +209,7 @@ Usage examples
       input_fd=sys.stdin,
       output_fd=sys.stdout,
       error_fd=sys.stderr,
-      cwd='/home/demo',
+      host_cwd='/home/demo',
       process_isolation=True,
       container_image='network-ee'
   )
@@ -225,7 +225,6 @@ Usage examples
       input_fd=sys.stdin,
       output_fd=sys.stdout,
       error_fd=sys.stderr,
-      cwd='/home/demo',
   )
   print("out: {}".format(out))
   print("err: {}".format(err))

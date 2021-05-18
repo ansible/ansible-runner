@@ -30,7 +30,8 @@ def load_file_side_effect(path, value=None, *args, **kwargs):
     raise ConfigurationError
 
 
-def test_runner_config_init_defaults():
+@patch('os.makedirs', return_value=True)
+def test_runner_config_init_defaults(mock_makedirs):
     rc = RunnerConfig('/')
     assert rc.private_data_dir == '/'
     assert rc.ident is not None
@@ -43,12 +44,14 @@ def test_runner_config_init_defaults():
     assert isinstance(rc.loader, ArtifactLoader)
 
 
-def test_runner_config_with_artifact_dir():
+@patch('os.makedirs', return_value=True)
+def test_runner_config_with_artifact_dir(mock_makedirs):
     rc = RunnerConfig('/', artifact_dir='/this-is-some-dir')
     assert rc.artifact_dir == os.path.join('/this-is-some-dir', rc.ident)
 
 
-def test_runner_config_init_with_ident():
+@patch('os.makedirs', return_value=True)
+def test_runner_config_init_with_ident(mock_makedirs):
     rc = RunnerConfig('/', ident='test')
     assert rc.private_data_dir == '/'
     assert rc.ident == 'test'
@@ -61,14 +64,16 @@ def test_runner_config_init_with_ident():
     assert isinstance(rc.loader, ArtifactLoader)
 
 
-def test_runner_config_project_dir():
+@patch('os.makedirs', return_value=True)
+def test_runner_config_project_dir(mock_makedirs):
     rc = RunnerConfig('/', project_dir='/another/path')
     assert rc.project_dir == '/another/path'
     rc = RunnerConfig('/')
     assert rc.project_dir == '/project'
 
 
-def test_prepare_environment_vars_only_strings():
+@patch('os.makedirs', return_value=True)
+def test_prepare_environment_vars_only_strings(mock_makedirs):
     rc = RunnerConfig(private_data_dir="/", envvars=dict(D='D'))
 
     value = dict(A=1, B=True, C="foo")
@@ -86,7 +91,8 @@ def test_prepare_environment_vars_only_strings():
         assert rc.env['D'] == 'D'
 
 
-def test_prepare_env_ad_hoc_command():
+@patch('os.makedirs', return_value=True)
+def test_prepare_env_ad_hoc_command(mock_makedirs):
     rc = RunnerConfig(private_data_dir="/")
 
     value = {'AD_HOC_COMMAND_ID': 'teststring'}
@@ -97,7 +103,8 @@ def test_prepare_env_ad_hoc_command():
         assert rc.cwd == '/'
 
 
-def test_prepare_environment_pexpect_defaults():
+@patch('os.makedirs', return_value=True)
+def test_prepare_environment_pexpect_defaults(mock_makedirs):
     rc = RunnerConfig(private_data_dir="/")
     rc.prepare_env()
 
@@ -108,7 +115,8 @@ def test_prepare_environment_pexpect_defaults():
     assert rc.expect_passwords[EOF] is None
 
 
-def test_prepare_env_passwords():
+@patch('os.makedirs', return_value=True)
+def test_prepare_env_passwords(mock_makedirs):
     rc = RunnerConfig(private_data_dir='/')
 
     value = {'^SSH [pP]assword.*$': 'secret'}
@@ -123,19 +131,22 @@ def test_prepare_env_passwords():
         assert 'secret' in rc.expect_passwords.values()
 
 
-def test_prepare_env_extra_vars_defaults():
+@patch('os.makedirs', return_value=True)
+def test_prepare_env_extra_vars_defaults(mock_makedirs):
     rc = RunnerConfig('/')
     rc.prepare_env()
     assert rc.extra_vars is None
 
 
-def test_prepare_env_settings_defaults():
+@patch('os.makedirs', return_value=True)
+def test_prepare_env_settings_defaults(mock_makedirs):
     rc = RunnerConfig('/')
     rc.prepare_env()
     assert rc.settings == {}
 
 
-def test_prepare_env_settings():
+@patch('os.makedirs', return_value=True)
+def test_prepare_env_settings(mock_makedirs):
     rc = RunnerConfig('/')
 
     value = {'test': 'string'}
@@ -146,13 +157,16 @@ def test_prepare_env_settings():
         assert rc.settings == value
 
 
-def test_prepare_env_sshkey_defaults():
+@patch('os.makedirs', return_value=True)
+def test_prepare_env_sshkey_defaults(mock_makedirs):
     rc = RunnerConfig('/')
     rc.prepare_env()
     assert rc.ssh_key_data is None
 
 
-def test_prepare_env_sshkey():
+@patch('ansible_runner.config._base.open_fifo_write')
+@patch('os.makedirs', return_value=True)
+def test_prepare_env_sshkey(mock_makedirs, open_fifo_write_mock):
     rc = RunnerConfig('/')
 
     value = '01234567890'
@@ -163,7 +177,8 @@ def test_prepare_env_sshkey():
         assert rc.ssh_key_data == value
 
 
-def test_prepare_env_defaults():
+@patch('os.makedirs', return_value=True)
+def test_prepare_env_defaults(mock_makedirs):
     with patch('os.path.exists') as path_exists:
         path_exists.return_value=True
         rc = RunnerConfig('/')
@@ -174,7 +189,8 @@ def test_prepare_env_defaults():
         assert rc.cwd == '/project'
 
 
-def test_prepare_env_directory_isolation():
+@patch('os.makedirs', return_value=True)
+def test_prepare_env_directory_isolation(mock_makedirs):
     with patch('os.path.exists') as path_exists:
         path_exists.return_value=True
         rc = RunnerConfig('/')
@@ -183,8 +199,9 @@ def test_prepare_env_directory_isolation():
         assert rc.cwd == '/tmp/foo'
 
 
+@patch('os.makedirs', return_value=True)
 @patch('os.path.exists', return_value=True)
-def test_prepare_inventory(path_exists):
+def test_prepare_inventory(path_exists, mock_makedirs):
     rc = RunnerConfig(private_data_dir='/')
     rc.prepare_inventory()
     assert rc.inventory == '/inventory'
@@ -200,7 +217,8 @@ def test_prepare_inventory(path_exists):
     assert rc.inventory is None
 
 
-def test_generate_ansible_command():
+@patch('os.makedirs', return_value=True)
+def test_generate_ansible_command(mock_makedirs):
     rc = RunnerConfig(private_data_dir='/', playbook='main.yaml')
     with patch('os.path.exists') as path_exists:
         path_exists.return_value=True
@@ -272,7 +290,8 @@ def test_generate_ansible_command():
     assert cmd == ['ansible-playbook', '-i', '/inventory', '--forks', '5', 'main.yaml']
 
 
-def test_generate_ansible_command_with_api_extravars():
+@patch('os.makedirs', return_value=True)
+def test_generate_ansible_command_with_api_extravars(mock_makedirs):
     rc = RunnerConfig(private_data_dir='/', playbook='main.yaml', extravars={"foo":"bar"})
     with patch('os.path.exists') as path_exists:
         path_exists.return_value=True
@@ -282,7 +301,8 @@ def test_generate_ansible_command_with_api_extravars():
     assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '{"foo":"bar"}', 'main.yaml']
 
 
-def test_generate_ansible_command_with_dict_extravars():
+@patch('os.makedirs', return_value=True)
+def test_generate_ansible_command_with_dict_extravars(mock_makedirs):
     rc = RunnerConfig(private_data_dir='/', playbook='main.yaml', extravars={"foo":"test \n hello"})
     with patch('os.path.exists') as path_exists:
         path_exists.return_value=True
@@ -296,7 +316,8 @@ def test_generate_ansible_command_with_dict_extravars():
     (u'--tags foo --skip-tags', ['--tags', 'foo', '--skip-tags']),
     (u'--limit "䉪ቒ칸ⱷ?噂폄蔆㪗輥"', ['--limit', '䉪ቒ칸ⱷ?噂폄蔆㪗輥']),
 ])
-def test_generate_ansible_command_with_cmdline_args(cmdline, tokens):
+@patch('os.makedirs', return_value=True)
+def test_generate_ansible_command_with_cmdline_args(mock_makedirs, cmdline, tokens):
     rc = RunnerConfig(private_data_dir='/', playbook='main.yaml')
     with patch('os.path.exists') as path_exists:
         path_exists.return_value = True
@@ -309,7 +330,8 @@ def test_generate_ansible_command_with_cmdline_args(cmdline, tokens):
         assert cmd == ['ansible-playbook'] + tokens + ['-i', '/inventory', 'main.yaml']
 
 
-def test_prepare_command_defaults():
+@patch('os.makedirs', return_value=True)
+def test_prepare_command_defaults(mock_makedirs):
     rc = RunnerConfig('/')
 
     cmd_side_effect = partial(load_file_side_effect, 'args')
@@ -323,7 +345,8 @@ def test_prepare_command_defaults():
             rc.command == ['test', '"string with spaces"']
 
 
-def test_prepare_with_defaults():
+@patch('os.makedirs', return_value=True)
+def test_prepare_with_defaults(mock_makedirs):
     rc = RunnerConfig('/')
 
     rc.prepare_inventory = Mock()
@@ -342,11 +365,11 @@ def test_prepare_with_defaults():
 
 @patch.dict('os.environ', {'PYTHONPATH': '/python_path_via_environ',
                            'AWX_LIB_DIRECTORY': '/awx_lib_directory_via_environ'})
-def test_prepare():
+@patch('os.makedirs', return_value=True)
+def test_prepare(mock_makedirs):
     rc = RunnerConfig('/')
 
     rc.prepare_inventory = Mock()
-    rc.prepare_env = Mock()
     rc.prepare_command = Mock()
 
     rc.ssh_key_data = None
@@ -358,7 +381,6 @@ def test_prepare():
     rc.prepare()
 
     assert rc.prepare_inventory.called
-    assert rc.prepare_env.called
     assert rc.prepare_command.called
 
     assert not hasattr(rc, 'ssh_key_path')
@@ -378,12 +400,12 @@ def test_prepare():
         "PYTHONPATH is the union of the explicit env['PYTHONPATH'] override and AWX_LIB_DIRECTORY"
 
 
-@patch('ansible_runner.config.runner.open_fifo_write')
-def test_prepare_with_ssh_key(open_fifo_write_mock):
+@patch('os.makedirs', return_value=True)
+@patch('ansible_runner.config._base.open_fifo_write')
+def test_prepare_with_ssh_key(open_fifo_write_mock, mock_makedirs):
     rc = RunnerConfig('/')
 
     rc.prepare_inventory = Mock()
-    rc.prepare_env = Mock()
     rc.prepare_command = Mock()
 
     rc.wrap_args_with_ssh_agent = Mock()
@@ -404,7 +426,8 @@ def test_prepare_with_ssh_key(open_fifo_write_mock):
     assert open_fifo_write_mock.called
 
 
-def test_wrap_args_with_ssh_agent_defaults():
+@patch('os.makedirs', return_value=True)
+def test_wrap_args_with_ssh_agent_defaults(mock_makedirs):
     rc = RunnerConfig('/')
     res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], '/tmp/sshkey')
     assert res == [
@@ -414,7 +437,8 @@ def test_wrap_args_with_ssh_agent_defaults():
     ]
 
 
-def test_wrap_args_with_ssh_agent_with_auth():
+@patch('os.makedirs', return_value=True)
+def test_wrap_args_with_ssh_agent_with_auth(mock_makedirs):
     rc = RunnerConfig('/')
     res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], '/tmp/sshkey', '/tmp/sshauth')
     assert res == [
@@ -424,7 +448,8 @@ def test_wrap_args_with_ssh_agent_with_auth():
     ]
 
 
-def test_wrap_args_with_ssh_agent_silent():
+@patch('os.makedirs', return_value=True)
+def test_wrap_args_with_ssh_agent_silent(mock_makedirs):
     rc = RunnerConfig('/')
     res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], '/tmp/sshkey', silence_ssh_add=True)
     assert res == [
@@ -454,7 +479,8 @@ def test_process_isolation_executable_not_found(mock_subprocess, mock_sys, mock_
         assert mock_sys.exit.called
 
 
-def test_bwrap_process_isolation_defaults():
+@patch('os.makedirs', return_value=True)
+def test_bwrap_process_isolation_defaults(mock_makedirs):
     rc = RunnerConfig('/')
     rc.artifact_dir = '/tmp/artifacts'
     rc.playbook = 'main.yaml'
@@ -510,7 +536,9 @@ def test_bwrap_process_isolation_and_directory_isolation(mock_makedirs, mock_cop
     ]
 
 
-def test_process_isolation_settings():
+@patch('os.path.isdir', return_value=False)
+@patch('os.path.exists', return_value=True)
+def test_process_isolation_settings(mock_isdir, mock_exists):
     rc = RunnerConfig('/')
     rc.artifact_dir = '/tmp/artifacts'
     rc.playbook = 'main.yaml'
@@ -525,7 +553,7 @@ def test_process_isolation_settings():
     with patch('os.path.exists') as path_exists:
         path_exists.return_value=True
         rc.prepare()
-
+    print(rc.command)
     assert rc.command[0:8] == [
         'not_bwrap',
         '--die-with-parent',
@@ -604,12 +632,14 @@ def test_profiling_plugin_settings_with_custom_intervals(mock_mkdir):
     assert rc.env['CGROUP_PID_POLL_INTERVAL'] == '1.5'
 
 
-def test_container_volume_mounting_with_Z(tmpdir):
+@patch('os.path.isdir', return_value=True)
+@patch('os.path.exists', return_value=True)
+def test_container_volume_mounting_with_Z(mock_isdir, mock_exists, tmpdir):
     rc = RunnerConfig(str(tmpdir))
     rc.container_volume_mounts = ['project_path:project_path:Z']
     rc.container_name = 'foo'
     rc.env = {}
-    new_args = rc.wrap_args_for_containerization(['ansible-playbook', 'foo.yml'])
+    new_args = rc.wrap_args_for_containerization(['ansible-playbook', 'foo.yml'], 0, None)
     assert new_args[0] == 'podman'
     for i, entry in enumerate(new_args):
         if entry == '-v':
@@ -621,7 +651,9 @@ def test_container_volume_mounting_with_Z(tmpdir):
 
 
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_containerization_settings(tmpdir, container_runtime):
+@patch('os.path.isdir', return_value=True)
+@patch('os.path.exists', return_value=True)
+def test_containerization_settings(mock_isdir, mock_exists, tmpdir, container_runtime):
     with patch('ansible_runner.runner_config.RunnerConfig.containerized', new_callable=PropertyMock) as mock_containerized:
         rc = RunnerConfig(tmpdir)
         rc.ident = 'foo'
@@ -648,6 +680,8 @@ def test_containerization_settings(tmpdir, container_runtime):
         ['--name', 'ansible_runner_foo'] + \
         ['my_container', 'ansible-playbook', '-i', '/runner/inventory/hosts', 'main.yaml']
 
+    print(f"--expected_command_start -> len: {len(expected_command_start)}\n{expected_command_start}--")
+    print(f"--received_command -> len: {len(rc.command)}\n {rc.command}--")
     for index, element in enumerate(expected_command_start):
         if '--user' in element:
             assert '--user=' in rc.command[index]

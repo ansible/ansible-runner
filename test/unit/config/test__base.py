@@ -151,12 +151,12 @@ def test_prepare_env_sshkey():
 def test_prepare_env_defaults():
     with patch('os.path.exists') as path_exists:
         path_exists.return_value=True
-        rc = BaseConfig(private_data_dir='/tmp')
+        rc = BaseConfig(private_data_dir='/tmp', host_cwd='/tmp/project')
         rc._prepare_env()
         assert rc.idle_timeout is None
         assert rc.job_timeout is None
         assert rc.pexpect_timeout == 5
-        assert rc.cwd == '/tmp/project'
+        assert rc.host_cwd == '/tmp/project'
 
 
 @patch.dict('os.environ', {'PYTHONPATH': '/python_path_via_environ',
@@ -283,7 +283,7 @@ def test_containerization_settings(tmpdir, container_runtime):
     else:
         extra_container_args = ['--user={os.getuid()}']
 
-    expected_command_start = [container_runtime, 'run', '--rm', '--interactive', '--tty', '--workdir', '/runner/project'] + \
+    expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
                              ['-v', '{}/.ssh/:/home/runner/.ssh/'.format(os.environ['HOME'])]
     if container_runtime == 'podman':
         expected_command_start +=['--group-add=root', '--userns=keep-id', '--ipc=host']

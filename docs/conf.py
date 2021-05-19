@@ -14,6 +14,7 @@
 #
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath('../'))
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('./'))
@@ -28,7 +29,7 @@ author = 'Red Hat Ansible'
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = '2.0.0a2'
+release = '2.0.0a3'
 
 
 # -- General configuration ---------------------------------------------------

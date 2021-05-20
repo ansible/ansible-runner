@@ -17,6 +17,7 @@ python38-yaml [platform:centos-8]
 python38-lxml [platform:centos-8 platform:rhel-8]
 
 # paramiko
+findutils [compile platform:centos-8 platform:rhel-8]
 gcc [compile platform:centos-8 platform:rhel-8]
 make [compile platform:centos-8 platform:rhel-8]
 python38-devel [compile platform:centos-8 platform:rhel-8]

@@ -39,4 +39,10 @@ if [[ -d ${AWX_ISOLATED_DATA_DIR} ]]; then
     ansible --version | head -n 1 > ${AWX_ISOLATED_DATA_DIR}/ansible_version.txt
 fi
 
-exec /usr/local/bin/dumb-init -- "${@}"
+SCRIPT=/usr/local/bin/dumb-init
+# NOTE(pabelanger): Downstream we install dumb-init from RPM.
+if [ -f "/usr/bin/dumb-init" ]; then
+    SCRIPT=/usr/bin/dumb-init
+fi
+
+exec $SCRIPT -- "${@}"

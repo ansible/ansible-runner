@@ -99,7 +99,7 @@ def test_event_omission_except_failed(is_pre_ansible28):
             inventory=inv,
             only_failed_event_data=True,
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'fail': {'msg': "test"}}]}])
-    all_event_datas = [x['event_data'] for x in r.events if x['event_data']]
+    all_event_datas = [x['event_data'] for x in r.events if x.get('event_data')]
     assert len(all_event_datas) == 1
 
 

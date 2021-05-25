@@ -118,10 +118,8 @@ class BaseConfig(object):
         else:
             self.cwd = os.getcwd()
 
-        if not os.path.exists(self.private_data_dir):
-            os.makedirs(self.private_data_dir, mode=0o700)
-        if not os.path.exists(self.artifact_dir):
-            os.makedirs(self.artifact_dir, mode=0o700)
+        os.makedirs(self.private_data_dir, exist_ok=True, mode=0o700)
+        os.makedirs(self.artifact_dir, exist_ok=True, mode=0o700)
 
     _CONTAINER_ENGINES = ('docker', 'podman')
 

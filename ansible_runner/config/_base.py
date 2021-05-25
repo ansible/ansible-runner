@@ -400,13 +400,14 @@ class BaseConfig(object):
             workdir = self.container_workdir
         elif self.host_cwd is not None and os.path.exists(self.host_cwd):
             # mount current local working diretory if passed and exist
-            self._update_volume_mount_paths(new_args, self.host_cwd)
             workdir = self.host_cwd
         else:
             workdir = "/runner/project"
 
-        self.cwd = workdir
         self._ensure_path_safe_to_mount(workdir)
+        self._update_volume_mount_paths(new_args, workdir)
+
+        self.cwd = workdir
         new_args.extend(["--workdir", workdir])
 
         # For run() and run_async() API value of base execution_mode is 'BaseExecutionMode.NONE'

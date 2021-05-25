@@ -362,7 +362,8 @@ class BaseConfig(object):
             if 'ansible-playbook' in value:
                 playbook_file_path = self._get_playbook_path(cmdline_args)
                 if playbook_file_path:
-                    self._update_volume_mount_paths(args_list, playbook_file_path)
+                    self._update_volume_mount_paths(args_list, playbook_file_path, labels=":Z")
+                    break
 
         cmdline_args_copy = cmdline_args.copy()
         optional_arg_paths = []
@@ -385,7 +386,7 @@ class BaseConfig(object):
                 # comma separated host list provided as value
                 continue
 
-            self._update_volume_mount_paths(args_list, optional_arg_value)
+            self._update_volume_mount_paths(args_list, optional_arg_value, labels=":Z")
 
     def wrap_args_for_containerization(self, args, execution_mode, cmdline_args):
         new_args = [self.process_isolation_executable]

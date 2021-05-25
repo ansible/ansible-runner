@@ -234,18 +234,21 @@ class Runner(object):
             try:
                 stdout_response = ''
                 stderr_response = ''
-                proc_out = run_subprocess(
-                    " ".join(command),
-                    cwd=cwd,
-                    env=env,
-                    stdin=input_fd,
-                    stdout=output_fd,
-                    stderr=error_fd,
-                    timeout=subprocess_timeout,
-                    check=True,
-                    universal_newlines=True,
-                    shell=True,
-                )
+                kwargs = {
+                    'cwd': cwd,
+                    'env': env,
+                    'stdin': input_fd,
+                    'stdout': output_fd,
+                    'stderr': error_fd,
+                    'check': True,
+                    'universal_newlines': True,
+                    'shell': True
+                }
+                if subprocess_timeout is not None:
+                    kwargs.update({'timeout': subprocess_timeout})
+
+                proc_out = run_subprocess( " ".join(command), **kwargs)
+
                 stdout_response = proc_out.stdout
                 stderr_response = proc_out.stderr
                 self.rc = proc_out.returncode

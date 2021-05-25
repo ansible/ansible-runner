@@ -167,7 +167,7 @@ class BaseConfig(object):
             self.job_timeout = self.settings.get('job_timeout', None)
 
         elif self.runner_mode == 'subprocess':
-            self.subprocess_timeout = self.settings.get('subprocess_timeout', 300)
+            self.subprocess_timeout = self.settings.get('subprocess_timeout', None)
 
         self.process_isolation = self.settings.get('process_isolation', self.process_isolation)
         self.process_isolation_executable = self.settings.get('process_isolation_executable', self.process_isolation_executable)

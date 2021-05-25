@@ -273,11 +273,11 @@ class Runner(object):
             if self.timed_out or self.errored:
                 self.kill_container()
 
-            if stdout_response:
+            if stdout_response is not None:
                 if isinstance(stdout_response, bytes):
                     stdout_response = stdout_response.decode()
                 stdout_handle.write(stdout_response)
-            if stderr_response:
+            if stderr_response is not None:
                 if isinstance(stderr_response, bytes):
                     stderr_response = stderr_response.decode()
                 stderr_handle.write(stderr_response)

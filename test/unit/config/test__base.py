@@ -110,8 +110,14 @@ def test_prepare_env_passwords():
 def test_prepare_environment_subprocess_defaults():
     rc = BaseConfig(private_data_dir="/tmp")
     rc._prepare_env(runner_mode="subprocess")
-
     assert rc.subprocess_timeout is None
+
+
+def test_prepare_environment_subprocess_timeout():
+    rc = BaseConfig(private_data_dir="/tmp", timeout=100)
+    rc._prepare_env(runner_mode="subprocess")
+
+    assert rc.subprocess_timeout == 100
 
 
 def test_prepare_env_settings_defaults():

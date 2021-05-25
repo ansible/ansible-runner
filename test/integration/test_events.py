@@ -86,7 +86,7 @@ def test_event_omission(is_pre_ansible28):
             inventory=inv,
             omit_event_data=True,
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
-    assert not any([x['event_data'] for x in r.events])
+    assert not any([x.get('event_data') for x in r.events])
 
 
 def test_event_omission_except_failed(is_pre_ansible28):

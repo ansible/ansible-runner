@@ -673,15 +673,13 @@ def test_containerization_settings(mock_isdir, mock_exists, tmpdir, container_ru
         extra_container_args = ['--user={os.getuid()}']
 
     expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
-        ['-v', '{}:/runner:Z'.format(rc.private_data_dir)] + \
-        ['-v', '/host1:/container1', '-v', 'host2:/container2'] + \
+        ['-v', '{}/:/runner:Z'.format(rc.private_data_dir)] + \
+        ['-v', '/host1/:/container1', '-v', 'host2/:/container2'] + \
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \
         ['--name', 'ansible_runner_foo'] + \
         ['my_container', 'ansible-playbook', '-i', '/runner/inventory/hosts', 'main.yaml']
 
-    print(f"--expected_command_start -> len: {len(expected_command_start)}\n{expected_command_start}--")
-    print(f"--received_command -> len: {len(rc.command)}\n {rc.command}--")
     for index, element in enumerate(expected_command_start):
         if '--user' in element:
             assert '--user=' in rc.command[index]

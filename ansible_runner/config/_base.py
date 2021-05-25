@@ -304,7 +304,7 @@ class BaseConfig(object):
         return _playbook
 
 
-    def _add_trailing_slash_if_neeeded(self, some_path):
+    def _add_trailing_slash_if_needed(self, some_path):
         if os.path.isdir(some_path):
             return some_path + '/' if (some_path[-1] != '/') else some_path
         else:
@@ -322,7 +322,7 @@ class BaseConfig(object):
 
         self._ensure_path_safe_to_mount(src_mount_path)
 
-        src_mount_path = self._add_trailing_slash_if_neeeded(src_mount_path)
+        src_mount_path = self._add_trailing_slash_if_needed(src_mount_path)
 
         if os.path.isabs(src_mount_path):
             if os.path.isdir(src_mount_path):
@@ -362,7 +362,7 @@ class BaseConfig(object):
             if 'ansible-playbook' in value:
                 playbook_file_path = self._get_playbook_path(cmdline_args)
                 if playbook_file_path:
-                    self._update_volume_mount_paths(args_list, playbook_file_path, labels=":Z")
+                    self._update_volume_mount_paths(args_list, playbook_file_path)
                     break
 
         cmdline_args_copy = cmdline_args.copy()
@@ -386,7 +386,7 @@ class BaseConfig(object):
                 # comma separated host list provided as value
                 continue
 
-            self._update_volume_mount_paths(args_list, optional_arg_value, labels=":Z")
+            self._update_volume_mount_paths(args_list, optional_arg_value)
 
     def wrap_args_for_containerization(self, args, execution_mode, cmdline_args):
         new_args = [self.process_isolation_executable]
@@ -408,6 +408,7 @@ class BaseConfig(object):
             workdir = "/runner/project"
 
         self.cwd = workdir
+        new_args.extend(["--workdir", workdir])
 
         # For run() and run_async() API value of base execution_mode is 'BaseExecutionMode.NONE'
         # and the container volume mounts are handled seperately using 'container_volume_mounts'

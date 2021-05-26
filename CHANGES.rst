@@ -3,6 +3,14 @@
 Changelog
 ---------
 
+2.0.0a3 (2020-05-20)
+++++++++++++++++++++
+- Updated streaming module to fail jobs when a project contains an invalid symlink in the source files
+
+1.4.7 (2021-02-03)
+++++++++++++++++++
+- Fixed a bug that broke Runner when a bad utf-8 byte sequence was encountered from a stdin/stdout/stderr stream
+
 1.4.6 (2020-03-26)
 ++++++++++++++++++
 - Fixed a bug that broke Ansible playbook execution prior to version 2.8 of

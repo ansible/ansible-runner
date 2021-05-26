@@ -86,7 +86,15 @@ def test_event_omission(is_pre_ansible28):
             inventory=inv,
             omit_event_data=True,
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
-    assert not any([x['event_data'] for x in r.events])
+
+    events = []
+
+    for x in r.events:
+        if x['event'] == 'verbose':
+            continue
+        events.append(x)
+
+    assert not any([x['event_data'] for x in events])
 
 
 def test_event_omission_except_failed(is_pre_ansible28):
@@ -99,7 +107,16 @@ def test_event_omission_except_failed(is_pre_ansible28):
             inventory=inv,
             only_failed_event_data=True,
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'fail': {'msg': "test"}}]}])
-    all_event_datas = [x['event_data'] for x in r.events if x['event_data']]
+
+    events = []
+
+    for x in r.events:
+        if x['event'] == 'verbose':
+            continue
+        events.append(x)
+
+    all_event_datas = [x['event_data'] for x in events if x['event_data']]
+
     assert len(all_event_datas) == 1
 
 

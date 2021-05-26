@@ -167,8 +167,10 @@ class BaseConfig(object):
                 self.expect_passwords.update(self.passwords)
 
             self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
-
+            self.pexpect_timeout = self.settings.get('pexpect_timeout', 5)
+            self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
             self.idle_timeout = self.settings.get('idle_timeout', None)
+ 
             if self.timeout:
                 self.job_timeout = int(self.timeout)
             else:

@@ -165,7 +165,8 @@ def run(**kwargs):
     :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
     :param timeout: The timeout value in seconds that will be passed to either ``pexpect`` of ``subprocess`` invocation
-                    (based on ``runner_mode`` selected) while executing command.
+                    (based on ``runner_mode`` selected) while executing command. It the timeout is triggered it will force cancel the
+                    execution.
     :param streamer: Optionally invoke ansible-runner as one of the steps in the streaming pipeline
     :param _input: An optional file or file-like object for use as input in a streaming pipeline
     :param _output: An optional file or file-like object for use as output in a streaming pipeline
@@ -319,7 +320,8 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
     :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
     :param timeout: The timeout value in seconds that will be passed to either ``pexpect`` of ``subprocess`` invocation
-                    (based on ``runner_mode`` selected) while executing command.
+                    (based on ``runner_mode`` selected) while executing command. It the timeout is triggered it will force cancel the
+                    execution.
     :param process_isolation: Enable process isolation, using a container engine (e.g. podman).
     :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
     :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
@@ -449,7 +451,8 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format=None, snippe
     :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
     :param timeout: The timeout value in seconds that will be passed to either ``pexpect`` of ``subprocess`` invocation
-                    (based on ``runner_mode`` selected) while executing command.
+                    (based on ``runner_mode`` selected) while executing command. It the timeout is triggered it will force cancel the
+                    execution.
     :param process_isolation: Enable process isolation, using a container engine (e.g. podman).
     :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
     :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
@@ -560,7 +563,8 @@ def get_plugin_list(list_files=None, response_format=None, plugin_type=None, pla
     :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
     :param timeout: The timeout value in seconds that will be passed to either ``pexpect`` of ``subprocess`` invocation
-                    (based on ``runner_mode`` selected) while executing command.
+                    (based on ``runner_mode`` selected) while executing command. It the timeout is triggered it will force cancel the
+                    execution.
     :param process_isolation: Enable process isolation, using a container engine (e.g. podman).
     :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
     :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
@@ -673,7 +677,8 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
     :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
     :param timeout: The timeout value in seconds that will be passed to either ``pexpect`` of ``subprocess`` invocation
-                    (based on ``runner_mode`` selected) while executing command.
+                    (based on ``runner_mode`` selected) while executing command. It the timeout is triggered it will force cancel the
+                    execution.
     :param process_isolation: Enable process isolation, using a container engine (e.g. podman).
     :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
     :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
@@ -782,7 +787,8 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
     :param timeout: The timeout value in seconds that will be passed to either ``pexpect`` of ``subprocess`` invocation
-                    (based on ``runner_mode`` selected) while executing command.
+                    (based on ``runner_mode`` selected) while executing command. It the timeout is triggered it will force cancel the
+                    execution.
     :param process_isolation: Enable process isolation, using a container engine (e.g. podman).
     :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
     :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)

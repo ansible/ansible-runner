@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ansible-runner"
-version = "2.0.0a3"
+version = "2.0.0a4"
 description = "Consistent Ansible Python API and CLI with container and process isolation runtime capabilities"
 homepage = ""
 repository = "https://github.com/ansible/ansible-runner"

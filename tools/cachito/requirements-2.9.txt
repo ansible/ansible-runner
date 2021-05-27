@@ -106,7 +106,7 @@ selectors2==2.0.1         # via ncclient
 six==1.13.0               # via azure-cli-core, bcrypt, google-auth, isodate, keystoneauth1, knack, kubernetes, munch, ncclient, openshift, openstacksdk, ovirt-engine-sdk-python, packaging, pynacl, pyopenssl, python-dateutil, pyvmomi, pywinrm, requests-credssp, stevedore, websocket-client
 stevedore==1.31.0         # via keystoneauth1
 tabulate==0.8.2           # via azure-cli-core, knack
-urllib3==1.25.7           # via botocore, kubernetes
+urllib3==1.25.8           # via botocore, kubernetes
 websocket-client==0.57.0  # via kubernetes
 wheel==0.33.6  # via azure-cli-core (overriden, see upgrade blockers)
 xmltodict==0.12.0         # via pywinrm

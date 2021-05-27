@@ -97,7 +97,7 @@ requests-kerberos==0.12.0  # via pywinrm
 requests-ntlm==1.1.0      # via pywinrm
 requests-oauthlib==1.3.0  # via kubernetes, msrest
 requestsexceptions==1.4.0  # via openstacksdk
-rsa==4.0                  # via google-auth
+rsa==4.7.1                  # via google-auth
 ruamel.ordereddict==0.4.14; python_version < "3" # via ruamel.yaml
 ruamel.yaml.clib==0.2.0   # via ruamel.yaml
 ruamel.yaml==0.16.10      # via openshift

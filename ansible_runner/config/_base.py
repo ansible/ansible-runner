@@ -303,6 +303,14 @@ class BaseConfig(object):
 
         return _playbook
 
+
+    def _add_trailing_slash_if_neeeded(self, some_path):
+        if os.path.isdir(some_path):
+            return some_path + '/' if (some_path[-1] != '/') else some_path
+        else:
+            return some_path
+
+
     def _update_volume_mount_paths(self, args_list, src_mount_path, dest_mount_path=None, labels=None):
 
         if src_mount_path is None or not os.path.exists(src_mount_path):
@@ -313,6 +321,8 @@ class BaseConfig(object):
             dest_mount_path = src_mount_path
 
         self._ensure_path_safe_to_mount(src_mount_path)
+
+        src_mount_path = self._add_trailing_slash_if_neeeded(src_mount_path)
 
         if os.path.isabs(src_mount_path):
             if os.path.isdir(src_mount_path):
@@ -332,7 +342,7 @@ class BaseConfig(object):
             volume_mount_path += labels
 
         # check if mount path already added in args list
-        if ', '.join(map(str, ['-v', volume_mount_path])) not in ', '.join(map(str, args_list)):
+        if volume_mount_path not in args_list:
             args_list.extend(['-v', volume_mount_path])
 
     def _handle_ansible_cmd_options_bind_mounts(self, args_list, cmdline_args):

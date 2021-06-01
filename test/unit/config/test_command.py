@@ -77,8 +77,9 @@ def test_prepare_run_command_with_containerization(tmpdir, container_runtime):
     else:
         extra_container_args = ['--user={os.getuid()}']
 
-    expected_command_start = [container_runtime, 'run', '--rm', '--interactive', '--tty', '--workdir', '/runner/project'] + \
+    expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
                              ['-v', '{}/:{}'.format(cwd, cwd), '-v', '{}/.ssh/:/home/runner/.ssh/'.format(os.environ['HOME'])]
+
     if container_runtime == 'podman':
         expected_command_start +=['--group-add=root', '--userns=keep-id', '--ipc=host']
 

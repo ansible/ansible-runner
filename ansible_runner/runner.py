@@ -234,18 +234,21 @@ class Runner(object):
             try:
                 stdout_response = ''
                 stderr_response = ''
-                proc_out = run_subprocess(
-                    " ".join(command),
-                    cwd=cwd,
-                    env=env,
-                    stdin=input_fd,
-                    stdout=output_fd,
-                    stderr=error_fd,
-                    timeout=subprocess_timeout,
-                    check=True,
-                    universal_newlines=True,
-                    shell=True,
-                )
+                kwargs = {
+                    'cwd': cwd,
+                    'env': env,
+                    'stdin': input_fd,
+                    'stdout': output_fd,
+                    'stderr': error_fd,
+                    'check': True,
+                    'universal_newlines': True,
+                    'shell': True
+                }
+                if subprocess_timeout is not None:
+                    kwargs.update({'timeout': subprocess_timeout})
+
+                proc_out = run_subprocess( " ".join(command), **kwargs)
+
                 stdout_response = proc_out.stdout
                 stderr_response = proc_out.stderr
                 self.rc = proc_out.returncode
@@ -273,11 +276,11 @@ class Runner(object):
             if self.timed_out or self.errored:
                 self.kill_container()
 
-            if stdout_response:
+            if stdout_response is not None:
                 if isinstance(stdout_response, bytes):
                     stdout_response = stdout_response.decode()
                 stdout_handle.write(stdout_response)
-            if stderr_response:
+            if stderr_response is not None:
                 if isinstance(stderr_response, bytes):
                     stderr_response = stderr_response.decode()
                 stderr_handle.write(stderr_response)

@@ -550,11 +550,6 @@ def print_common_usage():
                 ansible-runner run . -r role_name --hosts myhost
                 ansible-runner run . -m command -a "ls -l" --hosts myhost
 
-            run ansible execution environments:
-
-                ansible-runner adhoc myhosts -m ping
-                ansible-runner playbook my_playbook.yml
-
         `ansible-runner --help` list of optional command line arguments
     """))
 
@@ -645,37 +640,11 @@ def main(sys_args=None):
     )
     add_args_to_parser(process_subparser, DEFAULT_CLI_ARGS['positional_args'])
 
-    # adhoc command exec
-    adhoc_subparser = subparser.add_parser(
-        'adhoc',
-        help="Run ansible adhoc commands in an Execution Environment"
-    )
-    adhoc_subparser.add_argument(
-        "--private-data-dir",
-        help="base directory containing the ansible-runner metadata "
-             "(project, inventory, env, etc)",
-    )
-    add_args_to_parser(adhoc_subparser, DEFAULT_CLI_ARGS['execenv_cli_group'])
-
-    # playbook command exec
-    playbook_subparser = subparser.add_parser(
-        'playbook',
-        help="Run ansible-playbook commands in an Execution Environment"
-    )
-    playbook_subparser.add_argument(
-        "--private-data-dir",
-        help="base directory containing the ansible-runner metadata "
-             "(project, inventory, env, etc)",
-    )
-    add_args_to_parser(playbook_subparser, DEFAULT_CLI_ARGS['execenv_cli_group'])
-
     # generic args for all subparsers
     add_args_to_parser(run_subparser, DEFAULT_CLI_ARGS['generic_args'])
     add_args_to_parser(start_subparser, DEFAULT_CLI_ARGS['generic_args'])
     add_args_to_parser(stop_subparser, DEFAULT_CLI_ARGS['generic_args'])
     add_args_to_parser(isalive_subparser, DEFAULT_CLI_ARGS['generic_args'])
-    add_args_to_parser(adhoc_subparser, DEFAULT_CLI_ARGS['generic_args'])
-    add_args_to_parser(playbook_subparser, DEFAULT_CLI_ARGS['generic_args'])
     add_args_to_parser(transmit_subparser, DEFAULT_CLI_ARGS['generic_args'])
     add_args_to_parser(worker_subparser, DEFAULT_CLI_ARGS['generic_args'])
     add_args_to_parser(process_subparser, DEFAULT_CLI_ARGS['generic_args'])
@@ -760,22 +729,6 @@ def main(sys_args=None):
     add_args_to_parser(isalive_modules_group, DEFAULT_CLI_ARGS['modules_group'])
     add_args_to_parser(transmit_modules_group, DEFAULT_CLI_ARGS['modules_group'])
 
-    # playbook options
-    playbook_group_options = (
-        "Ansible Playbook Options",
-        "configuation options for executing Ansible playbooks",
-    )
-    run_playbook_group = run_subparser.add_argument_group(*playbook_group_options)
-    start_playbook_group = start_subparser.add_argument_group(*playbook_group_options)
-    stop_playbook_group = stop_subparser.add_argument_group(*playbook_group_options)
-    isalive_playbook_group = isalive_subparser.add_argument_group(*playbook_group_options)
-    transmit_playbook_group = transmit_subparser.add_argument_group(*playbook_group_options)
-    add_args_to_parser(run_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
-    add_args_to_parser(start_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
-    add_args_to_parser(stop_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
-    add_args_to_parser(isalive_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
-    add_args_to_parser(transmit_playbook_group, DEFAULT_CLI_ARGS['playbook_group'])
-
     # container group
     container_group_options = (
         "Ansible Container Options",
@@ -786,44 +739,23 @@ def main(sys_args=None):
     stop_container_group = stop_subparser.add_argument_group(*container_group_options)
     isalive_container_group = isalive_subparser.add_argument_group(*container_group_options)
     transmit_container_group = transmit_subparser.add_argument_group(*container_group_options)
-    adhoc_container_group = adhoc_subparser.add_argument_group(*container_group_options)
-    playbook_container_group = playbook_subparser.add_argument_group(*container_group_options)
     add_args_to_parser(run_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(start_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(stop_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(isalive_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(transmit_container_group, DEFAULT_CLI_ARGS['container_group'])
-    add_args_to_parser(adhoc_container_group, DEFAULT_CLI_ARGS['container_group'])
-    add_args_to_parser(playbook_container_group, DEFAULT_CLI_ARGS['container_group'])
 
     if len(sys.argv) == 1:
         parser.print_usage()
         print_common_usage()
         parser.exit(status=0)
 
-    if ('playbook' in sys.argv) or ('adhoc' in sys.argv):
-        args, leftover_args = parser.parse_known_args(sys_args)
-    else:
-        args = parser.parse_args(sys_args)
+
+    args = parser.parse_args(sys_args)
 
     vargs = vars(args)
 
-    # FIXME - Probably a more elegant way to handle this.
-    # set some state about CLI Exec Env
-    cli_execenv_cmd = ""
-
-    if vargs.get('command') in ('adhoc', 'playbook'):
-        cli_execenv_cmd = vargs.get('command')
-
-        if not leftover_args:
-            parser.exit(
-                status=1,
-                message="The {} subcommand requires arguments to pass to Ansible inside the container.\n".format(
-                    vargs.get('command')
-                )
-            )
-
-    if vargs.get('command') in ('worker', 'process', 'adhoc', 'playbook'):
+    if vargs.get('command') in ('worker', 'process'):
         if not vargs.get('private_data_dir'):
             temp_private_dir = tempfile.mkdtemp()
             vargs['private_data_dir'] = temp_private_dir
@@ -866,12 +798,12 @@ def main(sys_args=None):
 
     stderr_path = None
     context = None
-    if vargs.get('command') not in ('run', 'transmit', 'worker', 'adhoc', 'playbook'):
+    if vargs.get('command') not in ('run', 'transmit', 'worker'):
         stderr_path = os.path.join(vargs.get('private_data_dir'), 'daemon.log')
         if not os.path.exists(stderr_path):
             os.close(os.open(stderr_path, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
 
-    if vargs.get('command') in ('start', 'run', 'transmit', 'worker', 'process', 'adhoc', 'playbook'):
+    if vargs.get('command') in ('start', 'run', 'transmit', 'worker', 'process'):
 
         if vargs.get('command') == 'start':
             import daemon
@@ -922,14 +854,8 @@ def main(sys_args=None):
                                    resource_profiling_pid_poll_interval=vargs.get('resource_profiling_pid_poll_interval'),
                                    resource_profiling_results_dir=vargs.get('resource_profiling_results_dir'),
                                    limit=vargs.get('limit'),
-                                   streamer=streamer,
-                                   cli_execenv_cmd=cli_execenv_cmd
+                                   streamer=streamer
                                    )
-                if vargs.get('command') in ('adhoc', 'playbook'):
-                    run_options['cmdline'] = sys.argv[sys.argv.index(leftover_args[0]):]
-                    run_options['process_isolation']=True
-                    run_options['process_isolation_executable']=vargs.get('container_runtime')
-
                 try:
                     res = run(**run_options)
                 except Exception:

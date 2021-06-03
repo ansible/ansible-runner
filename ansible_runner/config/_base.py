@@ -58,7 +58,7 @@ class BaseConfig(object):
                  project_dir=None, artifact_dir=None, fact_cache_type='jsonfile', fact_cache=None,
                  process_isolation=False, process_isolation_executable=None,
                  container_image=None, container_volume_mounts=None, container_options=None, container_workdir=None,
-                 ident=None, rotate_artifacts=0, ssh_key=None, quiet=False, json_mode=False):
+                 ident=None, rotate_artifacts=0, timeout=None, ssh_key=None, quiet=False, json_mode=False):
         # common params
         self.host_cwd = host_cwd
         self.envvars = envvars
@@ -81,6 +81,7 @@ class BaseConfig(object):
         self.json_mode=json_mode
         self.passwords = passwords
         self.settings = settings
+        self.timeout = timeout
 
         # setup initial environment
         if private_data_dir:
@@ -162,12 +163,20 @@ class BaseConfig(object):
 
             self.pexpect_timeout = self.settings.get('pexpect_timeout', 5)
             self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
-
+            self.pexpect_timeout = self.settings.get('pexpect_timeout', 5)
+            self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
             self.idle_timeout = self.settings.get('idle_timeout', None)
-            self.job_timeout = self.settings.get('job_timeout', None)
+ 
+            if self.timeout:
+                self.job_timeout = int(self.timeout)
+            else:
+                self.job_timeout = self.settings.get('job_timeout', None)
 
         elif self.runner_mode == 'subprocess':
-            self.subprocess_timeout = self.settings.get('subprocess_timeout', None)
+            if self.timeout:
+                self.subprocess_timeout = int(self.timeout)
+            else:
+                self.subprocess_timeout = self.settings.get('subprocess_timeout', None)
 
         self.process_isolation = self.settings.get('process_isolation', self.process_isolation)
         self.process_isolation_executable = self.settings.get('process_isolation_executable', self.process_isolation_executable)

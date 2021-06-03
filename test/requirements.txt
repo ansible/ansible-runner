@@ -1,0 +1,5 @@
+pytest
+pytest-xdist
+mock
+flake8
+yamllint

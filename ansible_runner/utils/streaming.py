@@ -3,6 +3,7 @@ import zipfile
 import os
 import json
 import sys
+import stat
 
 from .base64io import Base64IO
 from pathlib import Path
@@ -19,14 +20,21 @@ def stream_dir(source_directory, stream):
                     if relpath == ".":
                         relpath = ""
                     for fname in files:
-                        fullpath = os.path.join(dirpath, fname)
-                        if not os.path.isfile(fullpath):
-                            raise FileNotFoundError(
-                                "invalid symlink found; file={0}.".format(fullpath)
+                        full_path = os.path.join(dirpath, fname)
+                        # Magic to preserve symlinks
+                        if os.path.islink(full_path):
+                            archive_relative_path = os.path.relpath(dirpath, source_directory)
+                            file_relative_path = os.path.join(archive_relative_path, fname)
+                            zip_info = zipfile.ZipInfo(file_relative_path)
+                            zip_info.create_system = 3
+                            permissions = 0o777
+                            permissions |= 0xA000
+                            zip_info.external_attr = permissions << 16
+                            archive.writestr(zip_info, os.readlink(full_path))
+                        else:
+                            archive.write(
+                                os.path.join(dirpath, fname), arcname=os.path.join(relpath, fname)
                             )
-                        archive.write(
-                            os.path.join(dirpath, fname), arcname=os.path.join(relpath, fname)
-                        )
             archive.close()
 
         zip_size = Path(tmp.name).stat().st_size
@@ -62,7 +70,20 @@ def unstream_dir(stream, length, target_directory):
             # Fancy extraction in order to preserve permissions
             # https://www.burgundywall.com/post/preserving-file-perms-with-python-zipfile-module
             for info in archive.infolist():
-                archive.extract(info.filename, path=target_directory)
                 out_path = os.path.join(target_directory, info.filename)
-                perm = info.external_attr >> 16
-                os.chmod(out_path, perm)
+                
+                perms = info.external_attr >> 16
+                mode = stat.filemode(perms)
+                
+                is_symlink = mode[:1] == 'l'
+                if is_symlink and os.path.exists(out_path):
+                    os.remove(out_path)
+                        
+                archive.extract(info.filename, path=target_directory)
+
+                if is_symlink:
+                    link = open(out_path).read()
+                    os.remove(out_path)
+                    os.symlink(link, out_path)
+                else:
+                    os.chmod(out_path, perms)

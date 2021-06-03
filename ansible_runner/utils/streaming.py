@@ -70,11 +70,18 @@ def unstream_dir(stream, length, target_directory):
             # Fancy extraction in order to preserve permissions
             # https://www.burgundywall.com/post/preserving-file-perms-with-python-zipfile-module
             for info in archive.infolist():
-                archive.extract(info.filename, path=target_directory)
                 out_path = os.path.join(target_directory, info.filename)
+                
                 perms = info.external_attr >> 16
                 mode = stat.filemode(perms)
-                if mode[:1] == 'l':
+                
+                is_symlink = mode[:1] == 'l'
+                if is_symlink and os.path.exists(out_path):
+                    os.remove(out_path)
+                        
+                archive.extract(info.filename, path=target_directory)
+
+                if is_symlink:
                     link = open(out_path).read()
                     os.remove(out_path)
                     os.symlink(link, out_path)

@@ -252,13 +252,50 @@ def test_transmit_symlink(tmpdir, symlink_dest):
     # prepare the destination private_data_dir to transmit to
     dest_dir = tmpdir.mkdir('symlink_zip_dest')
 
-    # rewind the buffer and extract into destination private_data_dir
+    # Extract twice so we assure that existing data does not break things
+    for i in range(2):
+
+        # rewind the buffer and extract into destination private_data_dir
+        outgoing_buffer.seek(0)
+        first_line = outgoing_buffer.readline()
+        size_data = json.loads(first_line.strip())
+        unstream_dir(outgoing_buffer, size_data['zipfile'], dest_dir)
+
+        # Assure the new symlink is still the same type of symlink
+        new_symlink_path = os.path.join(dest_dir, 'my_link')
+        assert os.path.islink(new_symlink_path)
+        os.readlink(new_symlink_path) == symlink_dest
+
+
+@pytest.mark.parametrize('fperm', [
+    0o777,
+    0o666,
+    0o555,
+    0o700,
+])
+def test_transmit_permissions(tmpdir, fperm):
+
+    pdd = tmpdir.mkdir('transmit_permission_test')
+
+    old_file_path = os.path.join(pdd, 'ordinary_file.txt')
+    with open(old_file_path, 'w') as f:
+        f.write('hello world')
+    os.chmod(old_file_path, fperm)
+
+    # SANITY - set expectations for the file
+    assert oct(os.stat(old_file_path).st_mode & 0o777) == oct(fperm)
+
+    outgoing_buffer = io.BytesIO()
+    outgoing_buffer.name = 'not_stdout'
+    stream_dir(pdd, outgoing_buffer)
+
+    dest_dir = tmpdir.mkdir('transmit_permission_dest')
+
     outgoing_buffer.seek(0)
     first_line = outgoing_buffer.readline()
     size_data = json.loads(first_line.strip())
     unstream_dir(outgoing_buffer, size_data['zipfile'], dest_dir)
 
-    # Assure the new symlink is still the same type of symlink
-    new_symlink_path = os.path.join(dest_dir, 'my_link')
-    assert os.path.islink(new_symlink_path)
-    os.readlink(new_symlink_path) == symlink_dest
+    # Assure the new file is the same permissions
+    new_file_path = os.path.join(dest_dir, 'ordinary_file.txt')
+    assert oct(os.stat(new_file_path).st_mode) == oct(os.stat(old_file_path).st_mode)

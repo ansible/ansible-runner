@@ -57,7 +57,7 @@ WORKDIR /runner
 
 ENV HOME=/home/runner
 
-ADD utils/entrypoint.sh /bin/entrypoint
+ADD ansible_runner/data/entrypoint.sh /bin/entrypoint
 RUN chmod +x /bin/entrypoint
 
 ENTRYPOINT ["entrypoint"]

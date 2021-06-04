@@ -41,10 +41,6 @@ Install the package::
 From source
 -----------
 
-Ansible Runner uses `python-poetry <https://python-poetry.org/`_ for
-development and dependency management, once that is installed performed the
-following steps.
-
 Check out the source code from `github <https://github.com/ansible/ansible-runner>`_::
 
   $ git clone git://github.com/ansible/ansible-runner
@@ -53,16 +49,22 @@ Or download from the `releases page <https://github.com/ansible/ansible-runner/r
 
 Then install::
 
-  $ poetry install
+  $ pip install virtualenvwrapper
+  $ mkvirtualenv ansible-runner
+  $ pip install -e .
 
 .. _builddist:
 
 Build the distribution
 ----------------------
 
-To produce an installable ``wheel`` file::
+To produce both wheel and sdist:
 
   make dist
+
+To produce an installable ``wheel``::
+
+  make wheel
 
 To produce a distribution tarball::
 

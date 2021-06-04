@@ -1,9 +1,4 @@
-PYTHON ?= python
-ifeq ($(origin VIRTUAL_ENV), undefined)
-    DIST_PYTHON ?= poetry run $(PYTHON)
-else
-    DIST_PYTHON ?= $(PYTHON)
-endif
+PYTHON ?= python3
 
 CONTAINER_ENGINE ?= docker
 
@@ -14,8 +9,7 @@ GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
 ANSIBLE_BRANCH ?= devel
 ANSIBLE_VERSIONS ?= stable-2.9 stable-2.10 devel
 PIP_NAME = ansible_runner
-LONG_VERSION := $(shell poetry version)
-VERSION := $(filter-out $(NAME), $(LONG_VERSION))
+VERSION := $(shell python setup.py --version)
 ifeq ($(OFFICIAL),yes)
     RELEASE ?= 1
 else
@@ -78,21 +72,18 @@ clean:
 	find . -type f -regex ".*\py[co]$$" -delete
 	rm -rf $(shell find test/ -type d -name "artifacts")
 
-dist:
-	poetry build
+dist: sdist wheel
+
+WHEEL_NAME = $(subst -,_,$(NAME))
+wheel: dist/$(WHEEL_NAME)-$(VERSION)-py3-none-any.whl
+
+dist/$(WHEEL_NAME)-$(VERSION)-py3-none-any.whl:
+	$(PYTHON) setup.py bdist_wheel
 
 sdist: dist/$(NAME)-$(VERSION).tar.gz
 
-# Generate setup.py transiently for the sdist so we don't have to deal with
-# packaging poetry as a RPM for rpm build time dependencies.
 dist/$(NAME)-$(VERSION).tar.gz:
-	$(DIST_PYTHON) setup.py sdist
-
-dev:
-	poetry install
-
-shell:
-	poetry shell
+	$(PYTHON) setup.py sdist
 
 test:
 	tox

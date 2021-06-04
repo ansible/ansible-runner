@@ -24,3 +24,7 @@ test/integration/containerized/priv_data/artifacts/
 *,cover
 .venv
 .env
+/test/data/debug/
+/test/data/printenv/env/
+/test/data/**/artifacts/
+/.eggs/

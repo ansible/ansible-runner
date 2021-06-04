@@ -25,12 +25,6 @@ project = 'ansible-runner'
 copyright = '2018, Red Hat Ansible'
 author = 'Red Hat Ansible'
 
-# The short X.Y version
-version = ''
-# The full version, including alpha/beta/rc tags
-release = '2.0.0a4'
-
-
 # -- General configuration ---------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -46,6 +40,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
+    'pbr.sphinxext',
 ]
 
 # Add any paths that contain templates here, relative to this directory.

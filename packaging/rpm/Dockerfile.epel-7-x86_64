@@ -6,4 +6,4 @@ RUN yum install -y make mock python3 which git gcc python3-devel
 # Fix output of rpm --eval '%{?dist}'
 RUN sed -i "s/.el7.centos/.el7/g" /etc/rpm/macros.dist
 
-RUN pip3 install -IU poetry ansible
+RUN pip3 install -IU ansible

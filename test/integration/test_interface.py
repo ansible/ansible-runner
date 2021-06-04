@@ -142,7 +142,7 @@ def test_run_command(test_data_dir):
     private_data_dir = os.path.join(test_data_dir, 'debug')
     inventory = os.path.join(private_data_dir, 'inventory', 'inv_1')
     playbook = os.path.join(private_data_dir, 'project', 'debug.yml')
-    rc, out, err = run_command(
+    out, err, rc = run_command(
         private_data_dir=private_data_dir,
         executable_cmd='ansible-playbook',
         cmdline_args=[playbook, '-i', inventory]
@@ -182,7 +182,7 @@ def test_run_script_within_container(test_data_dir, container_runtime_installed)
         'container_image': defaults.default_container_image,
         'container_volume_mounts': container_volume_mounts
     }
-    rc, out, _ = run_command(
+    out, _, rc = run_command(
         private_data_dir=private_data_dir,
         executable_cmd='python3',
         cmdline_args=[os.path.join(script_path, 'test_ee.py')],

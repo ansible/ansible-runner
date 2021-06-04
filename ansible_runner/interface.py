@@ -373,14 +373,15 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
     :type status_handler: function
     :type artifacts_handler: function
 
-    :returns: Returns a tuple of return code, response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is empty as
+    :returns: Returns a tuple of response, error string and return code.
+              In case if ``runner_mode`` is set to ``pexpect`` the error value is empty as
               ``pexpect`` uses same output descriptor for stdout and stderr.
     '''
     r = init_command_config(executable_cmd, cmdline_args=cmdline_args, **kwargs)
     r.run()
     response = r.stdout.read()
     error = r.stderr.read()
-    return r.rc, response, error
+    return response, error, r.rc
 
 
 def run_command_async(executable_cmd, cmdline_args=None, **kwargs):

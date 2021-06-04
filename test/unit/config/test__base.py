@@ -242,7 +242,8 @@ def test_wrap_args_with_ssh_agent_silent():
 
 @patch('os.path.isdir', return_value=False)
 @patch('os.path.exists', return_value=True)
-def test_container_volume_mounting_with_Z(mock_isdir, mock_exists, tmpdir):
+@patch('os.makedirs', return_value=True)
+def test_container_volume_mounting_with_Z(mock_isdir, mock_exists, mock_makedirs, tmpdir):
     rc = BaseConfig(private_data_dir=str(tmpdir))
     os.path.isdir = Mock()
     rc.container_volume_mounts = ['project_path:project_path:Z']

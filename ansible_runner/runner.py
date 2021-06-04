@@ -72,8 +72,10 @@ class Runner(object):
                     event_data.update(partial_event_data)
                     if self.remove_partials:
                         os.remove(partial_filename)
-                except IOError:
-                    debug("Failed to open ansible stdout callback plugin partial data file {}".format(partial_filename))
+                except IOError as e:
+                    msg = "Failed to open ansible stdout callback plugin partial data" \
+                          " file {} with error {}".format(partial_filename, str(e))
+                    raise AnsibleRunnerException(msg)
 
                 # prefer 'created' from partial data, but verbose events set time here
                 if 'created' not in event_data:

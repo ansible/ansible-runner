@@ -11,7 +11,7 @@ import six
 import sys
 
 from ansible_runner import Runner
-from ansible_runner.exceptions import CallbackError
+from ansible_runner.exceptions import CallbackError, AnsibleRunnerException
 from ansible_runner.config.runner import RunnerConfig
 
 HERE, FILENAME = os.path.split(__file__)
@@ -101,6 +101,18 @@ def test_env_vars(rc, value):
     assert exitcode == 0
     with codecs.open(os.path.join(rc.artifact_dir, 'stdout'), 'r', encoding='utf-8') as f:
         assert value in f.read()
+
+
+def test_event_callback_data_check(rc):
+    rc.ident = "testident"
+    rc.check_job_event_data = True
+    runner = Runner(config=rc, remove_partials=False)
+    runner.event_handler = mock.Mock()
+
+    with pytest.raises(AnsibleRunnerException) as exc:
+        runner.event_callback(dict(uuid="testuuid", counter=0))
+    
+    assert "Failed to open ansible stdout callback plugin partial data" in str(exc)
 
 
 def test_event_callback_interface_has_ident(rc):

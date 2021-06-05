@@ -75,7 +75,9 @@ class Runner(object):
                 except IOError as e:
                     msg = "Failed to open ansible stdout callback plugin partial data" \
                           " file {} with error {}".format(partial_filename, str(e))
-                    raise AnsibleRunnerException(msg)
+                    debug(msg)
+                    if self.config.check_job_event_data:
+                        raise AnsibleRunnerException(msg)
 
                 # prefer 'created' from partial data, but verbose events set time here
                 if 'created' not in event_data:

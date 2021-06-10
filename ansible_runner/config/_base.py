@@ -21,6 +21,7 @@ import os
 import pexpect
 import re
 
+from tempfile import gettempdir
 from uuid import uuid4
 try:
     from collections.abc import Mapping
@@ -87,7 +88,7 @@ class BaseConfig(object):
         if private_data_dir:
             self.private_data_dir = os.path.abspath(private_data_dir)
         else:
-            self.private_data_dir = os.path.abspath(os.path.expanduser('~/.ansible-runner'))
+            self.private_data_dir = os.path.join(gettempdir(), ".ansible-runner")
 
         if artifact_dir is None:
             artifact_dir = os.path.join(self.private_data_dir, 'artifacts')

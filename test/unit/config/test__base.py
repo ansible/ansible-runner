@@ -8,6 +8,8 @@ import six
 from pexpect import TIMEOUT, EOF
 
 import pytest
+
+from tempfile import gettempdir
 from unittest.mock import (Mock, patch, PropertyMock)
 
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
@@ -45,7 +47,7 @@ def test_base_config_init_defaults():
 def test_base_config_with_artifact_dir():
     rc = BaseConfig(artifact_dir='/tmp/this-is-some-dir')
     assert rc.artifact_dir == os.path.join('/tmp/this-is-some-dir', rc.ident)
-    assert rc.private_data_dir == os.path.abspath(os.path.expanduser('~/.ansible-runner'))
+    assert rc.private_data_dir == os.path.join(gettempdir(), ".ansible-runner")
 
 
 def test_base_config_init_with_ident():

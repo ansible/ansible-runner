@@ -538,7 +538,8 @@ def test_bwrap_process_isolation_and_directory_isolation(mock_makedirs, mock_cop
 
 @patch('os.path.isdir', return_value=False)
 @patch('os.path.exists', return_value=True)
-def test_process_isolation_settings(mock_isdir, mock_exists):
+@patch('os.makedirs', return_value=True)
+def test_process_isolation_settings(mock_isdir, mock_exists, mock_makedirs):
     rc = RunnerConfig('/')
     rc.artifact_dir = '/tmp/artifacts'
     rc.playbook = 'main.yaml'

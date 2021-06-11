@@ -197,6 +197,9 @@ def run(**kwargs):
     :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
     :param omit_event_data: Omits extra ansible event data from event payload (stdout and event still included)
     :param only_failed_event_data: Omits extra ansible event data unless it's a failed event (stdout and event still included)
+    :param check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
+                                 value is set to 'True' it will raise 'AnsibleRunnerException' exception,
+                                 if set to 'False' it log a debug message and continue execution. Default value is 'False'
     :type private_data_dir: str
     :type ident: str
     :type json_mode: bool
@@ -244,6 +247,7 @@ def run(**kwargs):
     :type fact_cache_type: str
     :type omit_event_data: bool
     :type only_failed_event_data: bool
+    :type check_job_event_data: bool
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object, or a simple object containing `rc` if run remotely
     '''
@@ -340,6 +344,10 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
     :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
     :param status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
     :param artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
+    :param check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
+                                 value is set to 'True' it will raise 'AnsibleRunnerException' exception,
+                                 if set to 'False' it log a debug message and continue execution. Default value is 'False'
+
     :type executable_cmd: str
     :type cmdline_args: list
     :type input_fd: file descriptor
@@ -372,15 +380,17 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
     :type finished_callback: function
     :type status_handler: function
     :type artifacts_handler: function
+    :type check_job_event_data: bool
 
-    :returns: Retunes a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is empty as
+    :returns: Returns a tuple of response, error string and return code.
+              In case if ``runner_mode`` is set to ``pexpect`` the error value is empty as
               ``pexpect`` uses same output descriptor for stdout and stderr.
     '''
     r = init_command_config(executable_cmd, cmdline_args=cmdline_args, **kwargs)
     r.run()
     response = r.stdout.read()
     error = r.stderr.read()
-    return response, error
+    return response, error, r.rc
 
 
 def run_command_async(executable_cmd, cmdline_args=None, **kwargs):
@@ -471,6 +481,10 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format=None, snippe
     :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
     :param status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
     :param artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
+    :param check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
+                                 value is set to 'True' it will raise 'AnsibleRunnerException' exception,
+                                 if set to 'False' it log a debug message and continue execution. Default value is 'False'
+
     :type plugin_names: list
     :type plugin_type: str
     :type response_format: str
@@ -504,6 +518,7 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format=None, snippe
     :type finished_callback: function
     :type status_handler: function
     :type artifacts_handler: function
+    :type check_job_event_data: bool
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is empty as
               ``pexpect`` uses same output descriptor for stdout and stderr. If the value of ``response_format`` is ``json``
@@ -583,6 +598,10 @@ def get_plugin_list(list_files=None, response_format=None, plugin_type=None, pla
     :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
     :param status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
     :param artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
+    :param check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
+                                 value is set to 'True' it will raise 'AnsibleRunnerException' exception,
+                                 if set to 'False' it log a debug message and continue execution. Default value is 'False'
+
     :type list_files: bool
     :type plugin_type: str
     :type response_format: str
@@ -615,6 +634,7 @@ def get_plugin_list(list_files=None, response_format=None, plugin_type=None, pla
     :type finished_callback: function
     :type status_handler: function
     :type artifacts_handler: function
+    :type check_job_event_data: bool
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is empty as
               ``pexpect`` uses same output descriptor for stdout and stderr. If the vaue of ``response_format`` is ``json``
@@ -697,6 +717,9 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
     :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
     :param status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
     :param artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
+    :param check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
+                                 value is set to 'True' it will raise 'AnsibleRunnerException' exception,
+                                 if set to 'False' it log a debug message and continue execution. Default value is 'False'
     :type action: str
     :type inventories: list
     :type response_format: str
@@ -733,6 +756,7 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
     :type finished_callback: function
     :type status_handler: function
     :type artifacts_handler: function
+    :type check_job_event_data: bool
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is
               empty as ``pexpect`` uses same output descriptor for stdout and stderr. If the vaue of ``response_format`` is ``json``
@@ -807,6 +831,9 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
     :param status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
     :param artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
+    :param check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
+                                 value is set to 'True' it will raise 'AnsibleRunnerException' exception,
+                                 if set to 'False' it log a debug message and continue execution. Default value is 'False'
     :type action: str
     :type config_file: str
     :type only_changed: bool
@@ -837,6 +864,7 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     :type finished_callback: function
     :type status_handler: function
     :type artifacts_handler: function
+    :type check_job_event_data: bool
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is
               empty as ``pexpect`` uses same output descriptor for stdout and stderr.

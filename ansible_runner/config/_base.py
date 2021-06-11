@@ -58,7 +58,7 @@ class BaseConfig(object):
                  project_dir=None, artifact_dir=None, fact_cache_type='jsonfile', fact_cache=None,
                  process_isolation=False, process_isolation_executable=None,
                  container_image=None, container_volume_mounts=None, container_options=None, container_workdir=None,
-                 ident=None, rotate_artifacts=0, timeout=None, ssh_key=None, quiet=False, json_mode=False):
+                 ident=None, rotate_artifacts=0, timeout=None, ssh_key=None, quiet=False, json_mode=False, check_job_event_data=False):
         # common params
         self.host_cwd = host_cwd
         self.envvars = envvars
@@ -82,6 +82,7 @@ class BaseConfig(object):
         self.passwords = passwords
         self.settings = settings
         self.timeout = timeout
+        self.check_job_event_data = check_job_event_data
 
         # setup initial environment
         if private_data_dir:
@@ -118,10 +119,8 @@ class BaseConfig(object):
         else:
             self.cwd = os.getcwd()
 
-        if not os.path.exists(self.private_data_dir):
-            os.makedirs(self.private_data_dir, mode=0o700)
-        if not os.path.exists(self.artifact_dir):
-            os.makedirs(self.artifact_dir, mode=0o700)
+        os.makedirs(self.private_data_dir, exist_ok=True, mode=0o700)
+        os.makedirs(self.artifact_dir, exist_ok=True, mode=0o700)
 
     _CONTAINER_ENGINES = ('docker', 'podman')
 

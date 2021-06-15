@@ -16,7 +16,7 @@ To view the parameters accepted by ``ansible-runner``::
 
 An example invocation of the standalone ``ansible-runner`` utility::
 
-  $ ansible-runner -p playbook.yml run /tmp/private
+  $ ansible-runner run /tmp/private -p playbook.yml
 
 Where playbook.yml is the playbook from the ``/tmp/private/projects`` directory, and ``run`` is the command mode you want to invoke **Runner** with
 
@@ -26,8 +26,8 @@ The different **commands** that runner accepts are:
 * ``start`` starts ``ansible-runner`` as a background daemon process and generates a pid file
 * ``stop`` terminates an ``ansible-runner`` process that was launched in the background with ``start``
 * ``is-alive`` checks the status of an ``ansible-runner`` process that was started in the background with ``start``
-* ``adhoc`` will run ad-hoc ``ansible`` commands inside a containerized Ansible Execution Environment 
-* ``playbook`` will run ``ansible-playbook`` commands inside a containerized Ansible Execution Environment 
+* ``adhoc`` will run ad-hoc ``ansible`` commands inside a containerized Ansible Execution Environment
+* ``playbook`` will run ``ansible-playbook`` commands inside a containerized Ansible Execution Environment
 
 While **Runner** is running it creates an ``artifacts`` directory (see :ref:`artifactdir`) regardless of what mode it was started
 in. The resulting output and status from **Ansible** will be located here. You can control the exact location underneath the ``artifacts`` directory
@@ -51,14 +51,14 @@ Running Playbooks
 
 An example invocation using ``demo`` as private directory::
 
-  $ ansible-runner --playbook test.yml run demo
+  $ ansible-runner run demo --playbook test.yml
 
 Running Modules Directly
 ------------------------
 
 An example invocating the ``debug`` module with ``demo`` as a private directory::
 
-  $ ansible-runner -m debug --hosts localhost -a msg=hello run demo
+  $ ansible-runner run demo -m debug --hosts localhost -a msg=hello
 
 
 Running Roles Directly
@@ -66,7 +66,7 @@ Running Roles Directly
 
 An example invocation using ``demo`` as private directory and ``localhost`` as target::
 
-  $ ansible-runner --role testrole --hosts localhost run demo
+  $ ansible-runner run demo --role testrole --hosts localhost
 
 Ansible roles directory can be provided with ``--roles-path`` option. Role variables can be passed with ``--role-vars`` at runtime.
 

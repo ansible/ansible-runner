@@ -133,9 +133,9 @@ def test_role_logfile(skipif_pre_ansible28, clear_integration_artifacts):
     rc = main(['run', '-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
                '--roles-path', 'test/integration/project/roles',
-               '--logfile', 'new_logfile',
+               '--logfile', 'test_role_logfile',
                'test/integration'])
-    assert os.path.exists('new_logfile')
+    assert os.path.exists('test_role_logfile'), rc
     assert rc == 0
 
 

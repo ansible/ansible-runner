@@ -261,7 +261,7 @@ def test_container_volume_mounting_with_Z(mock_isdir, mock_exists, mock_makedirs
     for i, entry in enumerate(new_args):
         if entry == '-v':
             mount = new_args[i + 1]
-            if mount.endswith('project_path:Z'):
+            if mount.endswith('project_path/:Z'):
                 break
     else:
         raise Exception('Could not find expected mount, args: {}'.format(new_args))
@@ -295,8 +295,8 @@ def test_containerization_settings(tmpdir, container_runtime):
     if container_runtime == 'podman':
         expected_command_start +=['--group-add=root', '--userns=keep-id', '--ipc=host']
 
-    expected_command_start += ['-v', '{}/artifacts/:/runner/artifacts:Z'.format(rc.private_data_dir)] + \
-        ['-v', '{}/:/runner:Z'.format(rc.private_data_dir)] + \
+    expected_command_start += ['-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir)] + \
+        ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \
         ['--name', 'ansible_runner_foo'] + \

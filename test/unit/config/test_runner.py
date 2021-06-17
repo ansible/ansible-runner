@@ -637,7 +637,7 @@ def test_profiling_plugin_settings_with_custom_intervals(mock_mkdir):
 @patch('os.path.exists', return_value=True)
 def test_container_volume_mounting_with_Z(mock_isdir, mock_exists, tmpdir):
     rc = RunnerConfig(str(tmpdir))
-    rc.container_volume_mounts = ['project_path:project_path:Z']
+    rc.container_volume_mounts = ['/tmp/project_path:/tmp/project_path:Z']
     rc.container_name = 'foo'
     rc.env = {}
     new_args = rc.wrap_args_for_containerization(['ansible-playbook', 'foo.yml'], 0, None)
@@ -645,7 +645,7 @@ def test_container_volume_mounting_with_Z(mock_isdir, mock_exists, tmpdir):
     for i, entry in enumerate(new_args):
         if entry == '-v':
             mount = new_args[i + 1]
-            if mount.endswith(':project_path:Z'):
+            if mount.endswith(':/tmp/project_path/:Z'):
                 break
     else:
         raise Exception('Could not find expected mount, args: {}'.format(new_args))
@@ -663,7 +663,7 @@ def test_containerization_settings(mock_isdir, mock_exists, tmpdir, container_ru
         rc.process_isolation = True
         rc.process_isolation_executable=container_runtime
         rc.container_image = 'my_container'
-        rc.container_volume_mounts=['/host1:/container1', 'host2:/container2']
+        rc.container_volume_mounts=['/host1:/container1', '/host2:/container2']
         mock_containerized.return_value = True
         rc.prepare()
 
@@ -674,8 +674,8 @@ def test_containerization_settings(mock_isdir, mock_exists, tmpdir, container_ru
         extra_container_args = ['--user={os.getuid()}']
 
     expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
-        ['-v', '{}/:/runner:Z'.format(rc.private_data_dir)] + \
-        ['-v', '/host1/:/container1', '-v', 'host2/:/container2'] + \
+        ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
+        ['-v', '/host1/:/container1/', '-v', '/host2/:/container2/'] + \
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \
         ['--name', 'ansible_runner_foo'] + \

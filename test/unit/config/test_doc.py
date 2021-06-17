@@ -80,8 +80,8 @@ def test_prepare_plugin_docs_command_with_containerization(tmpdir, container_run
     if container_runtime == 'podman':
         expected_command_start +=['--group-add=root', '--userns=keep-id', '--ipc=host']
 
-    expected_command_start += ['-v', '{}/artifacts/:/runner/artifacts:Z'.format(rc.private_data_dir)] + \
-        ['-v', '{}/:/runner:Z'.format(rc.private_data_dir)] + \
+    expected_command_start += ['-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir)] + \
+        ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \
         ['--name', 'ansible_runner_foo'] + \
@@ -128,8 +128,8 @@ def test_prepare_plugin_list_command_with_containerization(tmpdir, container_run
     if container_runtime == 'podman':
         expected_command_start +=['--group-add=root', '--userns=keep-id', '--ipc=host']
 
-    expected_command_start += ['-v', '{}/artifacts/:/runner/artifacts:Z'.format(rc.private_data_dir)] + \
-        ['-v', '{}/:/runner:Z'.format(rc.private_data_dir)] + \
+    expected_command_start += ['-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir)] + \
+        ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \
         ['--name', 'ansible_runner_foo'] + \

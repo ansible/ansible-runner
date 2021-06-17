@@ -276,7 +276,7 @@ class BaseConfig(object):
     def _ensure_path_safe_to_mount(self, path):
         if os.path.isfile(path):
             path = os.path.dirname(path)
-        if path in ('/', '/home', '/usr'):
+        if os.path.join(path, "") in ('/', '/home/', '/usr/'):
             raise ConfigurationError("When using containerized execution, cannot mount '/' or '/home' or '/usr'")
 
     def _get_playbook_path(self, cmdline_args):
@@ -310,48 +310,57 @@ class BaseConfig(object):
                     break
 
         return _playbook
-
-
-    def _add_trailing_slash_if_needed(self, some_path):
-        if os.path.isdir(some_path):
-            return some_path + '/' if (some_path[-1] != '/') else some_path
-        else:
-            return some_path
-
-
-    def _update_volume_mount_paths(self, args_list, src_mount_path, dest_mount_path=None, labels=None):
+    
+    def _update_volume_mount_paths(
+        self, args_list, src_mount_path, dst_mount_path=None, labels=None
+    ):
 
         if src_mount_path is None or not os.path.exists(src_mount_path):
             logger.debug("Source volume mount path does not exit {0}".format(src_mount_path))
             return
 
-        if dest_mount_path is None:
-            dest_mount_path = src_mount_path
+        # ensure source is abs
+        src_path = os.path.abspath(os.path.expanduser(os.path.expandvars(src_mount_path)))
 
-        self._ensure_path_safe_to_mount(src_mount_path)
-
-        src_mount_path = self._add_trailing_slash_if_needed(src_mount_path)
-
-        if os.path.isabs(src_mount_path):
-            if os.path.isdir(src_mount_path):
-                volume_mount_path = "{}:{}".format(src_mount_path, dest_mount_path)
-            else:
-                volume_mount_path = "{}:{}".format(os.path.dirname(src_mount_path), os.path.dirname(dest_mount_path))
+        # set dest src (if None) relative to workdir(not absolute) or provided
+        if dst_mount_path is None:
+            dst_path = src_path
+        elif self.container_workdir and not os.path.isabs(dst_mount_path):
+            dst_path = os.path.abspath(
+                os.path.expanduser(
+                    os.path.expandvars(os.path.join(self.container_workdir, dst_mount_path))
+                )
+            )
         else:
-            if self.container_workdir and not os.path.isabs(dest_mount_path):
-                dest_mount_path = os.path.join(self.container_workdir, dest_mount_path)
+            dst_path = os.path.abspath(os.path.expanduser(os.path.expandvars(dst_mount_path)))
 
-            if os.path.isdir(os.path.abspath(src_mount_path)):
-                volume_mount_path = "{}:{}".format(src_mount_path, dest_mount_path)
-            else:
-                volume_mount_path = "{}:{}".format(os.path.dirname(src_mount_path), os.path.dirname(dest_mount_path))
+        # ensure each is a directory not file, use src for dest
+        # because dest doesn't exist locally
+        src_dir = src_path if os.path.isdir(src_path) else os.path.dirname(src_path)
+        dst_dir = dst_path if os.path.isdir(src_path) else os.path.dirname(dst_path)
 
+        # always ensure a trailing slash
+        src_dir = os.path.join(src_dir, "")
+        dst_dir = os.path.join(dst_dir, "")
+
+        # ensure the src and dest are safe mount points
+        # after stripping off the file and resolving
+        self._ensure_path_safe_to_mount(src_dir)
+        self._ensure_path_safe_to_mount(dst_dir)
+
+        # format the src dest str
+        volume_mount_path = "{}:{}".format(src_dir, dst_dir)
+
+        # add labels as needed
         if labels:
+            if not labels.startswith(":"):
+                volume_mount_path += ":"
             volume_mount_path += labels
+
 
         # check if mount path already added in args list
         if volume_mount_path not in args_list:
-            args_list.extend(['-v', volume_mount_path])
+            args_list.extend(["-v", volume_mount_path])
 
     def _handle_ansible_cmd_options_bind_mounts(self, args_list, cmdline_args):
         inventory_file_options = ['-i', '--inventory', '--inventory-file']
@@ -444,14 +453,14 @@ class BaseConfig(object):
             # runtime commands need artifacts mounted to output data
             self._update_volume_mount_paths(new_args,
                                             "{}/artifacts".format(self.private_data_dir),
-                                            dest_mount_path="/runner/artifacts",
+                                            dst_mount_path="/runner/artifacts",
                                             labels=":Z")
 
             # Mount the entire private_data_dir
             # custom show paths inside private_data_dir do not make sense
             self._update_volume_mount_paths(new_args,
                                             "{}".format(self.private_data_dir),
-                                            dest_mount_path="/runner",
+                                            dst_mount_path="/runner",
                                             labels=":Z")
         else:
             subdir_path = os.path.join(self.private_data_dir, 'artifacts')
@@ -460,7 +469,7 @@ class BaseConfig(object):
 
             # Mount the entire private_data_dir
             # custom show paths inside private_data_dir do not make sense
-            self._update_volume_mount_paths(new_args, "{}".format(self.private_data_dir), dest_mount_path="/runner", labels=":Z")
+            self._update_volume_mount_paths(new_args, "{}".format(self.private_data_dir), dst_mount_path="/runner", labels=":Z")
     
         if self.container_volume_mounts:
             for mapping in self.container_volume_mounts:
@@ -469,7 +478,7 @@ class BaseConfig(object):
                 labels = None
                 if len(volume_mounts) == 3:
                     labels = ":%s" %volume_mounts[2]
-                self._update_volume_mount_paths(new_args, volume_mounts[0], dest_mount_path=volume_mounts[1], labels=labels)
+                self._update_volume_mount_paths(new_args, volume_mounts[0], dst_mount_path=volume_mounts[1], labels=labels)
 
         # Reference the file with list of keys to pass into container
         # this file will be written in ansible_runner.runner
@@ -534,10 +543,10 @@ class BaseConfig(object):
                         else:
                             dest_path = os.environ[env]
 
-                        self._update_volume_mount_paths(new_args, os.environ[env], dest_mount_path=dest_path)
+                        self._update_volume_mount_paths(new_args, os.environ[env], dst_mount_path=dest_path)
 
                     new_args.extend(["-e", "{}={}".format(env, dest_path)])
 
             for paths in cli_automount['PATHS']:
                 if os.path.exists(paths['src']):
-                    self._update_volume_mount_paths(new_args, paths['src'], dest_mount_path=paths['dest'])
+                    self._update_volume_mount_paths(new_args, paths['src'], dst_mount_path=paths['dest'])

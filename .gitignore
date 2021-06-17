@@ -23,6 +23,7 @@ test/integration/containerized/priv_data/artifacts/
 .coverage
 *,cover
 .venv
+/venv
 .env
 /test/data/debug/
 /test/data/printenv/env/

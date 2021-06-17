@@ -3,6 +3,8 @@
 import os
 import pytest
 
+from tempfile import gettempdir
+
 from ansible_runner.config.inventory import InventoryConfig
 from ansible_runner.config._base import BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
@@ -11,7 +13,7 @@ from ansible_runner.utils import get_executable_path
 
 def test_ansible_inventory_init_defaults():
     rc = InventoryConfig()
-    assert rc.private_data_dir == os.path.abspath(os.path.expanduser('~/.ansible-runner'))
+    assert rc.private_data_dir == os.path.join(gettempdir(), ".ansible-runner")
     assert rc.execution_mode == BaseExecutionMode.ANSIBLE_COMMANDS
 
 

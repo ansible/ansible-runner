@@ -17,6 +17,6 @@ Get Involved
 * We use [GitHub issues](https://github.com/ansible/ansible-runner/issues) to track bug report and feature ideas...
 * ... and [GitHub Milestones](https://github.com/ansible/ansible-runner/milestones) to track what's for the next release
 * Want to contribute, check out our [guide](CONTRIBUTING.md)
-* Join us in the `#ansible-runner` channel on Freenode IRC
+* Join us in the `#ansible-runner` channel on Libera.chat IRC
 * Join the discussion in [awx-project](https://groups.google.com/forum/#!forum/awx-project)
 * For the full list of Ansible email Lists, IRC channels see the [Ansible Mailing lists](https://docs.ansible.com/ansible/latest/community/communication.html#mailing-list-information)

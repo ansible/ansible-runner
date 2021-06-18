@@ -3,6 +3,8 @@
 import os
 import pytest
 
+from tempfile import gettempdir
+
 from ansible_runner.config.inventory import InventoryConfig
 from ansible_runner.config._base import BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
@@ -11,7 +13,7 @@ from ansible_runner.utils import get_executable_path
 
 def test_ansible_inventory_init_defaults():
     rc = InventoryConfig()
-    assert rc.private_data_dir == os.path.abspath(os.path.expanduser('~/.ansible-runner'))
+    assert rc.private_data_dir == os.path.join(gettempdir(), ".ansible-runner")
     assert rc.execution_mode == BaseExecutionMode.ANSIBLE_COMMANDS
 
 
@@ -105,8 +107,8 @@ def test_prepare_inventory_command_with_containerization(tmpdir, container_runti
     if container_runtime == 'podman':
         expected_command_start +=['--group-add=root', '--userns=keep-id', '--ipc=host']
 
-    expected_command_start += ['-v', '{}/artifacts/:/runner/artifacts:Z'.format(rc.private_data_dir)] + \
-        ['-v', '{}/:/runner:Z'.format(rc.private_data_dir)] + \
+    expected_command_start += ['-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir)] + \
+        ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \
         ['--name', 'ansible_runner_foo', 'my_container'] + \

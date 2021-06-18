@@ -3,6 +3,8 @@
 import os
 import pytest
 
+from tempfile import gettempdir
+
 from ansible_runner.config.command import CommandConfig
 from ansible_runner.config._base import BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
@@ -10,7 +12,7 @@ from ansible_runner.exceptions import ConfigurationError
 
 def test_ansible_config_defaults():
     rc = CommandConfig()
-    assert rc.private_data_dir == os.path.abspath(os.path.expanduser('~/.ansible-runner'))
+    assert rc.private_data_dir == os.path.join(gettempdir(), ".ansible-runner")
     assert rc.execution_mode == BaseExecutionMode.NONE
     assert rc.runner_mode is None
 
@@ -78,13 +80,13 @@ def test_prepare_run_command_with_containerization(tmpdir, container_runtime):
         extra_container_args = ['--user={os.getuid()}']
 
     expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
-                             ['-v', '{}/:{}'.format(cwd, cwd), '-v', '{}/.ssh/:/home/runner/.ssh/'.format(os.environ['HOME'])]
+                             ['-v', '{}/:{}/'.format(cwd, cwd), '-v', '{}/.ssh/:/home/runner/.ssh/'.format(os.environ['HOME'])]
 
     if container_runtime == 'podman':
         expected_command_start +=['--group-add=root', '--userns=keep-id', '--ipc=host']
 
-    expected_command_start += ['-v', '{}/artifacts/:/runner/artifacts:Z'.format(rc.private_data_dir)] + \
-        ['-v', '{}/:/runner:Z'.format(rc.private_data_dir)] + \
+    expected_command_start += ['-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir)] + \
+        ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \
         ['--name', 'ansible_runner_foo'] + \

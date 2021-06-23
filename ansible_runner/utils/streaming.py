@@ -19,7 +19,7 @@ def stream_dir(source_directory, stream):
                     relpath = os.path.relpath(dirpath, source_directory)
                     if relpath == ".":
                         relpath = ""
-                    for fname in files:
+                    for fname in files + dirs:
                         full_path = os.path.join(dirpath, fname)
                         # Magic to preserve symlinks
                         if os.path.islink(full_path):

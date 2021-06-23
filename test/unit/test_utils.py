@@ -227,16 +227,24 @@ def test_sanitize_container_name(container_name, expected_name):
     sanitize_container_name(str(container_name)) == expected_name
 
 
-@pytest.mark.parametrize('symlink_dest', [
-    '/proc/cpuinfo',
-    'ordinary_file.txt',
-    'filedoesnotexist.txt'
-], ids=['global', 'local', 'bad'])
-def test_transmit_symlink(tmpdir, symlink_dest):
+@pytest.mark.parametrize('symlink_dest,check_content', [
+    ('/proc/cpuinfo', []),
+    ('ordinary_file.txt', ['my_link']),
+    ('ordinary_directory', ['my_link/dir_file.txt']),
+    ('.', ['my_link/ordinary_directory/dir_file.txt', 'my_link/my_link/ordinary_file.txt']),
+    ('filedoesnotexist.txt', [])
+], ids=['global', 'local', 'directory', 'recursive', 'bad'])
+def test_transmit_symlink(tmpdir, symlink_dest, check_content):
     # prepare the input private_data_dir directory to zip
     pdd = tmpdir.mkdir('symlink_zip_test')
+
+    # Create some basic shared demo content
     with open(os.path.join(pdd, 'ordinary_file.txt'), 'w') as f:
         f.write('hello world')
+    os.mkdir(os.path.join(pdd, 'ordinary_directory'))
+    with open(os.path.join(pdd, 'ordinary_directory', 'dir_file.txt'), 'w') as f:
+        f.write('hello world')
+
     old_symlink_path = os.path.join(pdd, 'my_link')
     os.symlink(symlink_dest, old_symlink_path)
 
@@ -265,6 +273,12 @@ def test_transmit_symlink(tmpdir, symlink_dest):
         new_symlink_path = os.path.join(dest_dir, 'my_link')
         assert os.path.islink(new_symlink_path)
         os.readlink(new_symlink_path) == symlink_dest
+
+    for fname in check_content:
+        abs_path = os.path.join(dest_dir, fname)
+        assert os.path.exists(abs_path), f'Expected "{fname}" in target dir to be a file with content.'
+        with open(abs_path, 'r') as f:
+            assert f.read() == 'hello world'
 
 
 @pytest.mark.parametrize('fperm', [

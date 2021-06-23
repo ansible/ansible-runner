@@ -5,7 +5,7 @@
     description: Base ansible-runner container image
     required-projects:
       - name: github.com/ansible/ansible-runner
-    timeout: 3600
+    timeout: 5400
     vars:
       zuul_work_dir: "{{ zuul.projects['github.com/ansible/ansible-runner'].src_dir }}"
 

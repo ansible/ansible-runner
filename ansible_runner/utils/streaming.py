@@ -71,14 +71,18 @@ def unstream_dir(stream, length, target_directory):
             # https://www.burgundywall.com/post/preserving-file-perms-with-python-zipfile-module
             for info in archive.infolist():
                 out_path = os.path.join(target_directory, info.filename)
-                
+
                 perms = info.external_attr >> 16
                 mode = stat.filemode(perms)
-                
+
                 is_symlink = mode[:1] == 'l'
-                if is_symlink and os.path.exists(out_path):
-                    os.remove(out_path)
-                        
+                if os.path.exists(out_path):
+                    if is_symlink:
+                        os.remove(out_path)
+                    elif os.path.isdir(out_path):
+                        # Special case, the important dirs were pre-created so don't try to chmod them
+                        continue
+
                 archive.extract(info.filename, path=target_directory)
 
                 if is_symlink:

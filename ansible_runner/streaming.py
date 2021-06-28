@@ -73,7 +73,7 @@ class Worker(object):
 
         private_data_dir = kwargs.get('private_data_dir')
         if private_data_dir is None:
-            private_data_dir = tempfile.TemporaryDirectory().name
+            private_data_dir = tempfile.mkdtemp()
         self.private_data_dir = private_data_dir
 
         self.status = "unstarted"
@@ -164,7 +164,7 @@ class Processor(object):
 
         private_data_dir = kwargs.get('private_data_dir')
         if private_data_dir is None:
-            private_data_dir = tempfile.TemporaryDirectory().name
+            private_data_dir = tempfile.mkdtemp()
         self.private_data_dir = private_data_dir
         self._loader = ArtifactLoader(self.private_data_dir)
 

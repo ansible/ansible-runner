@@ -12,7 +12,13 @@ from ansible_runner.exceptions import ConfigurationError
 
 def test_ansible_config_defaults():
     rc = CommandConfig()
-    assert rc.private_data_dir == os.path.join(gettempdir(), ".ansible-runner")
+
+    # Check that the private data dir is placed in our default location with our default prefix
+    # and has some extra uniqueness on the end.
+    base_private_data_dir = os.path.join(gettempdir(), '.ansible-runner-')
+    assert rc.private_data_dir.startswith(base_private_data_dir)
+    assert len(rc.private_data_dir) > len(base_private_data_dir)
+
     assert rc.execution_mode == BaseExecutionMode.NONE
     assert rc.runner_mode is None
 

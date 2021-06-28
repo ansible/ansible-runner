@@ -3,13 +3,13 @@
 from functools import partial
 import os
 import re
+from tempfile import gettempdir
 
 import six
 from pexpect import TIMEOUT, EOF
 
 import pytest
 
-from tempfile import gettempdir
 from unittest.mock import (Mock, patch, PropertyMock)
 
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
@@ -47,7 +47,12 @@ def test_base_config_init_defaults():
 def test_base_config_with_artifact_dir():
     rc = BaseConfig(artifact_dir='/tmp/this-is-some-dir')
     assert rc.artifact_dir == os.path.join('/tmp/this-is-some-dir', rc.ident)
-    assert rc.private_data_dir == os.path.join(gettempdir(), ".ansible-runner")
+
+    # Check that the private data dir is placed in our default location with our default prefix
+    # and has some extra uniqueness on the end.
+    base_private_data_dir = os.path.join(gettempdir(), '.ansible-runner-')
+    assert rc.private_data_dir.startswith(base_private_data_dir)
+    assert len(rc.private_data_dir) > len(base_private_data_dir)
 
 
 def test_base_config_init_with_ident():

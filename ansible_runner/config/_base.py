@@ -20,8 +20,8 @@ import logging
 import os
 import pexpect
 import re
+import tempfile
 
-from tempfile import gettempdir
 from uuid import uuid4
 try:
     from collections.abc import Mapping
@@ -88,8 +88,12 @@ class BaseConfig(object):
         # setup initial environment
         if private_data_dir:
             self.private_data_dir = os.path.abspath(private_data_dir)
+            # Note that os.makedirs, exist_ok=True is dangerous.  If there's a directory writable
+            # by someone other than the user anywhere in the path to be created, an attacker can
+            # attempt to compromise the directories via a race.
+            os.makedirs(self.private_data_dir, exist_ok=True, mode=0o700)
         else:
-            self.private_data_dir = os.path.join(gettempdir(), ".ansible-runner")
+            self.private_data_dir = tempfile.mkdtemp(prefix=".ansible-runner-")
 
         if artifact_dir is None:
             artifact_dir = os.path.join(self.private_data_dir, 'artifacts')
@@ -120,7 +124,6 @@ class BaseConfig(object):
         else:
             self.cwd = os.getcwd()
 
-        os.makedirs(self.private_data_dir, exist_ok=True, mode=0o700)
         os.makedirs(self.artifact_dir, exist_ok=True, mode=0o700)
 
     _CONTAINER_ENGINES = ('docker', 'podman')

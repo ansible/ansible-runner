@@ -13,7 +13,13 @@ from ansible_runner.utils import get_executable_path
 
 def test_ansible_doc_defaults():
     rc = DocConfig()
-    assert rc.private_data_dir == os.path.join(gettempdir(), ".ansible-runner")
+
+    # Check that the private data dir is placed in our default location with our default prefix
+    # and has some extra uniqueness on the end.
+    base_private_data_dir = os.path.join(gettempdir(), '.ansible-runner-')
+    assert rc.private_data_dir.startswith(base_private_data_dir)
+    assert len(rc.private_data_dir) > len(base_private_data_dir)
+
     assert rc.execution_mode == BaseExecutionMode.ANSIBLE_COMMANDS
     assert rc.runner_mode == 'subprocess'
 

@@ -601,11 +601,13 @@ def main(sys_args=None):
         help="Run ansible-runner in the foreground"
     )
     add_args_to_parser(run_subparser, DEFAULT_CLI_ARGS['positional_args'])
+    add_args_to_parser(run_subparser, DEFAULT_CLI_ARGS['playbook_group'])
     start_subparser = subparser.add_parser(
         'start',
         help="Start an ansible-runner process in the background"
     )
     add_args_to_parser(start_subparser, DEFAULT_CLI_ARGS['positional_args'])
+    add_args_to_parser(start_subparser, DEFAULT_CLI_ARGS['playbook_group'])
     stop_subparser = subparser.add_parser(
         'stop',
         help="Stop an ansible-runner process that's running in the background"

@@ -70,25 +70,27 @@ def generate_volmount_args(src_str, dst_str, labels):
     return ["-v", vol_mount_str]
 
 
-@patch("os.path.exists", return_value=True)
 @pytest.mark.parametrize("not_safe", not_safe)
-def test_check_not_safe_to_mount_dir(_mock_ope, not_safe):
+def test_check_not_safe_to_mount_dir(not_safe):
     """Ensure unsafe directories are not mounted"""
     with pytest.raises(ConfigurationError):
-        BaseConfig()._update_volume_mount_paths(
-            args_list=[], src_mount_path=not_safe, dst_mount_path=None
-        )
+        bc = BaseConfig()
+        with patch("os.path.exists", return_value=True):
+            bc._update_volume_mount_paths(
+                args_list=[], src_mount_path=not_safe, dst_mount_path=None
+            )
 
 
-@patch("os.path.exists", return_value=True)
 @pytest.mark.parametrize("not_safe", not_safe)
-def test_check_not_safe_to_mount_file(_mock_ope, not_safe):
+def test_check_not_safe_to_mount_file(not_safe):
     """Ensure unsafe directories for a given file are not mounted"""
     file_path = os.path.join(not_safe, "file.txt")
     with pytest.raises(ConfigurationError):
-        BaseConfig()._update_volume_mount_paths(
-            args_list=[], src_mount_path=file_path, dst_mount_path=None
-        )
+        bc = BaseConfig()
+        with patch("os.path.exists", return_value=True):
+            bc._update_volume_mount_paths(
+                args_list=[], src_mount_path=file_path, dst_mount_path=None
+            )
 
 
 @patch("os.path.exists", return_value=True)
@@ -166,10 +168,9 @@ def test_src_dst_all_dirs(_mock_ope, _mock_isdir, src, dst, labels):
 
 
 
-@patch("os.path.exists", return_value=True)
 @pytest.mark.parametrize("labels", labels, ids=id_for_label)
 @pytest.mark.parametrize("path", dir_variations, ids=id_for_src)
-def test_src_dst_all_files(_mock_ope, path, labels):
+def test_src_dst_all_files(path, labels):
     """Ensure file paths are tranformed correctly into dir paths"""
     src_str = os.path.join(resolve_path(path.path), "")
     dst_str = src_str
@@ -180,10 +181,11 @@ def test_src_dst_all_files(_mock_ope, path, labels):
     dest_file = src_file
 
     base_config = BaseConfig()
-    with patch("os.path.isdir", return_value=False):
-        base_config._update_volume_mount_paths(
-            args_list=result, src_mount_path=src_file, dst_mount_path=dest_file, labels=labels
-        )
+    with patch("os.path.exists", return_value=True):
+        with patch("os.path.isdir", return_value=False):
+            base_config._update_volume_mount_paths(
+                args_list=result, src_mount_path=src_file, dst_mount_path=dest_file, labels=labels
+            )
 
     explanation = (
         f"provided: {src_file}:{dest_file}",

@@ -6,7 +6,7 @@ NAME = ansible-runner
 IMAGE_NAME ?= quay.io/ansible/ansible-runner
 IMAGE_NAME_STRIPPED := $(word 1,$(subst :, ,$(IMAGE_NAME)))
 GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
-ANSIBLE_BRANCH ?= ""
+ANSIBLE_BRANCH ?=
 ANSIBLE_VERSIONS ?= stable-2.9 stable-2.10 stable-2.11
 PIP_NAME = ansible_runner
 VERSION := $(shell python setup.py --version)
@@ -97,9 +97,9 @@ image: sdist
 		-t $(IMAGE_NAME) -f Dockerfile .
 	$(CONTAINER_ENGINE) tag $(IMAGE_NAME) $(IMAGE_NAME_STRIPPED):$(GIT_BRANCH)
 
-image_matrix:
+image_matrix: image
 	for version in $(ANSIBLE_VERSIONS) ; do \
-		ANSIBLE_BRANCH=$$version GIT_BRANCH=$$version.$(GIT_BRANCH) make image ; \
+		ANSIBLE_BRANCH=$$version GIT_BRANCH=$$version-$(GIT_BRANCH) make image ; \
 	done
 	$(CONTAINER_ENGINE) tag $(IMAGE_NAME) $(IMAGE_NAME_STRIPPED):$(GIT_BRANCH)
 

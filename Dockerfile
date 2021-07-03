@@ -51,8 +51,6 @@ RUN for dir in \
       /etc/group ; \
     do touch $file ; chmod g+rw $file ; chgrp root $file ; done
 
-VOLUME /runner
-
 WORKDIR /runner
 
 ENV HOME=/home/runner

@@ -3,7 +3,7 @@
 Changelog
 ---------
 
-2.0.0a3 (2020-05-20)
+2.0.0a3 (2021-05-20)
 ++++++++++++++++++++
 - Updated streaming module to fail jobs when a project contains an invalid symlink in the source files
 

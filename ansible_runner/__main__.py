@@ -750,7 +750,6 @@ def main(sys_args=None):
         print_common_usage()
         parser.exit(status=0)
 
-
     args = parser.parse_args(sys_args)
 
     vargs = vars(args)

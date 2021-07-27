@@ -79,7 +79,7 @@ class BaseConfig(object):
         self.private_data_dir = private_data_dir
         self.rotate_artifacts = rotate_artifacts
         self.quiet = quiet
-        self.json_mode=json_mode
+        self.json_mode = json_mode
         self.passwords = passwords
         self.settings = settings
         self.timeout = timeout
@@ -169,7 +169,7 @@ class BaseConfig(object):
             self.pexpect_timeout = self.settings.get('pexpect_timeout', 5)
             self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
             self.idle_timeout = self.settings.get('idle_timeout', None)
- 
+
             if self.timeout:
                 self.job_timeout = int(self.timeout)
             else:
@@ -207,7 +207,7 @@ class BaseConfig(object):
         try:
             envvars = self.loader.load_file('env/envvars', Mapping)
             if envvars:
-                self.env.update({str(k):str(v) for k, v in envvars.items()})
+                self.env.update({str(k): str(v) for k, v in envvars.items()})
         except ConfigurationError:
             debug("Not loading environment vars")
             # Still need to pass default environment to pexpect
@@ -242,7 +242,7 @@ class BaseConfig(object):
             self.env['PYTHONPATH'] = ':'.join([python_path, callback_dir])
             if python_path and not python_path.endswith(':'):
                 python_path += ':'
-            self.env['ANSIBLE_CALLBACK_PLUGINS'] = ':'.join(filter(None,(self.env.get('ANSIBLE_CALLBACK_PLUGINS'), callback_dir)))
+            self.env['ANSIBLE_CALLBACK_PLUGINS'] = ':'.join(filter(None, (self.env.get('ANSIBLE_CALLBACK_PLUGINS'), callback_dir)))
 
         if 'AD_HOC_COMMAND_ID' in self.env:
             self.env['ANSIBLE_STDOUT_CALLBACK'] = 'minimal'
@@ -260,7 +260,7 @@ class BaseConfig(object):
                 self.env['ANSIBLE_CACHE_PLUGIN_CONNECTION'] = self.fact_cache
 
         debug('env:')
-        for k,v in sorted(self.env.items()):
+        for k, v in sorted(self.env.items()):
             debug(f' {k}: {v}')
 
     def _handle_command_wrap(self, execution_mode, cmdline_args):
@@ -314,7 +314,7 @@ class BaseConfig(object):
                     break
 
         return _playbook
-    
+
     def _update_volume_mount_paths(
         self, args_list, src_mount_path, dst_mount_path=None, labels=None
     ):
@@ -360,7 +360,6 @@ class BaseConfig(object):
             if not labels.startswith(":"):
                 volume_mount_path += ":"
             volume_mount_path += labels
-
 
         # check if mount path already added in args list
         if volume_mount_path not in args_list:
@@ -473,14 +472,14 @@ class BaseConfig(object):
             # Mount the entire private_data_dir
             # custom show paths inside private_data_dir do not make sense
             self._update_volume_mount_paths(new_args, "{}".format(self.private_data_dir), dst_mount_path="/runner", labels=":Z")
-    
+
         if self.container_volume_mounts:
             for mapping in self.container_volume_mounts:
                 volume_mounts = mapping.split(':', 2)
                 self._ensure_path_safe_to_mount(volume_mounts[0])
                 labels = None
                 if len(volume_mounts) == 3:
-                    labels = ":%s" %volume_mounts[2]
+                    labels = ":%s" % volume_mounts[2]
                 self._update_volume_mount_paths(new_args, volume_mounts[0], dst_mount_path=volume_mounts[1], labels=labels)
 
         # Reference the file with list of keys to pass into container

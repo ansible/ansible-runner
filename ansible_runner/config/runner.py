@@ -110,7 +110,6 @@ class RunnerConfig(BaseConfig):
         self.omit_event_data = omit_event_data
         self.only_failed_event_data = only_failed_event_data
 
-
     @property
     def sandboxed(self):
         return self.process_isolation and self.process_isolation_executable not in self._CONTAINER_ENGINES
@@ -156,7 +155,7 @@ class RunnerConfig(BaseConfig):
         self._handle_command_wrap()
 
         debug('env:')
-        for k,v in sorted(self.env.items()):
+        for k, v in sorted(self.env.items()):
             debug(f' {k}: {v}')
         if hasattr(self, 'command') and isinstance(self.command, list):
             debug(f"command: {' '.join(self.command)}")
@@ -399,7 +398,7 @@ class RunnerConfig(BaseConfig):
                 logger.debug('read-only path not found: {0}'.format(path))
                 continue
             path = os.path.realpath(path)
-            new_args.extend(['--ro-bind', '{0}'.format(path),  '{0}'.format(path)])
+            new_args.extend(['--ro-bind', '{0}'.format(path), '{0}'.format(path)])
 
         show_paths.extend(self.process_isolation_show_paths or [])
         for path in sorted(set(show_paths)):

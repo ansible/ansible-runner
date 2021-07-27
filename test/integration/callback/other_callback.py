@@ -11,4 +11,3 @@ class CallbackModule(CallbackBase):
 
     def v2_runner_on_ok(self, result):
         pass
-

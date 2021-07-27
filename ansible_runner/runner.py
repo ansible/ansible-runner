@@ -214,7 +214,6 @@ class Runner(object):
             else:
                 logger.info("Created cgroup '{}'".format(cgroup_path))
 
-
         self.status_callback('running')
         self.last_stdout_update = time.time()
 
@@ -255,7 +254,7 @@ class Runner(object):
                 if subprocess_timeout is not None:
                     kwargs.update({'timeout': subprocess_timeout})
 
-                proc_out = run_subprocess( " ".join(command), **kwargs)
+                proc_out = run_subprocess(" ".join(command), **kwargs)
 
                 stdout_response = proc_out.stdout
                 stderr_response = proc_out.stderr
@@ -338,8 +337,8 @@ class Runner(object):
                         self.canceled = self.cancel_callback()
                     except Exception as e:
                         # TODO: logger.exception('Could not check cancel callback - cancelling immediately')
-                        #if isinstance(extra_update_fields, dict):
-                        #    extra_update_fields['job_explanation'] = "System error during job execution, check system logs"
+                        # if isinstance(extra_update_fields, dict):
+                        #     extra_update_fields['job_explanation'] = "System error during job execution, check system logs"
                         raise CallbackError("Exception in Cancel Callback: {}".format(e))
                 if self.config.job_timeout and not self.canceled and (time.time() - job_start) > self.config.job_timeout:
                     self.timed_out = True
@@ -507,15 +506,14 @@ class Runner(object):
         if not last_event:
             return None
         last_event = last_event[0]['event_data']
-        return dict(skipped=last_event.get('skipped',{}),
-                    ok=last_event.get('ok',{}),
-                    dark=last_event.get('dark',{}),
-                    failures=last_event.get('failures',{}),
+        return dict(skipped=last_event.get('skipped', {}),
+                    ok=last_event.get('ok', {}),
+                    dark=last_event.get('dark', {}),
+                    failures=last_event.get('failures', {}),
                     ignored=last_event.get('ignored', {}),
                     rescued=last_event.get('rescued', {}),
-                    processed=last_event.get('processed',{}),
-                    changed=last_event.get('changed',{}))
-
+                    processed=last_event.get('processed', {}),
+                    changed=last_event.get('changed', {}))
 
     def host_events(self, host):
         '''
@@ -560,7 +558,6 @@ class Runner(object):
             os.remove(pidfile)
         except (TypeError, OSError):
             pass
-
 
     def get_fact_cache(self, host):
         '''

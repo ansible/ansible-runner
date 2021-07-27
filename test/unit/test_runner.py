@@ -111,7 +111,7 @@ def test_event_callback_data_check(rc):
 
     with pytest.raises(AnsibleRunnerException) as exc:
         runner.event_callback(dict(uuid="testuuid", counter=0))
-    
+
     assert "Failed to open ansible stdout callback plugin partial data" in str(exc)
 
 

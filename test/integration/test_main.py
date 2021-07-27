@@ -51,7 +51,6 @@ def test_temp_directory():
 
     context = dict()
 
-
     def will_fail():
         with temp_directory() as temp_dir:
             context['saved_temp_dir'] = temp_dir
@@ -276,7 +275,6 @@ def test_role_run_inventory_missing(is_pre_ansible28):
 
 def test_role_start():
 
-
     with temp_directory() as temp_dir:
         p = multiprocessing.Process(target=main,
                                     args=[['start', '-r', 'benthomasson.hello_role',
@@ -295,17 +293,16 @@ def test_playbook_start(skipif_pre_ansible28):
         ensure_directory(project_dir)
         shutil.copy(os.path.join(HERE, 'project/hello.yml'), project_dir)
         ensure_directory(os.path.join(temp_dir, 'inventory'))
-        shutil.copy(os.path.join(HERE, inv), os.path.join(temp_dir,'inventory/localhost'))
+        shutil.copy(os.path.join(HERE, inv), os.path.join(temp_dir, 'inventory/localhost'))
 
         # privateip: removed --hosts command line option from test beause it is
         # not a supported combination of cli options
         p = multiprocessing.Process(target=main,
                                     args=[['start', '-p', 'hello.yml',
                                            '--inventory', os.path.join(HERE, 'inventory/localhost'),
-                                           #'--hosts', 'localhost',
+                                           # '--hosts', 'localhost',
                                            temp_dir]])
         p.start()
-
 
         time.sleep(5)
 

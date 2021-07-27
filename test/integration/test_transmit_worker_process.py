@@ -35,7 +35,7 @@ class TestStreamingUsage:
 
     def check_artifacts(self, process_dir, job_type):
 
-        assert set(os.listdir(process_dir)) == {'artifacts',}
+        assert set(os.listdir(process_dir)) == {'artifacts', }
 
         events_dir = os.path.join(process_dir, 'artifacts', 'job_events')
         events = []
@@ -91,7 +91,6 @@ class TestStreamingUsage:
         processor.run()
 
         self.check_artifacts(process_dir, job_type)
-
 
     @pytest.mark.parametrize("job_type", ['run', 'adhoc'])
     def test_remote_job_by_sockets(self, tmpdir, test_data_dir, container_runtime_installed, job_type):

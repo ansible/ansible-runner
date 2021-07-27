@@ -163,7 +163,7 @@ def test_prepare_env_sshkey():
 
 def test_prepare_env_defaults():
     with patch('os.path.exists') as path_exists:
-        path_exists.return_value=True
+        path_exists.return_value = True
         rc = BaseConfig(private_data_dir='/tmp', host_cwd='/tmp/project')
         rc._prepare_env()
         assert rc.idle_timeout is None
@@ -300,7 +300,7 @@ def test_containerization_settings(tmpdir, container_runtime):
     expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
                              ['-v', '{}/.ssh/:/home/runner/.ssh/'.format(os.environ['HOME'])]
     if container_runtime == 'podman':
-        expected_command_start +=['--group-add=root', '--ipc=host']
+        expected_command_start += ['--group-add=root', '--ipc=host']
 
     expected_command_start += ['-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir)] + \
         ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \

@@ -180,7 +180,7 @@ def test_prepare_env_sshkey(mock_makedirs, open_fifo_write_mock):
 @patch('os.makedirs', return_value=True)
 def test_prepare_env_defaults(mock_makedirs):
     with patch('os.path.exists') as path_exists:
-        path_exists.return_value=True
+        path_exists.return_value = True
         rc = RunnerConfig('/')
         rc.prepare_env()
         assert rc.idle_timeout is None
@@ -192,7 +192,7 @@ def test_prepare_env_defaults(mock_makedirs):
 @patch('os.makedirs', return_value=True)
 def test_prepare_env_directory_isolation(mock_makedirs):
     with patch('os.path.exists') as path_exists:
-        path_exists.return_value=True
+        path_exists.return_value = True
         rc = RunnerConfig('/')
         rc.directory_isolation_path = '/tmp/foo'
         rc.prepare_env()
@@ -221,7 +221,7 @@ def test_prepare_inventory(path_exists, mock_makedirs):
 def test_generate_ansible_command(mock_makedirs):
     rc = RunnerConfig(private_data_dir='/', playbook='main.yaml')
     with patch('os.path.exists') as path_exists:
-        path_exists.return_value=True
+        path_exists.return_value = True
         rc.prepare_inventory()
     rc.extra_vars = None
 
@@ -292,9 +292,9 @@ def test_generate_ansible_command(mock_makedirs):
 
 @patch('os.makedirs', return_value=True)
 def test_generate_ansible_command_with_api_extravars(mock_makedirs):
-    rc = RunnerConfig(private_data_dir='/', playbook='main.yaml', extravars={"foo":"bar"})
+    rc = RunnerConfig(private_data_dir='/', playbook='main.yaml', extravars={"foo": "bar"})
     with patch('os.path.exists') as path_exists:
-        path_exists.return_value=True
+        path_exists.return_value = True
         rc.prepare_inventory()
 
     cmd = rc.generate_ansible_command()
@@ -303,9 +303,9 @@ def test_generate_ansible_command_with_api_extravars(mock_makedirs):
 
 @patch('os.makedirs', return_value=True)
 def test_generate_ansible_command_with_dict_extravars(mock_makedirs):
-    rc = RunnerConfig(private_data_dir='/', playbook='main.yaml', extravars={"foo":"test \n hello"})
+    rc = RunnerConfig(private_data_dir='/', playbook='main.yaml', extravars={"foo": "test \n hello"})
     with patch('os.path.exists') as path_exists:
-        path_exists.return_value=True
+        path_exists.return_value = True
         rc.prepare_inventory()
 
     cmd = rc.generate_ansible_command()
@@ -467,7 +467,7 @@ def test_process_isolation_executable_not_found(mock_subprocess, mock_sys, mock_
     # Mock subprocess.Popen indicates if
     # process isolation executable is present
     mock_proc = Mock()
-    mock_proc.returncode=(0 if executable_present else 1)
+    mock_proc.returncode = (0 if executable_present else 1)
     mock_subprocess.Popen.return_value = mock_proc
 
     kwargs = {'process_isolation': True,
@@ -488,7 +488,7 @@ def test_bwrap_process_isolation_defaults(mock_makedirs):
     rc.process_isolation = True
     rc.process_isolation_executable = 'bwrap'
     with patch('os.path.exists') as path_exists:
-        path_exists.return_value=True
+        path_exists.return_value = True
         rc.prepare()
 
     assert rc.command == [
@@ -552,7 +552,7 @@ def test_process_isolation_settings(mock_isdir, mock_exists, mock_makedirs):
     rc.process_isolation_path = '/tmp'
 
     with patch('os.path.exists') as path_exists:
-        path_exists.return_value=True
+        path_exists.return_value = True
         rc.prepare()
     print(rc.command)
     assert rc.command[0:8] == [
@@ -661,9 +661,9 @@ def test_containerization_settings(mock_isdir, mock_exists, tmpdir, container_ru
         rc.playbook = 'main.yaml'
         rc.command = 'ansible-playbook'
         rc.process_isolation = True
-        rc.process_isolation_executable=container_runtime
+        rc.process_isolation_executable = container_runtime
         rc.container_image = 'my_container'
-        rc.container_volume_mounts=['/host1:/container1', '/host2:/container2']
+        rc.container_volume_mounts = ['/host1:/container1', '/host2:/container2']
         mock_containerized.return_value = True
         rc.prepare()
 

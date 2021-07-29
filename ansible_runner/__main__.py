@@ -41,6 +41,7 @@ from yaml import safe_load
 from ansible_runner import run
 from ansible_runner import output
 from ansible_runner.utils import dump_artifact, Bunch
+from ansible_runner.utils.capacity import get_cpu_capacity, get_mem_capacity
 from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
 
@@ -628,6 +629,11 @@ def main(sys_args=None):
         'worker',
         help="Execute work streamed from a controlling instance"
     )
+    info = worker_subparser.add_subparsers(
+        dest='worker_info',
+        help="Show the execution node's Ansible Runner version along with its memory and CPU capacities"
+    )
+    info.add_parser('capacity')
     worker_subparser.add_argument(
         "--private-data-dir",
         help="base directory containing the ansible-runner metadata "
@@ -756,6 +762,17 @@ def main(sys_args=None):
     vargs = vars(args)
 
     if vargs.get('command') in ('worker', 'process'):
+        if vargs.get('worker_info'):
+            cpu = get_cpu_capacity()
+            mem = get_mem_capacity()
+            if cpu or mem > 0:
+                print("\nExecution Node Info\n"
+                      "-------------------\n"
+                      f"Ansible-Runner Version: {VERSION}\nCPU Capacity: {cpu}\nMemory Capacity: {mem}\n")
+                parser.exit(0)
+            else:
+                sys.tracebacklimit = 0
+                parser.exit(status=1, message="The worker node has no CPU or memory capacity.\n")
         if not vargs.get('private_data_dir'):
             temp_private_dir = tempfile.mkdtemp()
             vargs['private_data_dir'] = temp_private_dir

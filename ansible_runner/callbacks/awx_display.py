@@ -36,9 +36,9 @@ import os  # noqa
 import sys  # noqa
 
 # Add awx/lib to sys.path.
-awx_lib_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if awx_lib_path not in sys.path:
-    sys.path.insert(0, awx_lib_path)
+callback_lib_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if callback_lib_path not in sys.path:
+    sys.path.insert(0, callback_lib_path)
 
 # Tower Display Callback
 from display_callback import AWXDefaultCallbackModule  # noqa

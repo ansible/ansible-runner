@@ -21,6 +21,7 @@ from __future__ import (absolute_import, division, print_function)
 import collections
 import contextlib
 import datetime
+import os
 import sys
 import uuid
 from copy import copy
@@ -28,11 +29,21 @@ from copy import copy
 # Ansible
 from ansible import constants as C
 from ansible.plugins.callback import CallbackBase
-from ansible.plugins.callback.default import CallbackModule as DefaultCallbackModule
+from ansible.plugins.loader import callback_loader
 
 # AWX Display Callback
 from .events import event_context
-from .minimal import CallbackModule as MinimalCallbackModule
+MinimalCallbackModule = callback_loader.get('minimal').__class__
+
+# Dynamically construct base classes for our callback module, to support
+# custom stdout callbacks.
+original_stdout_callback = os.environ['ANSIBLE_STDOUT_CALLBACK']
+del os.environ['ANSIBLE_STDOUT_CALLBACK']
+
+default_stdout_callback = C.config.get_config_value('DEFAULT_STDOUT_CALLBACK')
+DefaultCallbackModule = callback_loader.get(default_stdout_callback).__class__
+
+os.environ['ANSIBLE_STDOUT_CALLBACK'] = original_stdout_callback
 
 CENSORED = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"  # noqa
 
@@ -539,7 +550,7 @@ class AWXDefaultCallbackModule(BaseCallbackModule, DefaultCallbackModule):
 
 class AWXMinimalCallbackModule(BaseCallbackModule, MinimalCallbackModule):
 
-    CALLBACK_NAME = 'minimal'
+    CALLBACK_NAME = 'awx_minimal'
 
     def v2_playbook_on_play_start(self, play):
         pass

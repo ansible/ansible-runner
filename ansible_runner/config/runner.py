@@ -147,6 +147,11 @@ class RunnerConfig(BaseConfig):
         self.prepare_inventory()
         self.prepare_command()
 
+        if self.execution_mode == ExecutionMode.ANSIBLE:
+            self.env['ANSIBLE_STDOUT_CALLBACK'] = 'awx_minimal'
+        else:
+            self.env['ANSIBLE_STDOUT_CALLBACK'] = 'awx_display'
+
         if self.execution_mode == ExecutionMode.ANSIBLE_PLAYBOOK and self.playbook is None:
             raise ConfigurationError("Runner playbook required when running ansible-playbook")
         elif self.execution_mode == ExecutionMode.ANSIBLE and self.module is None:
@@ -242,6 +247,7 @@ class RunnerConfig(BaseConfig):
 
         self.env["RUNNER_OMIT_EVENTS"] = str(self.omit_event_data)
         self.env["RUNNER_ONLY_FAILED_EVENTS"] = str(self.only_failed_event_data)
+        self.env["ANSIBLE_LOAD_CALLBACK_PLUGINS"] = '1'
 
     def prepare_command(self):
         try:

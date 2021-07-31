@@ -31,19 +31,25 @@ from ansible import constants as C
 from ansible.plugins.callback import CallbackBase
 from ansible.plugins.loader import callback_loader
 
-# AWX Display Callback
 from .events import event_context
-MinimalCallbackModule = callback_loader.get('minimal').__class__
 
-# Dynamically construct base classes for our callback module, to support
-# custom stdout callbacks.
-original_stdout_callback = os.environ['ANSIBLE_STDOUT_CALLBACK']
-del os.environ['ANSIBLE_STDOUT_CALLBACK']
+user_specified_callback = os.getenv('ORIGINAL_STDOUT_CALLBACK')
+runner_callback = os.environ.pop('ANSIBLE_STDOUT_CALLBACK', 'awx_display')
 
-default_stdout_callback = C.config.get_config_value('DEFAULT_STDOUT_CALLBACK')
+if user_specified_callback:
+    os.environ['ANSIBLE_STDOUT_CALLBACK'] = user_specified_callback
+
+is_adhoc = os.getenv('AD_HOC_COMMAND_ID', False)
+
+# Dynamically construct base classes for our callback module, to support custom stdout callbacks.
+if is_adhoc:
+    default_stdout_callback = 'minimal'
+else:
+    default_stdout_callback = C.config.get_config_value('DEFAULT_STDOUT_CALLBACK')
+
 DefaultCallbackModule = callback_loader.get(default_stdout_callback).__class__
 
-os.environ['ANSIBLE_STDOUT_CALLBACK'] = original_stdout_callback
+os.environ['ANSIBLE_STDOUT_CALLBACK'] = runner_callback
 
 CENSORED = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"  # noqa
 
@@ -543,17 +549,19 @@ class BaseCallbackModule(CallbackBase):
             super(BaseCallbackModule, self).v2_runner_on_start(host, task)
 
 
-class AWXDefaultCallbackModule(BaseCallbackModule, DefaultCallbackModule):
+class AWXCallbackModule(BaseCallbackModule, DefaultCallbackModule):
 
     CALLBACK_NAME = 'awx_display'
 
-
-class AWXMinimalCallbackModule(BaseCallbackModule, MinimalCallbackModule):
-
-    CALLBACK_NAME = 'awx_minimal'
-
     def v2_playbook_on_play_start(self, play):
-        pass
+        if is_adhoc:
+            pass
+        else:
+            super().v2_playbook_on_play_start(play)
+
 
     def v2_playbook_on_task_start(self, task, is_conditional):
-        self.set_task(task)
+        if is_adhoc:
+            self.set_task(task)
+        else:
+            super().v2_playbook_on_task_start(task, is_conditional)

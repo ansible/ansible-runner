@@ -19,6 +19,6 @@ from __future__ import (absolute_import, division, print_function)
 
 # AWX Display Callback
 from . import display  # noqa (wraps ansible.display.Display methods)
-from .module import AWXDefaultCallbackModule, AWXMinimalCallbackModule
+from .module import AWXCallbackModule
 
-__all__ = ['AWXDefaultCallbackModule', 'AWXMinimalCallbackModule']
+__all__ = ['AWXCallbackModule']

@@ -20,13 +20,6 @@ ansible_runner.display_callback.events module
     :undoc-members:
     :show-inheritance:
 
-ansible_runner.display_callback.minimal module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. automodule:: ansible_runner.display_callback.minimal
-    :members:
-    :undoc-members:
-
 ansible_runner.display_callback.module module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

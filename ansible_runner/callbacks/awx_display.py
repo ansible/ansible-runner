@@ -41,10 +41,10 @@ if callback_lib_path not in sys.path:
     sys.path.insert(0, callback_lib_path)
 
 # Tower Display Callback
-from display_callback import AWXDefaultCallbackModule  # noqa
+from display_callback import AWXCallbackModule  # noqa
 
 
 # In order to be recognized correctly, self.__class__.__name__ needs to
 # match "CallbackModule"
-class CallbackModule(AWXDefaultCallbackModule):
+class CallbackModule(AWXCallbackModule):
     pass

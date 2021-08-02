@@ -29,3 +29,4 @@ test/integration/containerized/priv_data/artifacts/
 /test/data/printenv/env/
 /test/data/**/artifacts/
 /.eggs/
+docs/build

@@ -5,7 +5,7 @@ Using Runner with Execution Environmnets
 
 **Execution Environments** are meant to be a consistent, reproducible, portable,
 and sharable method to run Ansible Automation jobs in the exact same way on
-your laptop as they are executed in `Ansible AWX <https://github.com/ansible/awx/`_.
+your laptop as they are executed in `Ansible AWX <https://github.com/ansible/awx/>`_.
 This aids in the development of automation jobs and Ansible Content that is
 meant to be run in **Ansible AWX**, `Ansible Tower <https://www.ansible.com/products/tower>`_,
 or via `Red Hat Ansible Automation Platform <https://www.ansible.com/products/automation-platform>`_

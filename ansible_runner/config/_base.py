@@ -194,15 +194,16 @@ class BaseConfig(object):
             # Special flags to convey info to entrypoint or process in container
             self.env['LAUNCHED_BY_RUNNER'] = '1'
 
-            # A kernel bug in RHEL < 8.5 causes podman to use the fuse-overlayfs driver. This results in errors when
-            # trying to set extended file attributes. Setting this environment variables
-            # allows modules to take advantage of a fallback to work around this bug when failures are encountered.
-            #
-            # See the following for more information:
-            #    https://github.com/ansible/ansible/pull/73282
-            #    https://github.com/ansible/ansible/issues/73310
-            #    https://issues.redhat.com/browse/AAP-476
-            self.env['ANSIBLE_UNSAFE_WRITES'] = '1'
+            if self.process_isolation_executable == 'podman':
+                # A kernel bug in RHEL < 8.5 causes podman to use the fuse-overlayfs driver. This results in errors when
+                # trying to set extended file attributes. Setting this environment variables
+                # allows modules to take advantage of a fallback to work around this bug when failures are encountered.
+                #
+                # See the following for more information:
+                #    https://github.com/ansible/ansible/pull/73282
+                #    https://github.com/ansible/ansible/issues/73310
+                #    https://issues.redhat.com/browse/AAP-476
+                self.env['ANSIBLE_UNSAFE_WRITES'] = '1'
 
             artifact_dir = os.path.join("/runner/artifacts", "{}".format(self.ident))
             self.env['AWX_ISOLATED_DATA_DIR'] = artifact_dir

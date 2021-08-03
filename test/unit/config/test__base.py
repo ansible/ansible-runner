@@ -314,3 +314,28 @@ def test_containerization_settings(tmpdir, container_runtime):
             assert '--user=' in rc.command[index]
         else:
             assert rc.command[index] == element
+
+
+@pytest.mark.parametrize(
+    'container_runtime, expected', (
+        ('docker', None),
+        ('podman', '1')
+    )
+)
+def test_containerization_unsafe_write_setting(tmpdir, container_runtime, expected):
+    with patch('ansible_runner.config._base.BaseConfig.containerized', new_callable=PropertyMock) as mock_containerized:
+        rc = BaseConfig(private_data_dir=tmpdir)
+        rc.ident = 'foo'
+        rc.cmdline_args = ['main.yaml', '-i', '/tmp/inventory']
+        rc.command = ['ansible-playbook'] + rc.cmdline_args
+        rc.process_isolation = True
+        rc.runner_mode = 'pexpect'
+        rc.process_isolation_executable=container_runtime
+        rc.container_image = 'my_container'
+        rc.container_volume_mounts=['/host1:/container1', 'host2:/container2']
+        mock_containerized.return_value = True
+        rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
+        rc._prepare_env()
+        rc._handle_command_wrap(rc.execution_mode, rc.cmdline_args)
+
+    assert rc.env.get('ANSIBLE_UNSAFE_WRITES') == expected

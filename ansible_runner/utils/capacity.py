@@ -2,16 +2,13 @@ import multiprocessing
 import resource
 
 
-def get_cpu_capacity():
+def get_cpu_count():
     # `multiprocessing` info: https://docs.python.org/3/library/multiprocessing.html
-    forkcpu = 4
-    cpu_capacity = multiprocessing.cpu_count() * forkcpu
+    cpu_capacity = multiprocessing.cpu_count()
     return cpu_capacity
 
 
-def get_mem_capacity():
+def get_mem_info():
     # `resource` info: https://docs.python.org/3/library/resource.html
-    byte_denom = 1024
-    mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss 
-    mem_capacity = mem / byte_denom
+    mem_capacity = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     return mem_capacity

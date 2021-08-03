@@ -194,9 +194,9 @@ class BaseConfig(object):
             # Special flags to convey info to entrypoint or process in container
             self.env['LAUNCHED_BY_RUNNER'] = '1'
 
-            # A bug in the fuse-overlayfs driver in RHEL < 8.5 causes errors when trying to set extended file attributes.
-            # Setting this environment variablesallows modules to take advantage of a fallback to work around
-            # this bug only when failures are encountered.
+            # A kernel bug in RHEL < 8.5 causes podman to use the fuse-overlayfs driver. This results in errors when
+            # trying to set extended file attributes. Setting this environment variables
+            # allows modules to take advantage of a fallback to work around this bug when failures are encountered.
             #
             # See the following for more information:
             #    https://github.com/ansible/ansible/pull/73282

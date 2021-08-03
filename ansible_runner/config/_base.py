@@ -196,8 +196,8 @@ class BaseConfig(object):
 
             if self.process_isolation_executable == 'podman':
                 # A kernel bug in RHEL < 8.5 causes podman to use the fuse-overlayfs driver. This results in errors when
-                # trying to set extended file attributes. Setting this environment variables
-                # allows modules to take advantage of a fallback to work around this bug when failures are encountered.
+                # trying to set extended file attributes. Setting this environment variable allows modules to take advantage
+                # of a fallback to work around this bug when failures are encountered.
                 #
                 # See the following for more information:
                 #    https://github.com/ansible/ansible/pull/73282

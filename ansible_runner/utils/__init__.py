@@ -378,10 +378,14 @@ def ensure_str(s, encoding='utf-8', errors='strict'):
     Copied from six==1.12
 
     Coerce *s* to `str`.
+
     For Python 2:
+
       - `unicode` -> encoded to `str`
       - `str` -> `str`
+
     For Python 3:
+
       - `str` -> `str`
       - `bytes` -> decoded to `str`
     """

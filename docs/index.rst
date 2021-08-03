@@ -34,7 +34,7 @@ Examples of this could include:
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    intro
@@ -45,6 +45,7 @@ Examples of this could include:
    execution_environments
    container
    remote_jobs
+   modules
 
 
 Indices and tables

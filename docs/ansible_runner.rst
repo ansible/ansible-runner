@@ -1,5 +1,5 @@
-ansible\_runner package
-=======================
+ansible_runner package
+======================
 
 Subpackages
 -----------
@@ -12,59 +12,50 @@ Subpackages
 Submodules
 ----------
 
-ansible\_runner.exceptions module
----------------------------------
+ansible_runner.exceptions module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: ansible_runner.exceptions
     :members:
     :undoc-members:
     :show-inheritance:
 
-ansible\_runner.interface module
---------------------------------
+ansible_runner.interface module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: ansible_runner.interface
     :members:
     :undoc-members:
     :show-inheritance:
 
-ansible\_runner.loader module
------------------------------
+ansible_runner.loader module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: ansible_runner.loader
     :members:
     :undoc-members:
     :show-inheritance:
 
-ansible\_runner.runner module
------------------------------
+ansible_runner.runner module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: ansible_runner.runner
     :members:
     :undoc-members:
     :show-inheritance:
 
-ansible\_runner.runner\_config module
--------------------------------------
+ansible_runner.runner\_config module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: ansible_runner.runner_config
     :members:
     :undoc-members:
     :show-inheritance:
 
-ansible\_runner.utils module
-----------------------------
+ansible_runner.utils module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: ansible_runner.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: ansible_runner
     :members:
     :undoc-members:
     :show-inheritance:

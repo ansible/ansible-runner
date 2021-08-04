@@ -34,10 +34,9 @@ import tempfile
 import atexit
 
 from contextlib import contextmanager
-from pathlib import Path
 from uuid import uuid4
 
-from yaml import safe_load
+from yaml import safe_dump, safe_load
 
 from ansible_runner import run
 from ansible_runner import output
@@ -767,17 +766,19 @@ def main(sys_args=None):
         if vargs.get('worker_info'):
             cpu = get_cpu_count()
             mem = get_mem_info()
-            if cpu or mem > 0:
-                base = Path('worker_info')
-                info_file = str(uuid4().hex)
-                jsonpath = base / info_file
-                base.mkdir(exist_ok=True)
-                info = [VERSION, cpu, mem]
-                jsonpath.write_text(json.dumps(info))
-                parser.exit(0)
+            error = []
+            if isinstance(mem, int):
+                pass
             else:
-                sys.tracebacklimit = 0
-                parser.exit(status=1, message="The worker node has no CPU or memory capacity.\n")
+                error.append(mem)
+                mem = None
+            info = {'Errors': error,
+                    'Memory Capacity': mem,
+                    'CPU Capacity': cpu,
+                    'Version': VERSION,
+                    }
+            print(safe_dump(info, default_flow_style=True))
+            parser.exit(0)
         if not vargs.get('private_data_dir'):
             temp_private_dir = tempfile.mkdtemp()
             vargs['private_data_dir'] = temp_private_dir

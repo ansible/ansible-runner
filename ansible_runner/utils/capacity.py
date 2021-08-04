@@ -1,5 +1,5 @@
 import multiprocessing
-import resource
+import re
 
 
 def get_cpu_count():
@@ -9,6 +9,13 @@ def get_cpu_count():
 
 
 def get_mem_info():
-    # `resource` info: https://docs.python.org/3/library/resource.html
-    mem_capacity = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    return mem_capacity
+    try:
+        with open('/proc/meminfo') as f:
+            mem = f.read()
+        matched = re.search(r'^MemTotal:\s+(\d+)', mem)
+        if matched:
+            mem_capacity = int(matched.groups()[0])
+        return mem_capacity
+    except FileNotFoundError:
+        error = "The /proc/meminfo file could not found, memory capacity undiscoverable."
+        return error

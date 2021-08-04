@@ -4,6 +4,7 @@ git
 openssh-clients
 rsync
 sshpass [epel]
+python37-devel [test platform:fedora]
 
 # ansible
 python38-cffi [platform:centos-8]

@@ -283,9 +283,9 @@ def test_containerization_settings(tmpdir, container_runtime):
         rc.command = ['ansible-playbook'] + rc.cmdline_args
         rc.process_isolation = True
         rc.runner_mode = 'pexpect'
-        rc.process_isolation_executable=container_runtime
+        rc.process_isolation_executable = container_runtime
         rc.container_image = 'my_container'
-        rc.container_volume_mounts=['/host1:/container1', 'host2:/container2']
+        rc.container_volume_mounts = ['/host1:/container1', 'host2:/container2']
         mock_containerized.return_value = True
         rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
         rc._prepare_env()
@@ -330,9 +330,9 @@ def test_containerization_unsafe_write_setting(tmpdir, container_runtime, expect
         rc.command = ['ansible-playbook'] + rc.cmdline_args
         rc.process_isolation = True
         rc.runner_mode = 'pexpect'
-        rc.process_isolation_executable=container_runtime
+        rc.process_isolation_executable = container_runtime
         rc.container_image = 'my_container'
-        rc.container_volume_mounts=['/host1:/container1', 'host2:/container2']
+        rc.container_volume_mounts = ['/host1:/container1', 'host2:/container2']
         mock_containerized.return_value = True
         rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
         rc._prepare_env()

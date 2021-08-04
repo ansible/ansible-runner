@@ -141,7 +141,6 @@ def test_no_dst_all_dirs(_mock_ope, _mock_isdir, path, labels):
     assert all(part.endswith('/') for part in result[1].split(':')[0:1]), explanation
 
 
-
 @patch("os.path.exists", return_value=True)
 @patch("os.path.isdir", return_value=True)
 @pytest.mark.parametrize("labels", labels, ids=id_for_label)
@@ -165,7 +164,6 @@ def test_src_dst_all_dirs(_mock_ope, _mock_isdir, src, dst, labels):
     )
     assert result == expected, explanation
     assert all(part.endswith('/') for part in result[1].split(':')[0:1]), explanation
-
 
 
 @pytest.mark.parametrize("labels", labels, ids=id_for_label)
@@ -196,7 +194,6 @@ def test_src_dst_all_files(path, labels):
     assert all(part.endswith('/') for part in result[1].split(':')[0:1]), explanation
 
 
-
 @patch("os.path.exists", return_value=True)
 @patch("os.path.isdir", return_value=True)
 @pytest.mark.parametrize("relative", (".", "..", "../.."))
@@ -224,4 +221,3 @@ def test_src_dst_all_relative_dirs(_mock_ope, _mock_isdir, src, dst, labels, rel
     )
     assert result == expected, explanation
     assert all(part.endswith('/') for part in result[1].split(':')[0:1]), explanation
-

@@ -33,7 +33,7 @@ def test_run_command(rc):
     assert exitcode == 0
     with open(os.path.join(rc.artifact_dir, 'command')) as f:
         data = json.load(f)
-        assert data.get('command') == ['sleep','1']
+        assert data.get('command') == ['sleep', '1']
         assert 'cwd' in data
         assert isinstance(data.get('env'), dict)
 
@@ -58,7 +58,7 @@ def test_run_command_with_unicode(rc):
 
 def test_run_command_finished_callback(rc):
     finished_callback = MagicMock()
-    rc.command = ['sleep','1']
+    rc.command = ['sleep', '1']
     runner = Runner(config=rc, finished_callback=finished_callback)
     status, exitcode = runner.run()
     assert status == 'successful'
@@ -69,7 +69,7 @@ def test_run_command_finished_callback(rc):
 def test_run_command_explosive_finished_callback(rc):
     def boom(*args):
         raise Exception('boom')
-    rc.command = ['sleep','1']
+    rc.command = ['sleep', '1']
     runner = Runner(config=rc, finished_callback=boom)
     with pytest.raises(Exception):
         runner.run()
@@ -78,7 +78,7 @@ def test_run_command_explosive_finished_callback(rc):
 def test_run_command_explosive_cancel_callback(rc):
     def boom(*args):
         raise Exception('boom')
-    rc.command = ['sleep','1']
+    rc.command = ['sleep', '1']
     runner = Runner(config=rc, cancel_callback=boom)
     with pytest.raises(Exception):
         runner.run()
@@ -87,7 +87,7 @@ def test_run_command_explosive_cancel_callback(rc):
 def test_run_command_cancel_callback(rc):
     def cancel(*args):
         return True
-    rc.command = ['sleep','1']
+    rc.command = ['sleep', '1']
     runner = Runner(config=rc, cancel_callback=cancel)
     status, exitcode = runner.run()
     assert status == 'canceled'
@@ -148,7 +148,7 @@ def test_run_command_long_running_children(rc):
 
 
 def test_run_command_events_missing(rc):
-    rc.command = ['sleep','1']
+    rc.command = ['sleep', '1']
     runner = Runner(config=rc)
     status, exitcode = runner.run()
     assert status == 'successful'
@@ -157,7 +157,7 @@ def test_run_command_events_missing(rc):
 
 
 def test_run_command_stdout_missing(rc):
-    rc.command = ['sleep','1']
+    rc.command = ['sleep', '1']
     runner = Runner(config=rc)
     status, exitcode = runner.run()
     assert status == 'successful'
@@ -168,7 +168,7 @@ def test_run_command_stdout_missing(rc):
 
 
 def test_run_command_no_stats(rc):
-    rc.command = ['sleep','1']
+    rc.command = ['sleep', '1']
     runner = Runner(config=rc)
     status, exitcode = runner.run()
     assert status == 'successful'
@@ -276,4 +276,3 @@ def test_set_extra_vars(rc):
     status, exitcode = runner.run()
     with open(os.path.join(rc.artifact_dir, 'stdout')) as f:
         assert 'hello there' in f.read()
-

@@ -60,7 +60,7 @@ def test_basic_events(containerized, container_runtime_available, is_pre_ansible
 
 @pytest.mark.parametrize('containerized', [True, False])
 def test_async_events(containerized, container_runtime_available, is_pre_ansible28):
-    test_basic_events(containerized, container_runtime_available, is_pre_ansible28, is_run_async=True,g_facts=True)
+    test_basic_events(containerized, container_runtime_available, is_pre_ansible28, is_run_async=True, g_facts=True)
 
 
 def test_basic_serializeable(is_pre_ansible28):

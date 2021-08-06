@@ -6,6 +6,7 @@
         - ansible-runner-build-container-image-stable-2.9
         - ansible-runner-build-container-image-stable-2.10
         - ansible-runner-build-container-image-stable-2.11
+        - ansible-tox-py38
     gate:
       jobs: *id001
     post:

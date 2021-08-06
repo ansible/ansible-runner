@@ -10,19 +10,3 @@
         - ansible-tox-py37
     gate:
       jobs: *id001
-    post:
-      jobs: &id002
-        - ansible-runner-upload-container-image:
-            vars:
-              upload_container_image_promote: false
-        - ansible-runner-upload-container-image-stable-2.9:
-            vars:
-              upload_container_image_promote: false
-        - ansible-runner-upload-container-image-stable-2.10:
-            vars:
-              upload_container_image_promote: false
-        - ansible-runner-upload-container-image-stable-2.11:
-            vars:
-              upload_container_image_promote: false
-    periodic:
-      jobs: *id002

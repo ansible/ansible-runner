@@ -30,8 +30,8 @@
             - github.com/ansible/ansible
           tags:
             # If zuul.tag is defined: [ '3', '3.19', '3.19.0' ].  Only works for 3-component tags.
-            # Otherwise: ['devel']
-            "{{ zuul.tag is defined | ternary([zuul.get('tag', '').split('.')[0], '.'.join(zuul.get('tag', '').split('.')[:2]), zuul.get('tag', '')], ['devel']) }}"
+            # Otherwise: ['latest']
+            "{{ zuul.tag is defined | ternary([zuul.get('tag', '').split('.')[0], '.'.join(zuul.get('tag', '').split('.')[:2]), zuul.get('tag', '')], ['latest']) }}"
       docker_images: *container_images
 
 - job:
@@ -76,7 +76,7 @@
           repository: quay.io/ansible/ansible-runner
           siblings:
             - github.com/ansible/ansible
-          tags: ['stable-2.10-devel']
+          tags: ['stable-2.10-latest']
       docker_images: *container_images_stable_2_10
 
 - job:
@@ -122,9 +122,7 @@
           repository: quay.io/ansible/ansible-runner
           siblings:
             - github.com/ansible/ansible
-          tags:
-            - stable-2.11-devel
-            - latest
+          tags: ['stable-2.11-latest']
       docker_images: *container_images_stable_2_11
 
 - job:
@@ -170,7 +168,7 @@
           repository: quay.io/ansible/ansible-runner
           siblings:
             - github.com/ansible/ansible
-          tags: ['stable-2.9-devel']
+          tags: ['stable-2.9-latest']
       docker_images: *container_images_stable_2_9
 
 - job:

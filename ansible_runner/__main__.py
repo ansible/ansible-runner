@@ -854,6 +854,7 @@ def main(sys_args=None):
                                    resource_profiling_memory_poll_interval=vargs.get('resource_profiling_memory_poll_interval'),
                                    resource_profiling_pid_poll_interval=vargs.get('resource_profiling_pid_poll_interval'),
                                    resource_profiling_results_dir=vargs.get('resource_profiling_results_dir'),
+                                   cmdline=vargs.get('cmdline'),
                                    limit=vargs.get('limit'),
                                    streamer=streamer
                                    )

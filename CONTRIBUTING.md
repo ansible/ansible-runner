@@ -85,11 +85,11 @@ upstream	https://github.com/ansible/ansible-runner.git (push)
 
     Or a range of commits
 
-        git cherry-pick [start revision]..[end revision]
+        git cherry-pick -x [start revision]..[end revision]
 
     Alternatively, squash all the commits in a merge commit into a singe commit for the backport.
 
-        git cherry-pick [start revision]..[end revision] -m 1
+        git cherry-pick -x [start revision]..[end revision] -m 1
 
 1. Resolve any merge conflicts and push to your fork.
 

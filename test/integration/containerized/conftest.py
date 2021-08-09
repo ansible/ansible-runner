@@ -45,7 +45,7 @@ class CompletedProcessProxy(object):
 def cli(request):
     def run(args, *a, **kw):
         if not kw.pop('bare', None):
-            args = ['ansible-runner',] + args
+            args = ['ansible-runner'] + args
         kw['encoding'] = 'utf-8'
         if 'check' not in kw:
             # By default we want to fail if a command fails to run. Tests that

@@ -14,4 +14,3 @@ plugins = {
     for entry_point
     in pkg_resources.iter_entry_points('ansible_runner.plugins')
 }
-

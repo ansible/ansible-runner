@@ -59,7 +59,6 @@ class AnsibleCfgConfig(BaseConfig):
 
     _supported_actions = ('list', 'dump', 'view')
 
-
     def prepare_ansible_config_command(self, action, config_file=None, only_changed=None):
 
         if action not in AnsibleCfgConfig._supported_actions:

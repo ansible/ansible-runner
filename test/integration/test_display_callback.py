@@ -33,7 +33,6 @@ def executor(tmpdir, request, is_pre_ansible28):
     else:
         inventory = 'localhost ansible_connection=local'
 
-
     r = init_runner(
         private_data_dir=private_data_dir,
         inventory=inventory,
@@ -81,7 +80,6 @@ def test_callback_plugin_receives_events(executor, event, playbook, envvars):
     executor.run()
     assert len(list(executor.events))
     assert event in [task['event'] for task in executor.events]
-
 
 
 @pytest.mark.parametrize('playbook', [

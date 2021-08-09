@@ -69,7 +69,7 @@ def test_cmdline_role_defaults():
     """Run a role directly with all command line defaults
     """
     private_data_dir = tempfile.mkdtemp()
-    options = ['-r' , 'test']
+    options = ['-r', 'test']
 
     playbook = [{'hosts': 'all', 'gather_facts': True, 'roles': [{'role': 'test'}]}]
 
@@ -86,7 +86,7 @@ def test_cmdline_role_skip_facts():
     """Run a role directly and set --role-skip-facts option
     """
     private_data_dir = tempfile.mkdtemp()
-    options = ['-r' , 'test', '--role-skip-facts']
+    options = ['-r', 'test', '--role-skip-facts']
 
     playbook = [{'hosts': 'all', 'gather_facts': False, 'roles': [{'role': 'test'}]}]
 
@@ -103,7 +103,7 @@ def test_cmdline_role_inventory():
     """Run a role directly and set --inventory option
     """
     private_data_dir = tempfile.mkdtemp()
-    options = ['-r' , 'test', '--inventory hosts']
+    options = ['-r', 'test', '--inventory hosts']
 
     playbook = [{'hosts': 'all', 'gather_facts': False, 'roles': [{'role': 'test'}]}]
 
@@ -121,7 +121,7 @@ def test_cmdline_role_vars():
     """Run a role directly and set --role-vars option
     """
     private_data_dir = tempfile.mkdtemp()
-    options = ['-r' , 'test', '--role-vars "foo=bar"']
+    options = ['-r', 'test', '--role-vars "foo=bar"']
 
     playbook = [{
         'hosts': 'all',
@@ -145,7 +145,7 @@ def test_cmdline_roles_path():
     """Run a role directly and set --roles-path option
     """
     private_data_dir = tempfile.mkdtemp()
-    options = ['-r' , 'test', '--roles-path /tmp/roles']
+    options = ['-r', 'test', '--roles-path /tmp/roles']
 
     playbook = [{'hosts': 'all', 'gather_facts': False, 'roles': [{'role': 'test'}]}]
 
@@ -242,7 +242,7 @@ def test_cmdline_cmdline_override(is_pre_ansible28):
 
         # privateip: removed --hosts command line option from test beause it is
         # not a supported combination of cli options
-        #cmdline('run', private_data_dir, '-p', playbook, '--hosts', 'all', '--cmdline', '-e foo=bar')
+        # cmdline('run', private_data_dir, '-p', playbook, '--hosts', 'all', '--cmdline', '-e foo=bar')
         cmdline('run', private_data_dir, '-p', playbook, '--cmdline', '-e foo=bar')
         assert main() == 0
     finally:

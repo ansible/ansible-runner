@@ -117,7 +117,7 @@ def test_get_contents_ok(loader):
         handler.write(b"test string")
         handler.seek(0)
 
-        mock_open.return_value.__enter__.return_value  = handler
+        mock_open.return_value.__enter__.return_value = handler
 
         res = loader.get_contents('/tmp')
         assert res == b'test string'

@@ -212,7 +212,7 @@ def dump_artifacts(kwargs):
             kwargs.pop(key)
 
 
-def collect_new_events(event_path,old_events):
+def collect_new_events(event_path, old_events):
     '''
     Collect new events for the 'events' generator property
     '''
@@ -220,7 +220,7 @@ def collect_new_events(event_path,old_events):
     dir_events_actual = []
     for each_file in dir_events:
         if re.match("^[0-9]+-.+json$", each_file):
-            if '-partial' not in each_file and each_file not in old_events.keys() :
+            if '-partial' not in each_file and each_file not in old_events.keys():
                 dir_events_actual.append(each_file)
     dir_events_actual.sort(key=lambda filenm: int(filenm.split("-", 1)[0]))
     for event_file in dir_events_actual:

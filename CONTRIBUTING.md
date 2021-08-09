@@ -44,11 +44,11 @@ To reactivate the virtual environment:
 
 ## Backporting commits
 
-For the purpose of these instructions, it is assumed a remote named `upstream` points to this repository and a remote named `fork` points at your fork. We want to backport commits from `devel` to the `release_2.0` branch.
+For the purpose of these instructions, it is assumed a remote named `upstream` points to this repository and a remote named `origin` points at your fork. We want to backport commits from `devel` to the `release_2.0` branch.
 
 ```
-fork	git@github.com:me/ansible-runner.git (fetch)
-fork	git@github.com:me/ansible-runner.git (push)
+origin	git@github.com:me/ansible-runner.git (fetch)
+origin	git@github.com:me/ansible-runner.git (push)
 upstream	https://github.com/ansible/ansible-runner.git (fetch)
 upstream	https://github.com/ansible/ansible-runner.git (push)
 ```
@@ -63,11 +63,11 @@ upstream	https://github.com/ansible/ansible-runner.git (push)
 
     **Note:** It is possible to pass multiple branches to `cherry_picker`.
 
-        cherry_picker --pr-remote fork [revision] release_2.0
+        cherry_picker --pr-remote origin [revision] release_2.0
 
     **Note:** `cherry_picker` does not currently support backporting merge commits. In this case, use a range of commits before the merge commit.
 
-        cherry_picker --pr-remote fork [start revision]..[end revision] release_2.0
+        cherry_picker --pr-remote origin [start revision]..[end revision] release_2.0
 
 
 ### Manually Backporting
@@ -93,6 +93,6 @@ upstream	https://github.com/ansible/ansible-runner.git (push)
 
 1. Resolve any merge conflicts and push to your fork.
 
-        git push -u fork my-backport-branch
+        git push -u origin my-backport-branch
 
 1. Click the displayed URL to finish the backport process. Make sure the correct branch is selected for the pull request.

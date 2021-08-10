@@ -27,3 +27,6 @@ python38-devel [compile platform:centos-8 platform:rhel-8]
 krb5-devel [compile platform:centos-8 platform:rhel-8]
 krb5-workstation [platform:centos-8 platform:rhel-8]
 python38-requests [platform:centos-8 platform:rhel-8]
+
+# container environments
+docker.io [test platform:ubuntu-bionic]

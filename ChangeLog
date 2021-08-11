@@ -1,0 +1,962 @@
+CHANGES
+=======
+
+* Add 🍒⛏
+* Ignore W503 in favor of W504
+* Revert "Update metadatafields to use underscores"
+* Update metadatafields to use underscores
+* Fix PEP8 errors and remove rule ignore settings
+* Update run\_command() examples in docs
+* Fix date in changelog
+* fix(makefile): rename tag to emulate zuul build
+* fix(make): removed unused arg and fixing tools/req/branch
+* fix: remove VOLUME directive from Dockerfile
+* Add py38 job
+* Rename images from devel to latest
+* [release\_2.0] Correct RHEL version in comment. (cherry picked from commit 27a9aafd74b236936c9b7f175e29cc5828ba3213)
+* Space it out
+* Add test
+* Update comment
+* Only enable the fallback when using podman
+* Update comment more accurately describe the problem
+* Remove usage of --userns=keep-id
+
+2.0.1
+-----
+
+* Fix pypi description formatting
+* Fix unittests for new private\_data\_dir handling
+* Close a race condition with temporary files
+* When creating a private\_data\_dir in a world writable location, use mkdtemp()
+* Also change IRC server here
+* recheck
+* Re-order CLI args to make examples work again
+* Update the irc network
+* Bump timeout on container build jobs
+* Add missing CLI options to start and run commands
+
+2.0.0
+-----
+
+* Write fully populated envfile to pass to podman
+
+2.0.0rc3
+--------
+
+* Do not attempt to chmod the special pre-created dirs during unstreaming
+
+2.0.0rc2
+--------
+
+* Expand the transmit symlink test
+* Directories that are symlinks need to be treated as if they are a symlink file
+
+2.0.0rc1
+--------
+
+* fix unit tests
+* If private\_data\_dir not passed default to temp location
+* Fix, test
+
+2.0.0b1
+-------
+
+* Raise conditional execption
+* Riase execption if not able to read partial event data
+* Remove cachito files
+* Add utils/\* to data-files
+* fix unit test failures
+* Fix private\_data\_dir and artifact\_dir already exists issue
+* fix review comment
+* fix review comments with typo
+* Return error code for run\_command interface
+* Fix container image builds
+* Add the latest tag to 2.11 image
+
+2.0.0a5
+-------
+
+* Remove version from docs/conf.py
+* PR feedback
+* Tell readthedocs to install PBR
+* Remove remaining traces of Poetry
+* Drop Poetry in favor of PBR
+* Add transmit stream test for file permissions and rewriting
+* Improve logic around extracting symlinks from zip archives
+* Add test coverage for transmission symlink preservation
+* Preserve symlinks in streaming interface
+* Bump version for 2.0 alpha 4
+* fix doc review comment
+* fix wrong rebase
+* set timeout for job\_timeout instead of pexpect\_timeout
+* Add timeout parameter in the interface
+
+2.0.0.alpha3
+------------
+
+* fix test failures
+* update subprocess timeout logic
+* Update runner config to use common code
+* Purging playbook and ad-hoc commands
+* add Z label for playbook and inventory dir mount
+* check stdout and stderr subprocess response for None
+* update workdir volume mount
+* Update runner config to use common code
+* Removing adhoc and playbook from docs
+* Purging playbook and ad-hoc commands
+* fix unit test failures
+* fix incorrect var, move \_add\_trailing\_slash\_if\_neeeded to class level
+* fix duplicate volume mounts for containers, simplify conditional
+* Added export of output file options for inventory interface
+* cleanup data structures that caused assertions to fail in unit tests; because of ansible deprecation warnings
+* added 1.4.7 and 2.0.0a3 changes to changelogs and to rpm packaging docs
+* bumped ansible-runner version to 2.0.0a3
+* Support dumb-init from an RPM
+* Add finduilts to bindep compile profile
+* retired try/except block in favour of a if/else conditional that raises an Exception when an invalid symlink is surfaced
+* surrounded ZipFile write() method in try/except block which raises a custom error when an invalid symlink is detected
+* fix review comments
+* update path if process\_isolation is enabled
+* fix testcase failure
+* Fix in doc config and absolute executable path
+* Add credssp support for windows connection plugin
+* Add kerberos support for windows connection
+* Partial revert "Don't use wheels for ansible-runner image"
+* Don't use wheels for ansible-runner image
+* Add toml requirements for ansible-runner container
+* Add ncclient / pypsrp / pywinrm python dependencies
+* Add upstream cachito requirement files
+* Fix ZUUL\_SIBLINGS and ANSIBLE\_BRANCH ARGs
+
+2.0.0.alpha2
+------------
+
+* Clean up Makefile
+* Fix broken image build
+* Fix test
+* Fix bug in base64io
+* Fix linter
+* Fix chunking logic
+* Avoid loading zip data into memory
+* Update python\_interface.rst
+* Bump version for 2.0.0a2 release
+* Add missing required-projects to devel upload image
+* Prepare for ansible stable-2.11 branch
+* Add missing ARG ANSIBLE\_BRANCH
+* Add missing siblings for ansible-runner devel image
+* Make sure we import from non-deprecated module
+* remove duplicate lines
+* add --tty option is value of input\_fd is passed
+* remove print statement
+
+2.0.0.alpha1
+------------
+
+* Remove ansible-core-image support
+* Bump to 2.0.0a1
+* Remove demo directory from container image
+* remove -tty option for subprocess runner mode
+* Remove ubi8 images from ansible-runner
+* update unit test case to remove -j check
+* remove json default for ansible-doc
+* More testcase fixes
+* fix test failures
+* add TODO comment in code
+* fix review comments and add testcases
+* Address review comments
+* address review comments
+* Add ansible-runner for stable-2.11
+* add json\_mode to base config
+* Show Ansible version when building an EE
+* Update runner to run ansible command line utilities
+* revert ansible-base pyproject.toml req
+* Add ansible-runner-ubi8-container-image
+* Refactor image build jobs
+* Write event files atomically
+* Update entrypoint script
+* Update entrypoint script; this change is not fully finished yet
+* Set created time for verbose events
+* Base64 encode / decode zip data that we send through the streaming interface
+* Stop swallowing errors when unpacking zip data
+* Allow for work to continue even if a bad utf-8 byte sequence is hit
+* Create PYTHON\_BUILDER\_IMAGE build-arg
+* Build ansible-runner stable-2.10 images
+* Revert "Move ARGs to top of Dockerfile to make it build"
+* Add missing required-projects for image build jobs
+* Allow other projects to run container build jobs
+* Socket test fixups to get to full functionality
+* Attempt to deal gracefully with errors in streamed message parsing
+* Add a couple of tests triggering the streaming json parse error
+* Add worker loop, not totally needed
+* WIP test socket implementation of remote job contract
+* Move ARGs to top of Dockerfile to make it build
+* Ensure ssh key fifo is always cleaned up
+* Add option for only streaming kwargs
+* Minor docs addition for worker command
+* Fix test conditional, should be passing now
+* Parent to quay.io/ansible/ansible-core for Dockerfile
+* Add test for adhoc via transmit command
+* Update intro.rst
+* Fix passwords regex in docs
+* Install python38 distro dependencies when possible
+* Add libyaml-devel dependency for ansible / ansible-test
+* python3.8 container image
+* Add back glibc-langpack-en into ansible-runner image
+* Update old --via-receptor docs to new streaming system
+* Fix typo in ansible-upload-container-image job
+* Create ansible-runner:stable-2.9-devel images
+* Fix ansible-runner-upload-container-image job
+* Switch to multi-stage builds using ansible/python-builder
+* Periodically rebuild ansible-runner container image
+* Avoid using the installed mock package
+* Report correct cwd for containerized runs in config
+* Prevent curses dialog
+* Fix debian packaging
+* Start to publish images to zuul-registry
+* Remove ansible-buildset-registry job
+* Don't try to promote ansible-runner image
+* Add zuul container CI jobs
+* Replace master reference with devel
+* Check for the case where garbage data has been streamed as a zipfile
+* Fix linter
+* Properly reconstruct paths in worker phase
+* Truncate the full paths used by dump\_artifacts in the streaming case
+* Test transmitting with a non-existant private\_data\_dir
+* Remove python3-devel from Dockerfile as psutil is what brought it in
+* Remove usage of psutil
+* Factor out a new unstream\_dir utility function
+* Preserve permissions when unzipping artifacts
+* Preserve permissions when unzipping worker payload
+* Do not mangle roles\_path when it is a string
+* Handle scenarios where None values are passed via python interface
+* Protect RunnerConfig from the optional \_input and \_output file params
+* Fix editable installations via \`pip install -e .\`
+* Get test running to finish
+* Start on integration test for transmit worker process cmds
+* Fix typo
+* Do not transmit the private\_data\_dir to the worker
+* Add the container command line flags to the transmit subcommand
+* Add an optional --private-data-dir flag to the worker subcommand
+* Make sure that running the worker can dump tracebacks
+* Make Processor respect the 'quiet' parameter
+* Fix a few issues
+* Add a new MockConfig for streaming.Processor
+* Pass the original job kwargs as a message
+* Make sure that the streamer kwarg is not passed on to RunnerConfig
+* Fix some typos on documentation
+* Fix up permissions when running under Docker
+* Strip the creation of a RunnerConfig from Transmitter
+* Factor out the directory zipping and make the transmitter use it
+* Get the worker phase hooked up
+* Decompose into a 3-phase streaming process
+* Updated to provide and read a specified length for the artifacts blob
+* Switch to not base64 encoding the artifacts files
+* Add command line arguments for the controller and worker streams
+* Hook up the artifact callback properly
+* Successfully runs
+* Encode the artifacts zip file as base64
+* Deal with bytes vs str
+* Hook in the methods from StreamWorker when a control output file is passed
+* Chop out the functionality using the old Python-based Receptor
+* Add new callback functions to stream output and artifacts
+* Use a full python object for cancel to allow for deadbands and such
+* Skip test if pre 2.8
+* yamllint fixes
+* Fix bug where some types were not passed along to stats property
+* make stats test actually produce status
+* Remove top-level CLI args that dont make sense
+* Refactor image\_matrix target and add publish target
+* Kill-on-cancel for containers launched from programatic interface
+* Skip 2.8
+* skip tests in py2
+* update fixtures
+* make test faster
+* [utils.py] Fix currupt json stdout with large events
+* [test\_display\_callback.py] Add verbose output test
+* [test\_display\_callback.py] Add bad playbook path test
+* Removing more serial markers, consolidate artifacts cleanup
+* Also tag one image without the compound tag
+* Implement multi-stage process for building images
+* Add tests for expected inventory behavior
+* Make test pass on Mac and silence warnings from pytest
+* update test
+* Add another test for relative path
+* split folder mounting logic for conventional and compat cases
+* Do not set project folder workdir when it does not exist
+* Fix a couple of typos in the command line help text
+* mount full private\_data\_dir
+* Fix permissions error when host uid doesnt match container user id
+* Unskip tests
+* Revert "Simplify by mounting the private\_data\_dir"
+* handle automounts and ENV vars in a more generic way
+* Patch up comments for env file
+* Use a file in artifacts to enumerate podman env var allow list
+* Revert test unskipping for now
+* update test
+* Do not set callback in entrypoint, so ad hoc commands work
+* Revert test unskipping because permission issue persists in some podman specific way
+* Switch to newer quay.io image and make corresponding updates
+* Switch to newer quay.io image and make corresponding updates
+* Simplify by mounting the private\_data\_dir
+* volume mount all folders, only create artifacts
+* Make roles work in AWX
+* Handle fact cache location in container
+* yamllint fix
+* Somewhat more clean test using action plugin
+* Fix race condition
+* Accept user envvars and pass into container
+* Skip tests that need container runtime when there is none
+* Get integration tests to run content instead of returning help text
+* Avoid trailing colon in callback plugins
+* Use fedora as base image
+* Allow the Z notation in user volume mounts
+* Actually fix permissions across rootless podman / docker
+* Fix permission denied error when running under docker
+* Add bindep to container image
+* Update \_\_main\_\_.py
+* Add poetry.lock
+* Install runner devel in image
+* Enable generic options on main parser
+* Fix tests
+* only shutil.rmtree on ./ping if it exists in test\_main.py
+* make yamllint happy
+* make linters happy
+* Only set callback when launching container from runner
+* Work out some kinks found when using base image for ansible-builder
+* remove import q used for debugging
+* Update Dockerfile
+* Update ansible\_runner/runner\_config.py
+* don't attempt arithmetic operations on str types for bookkeeping
+* make the linter happy
+* change the ssh home mount to be correct
+* add basic integraation tests for cli execenv
+* Avoid mapping volumes over volumes
+* Fix image builds on EL8
+* add ref to exec env doc to standalone page
+* allow for any order of args passed to ansible/ansible-playbook for adhoc/playbook subcommand
+* WIP - allowing playbook arg in any order
+* switch to mkdtemp to avoid automatic dir cleanup
+* don't mount private\_data\_dir in container twice (adhoc)
+* use tempdir for inferred private\_data\_dir
+* redirect all chown output in entrypoint.sh to /dev/null ... it gives a benign error on RHEL8
+* Fix ownership of project dir with rootless podman
+* remove receptor group from playbook subcommand
+* fix some spacing in ansible\_runner/runner\_config.py
+* add some docs notes for exec envs at the cli
+* add some FIXMEs so I remember to fix them tomorrow because I need to get off the computer right now
+* first pass at ExecEnv docs
+* Sort out rootless podman volume mount kinks
+* Prevent confirmation prompt when removing /tmp/passwd
+* adhoc/playbook cli arg handling for container options
+* remove '--pid=host' container arg, not needed
+* [WIP] adhoc/playbook + exec\_env w/ new argparse
+* workaround ansibl27 interpreter discovery
+* Skip tests incompatible with 2.7 and earlier
+* fix ansible-base failure
+* fix py36 and py37 tox envs
+* first stab, some test failures
+* BuildRequires: python3-devel
+* Pass HOME through tox runs
+* Revert "Prevent error due to podman bug when running tests"
+* Prevent error due to podman bug when running tests
+* Skip tox install
+* fix test\_basic\_events
+* Add knob for container engine in Makefile
+* Get remaining containerized tests passing
+* Get a couple more containerized tests passing
+* don't chmod dir for containerized test
+* run containerized cli tests serially
+* tox requires ansible-base
+* callback\_dir cannot be changed at runner-level for containers
+* use mocks instead of modifying os.environ
+* fix bwrap tests
+* fix test\_containerization\_settings
+* Fix issue where our callback plugin wasnt being used
+* Install ansible-base from source, drop python alternative
+* show env in debug output
+* make podman default process isolation exec
+* flake8 clean-up
+* remove awx files from setup.cfg
+* show full container invocation in debug output
+* fix test typo
+* update .gitignore
+* Remove unwanted setting of callback plugin in base image
+* Set correct stdout callback location for containerized jobs
+* ensure container engine present
+* tweak options
+* Always explicity set inventory when running in EE
+* switch to current user when using docker
+* tweak options
+* refactor process isolation / container options
+* missed a version string to update
+* rev to 2.0.0. in pyproject
+* move docs to intro.rst
+* drop poetry from .gitignore
+* continue rounding out containerization options
+* container docs
+* Take image tag as a setting
+* Add RunnerConfig args for containerized execution
+* containerization tests
+* wip add some tests for running w/ containers
+* WIP: ability to run jobs in containers
+* test\_basic\_events should run serially
+* Do not install ansible content distribution in base image
+* drop py2 target
+* devel is future 2.x
+* Run test\_password\_prompt serially
+* another couple non-serial safe tests
+* add artifacts dir made by tests to gitignore
+* make tests that use shared dirs play nice
+* add test target to .PHONY targets
+* Make tests able to run w xdist
+* doc run event\_handler return value
+* doc Runner.event\_handler return value
+* [Trivial] Fix typo in command help
+* Add a pypi badge, because why not?
+* switch from pipenv to poetry
+* Add config for pre-commit framework (see http://pre-commit.com)
+* Fix flake8 issues
+* Fix link target and add Receptor docs to index TOC
+* Use zlib compression and allow >4G files
+* Switch to zipfile instead of tarfile, because zipfile has built-in path traversal exploit protection
+* Add basic receptor docs
+* Accept via\_receptor as a parameter to run()
+* Move remote run\_options list to a variable instead of inline
+* Use a try-except block for tmpdir cleanup, and avoid verbosely declaring a class
+* Fix flake8 issues
+* Don't import Receptor plugin on python 2
+* Gracefully handle Receptor not being installed
+* Ignore .env and .idea
+* Allow running jobs via Receptor
+* Serialize python objects before adding them to extra\_vars\_list
+* type in intro.rst
+
+1.4.6
+-----
+
+* bump version to 1.4.6
+* fix a bug that breaks the callback plugin in older versions of ansible
+* Packaging: Add Requires python3 six
+
+1.4.5
+-----
+
+* Mention runner start/end/duration times in changelog
+* Updating for 1.4.5 release
+* Silence new Ansible devel warning
+* fix: move creating logic of job\_events folder
+* update unit tests for extra\_vars fix
+* fix: allow extra\_vars to have a different type than string
+* Pull correct version of base image
+* Base docker image on centos:8
+* Fix bug with --process\_isolation\_\*\_paths on CLI
+* Packaging: Use rpm templating rather than ansible tempalting
+* RPM: Ensure python-ansible-runner upgrade along side ansible-runner
+* Increase job\_timeout in tests
+* Annotate all runner\_on\_\* events with their start/stop/duration times
+* Only cap zipp on python2.7
+* Correctly silence warnings, make tests more robust
+* yamllint: Make this repo yamllintable
+* Make sure we install sshpass into the ssh container image
+* Prepare for centos-8 testing
+* Update uri params
+
+1.4.4
+-----
+
+* Bumping version and changelog for 1.4.4 release
+* Remove the use of ensure\_binary
+* EL8 Packaging
+
+1.4.3
+-----
+
+* Bump version and changelog for 1.4.3 release
+* Revert accidental indentation change from ac63349d0
+* Pass "die-with-parent" option to bwrap
+* Retain variable name for class method
+* Resolve tests
+* Remove PID file after terminating daemon
+* Fix the formatting I broke
+* Change sample directory tree to agree with docs and current codebase
+* Implementing ssh\_key parameter for RunnerConfig
+* always forcibly close the pexpect pty
+* Fix unicode problems for Python 2.7
+
+1.4.2
+-----
+
+* Spec file fixes
+* revert recent ansible-runner --version change
+
+1.4.1
+-----
+
+* Bump version for 1.4.1
+* ansible\_runner: updated new\_args.extend to os.path.realpath()
+* allow ANSIBLE\_HOST\_KEY\_CHECKING to be configured
+
+1.4.0
+-----
+
+* Specfile and Dockerfile fixes
+* Version bump and changelog for 1.4.0 release
+* Further doc updates for resource profiling
+* Updates to profiling data tests
+* Cherry-picking tests from previous perf stats work
+* Add (more) settings for resource profiling
+* Enable resource profiling for playbook runs
+* Add settings for resource profiling
+* Update docs for performance data collection
+* Build py3 based packages on EL 7.7+
+* Allow limiting the ansible event datastructure
+* Refactor Dockerfile
+* fix test case that wasn't rebased properly
+* updates test cases to clean up left behind files
+* Cap zipp<0.6.0 for tox dependency
+* removed invalid entries in gitignore
+* updates to Makefile and .gitignore
+* fixes use of --artifact-dir optional argument
+* fixes the output from print\_common\_usage()
+* fix minor typo in argument group description
+* adds additional visual updates to cli
+* update integration tests to defend use of --hosts
+* fix up test cases
+* return user error in some situations from cli
+* Alter encoder to share structure with Ansible core
+* process datetime objects too
+* Duplicate JSON encoder class locally
+* Use Ansible encoder for dumping event data
+* Update global env in a cleaner way when dealing with unicode values
+* Fix up mock open test
+* Rework the environment variable loading system
+* Fix a unicode issue involving environment vars
+* Adding test for unicode environment
+* Fix event generation on run\_async
+* Fix lint violation
+* Keep the callback provided in the environment variable
+* retry cleanup
+* release underlying fd when asked
+* Fix plugin unsafe prompt parameter list
+* Add debian install documentation
+* extravars in runner\_config could be file
+* Cleanup process isolation directory at Runner object shutdown
+* Support empty inventories
+* Upgrade tox to latest version
+* Updating tests for Ansible 2.8
+* Add back support for supplement ansible argument
+* Add changed count to stats
+* IRC: #ansible-runner
+* README.md Direct discussion to AWX
+* Use the correct python executable for tests
+* Add script that writes test playbook inputs to files
+
+1.3.4
+-----
+
+* Move integration data folder, add new test
+* make class \_\_name\_\_ match Ansible expectation
+* Add missing lockfile RPM dependency
+* Updating for 1.3.4 release
+* Adopt modified upstream packaging
+* bundle six.ensure\_str to avoid pinning to a new six version
+* Fix an issue with missing options
+* port old callback tests to integration folder
+* Fix missing toplevel host events docs issue
+
+1.3.3
+-----
+
+* Updating for 1.3.3 release
+* properly support env vars names that contain unicode
+* fix a unicode bug in env/cmdline in py2
+* precreate the job\_events artifact dir in the event handler
+* Fix platform-specific test fail, cleanup error
+* Revert "fix a bug in handling env/cmdline that contains unicode"
+* fix a bug in handling env/cmdline that contains unicode
+* save stderr to daemon.log when ansible-runner start exits prematurely
+* fix a py2 unicode handling bug in artifacts/command serialization
+* Fix up some dev tool dependencies and fix up child handle close
+* Updating development dependencies
+* Fix up timeout and cancel tests to be less flaky
+* Rename lint to linters for tox.ini
+* Add bindep.txt file for zuul jobs
+* Use command that will wait longer to trigger the timeout tests
+
+1.3.2
+-----
+
+* Updating for 1.3.2 release
+* py2 string compat
+* Port Tower changes to stream verbose events
+* properly handle env/envvars that contain unicode characters
+* fail more gracefully when ansible-playbook and bwrap aren't in PATH
+* Add ability to sign Debian packages
+* Fix extra\_vars parsing in RunnerConfig
+* remove process isolation temp dirs when runner exits
+* Drop the env vars unredacted into the config artifact file
+* Fix the problem where the job\_env json dump was getting bytes instead of str
+* Also update to capture the env vars
+* Update the command artifact to include the cwd
+* Capture the command being executed to an artifact file
+* Add support for forks and envvars at the module level
+
+1.3.1
+-----
+
+* Updating for release 1.3.1
+* fix a bug that causes ansible-runner to crash w/ playbooks w/ unicode
+* set safer default permissions when writing job events
+* set safer default permissions when using os.makedirs
+* set safer default permissions for utils.dump\_artifact
+* Updates: add git package
+* Adding some docs for facts
+* Add signing to deb builds
+
+1.3.0
+-----
+
+* Bumping version to 1.3.0 release
+* Fix --rotate-artifacts
+* Spelling fix
+* clean up old Tower/AWX comments
+* fix handling of serial strategy
+* awx backport
+* add process isolation to settings file interface
+* Switch back to building only a Python 2 package
+* Update the Debian/Ubuntu package description
+* Fix event reassembly not processing parent\_uuid logic
+* Bump the release version number
+* Prune down the system packages installed into the build container
+* Build only a Python 3 package
+* add runner config to status\_handler callback
+* Use Make macros that can be overridden to run debuild
+* Switch to building with debuild
+* Add a Recommends line for ansible >= 2.1
+* Override the version of python-pexpect that we depend upon
+* Made the Python 2 and Python 3 packages conflict with each other
+* Update the Build-Depends to include the things needed to run tests
+* Disable the build of the (probably broken) doc package
+* Remove an unused Make macro variable
+* Remove the apt-get command from the Makefile
+* Initial efforts to get Debian/Ubuntu packaging
+* add --limit arg to cli (Fixes #217)
+* hide, show, ro all use realpath so should chdir
+* flake8
+* Add new playbook stats fields (ignored, rescued)
+* rename binary\_wrap to execution\_mode
+* update unit tests for new binary wrap
+* fix test to run assertion
+* fix project\_dir + isolation + ssh agent
+* Add a setting to prevent directory isolation cleanup
+* Pass project\_dir to RunnerConfig initialization
+* Fix copy\_tree usage for symlink behavior
+* Update docs to include directory isolation details
+* Implement directory isolation during Runner ansible execution
+* Converts a relative path in artifact\_dir to an absolute one
+* fix a bug in the display of playbooks using serial or free strategy
+* fix verbose events
+* Fix up and expand inventory inputs
+* Fix extravar loader behavior
+* Fix deprecation warnings for collections.abc on py3
+* ensure verbose events get a uuid
+* correct handle ansible >= 2.5 notify event
+* close stdout handler
+* respect ansible display\_args\_to\_stdout setting
+* expose utility functions
+* Adds jsonfile fact caching
+* fix bug in undocumented args file
+* allow PYTHONPATH to be overwritten
+* rm ansible requirement for rpm
+* Fixes test\_runner\_config::test\_process\_isolation\_settings for mac
+* Add --tags and --skip-tags support
+
+1.2.0
+-----
+
+* Updating changelog and versions for 1.2.0 release
+* issue #173
+* issue #173
+* Update utils.py
+* add missing path debug, venv => ro\_paths, docs
+* add process isolation support
+* FIX: use self.status\_callback for "running"
+* Create CODE\_OF\_CONDUCT.md
+* Fix up runner\_on\_start and add some test coverage for events
+* Fix initialization race in awx\_display\_callback (#168)
+* Adding support for runner\_on\_start
+* Remove bubblewrap from RPM spec file
+* unify data passed to status\_handler
+
+1.1.2
+-----
+
+* Add support for noarch RPMs
+* Improving coverage for ansible\_runner/runner.py
+* Changes and updates for 1.1.2 release
+* Changes role-path to be an absolute path in integration test
+* Rework some role integration paths
+* Fix output buffering by forcing a flush() on write() for stdout
+* Actually pass role path selection as part of main invocation
+* Adds return code checks to integration tests
+* Add a manifest file to include license and readme
+* Updating to use templated zuul base config for tox run
+* Ability to consume other data types for rolevars
+* add missing handling of status\_handler-parameter
+* add two blank lines so flake8 is happy
+* use isinstance instead of type() for typecheck
+* add unit test, fix self.extra\_vars type validation
+* handle extravars passed to RunnerConfig via interface
+* Fix an issue where the ssh sock path could be too long
+
+1.1.1
+-----
+
+* Bumping other release versions for 1.1.1
+* Bumping for 1.1.1 release
+* Removes pycrypto from the rpm spec template
+* Simplify event callback handler
+* Add/update tests to verify callback behavior
+* Adds ansible to tox testenv
+* Moves test\_password\_prompt to integration tests
+* Adds a working --inventory option
+* Refactor dump\_artifacts to reduce code complexity
+* Add localhost inventory to prevent unreachable errors
+* Use temp dir for all tests in test\_main
+* flake8
+* Change decorator to contextmanager
+* Fixes tests for main function change
+* Removing unnused code
+* Increasing code coverage
+* Add tests for main
+* Allow the main entrypoint to be testable
+* Fix str bytes issue for python3
+* Handle case where child processes are gone
+* Fix unit tests for python2.7
+* flake8
+* Add runner ident to event data structure
+* Fix an issue where PYTHONPATH and callback\_dir can't be set together
+* Roll back Ansible executable check
+* Updating dev dependencies, Fixing flake8 errors
+* Updating test and cicd infrastructure integration
+* Moving zuul configuration to the top
+* Updating actual zuul pipeline configuration
+* Run flake8 tests in zuul
+* Fix toc link to external interface docs
+
+1.1.0
+-----
+
+* Updating changelog and versions for 1.1.0 release
+* Add a python example for calling a module
+* Add DEFAULT\_RUNNER\_BINARY for the container users
+* Add --binary option for users to provide full path to ansible
+* fix py example: the events are of type dict not object
+* Fixes paths for start to be absolute
+* Fix an issue where events returned for stats is an iterator in py3
+* Adding plugin/emitter documentation
+* Changes role execution to use the same run call as non-roles
+* Fix up python 3 support when detecting module/playbook exclusivity
+* Updating changelog for 1.0.6 to cover recent changes
+* Implement a plugin architecture for emitting events
+* Add docs for ad-hoc mode
+* Fixes handle\_termination by removing unfinished wrapper handler code
+* fixes a minor bug that would leak output when --quiet is used
+* Adds ad-hoc support
+* Fixes missing data in events sent to event handler
+* Clears out existing task before setting a new task
+* Propose fix two typos
+* Adding roles\_path to python interface
+* Update docs and changelog related to timeout
+* Fix up timeout default values and update timeout handling
+
+1.0.5
+-----
+
+* Updating changelog and bumping for 1.0.5 release
+* Implement automatic artifact directory rotation
+* Fix up some project path related tests
+* Fix silent failure on missing project directory
+* Switch file loading methods to debug
+* Fix the logging behavior when Runner invoked by module
+* Add a callback that will be invoked when Runner has finished
+* Adding docs for new parameters accepted on the standard interfaces
+* Fixes cancel\_callback to work with async
+* Handle unexpected filenames in event module interface
+* Adding external event\_handler and overriding logging behavior
+* Make some Runner tests py3 compatible
+* Make role path concatenation more idiomatic and add role path tests
+* Set pexpect\_use\_poll for unittests
+* Updating some docs and changelog
+* Make poll() usage with pexpect configurable
+* add support for running roles via api interface
+* add unit tests for AnsibleRunner.run and fix a hang in pexpect.spawn
+* Add check to verify that ansible is in path
+
+1.0.4
+-----
+
+* Updating for 1.0.4 release
+* Fix an issue where shlex needed a decoded byte array for python 3
+* Remove cmdline from demo/env
+* Add demo cmdline
+* Fix an issue where Exception.message is not available on python 3
+* Add command line argument for suppressing ansible output
+* Add some help text for the inventory argument
+* Update test to catch issue
+* Add support for no ansible output
+* Enhance the logging and display output
+* extend cmdline to ansible-runner options
+* add new feature for mananging cmdline options
+* Adding some more python module usage detail
+* Fix a python3 sorting bug when evaluating playbook events
+* Updating print statements to debug where appropriate
+* Extra note about the default location for the artifact dir
+* Adding contributing guide and updating setup to include README
+* Don't show unnecessary tracebacks in the logs
+* Provide python example
+* Add test for the case where artifact\_dir is used
+* Add artifact dir to cli tool
+* Accept option for custom artifacts dir
+* Add support for outputting json instead of raw ansible
+* Fix issue when loading string types
+* adds new option to skip fact collection when running a role directly
+* add additional help text per code review
+* expose ansible-playbook verbosity to cli and api
+* Updating documentation after feedback
+* change to how extra vars are handled
+* Docstring minor corrections
+* Docstring minor corrections (runner\_config)
+* Docstring minor corrections
+* roll up of fixes for running roles from command line
+* Docs minor corrections
+* Minor format fixing
+* Improve header formatting
+* Add brief description for running playbooks and roles
+* cleanup event counter variable
+* Fixes test\_dump\_artifacts\_private\_data\_dir on Mac OS
+* Replaces os.mknod with portable equivalent
+* Update some install docs and basic README
+* Adding module docs and usage docs
+* Adding the shell of usage details
+* Complete directory structure documentation
+* Adding introductory documentation
+* Adding install docs
+* Revising module documentation for sphinx formatting
+* Adding docs build configuration
+* Adding initial sphinx docs
+* Provide a default host filter for roles if one isn't provided
+* Make requirement for pexpect represent a mostly recent version
+* Updating pipenv lock for latest dependencies
+* Remove setup.py pexpect targeting
+* adds unit tests for RunnerConfig
+* Upgrading pexpect (and some ancillary packages) to 4.6
+
+1.0.3
+-----
+
+* Bumping version for 1.0.3 release
+* Add tests for validating the password regex
+* fixes issue where AttributeError is raised in runner\_config
+* adds unit test to check of inventory file overwrie
+* fixes bug that overwrites the inventory file
+
+1.0.2
+-----
+
+* Bumping release for 1.0.2
+* Ensure environment variables are properly coerced to strings
+* Adding dockerignore, updating ignore with artifacts dir
+* Adding Openshift deployment support
+* fix up unit test errors for py3 support
+* adds unit test cases for loader.py
+* adds loader module to handle file loads
+* merges envvars if one already exists for role execution
+* fix pep8 issues and update main interface for roles
+* update entrypoint for ansible-runner
+* moves entrypoint into bin/ansible-runner and adds role support
+* remove unneeded imports exposed by pyflake
+* implement Python logging
+* Set self.timed\_out instead of self.canceled on idle\_timeout event
+* Add class reference to handle\_termination
+* Adding tox test runner and updated test dependencies
+* Support python 3
+* return output when playbook errors
+* Setting fixed pexpect version. Change select() usage to poll()
+* Copying default os.environ to pass to pexpect
+
+1.0.1
+-----
+
+* Bumping version to 1.0.1
+* Fix RPM filename
+* Fix intermittent issue where RELEASE variable was changing
+* Pass through env vars to rpm-builder containers
+* Pass through $RELEASE to rpm-builder containers
+* Updating dependencies and docker image build
+* move handling of ssh\_keys to after command is built
+* update gitignore to ignore pytest\_cache/
+* adds unit test cases for interface changes
+* refactor functions into ansible\_runner.utils
+* Disable host key checking and retry files
+* fix up inventory kwarg description
+* update kwarg documentation for inventory
+* Fix an issue truncating the playbook stats lines
+* adds support for inventory based objects
+* clean up unused imports
+* check if dest file exists and changed
+* replace yaml.load with yaml.safe\_load
+* adds feature to dump artifacts to disk
+* Update version to 1.0.0
+* Fix run exit code always being 1
+* adds new function to interface for passing playbooks directly
+* Update pexpect package name in RPM spec file
+* Make target / Dockerfile for building RPM
+* Initial RPM spec file
+* Updating setup and README to point to public image locations
+* Adding module interface documentation
+* Add host event interface method to Runner object
+* Add stats property to runner object for easy run statistics
+* Fix up unwanted partial file writes and implement event interface
+* Remove currently unused memcached dependency
+* Removing isolated manager which is unused by standalone runner
+* Get the abspath of the private\_data\_dir
+* Fixing python module invocation semantics
+* Adding license
+* use absolute path for data dir
+* Add stdout property to runner object
+* Provide status for thread async mode
+* Updates for python 2/3 support
+* Refactoring start and entrypoints
+* Major refactoring into module code
+* Syntax and consistency corrections
+* Optimization of Dockerfiles
+* Fix nested bullets to be Github flavored markdown
+* Adding README
+* Add base dev image make target
+* Break out env contents to make them more useful
+* Break env contexts out into separate files
+* Fix runner initialization of artifacts
+* Very basic Makefile
+* Support specifying a run identifier
+* Updating launcher inputs and arguments
+* Adding initial runner build and dependency tracking
+* Refactoring AWX isolated execution manager into Runner
+* don't process artifacts from custom \`set\_stat\` calls asynchronously
+* properly handle unicode for isolated job buffers
+* Update isolated instance capacity calculaltion
+* Misc Python 3 changes: execfile(), file(), reduce(), StandardError
+* from six.moves import xrange for Python 3
+* Modernize Python 2 code to get ready for Python 3
+* properly handle unicode for isolated job buffers
+* change stdout composition to generate from job events on the fly
+* generalize stdout event processing to emit events for \*all\* job types
+* flake8: comply with new E722 rule
+* flake8: comply with new E722 rule
+* fix missing parameter to update\_capacity method
+* Set capacity to zero if the isolated node has an old version
+* stop hard-coding the awx version in the isolated development environment
+* change imports to reflect isolated->expect move
+* initial commit to move folder isolated->expect
+* Rename tower display plugins to awx display
+* Support for executing job and adhoc commands on isolated Tower nodes (#6524)

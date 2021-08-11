@@ -161,7 +161,7 @@ def test_run_ansible_command_within_container(test_data_dir, container_runtime_i
         'process_isolation': True,
         'container_image': defaults.default_container_image
     }
-    rc, out, err = run_command(
+    out, err, rc = run_command(
         private_data_dir=private_data_dir,
         executable_cmd='ansible-playbook',
         cmdline_args=[playbook, '-i', inventory],

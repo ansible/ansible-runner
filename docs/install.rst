@@ -87,4 +87,3 @@ installed and proceed with::
 
   make rpm
 
-.. include:: ../CHANGES.rst

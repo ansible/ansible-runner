@@ -114,6 +114,31 @@ def test_prepare_env_passwords():
         assert 'secret' in rc.expect_passwords.values()
 
 
+def test_prepare_env_passwords_via_args():
+    rc = BaseConfig(private_data_dir='/tmp', passwords={r'Vault password:\s*?$': 'vault'})
+
+    value = {'^SSH [pP]assword.*$': 'secret'}
+    password_side_effect = partial(load_file_side_effect, 'env/passwords', value)
+
+    with patch.object(rc.loader, 'load_file', side_effect=password_side_effect):
+        rc._prepare_env()
+        rc.expect_passwords.pop(TIMEOUT)
+        rc.expect_passwords.pop(EOF)
+        assert len(rc.expect_passwords) == 2
+        assert 'secret' in rc.expect_passwords.values()
+        assert 'vault' in rc.expect_passwords.values()
+
+    rc = BaseConfig(private_data_dir='/tmp', passwords={r'Vault password:\s*?$': 'vault'})
+    # load env/passwords raise ConfigurationError
+    config_error = partial(load_file_side_effect, 'env/passwords', None)
+    with patch.object(rc.loader, 'load_file', side_effect=config_error):
+        rc._prepare_env()
+        rc.expect_passwords.pop(TIMEOUT)
+        rc.expect_passwords.pop(EOF)
+        assert len(rc.expect_passwords) == 1
+        assert 'vault' in rc.expect_passwords.values()
+
+
 def test_prepare_environment_subprocess_defaults():
     rc = BaseConfig(private_data_dir="/tmp")
     rc._prepare_env(runner_mode="subprocess")

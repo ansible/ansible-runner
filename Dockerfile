@@ -17,7 +17,8 @@ RUN if [ "$ANSIBLE_BRANCH" != "" ] ; then \
       echo "Installing requirements.txt" ; \
       cp /tmp/src/tools/requirements.txt /tmp/src/requirements.txt ; \
     fi \
-    && cp /tmp/src/tools/build-requirements.txt /tmp/src/build-requirements.txt
+    && cp /tmp/src/tools/build-requirements.txt /tmp/src/build-requirements.txt \
+    && cp /tmp/src/tools/bindep.txt /tmp/src/bindep.txt
 
 # NOTE(pabelanger): For downstream builds, we compile everything from source
 # over using existing wheels. Do this upstream too so we can better catch

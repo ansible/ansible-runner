@@ -200,6 +200,9 @@
     parent: ansible-buildset-registry-consumer
     requires:
       - ansible-runner-container-image
+    vars:
+      container_command: podman
+    nodeset: centos-8-stream
 
 - job:
     name: ansible-runner-integration

@@ -18,6 +18,16 @@ from ansible_runner.exceptions import AnsibleRunnerException
 HERE = os.path.abspath(os.path.dirname(__file__))
 
 
+def iterate_timeout(max_seconds, purpose, interval=2):
+    start = time.time()
+    count = 0
+    while (time.time() < start + max_seconds):
+        count += 1
+        yield count
+        time.sleep(interval)
+    raise Exception("Timeout waiting for %s" % purpose)
+
+
 def ensure_directory(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -304,21 +314,22 @@ def test_playbook_start(skipif_pre_ansible28):
                                            temp_dir]])
         p.start()
 
-        time.sleep(5)
-
-        assert os.path.exists(os.path.join(temp_dir, 'pid'))
+        pid_path = os.path.join(temp_dir, 'pid')
+        for _ in iterate_timeout(30, "pid file creation"):
+            if os.path.exists(pid_path):
+                break
 
         rc = main(['is-alive', temp_dir])
         assert rc == 0
         rc = main(['stop', temp_dir])
         assert rc == 0
 
-        time.sleep(1)
+        for _ in iterate_timeout(30, "background process to stop"):
+            rc = main(['is-alive', temp_dir])
+            if rc == 1:
+                break
 
-        rc = main(['is-alive', temp_dir])
+        ensure_removed(pid_path)
+
+        rc = main(['stop', temp_dir])
         assert rc == 1
-
-        ensure_removed(os.path.join(temp_dir, 'pid'))
-
-        rc = main(['stop', temp_dir])
-    assert rc == 1

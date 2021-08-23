@@ -769,16 +769,12 @@ def main(sys_args=None):
             mem = get_mem_in_bytes()
             errors = []
             uuid = get_uuid()
-            if isinstance(mem, int):
-                pass
-            else:
+            if not isinstance(mem, int):
                 errors.append(mem)
                 mem = None
             if "Could not find" in uuid:
                 errors.append(uuid)
                 uuid = None
-            else:
-                pass
             info = {'errors': errors,
                     'mem_in_bytes': mem,
                     'cpu_count': cpu,

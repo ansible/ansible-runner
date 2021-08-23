@@ -26,12 +26,12 @@ def get_uuid():
         with open('/var/lib/dbus/machine-id') as f:
             uuid = f.read()
         return uuid.strip()
-    except:
+    except FileNotFoundError:
         try:
             with open('/etc/machine-id') as f:
                 uuid = f.read()
                 return uuid.strip()
         except FileNotFoundError:
             error = ("Could not find /var/lib/dbus/machine-id or "
-                    "/etc/machine-id files, UUID undiscoverable.")
+                     "/etc/machine-id files, UUID undiscoverable.")
             return error

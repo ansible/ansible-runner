@@ -41,7 +41,7 @@ from yaml import safe_dump, safe_load
 from ansible_runner import run
 from ansible_runner import output
 from ansible_runner.utils import dump_artifact, Bunch
-from ansible_runner.utils.capacity import get_cpu_count, get_mem_info
+from ansible_runner.utils.capacity import get_cpu_count, get_mem_in_bytes, get_uuid
 from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
 
@@ -766,17 +766,24 @@ def main(sys_args=None):
     if vargs.get('command') in ('worker', 'process'):
         if vargs.get('worker_info'):
             cpu = get_cpu_count()
-            mem = get_mem_info()
-            error = []
+            mem = get_mem_in_bytes()
+            errors = []
+            uuid = get_uuid()
             if isinstance(mem, int):
                 pass
             else:
-                error.append(mem)
+                errors.append(mem)
                 mem = None
-            info = {'Errors': error,
-                    'Memory Capacity': mem,
-                    'CPU Capacity': cpu,
-                    'Version': VERSION,
+            if "Could not find" in uuid:
+                errors.append(uuid)
+                uuid = None
+            else:
+                pass
+            info = {'errors': errors,
+                    'mem_in_bytes': mem,
+                    'cpu_count': cpu,
+                    'runner_version': VERSION,
+                    'uuid': uuid,
                     }
             print(safe_dump(info, default_flow_style=True))
             parser.exit(0)

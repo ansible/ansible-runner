@@ -1,0 +1,6 @@
+# For more info on CODEOWNERS file, see:
+#   - https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-on-github/about-code-owners
+#   - https://github.blog/2017-07-06-introducing-code-owners/
+
+# Default owners for everything in the repo.
+*    @ansible/executor

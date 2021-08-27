@@ -84,6 +84,7 @@ def test_prepare_config_command_with_containerization(tmp_path, container_runtim
         '--workdir',
         '/runner/project',
         '-v', '{}/.ssh/:/home/runner/.ssh/'.format(rc.private_data_dir),
+        '-v', '{}/.ssh/:/root/.ssh/'.format(str(tmp_path)),
     ]
 
     if container_runtime == 'podman':

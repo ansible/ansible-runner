@@ -1,0 +1,51 @@
+name: CI
+on:
+  push:
+    branches:
+      - devel
+
+  pull_request:
+    branches:
+      - devel
+
+
+jobs:
+  coverage:
+    name: CI
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - 3.8
+          - 3.9
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install tox
+          curl --silent --show-error --remote-name https://ansible-ci-files.s3.us-east-1.amazonaws.com/codecov/linux/codecov
+          chmod +x codecov
+          python --version
+
+      - name: Lint
+        run: |
+          tox -e linters
+
+      - name: Docs
+        run: |
+          tox -e docs
+
+      - name: Units
+        run: |
+          tox -e py
+
+      - name: Upload coverage
+        run: |
+          tox -e report,codecov

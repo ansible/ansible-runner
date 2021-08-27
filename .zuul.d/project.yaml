@@ -11,9 +11,6 @@
         - ansible-tox-docs:
             vars:
               sphinx_build_dir: docs/build
-        - ansible-tox-coverage:
-            vars:
-              tox_envlist: coverage,coverage_report
     gate:
       jobs: *id001
     post:

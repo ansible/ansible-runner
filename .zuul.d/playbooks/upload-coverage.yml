@@ -1,0 +1,13 @@
+- name: Upload code coverage
+  hosts: localhost
+  become: no
+  gather_facts: no
+
+  tasks:
+    - name: Download codecov
+    - name: Upload coverage
+      command: >
+        codecov
+
+      environment:
+        CODECOV_TOKEN: a5ea77e9-1011-4274-a3c0-f00b50a595d2

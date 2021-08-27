@@ -195,7 +195,6 @@
     name: ansible-runner-upload-container-image-stable-2.9
     parent: ansible-runner-container-image-base
 
-# =============================================================================
 - job:
     name: ansible-runner-integration
     parent: ansible-buildset-registry-consumer

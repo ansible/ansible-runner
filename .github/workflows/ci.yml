@@ -33,12 +33,15 @@ jobs:
   docs:
     name: Docs
     runs-on: ubuntu-latest
-    container: quay.io/ansible/default-test-container:3.8.0
+    container: quay.io/ansible/fedora34-test-container:2.1.0
+
     steps:
       - uses: actions/checkout@v2
 
       - name: Install test dependencies
         uses: ./.github/actions/setup
+        with:
+          python_version: 3.9
 
       - name: Build docs
         run: tox -e docs

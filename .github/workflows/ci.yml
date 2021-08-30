@@ -40,8 +40,10 @@ jobs:
   unit:
     name: Unit
     runs-on: ubuntu-latest
+    container: quay.io/ansible/fedora34-test-container:2.1.0
     strategy:
       matrix:
+        fail-fast: no
         python-version:
           - 3.8
           - 3.9
@@ -69,8 +71,10 @@ jobs:
   integration:
     name: Integration
     runs-on: ubuntu-latest
+    container: quay.io/ansible/fedora34-test-container:2.1.0
     strategy:
       matrix:
+        fail-fast: no
         python-version:
           - 3.8
           - 3.9

@@ -14,10 +14,26 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: ./.github/actions/setup
+      - name: Checkout
+        uses: actions/checkout@v2
 
-      - run: tox -e linters
+      - name: Install test dependencies
+        uses: ./.github/actions/setup
+
+      - name: Run linters
+        run: tox -e linters
+
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install test dependencies
+        uses: ./.github/actions/setup
+
+      - name: Build docs
+        run: tox -e docs
 
   ci:
     name: CI
@@ -28,25 +44,22 @@ jobs:
           - 3.8
           - 3.9
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
 
-      - uses: ./.github/actions/setup
+      - name: Install test dependencies
+        uses: ./.github/actions/setup
         with:
           needs_codecov: yes
-
-      - name: Docs
-        run: |
-          tox -e docs
 
       - name: Units
         run: |
           tox -e py
 
-      - name: Upload coverage
-        run: |
-          tox -e report,codecov
+      - name: Upload coverage data
+        run: codecov --file test/coverage/coverage.xml

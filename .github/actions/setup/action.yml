@@ -14,8 +14,7 @@ runs:
         pip install tox
         python --version
         if [[ ${{ inputs.needs_codecov }} =~ [Yy]es|[Tt]rue ]]; then
-          curl --silent --show-error --remote-name https://ansible-ci-files.s3.us-east-1.amazonaws.com/codecov/linux/codecov
-          chmod +x codecov
-          ./codecov --version
+          curl --silent --show-error --output "$HOME/.local/bin/codecov" https://ansible-ci-files.s3.us-east-1.amazonaws.com/codecov/linux/codecov
+          chmod +x "$HOME/.local/bin/codecov"
+          echo "Codecov $(codecov --version)"
         fi
-        echo $PATH

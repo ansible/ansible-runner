@@ -13,7 +13,7 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    container: quay.io/ansible/default-test-container:3.8.0
+    container: quay.io/ansible/fedora34-test-container:2.1.0
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -30,6 +30,7 @@ jobs:
       - name: Run linters
         run: tox -e linters
 
+
   docs:
     name: Docs
     runs-on: ubuntu-latest
@@ -40,26 +41,25 @@ jobs:
 
       - name: Install test dependencies
         uses: ./.github/actions/setup
-        with:
-          python_version: 3.9
 
       - name: Build docs
         run: tox -e docs
 
+
   unit:
     name: Unit
     runs-on: ubuntu-latest
-    container: quay.io/ansible/default-test-container:3.8.0
+    container: ${{ matrix.env.image }}
 
     strategy:
       fail-fast: false
       matrix:
-        python_version:
-          - ver: 3.8
-            env: py38
+        env:
+          - tox_env: py39
+            image: quay.io/ansible/fedora34-test-container:2.1.0
 
-          - ver: 3.9
-            env: py38
+          - tox_env: py38
+            image: registry.access.redhat.com/ubi8/python-38
 
     steps:
       - name: Checkout
@@ -69,11 +69,10 @@ jobs:
         uses: ./.github/actions/setup
         with:
           needs_codecov: yes
-          python_version: ${{ matrix.python_version.ver }}
 
       - name: Tests
         run: |
-          tox -e ${{ matrix.python_version.env }} test/unit/
+          tox -e ${{ matrix.env.tox_env }} test/unit/
 
       - name: Upload coverage data
         run: codecov --file test/coverage/coverage.xml
@@ -82,17 +81,18 @@ jobs:
   integration:
     name: Integration
     runs-on: ubuntu-latest
-    container: quay.io/ansible/default-test-container:3.8.0
+    container: ${{ matrix.env.image }}
 
     strategy:
       fail-fast: false
       matrix:
-        python_version:
-          - ver: 3.8
-            env: py38
+        env:
+          - tox_env: py39
+            image: quay.io/ansible/fedora34-test-container:2.1.0
 
-          - ver: 3.9
-            env: py38
+          - tox_env: py38
+            image: registry.access.redhat.com/ubi8/python-38
+
 
     steps:
       - name: Checkout
@@ -102,11 +102,10 @@ jobs:
         uses: ./.github/actions/setup
         with:
           needs_codecov: yes
-          python_version: ${{ matrix.python_version.ver }}
 
       - name: Tests
         run: |
-          tox -e ${{ matrix.python_version.env }} test/integration/
+          tox -e ${{ matrix.env.tox_env }} test/integration/
 
       - name: Upload coverage data
         run: codecov --file test/coverage/coverage.xml

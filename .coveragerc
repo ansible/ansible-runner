@@ -1,0 +1,11 @@
+[run]
+source = ansible_runner
+
+[report]
+skip_covered = True
+
+[html]
+directory = test/coverage/html
+
+[xml]
+output = test/coverage/coverage.xml

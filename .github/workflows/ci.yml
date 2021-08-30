@@ -62,7 +62,7 @@ jobs:
           needs_codecov: yes
           python_version: ${{ matrix.python_version.ver }}
 
-      - name: Units
+      - name: Tests
         run: |
           tox -e ${{ matrix.python_version.env }} test/unit/
 
@@ -95,9 +95,9 @@ jobs:
           needs_codecov: yes
           python_version: ${{ matrix.python_version.ver }}
 
-      - name: Units
+      - name: Tests
         run: |
-          tox -e py${{ matrix.python_version.env }} test/integration/
+          tox -e ${{ matrix.python_version.env }} test/integration/
 
       - name: Upload coverage data
         run: codecov --file test/coverage/coverage.xml

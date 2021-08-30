@@ -7,18 +7,15 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install Python dependencies
+    - name: Install dependencies
       shell: bash
       run: |
         pip install --upgrade pip
         pip install tox
         python --version
+        if [[ ${{ inputs.needs_codecov }} =~ [Yy]es|[Tt]rue ]]; then
+          curl --silent --show-error --remote-name https://ansible-ci-files.s3.us-east-1.amazonaws.com/codecov/linux/codecov
+          chmod +x codecov
+          ./codecov --version
+        fi
         echo $PATH
-
-    - name: Fetch Codecov uploader
-      if: inputs.needs_codecov
-      shell: bash
-      runs: |
-        curl --silent --show-error --remote-name https://ansible-ci-files.s3.us-east-1.amazonaws.com/codecov/linux/codecov
-        chmod +x codecov
-        ./codecov --version

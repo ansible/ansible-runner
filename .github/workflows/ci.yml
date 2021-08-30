@@ -46,8 +46,8 @@ jobs:
         run: tox -e docs
 
 
-  unit:
-    name: Unit - ${{ matrix.env.name }}
+  tests:
+    name: ${{ matrix.test_type.name }} - ${{ matrix.env.name }}
     runs-on: ubuntu-latest
     container: ${{ matrix.env.image }}
 
@@ -63,38 +63,12 @@ jobs:
             tox_env: py38
             image: registry.access.redhat.com/ubi8/python-38
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+        test_type:
+          - name: Unit
+            path: test/unit
 
-      - name: Install test dependencies
-        uses: ./.github/actions/setup
-        with:
-          needs_codecov: yes
-
-      - name: Tests
-        run: |
-          tox -e ${{ matrix.env.tox_env }} test/unit/
-
-      - name: Upload coverage data
-        run: codecov --file test/coverage/coverage.xml
-
-
-  integration:
-    name: Integration
-    runs-on: ubuntu-latest
-    container: ${{ matrix.env.image }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        env:
-          - tox_env: py39
-            image: quay.io/ansible/fedora34-test-container:2.1.0
-
-          - tox_env: py38
-            image: registry.access.redhat.com/ubi8/python-38
-
+          - name: Integration
+            path: test/integration
 
     steps:
       - name: Checkout
@@ -107,7 +81,7 @@ jobs:
 
       - name: Tests
         run: |
-          tox -e ${{ matrix.env.tox_env }} test/integration/
+          tox -e ${{ matrix.env.tox_env }} ${{ matrix.test_type.path }}
 
       - name: Upload coverage data
         run: codecov --file test/coverage/coverage.xml

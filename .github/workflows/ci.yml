@@ -35,8 +35,8 @@ jobs:
       - name: Build docs
         run: tox -e docs
 
-  ci:
-    name: CI
+  unit:
+    name: Unit
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -59,7 +59,36 @@ jobs:
 
       - name: Units
         run: |
-          tox -e py
+          tox -e py test/unit/
+
+      - name: Upload coverage data
+        run: codecov --file test/coverage/coverage.xml
+
+  integration:
+    name: Integration
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - 3.8
+          - 3.9
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install test dependencies
+        uses: ./.github/actions/setup
+        with:
+          needs_codecov: yes
+
+      - name: Units
+        run: |
+          tox -e py test/integration/
 
       - name: Upload coverage data
         run: codecov --file test/coverage/coverage.xml

@@ -13,7 +13,7 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    container: quay.io/ansible/fedora34-test-container:2.1.0
+    container: quay.io/ansible/default-test-container:3.8.0
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -27,7 +27,7 @@ jobs:
   docs:
     name: Docs
     runs-on: ubuntu-latest
-    container: quay.io/ansible/fedora34-test-container:2.1.0
+    container: quay.io/ansible/default-test-container:3.8.0
     steps:
       - uses: actions/checkout@v2
 
@@ -40,21 +40,16 @@ jobs:
   unit:
     name: Unit
     runs-on: ubuntu-latest
-    container: quay.io/ansible/fedora34-test-container:2.1.0
+    container: quay.io/ansible/default-test-container:3.8.0
     strategy:
       matrix:
         fail-fast: no
-        python-version:
-          - 3.8
-          - 3.9
+        target_env:
+          - py38
+          - py39
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
-      - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
 
       - name: Install test dependencies
         uses: ./.github/actions/setup
@@ -63,7 +58,7 @@ jobs:
 
       - name: Units
         run: |
-          tox -e py test/unit/
+          tox -e ${{ matrix.target_env }} test/unit/
 
       - name: Upload coverage data
         run: codecov --file test/coverage/coverage.xml
@@ -71,21 +66,16 @@ jobs:
   integration:
     name: Integration
     runs-on: ubuntu-latest
-    container: quay.io/ansible/fedora34-test-container:2.1.0
+    container: quay.io/ansible/default-test-container:3.8.0
     strategy:
       matrix:
         fail-fast: no
-        python-version:
-          - 3.8
-          - 3.9
+        target_env:
+          - py38
+          - py39
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
-      - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
 
       - name: Install test dependencies
         uses: ./.github/actions/setup
@@ -94,7 +84,7 @@ jobs:
 
       - name: Units
         run: |
-          tox -e py test/integration/
+          tox -e ${{ matrix.target_env }} test/integration/
 
       - name: Upload coverage data
         run: codecov --file test/coverage/coverage.xml

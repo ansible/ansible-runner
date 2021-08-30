@@ -1,0 +1,21 @@
+name: Setup test environment
+description: Install test dependencies
+inputs:
+  needs_codecov:
+    description: Whether to download the codecov uploader
+    default: false
+runs:
+  using: composite
+  steps:
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install --upgrade pip
+        pip install tox
+        python --version
+        if [[ ${{ inputs.needs_codecov }} =~ [Yy]es|[Tt]rue ]]; then
+          curl --silent --show-error --remote-name https://ansible-ci-files.s3.us-east-1.amazonaws.com/codecov/linux/codecov
+          chmod +x codecov
+          codecov --version
+        fi
+

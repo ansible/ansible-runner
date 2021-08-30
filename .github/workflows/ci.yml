@@ -43,7 +43,7 @@ jobs:
     container: quay.io/ansible/default-test-container:3.8.0
     strategy:
       matrix:
-        fail-fast: no
+        fail-fast: false
         target_env:
           - py38
           - py39
@@ -69,7 +69,7 @@ jobs:
     container: quay.io/ansible/default-test-container:3.8.0
     strategy:
       matrix:
-        fail-fast: no
+        fail-fast: false
         target_env:
           - py38
           - py39

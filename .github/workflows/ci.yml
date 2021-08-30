@@ -47,7 +47,7 @@ jobs:
 
 
   unit:
-    name: Unit
+    name: Unit - ${{ matrix.env.name }}
     runs-on: ubuntu-latest
     container: ${{ matrix.env.image }}
 
@@ -55,10 +55,12 @@ jobs:
       fail-fast: false
       matrix:
         env:
-          - tox_env: py39
+          - name: Fedora Py3.9
+            tox_env: py39
             image: quay.io/ansible/fedora34-test-container:2.1.0
 
-          - tox_env: py38
+          - name: RHEL Py3.8
+            tox_env: py38
             image: registry.access.redhat.com/ubi8/python-38
 
     steps:

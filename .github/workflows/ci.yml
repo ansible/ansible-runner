@@ -41,12 +41,17 @@ jobs:
     name: Unit
     runs-on: ubuntu-latest
     container: quay.io/ansible/default-test-container:3.8.0
+
     strategy:
       fail-fast: false
       matrix:
-        target_env:
-          - py38
-          - py39
+        python_version:
+          - ver: 3.8
+            env: py38
+
+          - ver: 3.9
+            env: py38
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -55,24 +60,31 @@ jobs:
         uses: ./.github/actions/setup
         with:
           needs_codecov: yes
+          python_version: ${{ matrix.python_version.ver }}
 
       - name: Units
         run: |
-          tox -e ${{ matrix.target_env }} test/unit/
+          tox -e ${{ matrix.python_version.env }} test/unit/
 
       - name: Upload coverage data
         run: codecov --file test/coverage/coverage.xml
+
 
   integration:
     name: Integration
     runs-on: ubuntu-latest
     container: quay.io/ansible/default-test-container:3.8.0
+
     strategy:
       fail-fast: false
       matrix:
-        target_env:
-          - py38
-          - py39
+        python_version:
+          - ver: 3.8
+            env: py38
+
+          - ver: 3.9
+            env: py38
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -81,10 +93,11 @@ jobs:
         uses: ./.github/actions/setup
         with:
           needs_codecov: yes
+          python_version: ${{ matrix.python_version.ver }}
 
       - name: Units
         run: |
-          tox -e ${{ matrix.target_env }} test/integration/
+          tox -e py${{ matrix.python_version.env }} test/integration/
 
       - name: Upload coverage data
         run: codecov --file test/coverage/coverage.xml

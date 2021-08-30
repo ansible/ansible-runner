@@ -4,19 +4,20 @@ inputs:
   needs_codecov:
     description: Whether to download the codecov uploader
     default: false
+  python_version:
+    default: 3.8
 runs:
   using: composite
   steps:
     - name: Install dependencies
       shell: bash
       run: |
-        pip install --upgrade pip
-        pip install tox
-        python --version
+        pip${{ inputs.python_version }} install --upgrade pip
+        pip${{ inputs.python_version }} install tox
+        python${{ inputs.python_version }} --version
         if [[ ${{ inputs.needs_codecov }} =~ [Yy]es|[Tt]rue ]]; then
           mkdir -p "$HOME/.local/bin/"
-          curl --silent --show-error --output "$HOME/.local/bin/codecov" https://ansible-ci-files.s3.us-east-1.amazonaws.com/codecov/linux/codecov
-          chmod +x "$HOME/.local/bin/codecov"
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          curl --silent --show-error --output "/usr/local/bin/codecov" https://ansible-ci-files.s3.us-east-1.amazonaws.com/codecov/linux/codecov
+          chmod +x "/usr/local/bin/codecov"
           echo "Codecov $(codecov --version)"
         fi

@@ -275,21 +275,25 @@ def test_container_volume_mounting_with_Z(mock_isdir, mock_exists, mock_makedirs
 
 
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_containerization_settings(tmpdir, container_runtime):
-    with patch('ansible_runner.config._base.BaseConfig.containerized', new_callable=PropertyMock) as mock_containerized:
-        rc = BaseConfig(private_data_dir=tmpdir)
-        rc.ident = 'foo'
-        rc.cmdline_args = ['main.yaml', '-i', '/tmp/inventory']
-        rc.command = ['ansible-playbook'] + rc.cmdline_args
-        rc.process_isolation = True
-        rc.runner_mode = 'pexpect'
-        rc.process_isolation_executable = container_runtime
-        rc.container_image = 'my_container'
-        rc.container_volume_mounts = ['/host1:/container1', 'host2:/container2']
-        mock_containerized.return_value = True
-        rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
-        rc._prepare_env()
-        rc._handle_command_wrap(rc.execution_mode, rc.cmdline_args)
+def test_containerization_settings(tmpdir, container_runtime, mocker):
+    mocker.patch.dict('os.environ', {'HOME': str(tmpdir)}, clear=True)
+    os.mkdir(os.path.join(tmpdir, '.ssh'))
+
+    mock_containerized = mocker.patch('ansible_runner.config._base.BaseConfig.containerized', new_callable=PropertyMock)
+    mock_containerized.return_value = True
+
+    rc = BaseConfig(private_data_dir=tmpdir)
+    rc.ident = 'foo'
+    rc.cmdline_args = ['main.yaml', '-i', '/tmp/inventory']
+    rc.command = ['ansible-playbook'] + rc.cmdline_args
+    rc.process_isolation = True
+    rc.runner_mode = 'pexpect'
+    rc.process_isolation_executable = container_runtime
+    rc.container_image = 'my_container'
+    rc.container_volume_mounts = ['/host1:/container1', 'host2:/container2']
+    rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
+    rc._prepare_env()
+    rc._handle_command_wrap(rc.execution_mode, rc.cmdline_args)
 
     extra_container_args = []
     if container_runtime == 'podman':
@@ -297,17 +301,32 @@ def test_containerization_settings(tmpdir, container_runtime):
     else:
         extra_container_args = ['--user={os.getuid()}']
 
-    expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
-                             ['-v', '{}/.ssh/:/home/runner/.ssh/'.format(os.environ['HOME'])]
-    if container_runtime == 'podman':
-        expected_command_start += ['--group-add=root', '--ipc=host']
+    expected_command_start = [
+        container_runtime,
+        'run',
+        '--rm',
+        '--tty',
+        '--interactive',
+        '--workdir',
+        '/runner/project',
+        '-v', '{}/.ssh/:/home/runner/.ssh/'.format(str(tmpdir))
+    ]
 
-    expected_command_start += ['-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir)] + \
-        ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
-        ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
-        extra_container_args + \
-        ['--name', 'ansible_runner_foo'] + \
-        ['my_container', 'ansible-playbook', 'main.yaml', '-i', '/tmp/inventory']
+    if container_runtime == 'podman':
+        expected_command_start.extend(['--group-add=root', '--ipc=host'])
+
+    expected_command_start.extend([
+        '-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir),
+        '-v', '{}/:/runner/:Z'.format(rc.private_data_dir),
+        '--env-file', '{}/env.list'.format(rc.artifact_dir),
+    ])
+
+    expected_command_start.extend(extra_container_args)
+
+    expected_command_start.extend([
+        '--name', 'ansible_runner_foo',
+        'my_container', 'ansible-playbook', 'main.yaml', '-i', '/tmp/inventory',
+    ])
 
     for index, element in enumerate(expected_command_start):
         if '--user=' in element:

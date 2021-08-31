@@ -71,12 +71,12 @@ jobs:
             path: test/integration
 
         env:
-          - name: 3.8
-            tox_env: py38
-            image: quay.io/ansible/fedora32-test-container:2.1.0
-
           - name: ansible-base
             tox_env: ansible-base
+            image: quay.io/ansible/fedora32-test-container:2.1.0
+
+          - name: 3.8
+            tox_env: py38
             image: quay.io/ansible/fedora32-test-container:2.1.0
 
           - name: 3.9

@@ -235,6 +235,8 @@ def test_sanitize_container_name(container_name, expected_name):
     ('filedoesnotexist.txt', [])
 ], ids=['global', 'local', 'directory', 'recursive', 'bad'])
 def test_transmit_symlink(tmpdir, symlink_dest, check_content):
+    if not os.path.exists(symlink_dest):
+        pytest.skip(f"File does not exists {symlink_dest}")
     # prepare the input private_data_dir directory to zip
     pdd = tmpdir.mkdir('symlink_zip_test')
 

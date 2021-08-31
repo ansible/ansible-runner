@@ -55,7 +55,10 @@ def test_prepare_config_invalid_action():
 
 
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_prepare_config_command_with_containerization(tmpdir, container_runtime):
+def test_prepare_config_command_with_containerization(tmpdir, container_runtime, mocker):
+    mocker.patch.dict('os.environ', {'HOME': str(tmpdir)}, clear=True)
+    os.mkdir(os.path.join(tmpdir, '.ssh'))
+
     kwargs = {
         'private_data_dir': tmpdir,
         'process_isolation': True,
@@ -73,17 +76,36 @@ def test_prepare_config_command_with_containerization(tmpdir, container_runtime)
     else:
         extra_container_args = ['--user={os.getuid()}']
 
-    expected_command_start = [container_runtime, 'run', '--rm', '--interactive', '--workdir', '/runner/project'] + \
-                             ['-v', '{}/.ssh/:/home/runner/.ssh/'.format(os.environ['HOME'])]
-    if container_runtime == 'podman':
-        expected_command_start += ['--group-add=root', '--ipc=host']
+    expected_command_start = [
+        container_runtime,
+        'run',
+        '--rm',
+        '--interactive',
+        '--workdir',
+        '/runner/project',
+        '-v', '{}/.ssh/:/home/runner/.ssh/'.format(rc.private_data_dir),
+    ]
 
-    expected_command_start += ['-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir)] + \
-        ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
-        ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
-        extra_container_args + \
-        ['--name', 'ansible_runner_foo'] + \
-        ['my_container', 'ansible-config', 'list', '-c', '/tmp/ansible.cfg']
+    if container_runtime == 'podman':
+        expected_command_start.extend(['--group-add=root', '--ipc=host'])
+
+    expected_command_start.extend([
+        '-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir),
+        '-v', '{}/:/runner/:Z'.format(rc.private_data_dir),
+        '--env-file', '{}/env.list'.format(rc.artifact_dir),
+    ])
+
+    expected_command_start.extend(extra_container_args)
+
+    expected_command_start.extend([
+        '--name',
+        'ansible_runner_foo',
+        'my_container',
+        'ansible-config',
+        'list',
+        '-c',
+        '/tmp/ansible.cfg',
+    ])
 
     for index, element in enumerate(expected_command_start):
         if '--user=' in element:

@@ -20,7 +20,7 @@
 .pytest_cache
 pytestdebug.log
 test/integration/containerized/priv_data/artifacts/
-.coverage
+.coverage*
 *,cover
 .venv
 /venv

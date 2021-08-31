@@ -15,7 +15,7 @@ runs:
         python --version
         if [[ ${{ inputs.needs_codecov }} =~ [Yy]es|[Tt]rue ]]; then
           mkdir -p "$HOME/.local/bin/"
-          curl --silent --show-error --output "/usr/local/bin/codecov" https://ansible-ci-files.s3.us-east-1.amazonaws.com/codecov/linux/codecov
-          chmod +x "/usr/local/bin/codecov"
+          curl --silent --show-error --output "${PATH%%:*}/codecov" https://ansible-ci-files.s3.us-east-1.amazonaws.com/codecov/linux/codecov
+          chmod +x "${PATH%%:*}/codecov"
           echo "Codecov $(codecov --version)"
         fi

@@ -55,7 +55,10 @@ jobs:
   tests:
     name: ${{ matrix.test_type.name }} - ${{ matrix.env.name }}
     runs-on: ubuntu-latest
-    container: ${{ matrix.env.image }}
+    container:
+      image: ${{ matrix.env.image }}
+      env:
+        PIP_CACHE_DIR: $RUNNER_TEMP/.cache/pip
 
     strategy:
       fail-fast: false
@@ -68,13 +71,17 @@ jobs:
             path: test/integration
 
         env:
+          - name: 3.8
+            tox_env: py38
+            image: quay.io/ansible/fedora32-test-container:2.1.0
+
+          - name: ansible-base
+            tox_env: ansible-base
+            image: quay.io/ansible/fedora32-test-container:2.1.0
+
           - name: 3.9
             tox_env: py39
             image: quay.io/ansible/fedora34-test-container:2.1.0
-
-          - name: 3.8
-            tox_env: py38
-            image: registry.access.redhat.com/ubi8/python-38
 
     steps:
       - name: Checkout

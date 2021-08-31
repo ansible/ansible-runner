@@ -13,7 +13,10 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    container: quay.io/ansible/fedora34-test-container:2.1.0
+    container:
+      image: quay.io/ansible/fedora34-test-container:2.1.0
+      env:
+        PIP_CACHE_DIR: $RUNNER_TEMP/.cache/pip
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -34,7 +37,10 @@ jobs:
   docs:
     name: Docs
     runs-on: ubuntu-latest
-    container: quay.io/ansible/fedora34-test-container:2.1.0
+    container:
+      image: quay.io/ansible/fedora34-test-container:2.1.0
+      env:
+        PIP_CACHE_DIR: $RUNNER_TEMP/.cache/pip
 
     steps:
       - uses: actions/checkout@v2

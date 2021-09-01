@@ -24,12 +24,6 @@ jobs:
       - name: Install test dependencies
         uses: ./.github/actions/setup
 
-      - run: |
-          env
-          whoami
-          ls -Al $HOME
-          ls -Al /github
-
       - name: Run linters
         run: tox -e linters
 

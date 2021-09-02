@@ -14,15 +14,12 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     container:
-      image: quay.io/ansible/fedora34-test-container:2.1.0
+      image: quay.io/ansible/ansible-runner-test-container:1.0.0
       env:
         PIP_CACHE_DIR: $RUNNER_TEMP/.cache/pip
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
-      - name: Install test dependencies
-        uses: ./.github/actions/setup
 
       - name: Run linters
         run: tox -e linters
@@ -32,15 +29,12 @@ jobs:
     name: Docs
     runs-on: ubuntu-latest
     container:
-      image: quay.io/ansible/fedora34-test-container:2.1.0
+      image: quay.io/ansible/ansible-runner-test-container:1.0.0
       env:
         PIP_CACHE_DIR: $RUNNER_TEMP/.cache/pip
 
     steps:
       - uses: actions/checkout@v2
-
-      - name: Install test dependencies
-        uses: ./.github/actions/setup
 
       - name: Build docs
         run: tox -e docs
@@ -67,24 +61,19 @@ jobs:
         env:
           - name: ansible-base
             tox_env: ansible-base
-            image: quay.io/ansible/fedora32-test-container:2.1.0
+            image: quay.io/ansible/ansible-runner-test-container:1.0.0
 
           - name: 3.8
             tox_env: py38
-            image: quay.io/ansible/fedora32-test-container:2.1.0
+            image: quay.io/ansible/ansible-runner-test-container:1.0.0
 
           - name: 3.9
             tox_env: py39
-            image: quay.io/ansible/fedora34-test-container:2.1.0
+            image: quay.io/ansible/ansible-runner-test-container:1.0.0
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
-      - name: Install test dependencies
-        uses: ./.github/actions/setup
-        with:
-          needs_codecov: yes
 
       - name: Tests
         run: |

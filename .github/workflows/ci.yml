@@ -13,7 +13,10 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    container: quay.io/ansible/ansible-runner-test-container:1.0.0
+    container:
+      image: quay.io/ansible/ansible-runner-test-container:1.0.0
+      env:
+        PIP_CACHE_DIR: ${{ runner.temp }}/.cache/pip
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -25,7 +28,10 @@ jobs:
   docs:
     name: Docs
     runs-on: ubuntu-latest
-    container: quay.io/ansible/ansible-runner-test-container:1.0.0
+    container:
+      image: quay.io/ansible/ansible-runner-test-container:1.0.0
+      env:
+        PIP_CACHE_DIR: ${{ runner.temp }}/.cache/pip
 
     steps:
       - name: Checkout
@@ -38,7 +44,10 @@ jobs:
   tests:
     name: ${{ matrix.test_type.name }} - ${{ matrix.env.name }}
     runs-on: ubuntu-latest
-    container: ${{ matrix.env.image }}
+    container:
+      image: quay.io/ansible/ansible-runner-test-container:1.0.0
+      env:
+        PIP_CACHE_DIR: ${{ runner.temp }}/.cache/pip
 
     strategy:
       fail-fast: false
@@ -53,15 +62,12 @@ jobs:
         env:
           - name: ansible-base
             tox_env: ansible-base
-            image: quay.io/ansible/ansible-runner-test-container:1.0.0
 
           - name: 3.8
             tox_env: py38
-            image: quay.io/ansible/ansible-runner-test-container:1.0.0
 
           - name: 3.9
             tox_env: py39
-            image: quay.io/ansible/ansible-runner-test-container:1.0.0
 
     steps:
       - name: Checkout

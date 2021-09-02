@@ -72,4 +72,7 @@ jobs:
           tox -e ${{ matrix.env.tox_env }} ${{ matrix.test_type.path }}
 
       - name: Upload coverage data
-        run: codecov --file test/coverage/coverage.xml
+        run: >
+          codecov
+            --file test/coverage/coverage.xml
+            --name ${{ job.tests.name }}

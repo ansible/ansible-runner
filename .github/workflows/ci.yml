@@ -93,11 +93,8 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Tests
-        run: |
-          tox -e ${{ matrix.env.tox_env }} ${{ matrix.test_type.path }}
+        run: tox -e ${{ matrix.env.tox_env }} ${{ matrix.test_type.path }}
 
       - name: Upload coverage data
-        run: >
-          codecov
-            --file test/coverage/coverage.xml
-            --name ${{ job.tests.name }}
+        continue-on-error: true
+        run: codecov --file test/coverage/coverage.xml --name ${{ job.tests.name }}

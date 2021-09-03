@@ -14,7 +14,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     container:
-      image: quay.io/ansible/ansible-runner-test-container:1.0.0
+      image: quay.io/ansible/ansible-runner-test-container:1.0.1
       env:
         PIP_CACHE_DIR: ${{ runner.temp }}/.cache/pip
     steps:
@@ -31,7 +31,7 @@ jobs:
     name: Docs
     runs-on: ubuntu-latest
     container:
-      image: quay.io/ansible/ansible-runner-test-container:1.0.0
+      image: quay.io/ansible/ansible-runner-test-container:1.0.1
       env:
         PIP_CACHE_DIR: ${{ runner.temp }}/.cache/pip
 
@@ -49,7 +49,7 @@ jobs:
     name: ${{ matrix.test_type.name }} - ${{ matrix.env.name }}
     runs-on: ubuntu-latest
     container:
-      image: quay.io/ansible/ansible-runner-test-container:1.0.0
+      image: quay.io/ansible/ansible-runner-test-container:1.0.1
       env:
         PIP_CACHE_DIR: ${{ runner.temp }}/.cache/pip
 

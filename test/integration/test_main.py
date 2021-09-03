@@ -80,7 +80,8 @@ def test_temp_directory():
     assert not os.path.exists(context['saved_temp_dir'])
 
 
-def test_help():
+def test_help(mocker):
+    mocker.patch('ansible_runner.__main__.sys.argv', return_value=[])
     with pytest.raises(SystemExit) as exc:
         main([])
     assert exc.value.code == 2, 'Should raise SystemExit with return code 2'

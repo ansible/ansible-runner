@@ -23,6 +23,8 @@ jobs:
 
       - name: Run linters
         run: tox -e linters
+        env:
+          PY_COLORS: 1
 
 
   docs:
@@ -39,6 +41,8 @@ jobs:
 
       - name: Build docs
         run: tox -e docs
+        env:
+          PY_COLORS: 1
 
 
   tests:
@@ -75,6 +79,8 @@ jobs:
 
       - name: Tests
         run: tox -e ${{ matrix.env.tox_env }} ${{ matrix.test_type.path }}
+        env:
+          PY_COLORS: 1
 
       - name: Upload coverage data
         continue-on-error: true

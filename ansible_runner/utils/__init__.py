@@ -259,11 +259,12 @@ def dump_artifacts(kwargs):
                 kwargs['inventory'] = dump_artifact(obj, path, 'hosts')
 
     for key in ('envvars', 'extravars', 'passwords', 'settings'):
-        obj = kwargs.get(key)
-        if obj and not os.path.exists(os.path.join(private_data_dir, 'env', key)):
-            path = os.path.join(private_data_dir, 'env')
-            dump_artifact(json.dumps(obj), path, key)
-            kwargs.pop(key)
+        if key == 'passwords' and kwargs.get('store_passwords', True) or key != 'passwords':
+            obj = kwargs.get(key)
+            if obj and not os.path.exists(os.path.join(private_data_dir, 'env', key)):
+                path = os.path.join(private_data_dir, 'env')
+                print(dump_artifact(json.dumps(obj), path, key))
+                kwargs.pop(key)
 
     for key in ('ssh_key', 'cmdline'):
         obj = kwargs.get(key)

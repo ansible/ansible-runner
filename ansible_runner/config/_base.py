@@ -65,8 +65,8 @@ class BaseConfig(object):
                  private_data_dir=None, host_cwd=None, envvars=None, passwords=None, settings=None,
                  project_dir=None, artifact_dir=None, fact_cache_type='jsonfile', fact_cache=None,
                  process_isolation=False, process_isolation_executable=None,
-                 container_image=None, container_volume_mounts=None, container_options=None, container_workdir=None, container_auth_data=None,
-                 ident=None, rotate_artifacts=0, timeout=None, ssh_key=None, quiet=False, json_mode=False, check_job_event_data=False):
+                 ident=None, rotate_artifacts=0, timeout=None, ssh_key=None, quiet=False, json_mode=False,
+                 check_job_event_data=False, store_passwords=True):
         # common params
         self.host_cwd = host_cwd
         self.envvars = envvars
@@ -93,6 +93,7 @@ class BaseConfig(object):
         self.settings = settings
         self.timeout = timeout
         self.check_job_event_data = check_job_event_data
+        self.store_passwords = store_passwords
 
         # setup initial environment
         if private_data_dir:
@@ -162,13 +163,17 @@ class BaseConfig(object):
                     self.passwords.update(self.loader.load_file('env/passwords', Mapping))
                 else:
                     self.passwords = self.passwords or self.loader.load_file('env/passwords', Mapping)
-                self.expect_passwords = {
-                    re.compile(pattern, re.M): password
-                    for pattern, password in iteritems(self.passwords)
-                }
             except ConfigurationError:
                 debug('Not loading passwords')
                 self.expect_passwords = dict()
+            finally:
+                if self.passwords:
+                    self.expect_passwords = {
+                        re.compile(pattern, re.M): password
+                        for pattern, password in iteritems(self.passwords)
+                    }
+                else:
+                    self.expect_passwords = dict()
 
             self.expect_passwords[pexpect.TIMEOUT] = None
             self.expect_passwords[pexpect.EOF] = None

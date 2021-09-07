@@ -159,6 +159,7 @@ def run(**kwargs):
                      be read from ``env/settings`` in ``private_data_dir``.
     :param ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
     :param cmdline: Command line options passed to Ansible read from ``env/cmdline`` in ``private_data_dir``
+    :param store_passwords: Disable the file ``env/passwords`` creation which store passwords provided by a dictionary with ``passwords`` argument
     :param limit: Matches ansible's ``--limit`` parameter to further constrain the inventory to be used
     :param forks: Control Ansible parallel concurrency
     :param verbosity: Control how verbose the output of ansible-playbook is
@@ -217,6 +218,7 @@ def run(**kwargs):
     :type rotate_artifacts: int
     :type timeout: int
     :type cmdline: str
+    :type store_passwords: bool
     :type limit: str
     :type forks: int
     :type quiet: bool

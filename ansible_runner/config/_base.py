@@ -16,12 +16,17 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+import atexit
+import json
 import logging
 import os
 import pexpect
 import re
+import shutil
+import stat
 import tempfile
 
+from base64 import b64encode
 from uuid import uuid4
 try:
     from collections.abc import Mapping
@@ -58,7 +63,7 @@ class BaseConfig(object):
                  private_data_dir=None, host_cwd=None, envvars=None, passwords=None, settings=None,
                  project_dir=None, artifact_dir=None, fact_cache_type='jsonfile', fact_cache=None,
                  process_isolation=False, process_isolation_executable=None,
-                 container_image=None, container_volume_mounts=None, container_options=None, container_workdir=None,
+                 container_image=None, container_volume_mounts=None, container_options=None, container_workdir=None, container_auth_data=None,
                  ident=None, rotate_artifacts=0, timeout=None, ssh_key=None, quiet=False, json_mode=False, check_job_event_data=False):
         # common params
         self.host_cwd = host_cwd
@@ -71,6 +76,7 @@ class BaseConfig(object):
         self.container_image = container_image or defaults.default_container_image
         self.container_volume_mounts = container_volume_mounts
         self.container_workdir = container_workdir
+        self.container_auth_data = container_auth_data
         self.container_name = None  # like other properties, not accurate until prepare is called
         self.container_options = container_options
         self._volume_mount_paths = []
@@ -187,6 +193,7 @@ class BaseConfig(object):
         self.container_image = self.settings.get('container_image', self.container_image)
         self.container_volume_mounts = self.settings.get('container_volume_mounts', self.container_volume_mounts)
         self.container_options = self.settings.get('container_options', self.container_options)
+        self.container_auth_data = self.settings.get('container_auth_data', self.container_auth_data)
 
         if self.containerized:
             self.container_name = "ansible_runner_{}".format(sanitize_container_name(self.ident))
@@ -443,8 +450,8 @@ class BaseConfig(object):
         new_args.extend(["--workdir", workdir])
 
         # For run() and run_async() API value of base execution_mode is 'BaseExecutionMode.NONE'
-        # and the container volume mounts are handled seperately using 'container_volume_mounts'
-        #  hence ignore additonal mount here
+        # and the container volume mounts are handled separately using 'container_volume_mounts'
+        # hence ignore additonal mount here
         if execution_mode != BaseExecutionMode.NONE:
             if execution_mode == BaseExecutionMode.ANSIBLE_COMMANDS:
                 self._handle_ansible_cmd_options_bind_mounts(new_args, cmdline_args)
@@ -463,6 +470,13 @@ class BaseConfig(object):
                 subdir_path = os.path.join(self.private_data_dir, subdir)
                 if not os.path.exists(subdir_path):
                     os.mkdir(subdir_path, 0o700)
+        if self.container_auth_data:
+            # Pull in the necessary registry auth info, if there is a container cred
+            host = self.container_auth_data.get('host')
+            username = self.container_auth_data.get('username')
+            password = self.container_auth_data.get('password')
+            registry_auth_path = self._generate_container_auth_file(host, username, password)
+            new_args.extend(["--authfile={}".format(registry_auth_path)])
 
             # runtime commands need artifacts mounted to output data
             self._update_volume_mount_paths(new_args,
@@ -515,6 +529,19 @@ class BaseConfig(object):
         new_args.extend(args)
         logger.debug(f"container engine invocation: {' '.join(new_args)}")
         return new_args
+
+    def _generate_container_auth_file(self, host, username, password):
+        token = "{}:{}".format(username, password)
+        encrypted_container_auth_data = {'auths': {host: {'auth': b64encode(token.encode('UTF-8')).decode('UTF-8')}}}
+        # Create a new temp file with container auth data
+        path = tempfile.mkdtemp(prefix='ansible_runner_registry_%s_' % self.ident)
+        @atexit.register
+        def cleanup_ansible_runner_registry():
+            shutil.rmtree(path)
+        with open(path + '/auth.json', 'w') as authfile:
+            os.chmod(authfile.name, stat.S_IRUSR | stat.S_IWUSR)
+            authfile.write(json.dumps(encrypted_container_auth_data, indent=4))
+        return authfile.name
 
     def wrap_args_with_ssh_agent(self, args, ssh_key_path, ssh_auth_sock=None, silence_ssh_add=False):
         """

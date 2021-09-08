@@ -5,5 +5,4 @@ pytest
 pytest-cov
 pytest-mock
 pytest-xdist
-tox
 yamllint

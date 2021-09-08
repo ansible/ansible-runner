@@ -17,7 +17,7 @@ In this example we are using [virtualenvwrapper](https://virtualenvwrapper.readt
 ```bash
 (host)$ pip install virtualenvwrapper
 (host)$ mkvirtualenv ansible-runner
-(host)$ pip install -e . -r test/requirements.txt -c test/constraints.txt
+(host)$ pip install -e . tox -c test/constraints.txt
 ```
 
 When done making changes, run:

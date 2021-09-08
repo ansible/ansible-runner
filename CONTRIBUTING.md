@@ -12,29 +12,35 @@ If you have questions about this document or anything not covered here? Come cha
 
 ## Setting up your development environment
 
-In this example we are using [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/), but any virtual environment will do.
+Install `tox` if it is not already installed on your system. This can be done with `pip` or your system package manager.
 
 ```bash
-(host)$ pip install virtualenvwrapper
-(host)$ mkvirtualenv ansible-runner
-(host)$ pip install -e . tox -c test/constraints.txt
+pip install tox -c test/constraints.txt
+```
+
+Setup a test virtual environment and activate it:
+
+```
+tox -e dev
+source .tox/dev/bin/activate
 ```
 
 When done making changes, run:
 
 ```
-(host)$ deactivate
+deactivate
 ```
 
 To reactivate the virtual environment:
 
 ```
-(host)$ workon ansible-runner
+source .tox/dev/bin/activate
 ```
-## Linting and Unit Tests
 
-`tox` is used to run linters (`flake8` and `yamllint`) and tests.
+## Testing
 
-```
-(host)$ tox
-```
+`tox` is used to run tests. To run the default set of tests, just run `tox`.
+
+To list all available test targets, run `tox -a`.
+
+Run a specific test with `tox -e [target]`

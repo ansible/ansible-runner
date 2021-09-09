@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import shutil
+
 from functools import partial
 import os
 import re
@@ -44,9 +46,12 @@ def test_base_config_init_defaults():
     assert isinstance(rc.loader, ArtifactLoader)
 
 
-def test_base_config_with_artifact_dir():
-    rc = BaseConfig(artifact_dir='/tmp/this-is-some-dir')
-    assert rc.artifact_dir == os.path.join('/tmp/this-is-some-dir', rc.ident)
+def test_base_config_with_artifact_dir(request):
+    some_dir = '/tmp/this-is-some-dir'
+    rc = BaseConfig(artifact_dir=some_dir)
+    request.addfinalizer(lambda: shutil.rmtree(some_dir))
+
+    assert rc.artifact_dir == os.path.join(some_dir, rc.ident)
 
     # Check that the private data dir is placed in our default location with our default prefix
     # and has some extra uniqueness on the end.

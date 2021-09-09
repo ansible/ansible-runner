@@ -106,9 +106,19 @@ def test_prepare_inventory_command_with_containerization(tmpdir, container_runti
     if container_runtime == 'podman':
         extra_container_args = ['--quiet']
     else:
-        extra_container_args = ['--user={os.getuid()}']
+        extra_container_args = ['--user={}'.format(os.getuid())]
 
-    expected_command_start = [container_runtime, 'run', '--rm', '--interactive', '--workdir', '/runner/project'] + \
+    ssh_auth_sock_elements = []
+    auth_sock = os.environ.get('SSH_AUTH_SOCK')
+    if auth_sock:
+        auth_sock_base = auth_sock
+        if auth_sock.endswith('ssh'):
+            auth_sock_base = auth_sock[:-len('ssh')]
+        ssh_auth_sock_elements.extend(
+            ['-v', '{0}:{0}'.format(auth_sock_base), '-e', 'SSH_AUTH_SOCK={}'.format(os.environ.get('SSH_AUTH_SOCK'))]
+        )
+
+    expected_command_start = [container_runtime, 'run', '--rm', '--interactive', '--workdir', '/runner/project'] + ssh_auth_sock_elements + \
                              ['-v', '{}/.ssh/:/home/runner/.ssh/'.format(os.environ['HOME'])]
     if container_runtime == 'podman':
         expected_command_start += ['--group-add=root', '--ipc=host']
@@ -122,10 +132,4 @@ def test_prepare_inventory_command_with_containerization(tmpdir, container_runti
         ['/tmp', '--vault-id', '1234', '--vault-password-file', '/tmp/password', '--output', '/tmp/inv_out.txt'] + \
         ['--export']
 
-    assert len(expected_command_start) == len(rc.command)
-
-    for index, element in enumerate(expected_command_start):
-        if '--user=' in element:
-            assert '--user=' in rc.command[index]
-        else:
-            assert rc.command[index] == element
+    assert expected_command_start == rc.command

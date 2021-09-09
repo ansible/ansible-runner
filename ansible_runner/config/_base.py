@@ -535,10 +535,12 @@ class BaseConfig(object):
         encrypted_container_auth_data = {'auths': {host: {'auth': b64encode(token.encode('UTF-8')).decode('UTF-8')}}}
         # Create a new temp file with container auth data
         path = tempfile.mkdtemp(prefix='ansible_runner_registry_%s_' % self.ident)
+
         @atexit.register
         def cleanup_ansible_runner_registry():
             shutil.rmtree(path)
-        with open(path + '/auth.json', 'w') as authfile:
+        registry_auth_path = os.path.join(path, 'auth.json')
+        with open(registry_auth_path, 'w') as authfile:
             os.chmod(authfile.name, stat.S_IRUSR | stat.S_IWUSR)
             authfile.write(json.dumps(encrypted_container_auth_data, indent=4))
         return authfile.name

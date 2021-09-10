@@ -2,6 +2,7 @@
 
 import os
 import pytest
+from unittest import mock
 
 from tempfile import gettempdir
 
@@ -88,6 +89,8 @@ def test_prepare_inventory_invalid_graph_response_format():
 
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
 def test_prepare_inventory_command_with_containerization(tmpdir, container_runtime):
+    os.mkdir(os.path.join(tmpdir, '.ssh'))
+
     kwargs = {
         'private_data_dir': tmpdir,
         'process_isolation': True,
@@ -97,9 +100,10 @@ def test_prepare_inventory_command_with_containerization(tmpdir, container_runti
     rc = InventoryConfig(**kwargs)
     rc.ident = 'foo'
     inventories = ['/tmp/inventory1', '/tmp/inventory2']
-    rc.prepare_inventory_command('list', inventories, response_format='yaml', playbook_dir='/tmp',
-                                 vault_ids='1234', vault_password_file='/tmp/password', output_file='/tmp/inv_out.txt',
-                                 export=True)
+    with mock.patch.dict('os.environ', {'HOME': str(tmpdir)}, clear=True):
+        rc.prepare_inventory_command('list', inventories, response_format='yaml', playbook_dir='/tmp',
+                                     vault_ids='1234', vault_password_file='/tmp/password', output_file='/tmp/inv_out.txt',
+                                     export=True)
 
     assert rc.runner_mode == 'subprocess'
     extra_container_args = []
@@ -108,18 +112,8 @@ def test_prepare_inventory_command_with_containerization(tmpdir, container_runti
     else:
         extra_container_args = ['--user={}'.format(os.getuid())]
 
-    ssh_auth_sock_elements = []
-    auth_sock = os.environ.get('SSH_AUTH_SOCK')
-    if auth_sock:
-        auth_sock_base = auth_sock
-        if auth_sock.endswith('ssh'):
-            auth_sock_base = auth_sock[:-len('ssh')]
-        ssh_auth_sock_elements.extend(
-            ['-v', '{0}:{0}'.format(auth_sock_base), '-e', 'SSH_AUTH_SOCK={}'.format(os.environ.get('SSH_AUTH_SOCK'))]
-        )
-
-    expected_command_start = [container_runtime, 'run', '--rm', '--interactive', '--workdir', '/runner/project'] + ssh_auth_sock_elements + \
-                             ['-v', '{}/.ssh/:/home/runner/.ssh/'.format(os.environ['HOME'])]
+    expected_command_start = [container_runtime, 'run', '--rm', '--interactive', '--workdir', '/runner/project'] + \
+                             ['-v', '{}/.ssh/:/home/runner/.ssh/'.format(str(tmpdir))]
     if container_runtime == 'podman':
         expected_command_start += ['--group-add=root', '--ipc=host']
 

@@ -27,6 +27,7 @@ This command optionally accepts the `--private-data-dir` option.
 If provided, it will extract the contents sent from `ansible-runner transmit` into that directory.
 If no `--private-data-dir` is given, then it will extract the contents to a temporary directory,
 which will be deleted at the end of execution.
+You can use the `--delete` flag to assure that files are deleted from a location specified by `--private-data-dir` as well.
 
 The `ansible-runner process` command accepts the result stream from the worker, and fires all the normal callbacks
 and does job event processing.  In the command above, this results in printing the playbook output and saving

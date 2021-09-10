@@ -31,6 +31,7 @@ from ansible_runner import output
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.output import debug
+from ansible_runner.utils import register_for_cleanup
 
 
 logger = logging.getLogger('ansible-runner')
@@ -355,6 +356,9 @@ class RunnerConfig(BaseConfig):
         '''
         path = tempfile.mkdtemp(prefix='ansible_runner_pi_', dir=self.process_isolation_path)
         os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+
+        register_for_cleanup(path)
+
         return path
 
     def wrap_args_with_cgexec(self, args):

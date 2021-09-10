@@ -14,6 +14,7 @@ import threading
 import pipes
 import uuid
 import codecs
+import atexit
 
 from distutils.spawn import find_executable
 from ansible_runner.exceptions import ConfigurationError
@@ -24,6 +25,21 @@ except ImportError:
     from collections import Iterable, Mapping
 from io import StringIO
 from six import string_types, PY2, PY3, text_type, binary_type
+
+
+def _cleanup_folder(folder):
+    try:
+        shutil.rmtree(folder)
+    except FileNotFoundError:
+        pass
+
+
+def register_for_cleanup(folder):
+    '''
+    Provide the path to a folder to make sure it is deleted when execution finishes.
+    The folder need not exist at the time when this is called.
+    '''
+    atexit.register(_cleanup_folder, folder)
 
 
 class Bunch(object):

@@ -31,7 +31,6 @@ import os
 import shutil
 import textwrap
 import tempfile
-import atexit
 
 from contextlib import contextmanager
 from uuid import uuid4
@@ -40,7 +39,7 @@ from yaml import safe_dump, safe_load
 
 from ansible_runner import run
 from ansible_runner import output
-from ansible_runner.utils import dump_artifact, Bunch
+from ansible_runner.utils import dump_artifact, Bunch, register_for_cleanup
 from ansible_runner.utils.capacity import get_cpu_count, get_mem_in_bytes, get_uuid
 from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
@@ -408,26 +407,6 @@ DEFAULT_CLI_ARGS = {
             )
         ),
     ),
-    "execenv_cli_group": (
-        (
-            ('--container-runtime',),
-            dict(
-                dest='container_runtime',
-                default='podman',
-                help="OCI Compliant container runtime to use. Examples: podman, docker"
-            ),
-        ),
-        (
-            ('--keep-files',),
-            dict(
-                dest='keep_files',
-                action='store_true',
-                default=False,
-                help="Keep temporary files persistent on disk instead of cleaning them automatically. "
-                     "(Useful for debugging)"
-            ),
-        ),
-    ),
 }
 
 logger = logging.getLogger('ansible-runner')
@@ -643,6 +622,16 @@ def main(sys_args=None):
         action="store_true",
         help="show the execution node's Ansible Runner version along with its memory and CPU capacities"
     )
+    worker_subparser.add_argument(
+        "--keep-directory",
+        dest="keep_directory",
+        action="store_true",
+        default=False,
+        help=(
+            "After the run is finished, keep the private_data_dir that has been streamed and unzipped here. "
+            "WARNING: if the directory already exists, it will be kept even if this flag is not given."
+        )
+    )
     process_subparser = subparser.add_parser(
         'process',
         help="Receive the output of remote ansible-runner work and distribute the results"
@@ -764,6 +753,11 @@ def main(sys_args=None):
     vargs = vars(args)
 
     if vargs.get('command') in ('worker', 'process'):
+        if not vargs.get('private_data_dir'):
+            temp_private_dir = tempfile.mkdtemp()
+            vargs['private_data_dir'] = temp_private_dir
+
+    if vargs.get('command') == 'worker':
         if vargs.get('worker_info'):
             cpu = get_cpu_count()
             mem = get_mem_in_bytes()
@@ -783,15 +777,13 @@ def main(sys_args=None):
                     }
             print(safe_dump(info, default_flow_style=True))
             parser.exit(0)
-        if not vargs.get('private_data_dir'):
-            temp_private_dir = tempfile.mkdtemp()
-            vargs['private_data_dir'] = temp_private_dir
-            if vargs.get('keep_files', False):
-                print("ANSIBLE-RUNNER: keeping temporary data directory: {}".format(temp_private_dir))
+        if vargs.get('keep_directory', False):
+            print("ANSIBLE-RUNNER: keeping --private-data-directory: {}".format(vargs['private_data_dir']))
+        else:
+            if os.path.exists(vargs['private_data_dir']):
+                print("ANSIBLE-RUNNER: will not delete --private-data-directory: {} because it already exists".format(vargs['private_data_dir']))
             else:
-                @atexit.register
-                def conditonally_clean_cli_execenv_tempdir():
-                    shutil.rmtree(temp_private_dir)
+                register_for_cleanup(vargs['private_data_dir'])
 
     if vargs.get('command') in ('start', 'run', 'transmit'):
         if vargs.get('hosts') and not (vargs.get('module') or vargs.get('role')):

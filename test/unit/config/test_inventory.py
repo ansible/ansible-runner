@@ -109,7 +109,7 @@ def test_prepare_inventory_command_with_containerization(tmp_path, container_run
     if container_runtime == 'podman':
         extra_container_args = ['--quiet']
     else:
-        extra_container_args = ['--user={os.getuid()}']
+        extra_container_args = [f'--user={os.getuid()}']
 
     expected_command_start = [
         container_runtime,
@@ -150,8 +150,4 @@ def test_prepare_inventory_command_with_containerization(tmp_path, container_run
 
     assert len(expected_command_start) == len(rc.command)
 
-    for index, element in enumerate(expected_command_start):
-        if '--user=' in element:
-            assert '--user=' in rc.command[index]
-        else:
-            assert rc.command[index] == element
+    assert expected_command_start == rc.command

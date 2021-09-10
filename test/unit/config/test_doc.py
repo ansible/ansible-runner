@@ -84,7 +84,7 @@ def test_prepare_plugin_docs_command_with_containerization(tmp_path, container_r
     if container_runtime == 'podman':
         extra_container_args = ['--quiet']
     else:
-        extra_container_args = ['--user={os.getuid()}']
+        extra_container_args = [f'--user={os.getuid()}']
 
     expected_command_start = [
         container_runtime,
@@ -118,11 +118,7 @@ def test_prepare_plugin_docs_command_with_containerization(tmp_path, container_r
         'file',
     ])
 
-    for index, element in enumerate(expected_command_start):
-        if '--user=' in element:
-            assert '--user=' in rc.command[index]
-        else:
-            assert rc.command[index] == element
+    assert expected_command_start == rc.command
 
 
 def test_prepare_plugin_list_command():
@@ -137,7 +133,7 @@ def test_prepare_plugin_list_command():
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
 def test_prepare_plugin_list_command_with_containerization(tmp_path, container_runtime, mocker):
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
-    os.mkdir(os.path.join(tmp_path, '.ssh'))
+    tmp_path.joinpath('.ssh').mkdir()
 
     kwargs = {
         'private_data_dir': tmp_path,
@@ -155,7 +151,7 @@ def test_prepare_plugin_list_command_with_containerization(tmp_path, container_r
     if container_runtime == 'podman':
         extra_container_args = ['--quiet']
     else:
-        extra_container_args = ['--user={os.getuid()}']
+        extra_container_args = [f'--user={os.getuid()}']
 
     expected_command_start = [
         container_runtime,

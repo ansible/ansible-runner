@@ -623,13 +623,14 @@ def main(sys_args=None):
         help="show the execution node's Ansible Runner version along with its memory and CPU capacities"
     )
     worker_subparser.add_argument(
-        "--keep-directory",
-        dest="keep_directory",
+        "--delete",
+        dest="delete_directory",
         action="store_true",
         default=False,
         help=(
-            "After the run is finished, keep the private_data_dir that has been streamed and unzipped here. "
-            "WARNING: if the directory already exists, it will be kept even if this flag is not given."
+            "Delete existing folder (and everything in it) in the location specified by --private-data-dir. "
+            "The directory will be re-populated when the streamed data is unpacked. "
+            "Using this will also assure that the directory is deleted when the job finishes."
         )
     )
     process_subparser = subparser.add_parser(
@@ -752,11 +753,6 @@ def main(sys_args=None):
 
     vargs = vars(args)
 
-    if vargs.get('command') in ('worker', 'process'):
-        if not vargs.get('private_data_dir'):
-            temp_private_dir = tempfile.mkdtemp()
-            vargs['private_data_dir'] = temp_private_dir
-
     if vargs.get('command') == 'worker':
         if vargs.get('worker_info'):
             cpu = get_cpu_count()
@@ -777,13 +773,25 @@ def main(sys_args=None):
                     }
             print(safe_dump(info, default_flow_style=True))
             parser.exit(0)
-        if vargs.get('keep_directory', False):
-            print("ANSIBLE-RUNNER: keeping --private-data-directory: {}".format(vargs['private_data_dir']))
+
+        cleanup_data_dir = True
+        if vargs.get('private_data_dir'):
+            if os.path.exists(vargs.get('private_data_dir')):
+                if vargs.get('delete_directory', False):
+                    shutil.rmtree(vargs['private_data_dir'])
+                else:
+                    cleanup_data_dir = False
         else:
-            if os.path.exists(vargs['private_data_dir']):
-                print("ANSIBLE-RUNNER: will not delete --private-data-directory: {} because it already exists".format(vargs['private_data_dir']))
-            else:
-                register_for_cleanup(vargs['private_data_dir'])
+            temp_private_dir = tempfile.mkdtemp()
+            vargs['private_data_dir'] = temp_private_dir
+        if cleanup_data_dir:
+            register_for_cleanup(vargs['private_data_dir'])
+
+    if vargs.get('command') == 'process':
+        # the process command is the final destination of artifacts, user expects private_data_dir to not be cleaned up
+        if not vargs.get('private_data_dir'):
+            temp_private_dir = tempfile.mkdtemp()
+            vargs['private_data_dir'] = temp_private_dir
 
     if vargs.get('command') in ('start', 'run', 'transmit'):
         if vargs.get('hosts') and not (vargs.get('module') or vargs.get('role')):

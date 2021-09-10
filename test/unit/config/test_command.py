@@ -64,12 +64,12 @@ def test_prepare_run_command_generic():
 
 
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_prepare_run_command_with_containerization(tmpdir, container_runtime, mocker):
-    mocker.patch.dict('os.environ', {'HOME': str(tmpdir)}, clear=True)
-    os.mkdir(os.path.join(tmpdir, '.ssh'))
+def test_prepare_run_command_with_containerization(tmp_path, container_runtime, mocker):
+    mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
+    tmp_path.joinpath('.ssh').mkdir()
 
     kwargs = {
-        'private_data_dir': tmpdir,
+        'private_data_dir': tmp_path,
         'process_isolation': True,
         'container_image': 'my_container',
         'process_isolation_executable': container_runtime

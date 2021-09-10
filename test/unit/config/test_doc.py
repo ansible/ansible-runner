@@ -61,12 +61,12 @@ def test_prepare_plugin_docs_command():
 
 
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_prepare_plugin_docs_command_with_containerization(tmpdir, container_runtime, mocker):
-    mocker.patch.dict('os.environ', {'HOME': str(tmpdir)}, clear=True)
-    os.mkdir(os.path.join(tmpdir, '.ssh'))
+def test_prepare_plugin_docs_command_with_containerization(tmp_path, container_runtime, mocker):
+    mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
+    tmp_path.joinpath('.ssh').mkdir()
 
     kwargs = {
-        'private_data_dir': tmpdir,
+        'private_data_dir': tmp_path,
         'process_isolation': True,
         'container_image': 'my_container',
         'process_isolation_executable': container_runtime
@@ -135,12 +135,12 @@ def test_prepare_plugin_list_command():
 
 
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_prepare_plugin_list_command_with_containerization(tmpdir, container_runtime, mocker):
-    mocker.patch.dict('os.environ', {'HOME': str(tmpdir)}, clear=True)
-    os.mkdir(os.path.join(tmpdir, '.ssh'))
+def test_prepare_plugin_list_command_with_containerization(tmp_path, container_runtime, mocker):
+    mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
+    os.mkdir(os.path.join(tmp_path, '.ssh'))
 
     kwargs = {
-        'private_data_dir': tmpdir,
+        'private_data_dir': tmp_path,
         'process_isolation': True,
         'container_image': 'my_container',
         'process_isolation_executable': container_runtime

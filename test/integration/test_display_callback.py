@@ -15,8 +15,8 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.fixture()
-def executor(tmpdir, request, is_pre_ansible28):
-    private_data_dir = six.text_type(tmpdir.mkdir('foo'))
+def executor(tmp_path, request, is_pre_ansible28):
+    private_data_dir = six.text_type(tmp_path.mkdir('foo'))
 
     playbooks = request.node.callspec.params.get('playbook')
     playbook = list(playbooks.values())[0]
@@ -323,7 +323,7 @@ def test_module_level_no_log(executor, playbook, skipif_pre_ansible28):
     assert 'SENSITIVE' not in json.dumps(list(executor.events))
 
 
-def test_output_when_given_invalid_playbook(tmpdir):
+def test_output_when_given_invalid_playbook(tmp_path):
     # As shown in the following issue:
     #
     #   https://github.com/ansible/ansible-runner/issues/29
@@ -334,7 +334,7 @@ def test_output_when_given_invalid_playbook(tmpdir):
     #   https://github.com/ansible/ansible-runner/pull/34
     #
     # But no test validated it.  This does that.
-    private_data_dir = str(tmpdir)
+    private_data_dir = str(tmp_path)
     executor = init_runner(
         private_data_dir=private_data_dir,
         inventory="localhost ansible_connection=local",
@@ -348,7 +348,7 @@ def test_output_when_given_invalid_playbook(tmpdir):
     assert "could not be found" in stdout
 
 
-def test_output_when_given_non_playbook_script(tmpdir):
+def test_output_when_given_non_playbook_script(tmp_path):
     # As shown in the following pull request:
     #
     #   https://github.com/ansible/ansible-runner/pull/256
@@ -360,7 +360,7 @@ def test_output_when_given_non_playbook_script(tmpdir):
     # this is a retro-active test based on the sample repo provided in the PR:
     #
     #   https://github.com/AlanCoding/ansible-runner-examples/tree/master/non_playbook/sleep_with_writes
-    private_data_dir = str(tmpdir)
+    private_data_dir = str(tmp_path)
     with open(os.path.join(private_data_dir, "args"), 'w') as args_file:
         args_file.write("bash sleep_and_write.sh\n")
     with open(os.path.join(private_data_dir, "sleep_and_write.sh"), 'w') as script_file:

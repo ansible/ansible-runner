@@ -1,8 +1,9 @@
 import json
 import shutil
 import tempfile
-import os
 import io
+
+from pathlib import Path
 
 import pytest
 from unittest.mock import patch
@@ -228,31 +229,35 @@ def test_sanitize_container_name(container_name, expected_name):
 
 
 @pytest.mark.parametrize('symlink_dest,check_content', [
-    ('/proc/cpuinfo', []),
+    ('/bin', []),
     ('ordinary_file.txt', ['my_link']),
     ('ordinary_directory', ['my_link/dir_file.txt']),
     ('.', ['my_link/ordinary_directory/dir_file.txt', 'my_link/my_link/ordinary_file.txt']),
     ('filedoesnotexist.txt', [])
 ], ids=['global', 'local', 'directory', 'recursive', 'bad'])
-def test_transmit_symlink(tmpdir, symlink_dest, check_content):
-    if not os.path.exists(symlink_dest):
-        pytest.skip(f"File does not exists {symlink_dest}")
+def test_transmit_symlink(tmp_path, symlink_dest, check_content):
+    symlink_dest = Path(symlink_dest)
+
     # prepare the input private_data_dir directory to zip
-    pdd = tmpdir.mkdir('symlink_zip_test')
+    pdd = tmp_path / 'symlink_zip_test'
+    pdd.mkdir()
 
     # Create some basic shared demo content
-    with open(os.path.join(pdd, 'ordinary_file.txt'), 'w') as f:
-        f.write('hello world')
-    os.mkdir(os.path.join(pdd, 'ordinary_directory'))
-    with open(os.path.join(pdd, 'ordinary_directory', 'dir_file.txt'), 'w') as f:
+    with open(pdd / 'ordinary_file.txt', 'w') as f:
         f.write('hello world')
 
-    old_symlink_path = os.path.join(pdd, 'my_link')
-    os.symlink(symlink_dest, old_symlink_path)
+    ord_dir = pdd / 'ordinary_directory'
+    ord_dir.mkdir()
+    with open(ord_dir / 'dir_file.txt', 'w') as f:
+        f.write('hello world')
+
+    old_symlink_path = pdd / 'my_link'
+    old_symlink_path.symlink_to(symlink_dest)
+    # os.symlink(symlink_dest, old_symlink_path)
 
     # SANITY - set expectations for the symlink
-    assert os.path.islink(old_symlink_path)
-    os.readlink(old_symlink_path) == symlink_dest
+    assert old_symlink_path.is_symlink()
+    old_symlink_path.readlink() == symlink_dest
 
     # zip and stream the data into the in-memory buffer outgoing_buffer
     outgoing_buffer = io.BytesIO()
@@ -260,7 +265,8 @@ def test_transmit_symlink(tmpdir, symlink_dest, check_content):
     stream_dir(pdd, outgoing_buffer)
 
     # prepare the destination private_data_dir to transmit to
-    dest_dir = tmpdir.mkdir('symlink_zip_dest')
+    dest_dir = tmp_path / 'symlink_zip_dest'
+    dest_dir.mkdir()
 
     # Extract twice so we assure that existing data does not break things
     for i in range(2):
@@ -272,13 +278,13 @@ def test_transmit_symlink(tmpdir, symlink_dest, check_content):
         unstream_dir(outgoing_buffer, size_data['zipfile'], dest_dir)
 
         # Assure the new symlink is still the same type of symlink
-        new_symlink_path = os.path.join(dest_dir, 'my_link')
-        assert os.path.islink(new_symlink_path)
-        os.readlink(new_symlink_path) == symlink_dest
+        new_symlink_path = dest_dir / 'my_link'
+        assert new_symlink_path.is_symlink()
+        new_symlink_path.readlink() == symlink_dest
 
     for fname in check_content:
-        abs_path = os.path.join(dest_dir, fname)
-        assert os.path.exists(abs_path), f'Expected "{fname}" in target dir to be a file with content.'
+        abs_path = dest_dir / fname
+        assert abs_path.exists(), f'Expected "{fname}" in target dir to be a file with content.'
         with open(abs_path, 'r') as f:
             assert f.read() == 'hello world'
 
@@ -289,23 +295,25 @@ def test_transmit_symlink(tmpdir, symlink_dest, check_content):
     0o555,
     0o700,
 ])
-def test_transmit_permissions(tmpdir, fperm):
+def test_transmit_permissions(tmp_path, fperm):
+    # breakpoint()
+    pdd = tmp_path / 'transmit_permission_test'
+    pdd.mkdir()
 
-    pdd = tmpdir.mkdir('transmit_permission_test')
-
-    old_file_path = os.path.join(pdd, 'ordinary_file.txt')
+    old_file_path = pdd / 'ordinary_file.txt'
     with open(old_file_path, 'w') as f:
         f.write('hello world')
-    os.chmod(old_file_path, fperm)
+    old_file_path.chmod(fperm)
 
     # SANITY - set expectations for the file
-    assert oct(os.stat(old_file_path).st_mode & 0o777) == oct(fperm)
+    # assert oct(os.stat(old_file_path).st_mode & 0o777) == oct(fperm)
+    assert oct(old_file_path.stat().st_mode & 0o777) == oct(fperm)
 
     outgoing_buffer = io.BytesIO()
     outgoing_buffer.name = 'not_stdout'
     stream_dir(pdd, outgoing_buffer)
 
-    dest_dir = tmpdir.mkdir('transmit_permission_dest')
+    dest_dir = tmp_path / 'transmit_permission_dest'
 
     outgoing_buffer.seek(0)
     first_line = outgoing_buffer.readline()
@@ -313,5 +321,5 @@ def test_transmit_permissions(tmpdir, fperm):
     unstream_dir(outgoing_buffer, size_data['zipfile'], dest_dir)
 
     # Assure the new file is the same permissions
-    new_file_path = os.path.join(dest_dir, 'ordinary_file.txt')
-    assert oct(os.stat(new_file_path).st_mode) == oct(os.stat(old_file_path).st_mode)
+    new_file_path = dest_dir / 'ordinary_file.txt'
+    assert oct(new_file_path.stat().st_mode) == oct(old_file_path.stat().st_mode)

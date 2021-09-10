@@ -250,8 +250,8 @@ def test_wrap_args_with_ssh_agent_silent():
 @patch('os.path.isdir', return_value=False)
 @patch('os.path.exists', return_value=True)
 @patch('os.makedirs', return_value=True)
-def test_container_volume_mounting_with_Z(mock_isdir, mock_exists, mock_makedirs, tmpdir):
-    rc = BaseConfig(private_data_dir=str(tmpdir))
+def test_container_volume_mounting_with_Z(mock_isdir, mock_exists, mock_makedirs, tmp_path):
+    rc = BaseConfig(private_data_dir=str(tmp_path))
     os.path.isdir = Mock()
     rc.container_volume_mounts = ['project_path:project_path:Z']
     rc.container_name = 'foo'
@@ -275,14 +275,14 @@ def test_container_volume_mounting_with_Z(mock_isdir, mock_exists, mock_makedirs
 
 
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_containerization_settings(tmpdir, container_runtime, mocker):
-    mocker.patch.dict('os.environ', {'HOME': str(tmpdir)}, clear=True)
-    os.mkdir(os.path.join(tmpdir, '.ssh'))
+def test_containerization_settings(tmp_path, container_runtime, mocker):
+    mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
+    tmp_path.joinpath('.ssh').mkdir()
 
     mock_containerized = mocker.patch('ansible_runner.config._base.BaseConfig.containerized', new_callable=PropertyMock)
     mock_containerized.return_value = True
 
-    rc = BaseConfig(private_data_dir=tmpdir)
+    rc = BaseConfig(private_data_dir=tmp_path)
     rc.ident = 'foo'
     rc.cmdline_args = ['main.yaml', '-i', '/tmp/inventory']
     rc.command = ['ansible-playbook'] + rc.cmdline_args
@@ -309,7 +309,7 @@ def test_containerization_settings(tmpdir, container_runtime, mocker):
         '--interactive',
         '--workdir',
         '/runner/project',
-        '-v', '{}/.ssh/:/home/runner/.ssh/'.format(str(tmpdir))
+        '-v', '{}/.ssh/:/home/runner/.ssh/'.format(str(tmp_path))
     ]
 
     if container_runtime == 'podman':
@@ -341,9 +341,9 @@ def test_containerization_settings(tmpdir, container_runtime, mocker):
         ('podman', '1')
     )
 )
-def test_containerization_unsafe_write_setting(tmpdir, container_runtime, expected):
+def test_containerization_unsafe_write_setting(tmp_path, container_runtime, expected):
     with patch('ansible_runner.config._base.BaseConfig.containerized', new_callable=PropertyMock) as mock_containerized:
-        rc = BaseConfig(private_data_dir=tmpdir)
+        rc = BaseConfig(private_data_dir=tmp_path)
         rc.ident = 'foo'
         rc.cmdline_args = ['main.yaml', '-i', '/tmp/inventory']
         rc.command = ['ansible-playbook'] + rc.cmdline_args

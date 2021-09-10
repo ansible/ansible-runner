@@ -635,8 +635,8 @@ def test_profiling_plugin_settings_with_custom_intervals(mock_mkdir):
 
 @patch('os.path.isdir', return_value=True)
 @patch('os.path.exists', return_value=True)
-def test_container_volume_mounting_with_Z(mock_isdir, mock_exists, tmpdir):
-    rc = RunnerConfig(str(tmpdir))
+def test_container_volume_mounting_with_Z(mock_isdir, mock_exists, tmp_path):
+    rc = RunnerConfig(str(tmp_path))
     rc.container_volume_mounts = ['/tmp/project_path:/tmp/project_path:Z']
     rc.container_name = 'foo'
     rc.env = {}
@@ -654,9 +654,9 @@ def test_container_volume_mounting_with_Z(mock_isdir, mock_exists, tmpdir):
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
 @patch('os.path.isdir', return_value=True)
 @patch('os.path.exists', return_value=True)
-def test_containerization_settings(mock_isdir, mock_exists, tmpdir, container_runtime):
+def test_containerization_settings(mock_isdir, mock_exists, tmp_path, container_runtime):
     with patch('ansible_runner.runner_config.RunnerConfig.containerized', new_callable=PropertyMock) as mock_containerized:
-        rc = RunnerConfig(tmpdir)
+        rc = RunnerConfig(tmp_path)
         rc.ident = 'foo'
         rc.playbook = 'main.yaml'
         rc.command = 'ansible-playbook'

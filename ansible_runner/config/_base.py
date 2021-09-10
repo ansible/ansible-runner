@@ -35,7 +35,6 @@ from ansible_runner.output import debug
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.utils import (
-    register_for_cleanup,
     open_fifo_write,
     args2cmdline,
     sanitize_container_name,
@@ -95,8 +94,6 @@ class BaseConfig(object):
             os.makedirs(self.private_data_dir, exist_ok=True, mode=0o700)
         else:
             self.private_data_dir = tempfile.mkdtemp(prefix=".ansible-runner-")
-
-            register_for_cleanup(self.private_data_dir)
 
         if artifact_dir is None:
             artifact_dir = os.path.join(self.private_data_dir, 'artifacts')

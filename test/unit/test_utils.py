@@ -1,4 +1,5 @@
 import json
+import os
 import shutil
 import tempfile
 import io
@@ -253,11 +254,10 @@ def test_transmit_symlink(tmp_path, symlink_dest, check_content):
 
     old_symlink_path = pdd / 'my_link'
     old_symlink_path.symlink_to(symlink_dest)
-    # os.symlink(symlink_dest, old_symlink_path)
 
     # SANITY - set expectations for the symlink
     assert old_symlink_path.is_symlink()
-    old_symlink_path.readlink() == symlink_dest
+    assert os.readlink(old_symlink_path) == str(symlink_dest)
 
     # zip and stream the data into the in-memory buffer outgoing_buffer
     outgoing_buffer = io.BytesIO()
@@ -280,7 +280,7 @@ def test_transmit_symlink(tmp_path, symlink_dest, check_content):
         # Assure the new symlink is still the same type of symlink
         new_symlink_path = dest_dir / 'my_link'
         assert new_symlink_path.is_symlink()
-        new_symlink_path.readlink() == symlink_dest
+        assert os.readlink(new_symlink_path) == str(symlink_dest)
 
     for fname in check_content:
         abs_path = dest_dir / fname

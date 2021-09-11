@@ -16,7 +16,8 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 
 @pytest.fixture()
 def executor(tmp_path, request, is_pre_ansible28):
-    private_data_dir = six.text_type(tmp_path.mkdir('foo'))
+    private_data_dir = tmp_path / 'foo'
+    private_data_dir.mkdir()
 
     playbooks = request.node.callspec.params.get('playbook')
     playbook = list(playbooks.values())[0]

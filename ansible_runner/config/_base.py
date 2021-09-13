@@ -150,16 +150,24 @@ class BaseConfig(object):
         if self.runner_mode == 'pexpect':
             try:
                 if self.passwords and isinstance(self.passwords, dict):
-                    self.passwords.update(self.loader.load_file('env/passwords', Mapping))
+                    # Load password file and then the passwords dict argument for precedence
+                    temporary_passwords = dict() or self.loader.load_file('env/passwords', Mapping)
+                    temporary_passwords.update(self.passwords)
+                    self.passwords = temporary_passwords
+                    del temporary_passwords
                 else:
                     self.passwords = self.passwords or self.loader.load_file('env/passwords', Mapping)
-                self.expect_passwords = {
-                    re.compile(pattern, re.M): password
-                    for pattern, password in iteritems(self.passwords)
-                }
             except ConfigurationError:
                 debug('Not loading passwords')
                 self.expect_passwords = dict()
+            finally:
+                if self.passwords:
+                    self.expect_passwords = {
+                        re.compile(pattern, re.M): password
+                        for pattern, password in iteritems(self.passwords)
+                    }
+                else:
+                    self.expect_passwords = dict()
 
             self.expect_passwords[pexpect.TIMEOUT] = None
             self.expect_passwords[pexpect.EOF] = None

@@ -30,12 +30,33 @@ def printenv_example(test_data_dir):
     return private_data_dir
 
 
+@pytest.fixture
+def passwords_example(test_data_dir):
+    private_data_dir = os.path.join(test_data_dir, 'passwords')
+    return private_data_dir
+
+
 def get_env_data(res):
     for event in res.events:
         found = bool(
             event['event'] == 'runner_on_ok' and event.get(
                 'event_data', {}
             ).get('task_action', None) == 'look_at_environment'
+        )
+        if found:
+            return event['event_data']['res']
+    else:
+        print('output:')
+        print(res.stdout.read())
+        raise RuntimeError('Count not find look_at_environment task from playbook')
+
+
+def get_passwords_data(res):
+    for event in res.events:
+        found = bool(
+            event['event'] == 'runner_on_ok' and event.get(
+                'event_data', {}
+            ).get('task_action', None) == 'set_fact'
         )
         if found:
             return event['event_data']['res']
@@ -313,3 +334,47 @@ def test_get_inventory_within_container(test_data_dir, container_runtime_install
     )
     assert 'host_1' in out['ungrouped']['hosts']
     assert 'host_2' in out['ungrouped']['hosts']
+
+
+def test_passwords_as_file(passwords_example):
+    custompass = "MYPASSWORD"
+    res = run(
+        private_data_dir=passwords_example,
+        playbook='get_passwords.yml',
+        inventory=None,
+    )
+    assert res.rc == 0, res.stdout.read()
+
+    ansible_pass = get_passwords_data(res)['ansible_facts']['check_password']
+
+    assert ansible_pass == custompass
+
+
+def test_passwords_as_arg_and_file(passwords_example):
+    custompass = "MYPASSWORD"
+    res = run(
+        private_data_dir=passwords_example,
+        playbook='get_passwords.yml',
+        inventory=None,
+        passwords={"SSH password:": custompass},
+    )
+    assert res.rc == 0, res.stdout.read()
+
+    ansible_pass = get_passwords_data(res)['ansible_facts']['check_password']
+
+    assert ansible_pass == custompass
+
+
+def test_passwords_precedence(passwords_example):
+    custompass = "MYPASSWORD2"
+    res = run(
+        private_data_dir=passwords_example,
+        playbook='get_passwords.yml',
+        inventory=None,
+        passwords={"SSH password:": custompass},
+    )
+    assert res.rc == 0, res.stdout.read()
+
+    ansible_pass = get_passwords_data(res)['ansible_facts']['check_password']
+
+    assert ansible_pass == custompass

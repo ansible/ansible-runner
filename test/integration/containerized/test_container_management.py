@@ -1,5 +1,6 @@
 import os
 import shutil
+import tempfile
 import time
 
 import pytest
@@ -70,3 +71,23 @@ def test_cancel_will_remove_container(test_data_dir, container_runtime_installed
     assert not is_running(
         cli, container_runtime_installed, 'ansible_runner_foo_bar'
     ), 'Found a running container, they should have all been stopped'
+
+
+def test_invalid_registry_host():
+    private_data_dir = tempfile.mkdtemp()
+    res = run(
+        private_data_dir=private_data_dir,
+        playbook='ping.yml',
+        settings={
+            'process_isolation_executable': 'podman',
+            'process_isolation': True,
+            'container_image': 'quay.io/kdelee/awx-ee',
+            'container_options': ['--user=root', '--pull=always'],
+        },
+        container_auth_data={'host': 'https://somedomain.invalid'},
+        ident='awx_123'
+    )
+    assert res.status == 'failed'
+    assert res.rc == 125  # This return code indicates a failed podman run
+
+    shutil.rmtree(private_data_dir)

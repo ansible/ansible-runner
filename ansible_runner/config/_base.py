@@ -451,7 +451,7 @@ class BaseConfig(object):
 
         # For run() and run_async() API value of base execution_mode is 'BaseExecutionMode.NONE'
         # and the container volume mounts are handled separately using 'container_volume_mounts'
-        # hence ignore additonal mount here
+        # hence ignore additional mount here
         if execution_mode != BaseExecutionMode.NONE:
             if execution_mode == BaseExecutionMode.ANSIBLE_COMMANDS:
                 self._handle_ansible_cmd_options_bind_mounts(new_args, cmdline_args)
@@ -532,7 +532,7 @@ class BaseConfig(object):
 
     def _generate_container_auth_file(self, host, username, password):
         token = "{}:{}".format(username, password)
-        encrypted_container_auth_data = {'auths': {host: {'auth': b64encode(token.encode('UTF-8')).decode('UTF-8')}}}
+        encoded_container_auth_data = {'auths': {host: {'auth': b64encode(token.encode('UTF-8')).decode('UTF-8')}}}
         # Create a new temp file with container auth data
         path = tempfile.mkdtemp(prefix='ansible_runner_registry_%s_' % self.ident)
 
@@ -542,7 +542,7 @@ class BaseConfig(object):
         registry_auth_path = os.path.join(path, 'auth.json')
         with open(registry_auth_path, 'w') as authfile:
             os.chmod(authfile.name, stat.S_IRUSR | stat.S_IWUSR)
-            authfile.write(json.dumps(encrypted_container_auth_data, indent=4))
+            authfile.write(json.dumps(encoded_container_auth_data, indent=4))
         return authfile.name
 
     def wrap_args_with_ssh_agent(self, args, ssh_key_path, ssh_auth_sock=None, silence_ssh_add=False):

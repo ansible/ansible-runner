@@ -75,8 +75,8 @@ def test_cancel_will_remove_container(test_data_dir, container_runtime_installed
     ), 'Found a running container, they should have all been stopped'
 
 
-@pytest.mark.skipif(shutil.which('podman') is None, reason='podman not available')
-def test_invalid_registry_host(tmp_path):
+@pytest.mark.parametrize('runtime', ['podman', 'docker'])
+def test_invalid_registry_host(tmp_path, runtime):
     pdd_path = tmp_path / 'private_data_dir'
     pdd_path.mkdir()
     private_data_dir = str(pdd_path)
@@ -87,7 +87,7 @@ def test_invalid_registry_host(tmp_path):
         private_data_dir=private_data_dir,
         playbook='ping.yml',
         settings={
-            'process_isolation_executable': 'podman',
+            'process_isolation_executable': runtime,
             'process_isolation': True,
             'container_image': image_name,
             'container_options': ['--user=root', '--pull=always'],
@@ -99,17 +99,22 @@ def test_invalid_registry_host(tmp_path):
     assert res.rc > 0
 
     result_stdout = res.stdout.read()
-    assert image_name in result_stdout
-    assert 'unauthorized' in result_stdout
+    if runtime == 'podman':
+        assert image_name in result_stdout
+        assert 'unauthorized' in result_stdout
+    else:
+        assert 'access to the requested resource is not authorized' in result_stdout
 
     assert os.path.exists(res.config.registry_auth_path)
-    with open(res.config.registry_auth_path, 'r') as f:
+    auth_path = res.config.registry_auth_path if runtime == 'podman' else os.path.join(res.config.registry_auth_path, 'config.json')
+    with open(auth_path, 'r') as f:
         content = f.read()
         assert res.config.container_auth_data['host'] in content
         assert 'Zm9vdXNlcjozNDlzazM0' in content  # the b64 encoded of username and password
 
 
-def test_registry_auth_file_cleanup(tmp_path, cli):
+@pytest.mark.parametrize('runtime', ['podman', 'docker'])
+def test_registry_auth_file_cleanup(tmp_path, cli, runtime):
     pdd_path = tmp_path / 'private_data_dir'
     pdd_path.mkdir()
     private_data_dir = str(pdd_path)
@@ -118,7 +123,7 @@ def test_registry_auth_file_cleanup(tmp_path, cli):
     registry_files_before = set(glob(auth_registry_glob))
 
     settings_data = {
-        'process_isolation_executable': 'podman',
+        'process_isolation_executable': runtime,
         'process_isolation': True,
         'container_image': 'quay.io/kdelee/does-not-exist',
         'container_options': ['--user=root', '--pull=always'],

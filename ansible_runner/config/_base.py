@@ -477,7 +477,11 @@ class BaseConfig(object):
             username = self.container_auth_data.get('username')
             password = self.container_auth_data.get('password')
             self.registry_auth_path = self._generate_container_auth_file(host, username, password)
-            new_args.extend(["--authfile={}".format(self.registry_auth_path)])
+            if 'podman' in self.process_isolation_executable:
+                new_args.extend(["--authfile={}".format(self.registry_auth_path)])
+            else:
+                docker_idx = new_args.index(self.process_isolation_executable)
+                new_args.insert(docker_idx + 1, "--config={}".format(self.registry_auth_path))
 
             # runtime commands need artifacts mounted to output data
             self._update_volume_mount_paths(new_args,
@@ -540,10 +544,16 @@ class BaseConfig(object):
         @atexit.register
         def cleanup_ansible_runner_registry():
             shutil.rmtree(path)
-        registry_auth_path = os.path.join(path, 'auth.json')
+        if self.process_isolation_executable == 'docker':
+            auth_filename = 'config.json'
+        else:
+            auth_filename = 'auth.json'
+        registry_auth_path = os.path.join(path, auth_filename)
         with open(registry_auth_path, 'w') as authfile:
             os.chmod(authfile.name, stat.S_IRUSR | stat.S_IWUSR)
             authfile.write(json.dumps(encoded_container_auth_data, indent=4))
+        if self.process_isolation_executable == 'docker':
+            return path
         return authfile.name
 
     def wrap_args_with_ssh_agent(self, args, ssh_key_path, ssh_auth_sock=None, silence_ssh_add=False):

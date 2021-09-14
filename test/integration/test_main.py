@@ -80,10 +80,18 @@ def test_temp_directory():
     assert not os.path.exists(context['saved_temp_dir'])
 
 
-def test_help():
+@pytest.mark.parametrize(
+    ('command', 'exit_code'),
+    (
+        (None, 0),
+        ([], 2),
+        (['run'], 2)
+    )
+)
+def test_help(command, exit_code):
     with pytest.raises(SystemExit) as exc:
-        main([])
-    assert exc.value.code == 2, 'Should raise SystemExit with return code 2'
+        main(command)
+    assert exc.value.code == exit_code, f'Should raise SystemExit with return code {exit_code}'
 
 
 def test_module_run():

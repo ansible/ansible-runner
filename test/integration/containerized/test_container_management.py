@@ -3,6 +3,7 @@ import shutil
 import time
 import json
 from glob import glob
+from uuid import uuid4
 
 import pytest
 
@@ -127,7 +128,10 @@ def test_registry_auth_file_cleanup(tmp_path, cli):
     with open(os.path.join(private_data_dir, 'env', 'settings'), 'w') as f:
         f.write(json.dumps(settings_data, indent=2))
 
-    cli(['run', private_data_dir, '-p', 'ping.yml'], check=False)
+    this_ident = str(uuid4())[:5]
 
-    registry_files_after = set(glob(auth_registry_glob))
-    assert registry_files_after == registry_files_before
+    cli(['run', private_data_dir, '--ident', this_ident, '-p', 'ping.yml'], check=False)
+
+    discovered_registry_files = set(glob(auth_registry_glob)) - registry_files_before
+    for file_name in discovered_registry_files:
+        assert this_ident not in file_name

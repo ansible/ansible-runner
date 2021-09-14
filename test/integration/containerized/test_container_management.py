@@ -77,6 +77,8 @@ def test_cancel_will_remove_container(test_data_dir, container_runtime_installed
 
 @pytest.mark.parametrize('runtime', ['podman', 'docker'])
 def test_invalid_registry_host(tmp_path, runtime):
+    if shutil.which(runtime) is None:
+        pytest.skip(f'{runtime} is unavaialble')
     pdd_path = tmp_path / 'private_data_dir'
     pdd_path.mkdir()
     private_data_dir = str(pdd_path)
@@ -115,6 +117,8 @@ def test_invalid_registry_host(tmp_path, runtime):
 
 @pytest.mark.parametrize('runtime', ['podman', 'docker'])
 def test_registry_auth_file_cleanup(tmp_path, cli, runtime):
+    if shutil.which(runtime) is None:
+        pytest.skip(f'{runtime} is unavaialble')
     pdd_path = tmp_path / 'private_data_dir'
     pdd_path.mkdir()
     private_data_dir = str(pdd_path)

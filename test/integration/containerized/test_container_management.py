@@ -75,8 +75,9 @@ def test_cancel_will_remove_container(test_data_dir, container_runtime_installed
     ), 'Found a running container, they should have all been stopped'
 
 
+@pytest.mark.skipif(shutil.which('podman') is None, reason='podman not available')
 def test_invalid_registry_host(tmp_path):
-    pdd_path = tmp_path / "private_data_dir"
+    pdd_path = tmp_path / 'private_data_dir'
     pdd_path.mkdir()
     private_data_dir = str(pdd_path)
 
@@ -109,7 +110,7 @@ def test_invalid_registry_host(tmp_path):
 
 
 def test_registry_auth_file_cleanup(tmp_path, cli):
-    pdd_path = tmp_path / "private_data_dir"
+    pdd_path = tmp_path / 'private_data_dir'
     pdd_path.mkdir()
     private_data_dir = str(pdd_path)
 

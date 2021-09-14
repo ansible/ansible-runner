@@ -158,6 +158,40 @@ class TestStreamingUsage:
         self.check_artifacts(process_dir, job_type)
 
 
+@pytest.fixture(scope='session')
+def transmit_stream(test_data_dir):
+    outgoing_buffer = tempfile.NamedTemporaryFile()
+    transmit_dir = os.path.join(test_data_dir, 'debug')
+    transmitter = Transmitter(_output=outgoing_buffer, private_data_dir=transmit_dir, playbook='debug.yml')
+    status, rc = transmitter.run()
+    assert rc in (None, 0)
+    assert status == 'unstarted'
+    return outgoing_buffer
+
+
+@pytest.mark.parametrize('delete', [False, True])
+def test_worker_preserve_or_delete_dir(tmp_path, cli, transmit_stream, delete):
+    worker_dir = str(tmp_path / 'for_worker')
+    os.mkdir(worker_dir)
+
+    test_file_path = os.path.join(worker_dir, 'test_file.txt')
+    with open(os.path.join(worker_dir, 'test_file.txt'), 'w') as f:
+        f.write('foobar')
+
+    with open(transmit_stream.name, 'r') as f:
+        worker_args = ['worker', '--private-data-dir', worker_dir]
+        if delete is True:
+            worker_args.append('--delete')
+        r = cli(worker_args, stdin=f)
+
+    assert '{"eof": true}' in r.stdout
+    for test_path in (test_file_path, os.path.join(worker_dir, 'project', 'debug.yml')):
+        if delete:
+            assert not os.path.exists(test_path)
+        else:
+            assert os.path.exists(test_path)
+
+
 def test_missing_private_dir_transmit(tmpdir):
     outgoing_buffer = io.BytesIO()
 

@@ -31,7 +31,6 @@ import os
 import shutil
 import textwrap
 import tempfile
-import atexit
 
 from contextlib import contextmanager
 from uuid import uuid4
@@ -40,7 +39,7 @@ from yaml import safe_dump, safe_load
 
 from ansible_runner import run
 from ansible_runner import output
-from ansible_runner.utils import dump_artifact, Bunch
+from ansible_runner.utils import dump_artifact, Bunch, register_for_cleanup
 from ansible_runner.utils.capacity import get_cpu_count, get_mem_in_bytes, get_uuid
 from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
@@ -408,26 +407,6 @@ DEFAULT_CLI_ARGS = {
             )
         ),
     ),
-    "execenv_cli_group": (
-        (
-            ('--container-runtime',),
-            dict(
-                dest='container_runtime',
-                default='podman',
-                help="OCI Compliant container runtime to use. Examples: podman, docker"
-            ),
-        ),
-        (
-            ('--keep-files',),
-            dict(
-                dest='keep_files',
-                action='store_true',
-                default=False,
-                help="Keep temporary files persistent on disk instead of cleaning them automatically. "
-                     "(Useful for debugging)"
-            ),
-        ),
-    ),
 }
 
 logger = logging.getLogger('ansible-runner')
@@ -643,6 +622,17 @@ def main(sys_args=None):
         action="store_true",
         help="show the execution node's Ansible Runner version along with its memory and CPU capacities"
     )
+    worker_subparser.add_argument(
+        "--delete",
+        dest="delete_directory",
+        action="store_true",
+        default=False,
+        help=(
+            "Delete existing folder (and everything in it) in the location specified by --private-data-dir. "
+            "The directory will be re-populated when the streamed data is unpacked. "
+            "Using this will also assure that the directory is deleted when the job finishes."
+        )
+    )
     process_subparser = subparser.add_parser(
         'process',
         help="Receive the output of remote ansible-runner work and distribute the results"
@@ -763,7 +753,7 @@ def main(sys_args=None):
 
     vargs = vars(args)
 
-    if vargs.get('command') in ('worker', 'process'):
+    if vargs.get('command') == 'worker':
         if vargs.get('worker_info'):
             cpu = get_cpu_count()
             mem = get_mem_in_bytes()
@@ -783,15 +773,25 @@ def main(sys_args=None):
                     }
             print(safe_dump(info, default_flow_style=True))
             parser.exit(0)
+
+        cleanup_data_dir = True
+        if vargs.get('private_data_dir'):
+            if os.path.exists(vargs.get('private_data_dir')):
+                if vargs.get('delete_directory', False):
+                    shutil.rmtree(vargs['private_data_dir'])
+                else:
+                    cleanup_data_dir = False
+        else:
+            temp_private_dir = tempfile.mkdtemp()
+            vargs['private_data_dir'] = temp_private_dir
+        if cleanup_data_dir:
+            register_for_cleanup(vargs['private_data_dir'])
+
+    if vargs.get('command') == 'process':
+        # the process command is the final destination of artifacts, user expects private_data_dir to not be cleaned up
         if not vargs.get('private_data_dir'):
             temp_private_dir = tempfile.mkdtemp()
             vargs['private_data_dir'] = temp_private_dir
-            if vargs.get('keep_files', False):
-                print("ANSIBLE-RUNNER: keeping temporary data directory: {}".format(temp_private_dir))
-            else:
-                @atexit.register
-                def conditonally_clean_cli_execenv_tempdir():
-                    shutil.rmtree(temp_private_dir)
 
     if vargs.get('command') in ('start', 'run', 'transmit'):
         if vargs.get('hosts') and not (vargs.get('module') or vargs.get('role')):

@@ -15,6 +15,7 @@ import ansible_runner
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.loader import ArtifactLoader
 import ansible_runner.plugins
+from ansible_runner.utils import register_for_cleanup
 from ansible_runner.utils.streaming import stream_dir, unstream_dir
 
 
@@ -74,6 +75,7 @@ class Worker(object):
         private_data_dir = kwargs.get('private_data_dir')
         if private_data_dir is None:
             private_data_dir = tempfile.mkdtemp()
+            register_for_cleanup(private_data_dir)
         self.private_data_dir = private_data_dir
 
         self.status = "unstarted"

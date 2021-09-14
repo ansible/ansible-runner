@@ -135,6 +135,9 @@ def test_role_run_abs():
     assert rc == 0
 
 
+# FIXME: This test interferes with test_role_logfile_abs. Marking it as serial so it is executed
+#        in a separate test run.
+@pytest.mark.serial
 def test_role_logfile(skipif_pre_ansible28, clear_integration_artifacts, tmp_path):
     logfile = tmp_path.joinpath('test_role_logfile')
     rc = main(['run', '-r', 'benthomasson.hello_role',

@@ -1,7 +1,8 @@
 import os
 import shutil
-import tempfile
 import time
+import json
+from glob import glob
 
 import pytest
 
@@ -73,21 +74,60 @@ def test_cancel_will_remove_container(test_data_dir, container_runtime_installed
     ), 'Found a running container, they should have all been stopped'
 
 
-def test_invalid_registry_host():
-    private_data_dir = tempfile.mkdtemp()
+def test_invalid_registry_host(tmp_path):
+    pdd_path = tmp_path / "private_data_dir"
+    pdd_path.mkdir()
+    private_data_dir = str(pdd_path)
+
+    image_name = 'quay.io/kdelee/does-not-exist'
+
     res = run(
         private_data_dir=private_data_dir,
         playbook='ping.yml',
         settings={
             'process_isolation_executable': 'podman',
             'process_isolation': True,
-            'container_image': 'quay.io/kdelee/awx-ee',
+            'container_image': image_name,
             'container_options': ['--user=root', '--pull=always'],
         },
-        container_auth_data={'host': 'https://somedomain.invalid'},
+        container_auth_data={'host': 'https://somedomain.invalid', 'username': 'foouser', 'password': '349sk34'},
         ident='awx_123'
     )
     assert res.status == 'failed'
-    assert res.rc == 125  # This return code indicates a failed podman run
+    assert res.rc > 0
 
-    shutil.rmtree(private_data_dir)
+    result_stdout = res.stdout.read()
+    assert image_name in result_stdout
+    assert 'unauthorized' in result_stdout
+
+    assert os.path.exists(res.config.registry_auth_path)
+    with open(res.config.registry_auth_path, 'r') as f:
+        content = f.read()
+        assert res.config.container_auth_data['host'] in content
+        assert 'Zm9vdXNlcjozNDlzazM0' in content  # the b64 encoded of username and password
+
+
+def test_registry_auth_file_cleanup(tmp_path, cli):
+    pdd_path = tmp_path / "private_data_dir"
+    pdd_path.mkdir()
+    private_data_dir = str(pdd_path)
+
+    auth_registry_glob = '/tmp/ansible_runner_registry_*'
+    registry_files_before = set(glob(auth_registry_glob))
+
+    settings_data = {
+        'process_isolation_executable': 'podman',
+        'process_isolation': True,
+        'container_image': 'quay.io/kdelee/does-not-exist',
+        'container_options': ['--user=root', '--pull=always'],
+        'container_auth_data': {'host': 'https://somedomain.invalid', 'username': 'foouser', 'password': '349sk34'},
+    }
+
+    os.mkdir(os.path.join(private_data_dir, 'env'))
+    with open(os.path.join(private_data_dir, 'env', 'settings'), 'w') as f:
+        f.write(json.dumps(settings_data, indent=2))
+
+    cli(['run', private_data_dir, '-p', 'ping.yml'], check=False)
+
+    registry_files_after = set(glob(auth_registry_glob))
+    assert registry_files_after == registry_files_before

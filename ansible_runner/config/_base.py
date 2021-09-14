@@ -77,6 +77,7 @@ class BaseConfig(object):
         self.container_volume_mounts = container_volume_mounts
         self.container_workdir = container_workdir
         self.container_auth_data = container_auth_data
+        self.registry_auth_path = None
         self.container_name = None  # like other properties, not accurate until prepare is called
         self.container_options = container_options
         self._volume_mount_paths = []
@@ -475,8 +476,8 @@ class BaseConfig(object):
             host = self.container_auth_data.get('host')
             username = self.container_auth_data.get('username')
             password = self.container_auth_data.get('password')
-            registry_auth_path = self._generate_container_auth_file(host, username, password)
-            new_args.extend(["--authfile={}".format(registry_auth_path)])
+            self.registry_auth_path = self._generate_container_auth_file(host, username, password)
+            new_args.extend(["--authfile={}".format(self.registry_auth_path)])
 
             # runtime commands need artifacts mounted to output data
             self._update_volume_mount_paths(new_args,

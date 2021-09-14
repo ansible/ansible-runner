@@ -18,14 +18,14 @@ HERE, FILENAME = os.path.split(__file__)
 
 
 @pytest.fixture(scope='function')
-def rc(request, tmpdir):
-    rc = RunnerConfig(str(tmpdir))
+def rc(request, tmp_path):
+    rc = RunnerConfig(str(tmp_path))
     rc.suppress_ansible_output = True
     rc.expect_passwords = {
         pexpect.TIMEOUT: None,
         pexpect.EOF: None
     }
-    rc.cwd = str(tmpdir)
+    rc.cwd = str(tmp_path)
     rc.env = {}
     rc.job_timeout = .5
     rc.idle_timeout = 0

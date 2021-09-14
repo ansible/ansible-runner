@@ -61,9 +61,12 @@ def test_prepare_plugin_docs_command():
 
 
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_prepare_plugin_docs_command_with_containerization(tmpdir, container_runtime):
+def test_prepare_plugin_docs_command_with_containerization(tmp_path, container_runtime, mocker):
+    mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
+    tmp_path.joinpath('.ssh').mkdir()
+
     kwargs = {
-        'private_data_dir': tmpdir,
+        'private_data_dir': tmp_path,
         'process_isolation': True,
         'container_image': 'my_container',
         'process_isolation_executable': container_runtime
@@ -81,25 +84,41 @@ def test_prepare_plugin_docs_command_with_containerization(tmpdir, container_run
     if container_runtime == 'podman':
         extra_container_args = ['--quiet']
     else:
-        extra_container_args = ['--user={os.getuid()}']
+        extra_container_args = [f'--user={os.getuid()}']
 
-    expected_command_start = [container_runtime, 'run', '--rm', '--interactive', '--workdir', '/runner/project'] + \
-                             ['-v', '{}/.ssh/:/home/runner/.ssh/'.format(os.environ['HOME'])]
+    expected_command_start = [
+        container_runtime,
+        'run',
+        '--rm',
+        '--interactive',
+        '--workdir',
+        '/runner/project',
+        '-v', '{}/.ssh/:/home/runner/.ssh/'.format(rc.private_data_dir),
+    ]
+
     if container_runtime == 'podman':
-        expected_command_start += ['--group-add=root', '--ipc=host']
+        expected_command_start.extend(['--group-add=root', '--ipc=host'])
 
-    expected_command_start += ['-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir)] + \
-        ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
-        ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
-        extra_container_args + \
-        ['--name', 'ansible_runner_foo'] + \
-        ['my_container'] + ['ansible-doc', '-s', '-t', 'module', '--playbook-dir', '/tmp/test', 'copy file']
+    expected_command_start.extend([
+        '-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir),
+        '-v', '{}/:/runner/:Z'.format(rc.private_data_dir),
+        '--env-file', '{}/env.list'.format(rc.artifact_dir),
+    ])
 
-    for index, element in enumerate(expected_command_start):
-        if '--user=' in element:
-            assert '--user=' in rc.command[index]
-        else:
-            assert rc.command[index] == element
+    expected_command_start.extend(extra_container_args)
+
+    expected_command_start.extend([
+        '--name', 'ansible_runner_foo',
+        'my_container',
+        'ansible-doc',
+        '-s',
+        '-t', 'module',
+        '--playbook-dir', '/tmp/test',
+        'copy '
+        'file',
+    ])
+
+    assert expected_command_start == rc.command
 
 
 def test_prepare_plugin_list_command():
@@ -112,9 +131,12 @@ def test_prepare_plugin_list_command():
 
 
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_prepare_plugin_list_command_with_containerization(tmpdir, container_runtime):
+def test_prepare_plugin_list_command_with_containerization(tmp_path, container_runtime, mocker):
+    mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
+    tmp_path.joinpath('.ssh').mkdir()
+
     kwargs = {
-        'private_data_dir': tmpdir,
+        'private_data_dir': tmp_path,
         'process_isolation': True,
         'container_image': 'my_container',
         'process_isolation_executable': container_runtime
@@ -129,19 +151,38 @@ def test_prepare_plugin_list_command_with_containerization(tmpdir, container_run
     if container_runtime == 'podman':
         extra_container_args = ['--quiet']
     else:
-        extra_container_args = ['--user={os.getuid()}']
+        extra_container_args = [f'--user={os.getuid()}']
 
-    expected_command_start = [container_runtime, 'run', '--rm', '--interactive', '--workdir', '/runner/project'] + \
-                             ['-v', '{}/.ssh/:/home/runner/.ssh/'.format(os.environ['HOME'])]
+    expected_command_start = [
+        container_runtime,
+        'run',
+        '--rm',
+        '--interactive',
+        '--workdir',
+        '/runner/project',
+        '-v', '{}/.ssh/:/home/runner/.ssh/'.format(rc.private_data_dir),
+    ]
+
     if container_runtime == 'podman':
-        expected_command_start += ['--group-add=root', '--ipc=host']
+        expected_command_start.extend(['--group-add=root', '--ipc=host'])
 
-    expected_command_start += ['-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir)] + \
-        ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
-        ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
-        extra_container_args + \
-        ['--name', 'ansible_runner_foo'] + \
-        ['my_container'] + ['ansible-doc', '-F', '-t', 'module', '--playbook-dir', '/tmp/test', '-M', '/test/module']
+    expected_command_start.extend([
+        '-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir),
+        '-v', '{}/:/runner/:Z'.format(rc.private_data_dir),
+        '--env-file', '{}/env.list'.format(rc.artifact_dir),
+    ])
+
+    expected_command_start.extend(extra_container_args)
+
+    expected_command_start.extend([
+        '--name', 'ansible_runner_foo',
+        'my_container',
+        'ansible-doc',
+        '-F',
+        '-t', 'module',
+        '--playbook-dir', '/tmp/test',
+        '-M', '/test/module'
+    ])
 
     for index, element in enumerate(expected_command_start):
         if '--user=' in element:

@@ -126,11 +126,22 @@ def test_module_run_debug():
             shutil.rmtree('./ping')
 
 
-def test_module_run_clean():
-    with temp_directory() as temp_dir:
-        rc = main(['run', '-m', 'ping',
-                   '--hosts', 'localhost',
-                   temp_dir])
+def test_module_run_debug(tmp_path):
+    output = tmp_path / 'ping'
+    rc = main(['run', '-m', 'ping',
+               '--hosts', 'localhost',
+               '--debug',
+               str(output)])
+
+    assert output.exists()
+    assert output.joinpath('artifacts').exists()
+    assert rc == 0
+
+
+def test_module_run_clean(tmp_path):
+    rc = main(['run', '-m', 'ping',
+               '--hosts', 'localhost',
+               str(tmp_path)])
     assert rc == 0
 
 
@@ -157,6 +168,9 @@ def test_role_run_abs(tmp_path):
     assert rc == 0
 
 
+# FIXME: This test interferes with test_role_logfile_abs. Marking it as serial so it is executed
+#        in a separate test run.
+@pytest.mark.serial
 def test_role_logfile(skipif_pre_ansible28, tmp_path):
     logfile = tmp_path.joinpath('test_role_logfile')
     rc = main(['run', '-r', 'benthomasson.hello_role',
@@ -166,6 +180,17 @@ def test_role_logfile(skipif_pre_ansible28, tmp_path):
                '--artifact-dir', str(tmp_path),
                'test/integration'])
     assert logfile.exists()
+    assert rc == 0
+
+
+def test_role_logfile_abs(tmp_path):
+    rc = main(['run', '-r', 'benthomasson.hello_role',
+               '--hosts', 'localhost',
+               '--roles-path', os.path.join(HERE, 'project/roles'),
+               '--logfile', tmp_path.joinpath('new_logfile').as_posix(),
+               str(tmp_path)])
+
+    assert tmp_path.joinpath('new_logfile').exists()
     assert rc == 0
 
 
@@ -184,6 +209,47 @@ def test_role_bad_project_dir():
     finally:
         os.unlink('bad_project_dir')
         ensure_removed("new_logfile")
+
+
+def test_role_run_clean(skipif_pre_ansible28, clear_integration_artifacts):
+
+    rc = main(['run', '-r', 'benthomasson.hello_role',
+               '--hosts', 'localhost',
+               '--roles-path', 'test/integration/roles',
+               "test/integration"])
+    assert rc == 0
+
+
+def test_role_run_cmd_line_abs():
+    with temp_directory() as temp_dir:
+        rc = main(['run', '-r', 'benthomasson.hello_role',
+                   '--hosts', 'localhost',
+                   '--roles-path', os.path.join(HERE, 'project/roles'),
+                   temp_dir])
+    assert rc == 0
+
+
+def test_role_run_artifacts_dir(skipif_pre_ansible28, clear_integration_artifacts):
+    rc = main(['run', '-r', 'benthomasson.hello_role',
+               '--hosts', 'localhost',
+               '--roles-path', 'test/integration/roles',
+               '--artifact-dir', 'otherartifacts',
+               "test/integration"])
+    assert rc == 0
+
+
+def test_role_run_artifacts_dir_abs(skipif_pre_ansible28):
+    try:
+        with temp_directory() as temp_dir:
+            rc = main(['run', '-r', 'benthomasson.hello_role',
+                       '--hosts', 'localhost',
+                       '--roles-path', os.path.join(HERE, 'project/roles'),
+                       '--artifact-dir', 'otherartifacts',
+                       temp_dir])
+        assert os.path.exists(os.path.join('.', 'otherartifacts'))
+        assert rc == 0
+    finally:
+        shutil.rmtree(os.path.join('.', 'otherartifacts'))
 
 
 @pytest.mark.parametrize('envvars', [

@@ -148,6 +148,4 @@ def test_prepare_inventory_command_with_containerization(tmp_path, container_run
         '--export',
     ])
 
-    assert len(expected_command_start) == len(rc.command)
-
     assert expected_command_start == rc.command

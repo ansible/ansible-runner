@@ -184,8 +184,4 @@ def test_prepare_plugin_list_command_with_containerization(tmp_path, container_r
         '-M', '/test/module'
     ])
 
-    for index, element in enumerate(expected_command_start):
-        if '--user=' in element:
-            assert '--user=' in rc.command[index]
-        else:
-            assert rc.command[index] == element
+    assert expected_command_start == rc.command

@@ -1,6 +1,9 @@
 import os
 import shutil
 import time
+import json
+from glob import glob
+from uuid import uuid4
 
 import pytest
 
@@ -70,3 +73,75 @@ def test_cancel_will_remove_container(test_data_dir, container_runtime_installed
     assert not is_running(
         cli, container_runtime_installed, 'ansible_runner_foo_bar'
     ), 'Found a running container, they should have all been stopped'
+
+
+@pytest.mark.parametrize('runtime', ['podman', 'docker'])
+def test_invalid_registry_host(tmp_path, runtime):
+    if shutil.which(runtime) is None:
+        pytest.skip(f'{runtime} is unavaialble')
+    pdd_path = tmp_path / 'private_data_dir'
+    pdd_path.mkdir()
+    private_data_dir = str(pdd_path)
+
+    image_name = 'quay.io/kdelee/does-not-exist'
+
+    res = run(
+        private_data_dir=private_data_dir,
+        playbook='ping.yml',
+        settings={
+            'process_isolation_executable': runtime,
+            'process_isolation': True,
+            'container_image': image_name,
+            'container_options': ['--user=root', '--pull=always'],
+        },
+        container_auth_data={'host': 'https://somedomain.invalid', 'username': 'foouser', 'password': '349sk34'},
+        ident='awx_123'
+    )
+    assert res.status == 'failed'
+    assert res.rc > 0
+
+    result_stdout = res.stdout.read()
+    if runtime == 'podman':
+        assert image_name in result_stdout
+        assert 'unauthorized' in result_stdout
+    else:
+        assert 'access to the requested resource is not authorized' in result_stdout
+
+    assert os.path.exists(res.config.registry_auth_path)
+    auth_path = res.config.registry_auth_path if runtime == 'podman' else os.path.join(res.config.registry_auth_path, 'config.json')
+    with open(auth_path, 'r') as f:
+        content = f.read()
+        assert res.config.container_auth_data['host'] in content
+        assert 'Zm9vdXNlcjozNDlzazM0' in content  # the b64 encoded of username and password
+
+
+@pytest.mark.parametrize('runtime', ['podman', 'docker'])
+def test_registry_auth_file_cleanup(tmp_path, cli, runtime):
+    if shutil.which(runtime) is None:
+        pytest.skip(f'{runtime} is unavaialble')
+    pdd_path = tmp_path / 'private_data_dir'
+    pdd_path.mkdir()
+    private_data_dir = str(pdd_path)
+
+    auth_registry_glob = '/tmp/ansible_runner_registry_*'
+    registry_files_before = set(glob(auth_registry_glob))
+
+    settings_data = {
+        'process_isolation_executable': runtime,
+        'process_isolation': True,
+        'container_image': 'quay.io/kdelee/does-not-exist',
+        'container_options': ['--user=root', '--pull=always'],
+        'container_auth_data': {'host': 'https://somedomain.invalid', 'username': 'foouser', 'password': '349sk34'},
+    }
+
+    os.mkdir(os.path.join(private_data_dir, 'env'))
+    with open(os.path.join(private_data_dir, 'env', 'settings'), 'w') as f:
+        f.write(json.dumps(settings_data, indent=2))
+
+    this_ident = str(uuid4())[:5]
+
+    cli(['run', private_data_dir, '--ident', this_ident, '-p', 'ping.yml'], check=False)
+
+    discovered_registry_files = set(glob(auth_registry_glob)) - registry_files_before
+    for file_name in discovered_registry_files:
+        assert this_ident not in file_name

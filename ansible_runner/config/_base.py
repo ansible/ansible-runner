@@ -502,9 +502,9 @@ class BaseConfig(object):
                 new_args.insert(docker_idx + 1, "--config={}".format(self.registry_auth_path))
             if registry_auth_conf_file is not None:
                 # Podman >= 3.1.0
-                self.env['CONTAINERS_REGISTRIES_CONF'] = registry_auth_conf_file
+                os.environ['CONTAINERS_REGISTRIES_CONF'] = registry_auth_conf_file
                 # Podman < 3.1.0
-                self.env['REGISTRIES_CONFIG_PATH'] = registry_auth_conf_file
+                os.environ['REGISTRIES_CONFIG_PATH'] = registry_auth_conf_file
 
         if self.container_volume_mounts:
             for mapping in self.container_volume_mounts:

@@ -16,13 +16,11 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import atexit
 import json
 import logging
 import os
 import pexpect
 import re
-import shutil
 import stat
 import tempfile
 
@@ -43,7 +41,8 @@ from ansible_runner.utils import (
     open_fifo_write,
     args2cmdline,
     sanitize_container_name,
-    cli_mounts
+    cli_mounts,
+    register_for_cleanup
 )
 
 logger = logging.getLogger('ansible-runner')
@@ -495,15 +494,17 @@ class BaseConfig(object):
 
         if self.container_auth_data:
             # Pull in the necessary registry auth info, if there is a container cred
-            host = self.container_auth_data.get('host')
-            username = self.container_auth_data.get('username')
-            password = self.container_auth_data.get('password')
-            self.registry_auth_path = self._generate_container_auth_file(host, username, password)
+            self.registry_auth_path, registry_auth_conf_file = self._generate_container_auth_dir(self.container_auth_data)
             if 'podman' in self.process_isolation_executable:
                 new_args.extend(["--authfile={}".format(self.registry_auth_path)])
             else:
                 docker_idx = new_args.index(self.process_isolation_executable)
                 new_args.insert(docker_idx + 1, "--config={}".format(self.registry_auth_path))
+            if registry_auth_conf_file is not None:
+                # Podman >= 3.1.0
+                self.env['CONTAINERS_REGISTRIES_CONF'] = registry_auth_conf_file
+                # Podman < 3.1.0
+                self.env['REGISTRIES_CONFIG_PATH'] = registry_auth_conf_file
 
         if self.container_volume_mounts:
             for mapping in self.container_volume_mounts:
@@ -536,15 +537,14 @@ class BaseConfig(object):
         logger.debug(f"container engine invocation: {' '.join(new_args)}")
         return new_args
 
-    def _generate_container_auth_file(self, host, username, password):
-        token = "{}:{}".format(username, password)
+    def _generate_container_auth_dir(self, auth_data):
+        host = auth_data.get('host')
+        token = "{}:{}".format(auth_data.get('username'), auth_data.get('password'))
         encoded_container_auth_data = {'auths': {host: {'auth': b64encode(token.encode('UTF-8')).decode('UTF-8')}}}
         # Create a new temp file with container auth data
         path = tempfile.mkdtemp(prefix='ansible_runner_registry_%s_' % self.ident)
+        register_for_cleanup(path)
 
-        @atexit.register
-        def cleanup_ansible_runner_registry():
-            shutil.rmtree(path)
         if self.process_isolation_executable == 'docker':
             auth_filename = 'config.json'
         else:
@@ -553,9 +553,26 @@ class BaseConfig(object):
         with open(registry_auth_path, 'w') as authfile:
             os.chmod(authfile.name, stat.S_IRUSR | stat.S_IWUSR)
             authfile.write(json.dumps(encoded_container_auth_data, indent=4))
+
+        registries_conf_path = None
+        if auth_data.get('verify_ssl', True) is False:
+            registries_conf_path = os.path.join(path, 'registries.conf')
+
+            with open(registries_conf_path, 'w') as registries_conf:
+                os.chmod(registries_conf.name, stat.S_IRUSR | stat.S_IWUSR)
+
+                lines = [
+                    '[[registry]]',
+                    'location = "{}"'.format(host),
+                    'insecure = true',
+                ]
+
+                registries_conf.write('\n'.join(lines))
+
+        auth_path = authfile.name
         if self.process_isolation_executable == 'docker':
-            return path
-        return authfile.name
+            auth_path = path  # docker expects to be passed directory
+        return (auth_path, registries_conf_path)
 
     def wrap_args_with_ssh_agent(self, args, ssh_key_path, ssh_auth_sock=None, silence_ssh_add=False):
         """

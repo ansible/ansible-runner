@@ -471,17 +471,6 @@ class BaseConfig(object):
                 subdir_path = os.path.join(self.private_data_dir, subdir)
                 if not os.path.exists(subdir_path):
                     os.mkdir(subdir_path, 0o700)
-        if self.container_auth_data:
-            # Pull in the necessary registry auth info, if there is a container cred
-            host = self.container_auth_data.get('host')
-            username = self.container_auth_data.get('username')
-            password = self.container_auth_data.get('password')
-            self.registry_auth_path = self._generate_container_auth_file(host, username, password)
-            if 'podman' in self.process_isolation_executable:
-                new_args.extend(["--authfile={}".format(self.registry_auth_path)])
-            else:
-                docker_idx = new_args.index(self.process_isolation_executable)
-                new_args.insert(docker_idx + 1, "--config={}".format(self.registry_auth_path))
 
             # runtime commands need artifacts mounted to output data
             self._update_volume_mount_paths(new_args,
@@ -503,6 +492,18 @@ class BaseConfig(object):
             # Mount the entire private_data_dir
             # custom show paths inside private_data_dir do not make sense
             self._update_volume_mount_paths(new_args, "{}".format(self.private_data_dir), dst_mount_path="/runner", labels=":Z")
+
+        if self.container_auth_data:
+            # Pull in the necessary registry auth info, if there is a container cred
+            host = self.container_auth_data.get('host')
+            username = self.container_auth_data.get('username')
+            password = self.container_auth_data.get('password')
+            self.registry_auth_path = self._generate_container_auth_file(host, username, password)
+            if 'podman' in self.process_isolation_executable:
+                new_args.extend(["--authfile={}".format(self.registry_auth_path)])
+            else:
+                docker_idx = new_args.index(self.process_isolation_executable)
+                new_args.insert(docker_idx + 1, "--config={}".format(self.registry_auth_path))
 
         if self.container_volume_mounts:
             for mapping in self.container_volume_mounts:

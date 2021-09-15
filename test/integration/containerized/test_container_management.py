@@ -94,25 +94,36 @@ def test_invalid_registry_host(tmp_path, runtime):
             'container_image': image_name,
             'container_options': ['--user=root', '--pull=always'],
         },
-        container_auth_data={'host': 'https://somedomain.invalid', 'username': 'foouser', 'password': '349sk34'},
+        container_auth_data={'host': 'somedomain.invalid', 'username': 'foouser', 'password': '349sk34', 'verify_ssl': False},
         ident='awx_123'
     )
     assert res.status == 'failed'
     assert res.rc > 0
+    assert os.path.exists(res.config.registry_auth_path)
 
     result_stdout = res.stdout.read()
     if runtime == 'podman':
         assert image_name in result_stdout
         assert 'unauthorized' in result_stdout
+        auth_file_path = res.config.registry_auth_path
+        registry_conf = os.path.join(os.path.dirname(res.config.registry_auth_path), 'registries.conf')
     else:
         assert 'access to the requested resource is not authorized' in result_stdout
+        auth_file_path = os.path.join(res.config.registry_auth_path, 'config.json')
+        registry_conf = os.path.join(res.config.registry_auth_path, 'registries.conf')
 
-    assert os.path.exists(res.config.registry_auth_path)
-    auth_path = res.config.registry_auth_path if runtime == 'podman' else os.path.join(res.config.registry_auth_path, 'config.json')
-    with open(auth_path, 'r') as f:
+    with open(auth_file_path, 'r') as f:
         content = f.read()
         assert res.config.container_auth_data['host'] in content
         assert 'Zm9vdXNlcjozNDlzazM0' in content  # the b64 encoded of username and password
+
+    assert os.path.exists(registry_conf)
+    with open(registry_conf, 'r') as f:
+        assert f.read() == '\n'.join([
+            '[[registry]]',
+            'location = "somedomain.invalid"',
+            'insecure = true'
+        ])
 
 
 @pytest.mark.parametrize('runtime', ['podman', 'docker'])

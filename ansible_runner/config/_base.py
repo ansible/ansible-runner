@@ -42,7 +42,7 @@ from ansible_runner.utils import (
     args2cmdline,
     sanitize_container_name,
     cli_mounts,
-    register_for_cleanup
+    register_for_cleanup,
 )
 
 logger = logging.getLogger('ansible-runner')

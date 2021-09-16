@@ -619,6 +619,44 @@ def main(sys_args=None):
         'worker',
         help="Execute work streamed from a controlling instance"
     )
+    worker_subcommands = worker_subparser.add_subparsers(
+        help="Sub-sub command to invoke",
+        dest='command',
+        description="ansible-runner worker [sub-sub-command]"
+    )
+    cleanup_command = worker_subcommands.add_parser(
+        'cleanup',
+        help="Cleanup private_data_dir patterns from prior jobs and supporting temporary folders."
+    )
+    cleanup_command.add_argument(
+        "--file-pattern",
+        help="A file glob to find private_data_dir folders to remove. "
+             "You may use {ident} in place of a ** to identify run IDs. "
+             "Example: --file-pattern=/tmp/foo_{ident}_**"
+    )
+    cleanup_command.add_argument(
+        "--exclude-idents",
+        help="A comma separated list of run IDs to preserve. "
+             "This will only work if the deletion pattern contains the {ident} syntax."
+    )
+    cleanup_command.add_argument(
+        "--untag-images",
+        help="A comma separated list of podman or docker tags to delete. "
+             "This will not remove the corresponding layers, use the image-prune option for that. "
+             "Example: --untag-images=quay.io/user/image:devel,quay.io/user/builder:latest"
+    )
+    cleanup_command.add_argument(
+        "--image-prune",
+        action="store_true",
+        help="If specified, will run docker / podman image prune --force. "
+             "This will only run after untagging."
+    )
+    cleanup_command.add_argument(
+        "--process-isolation-executable",
+        default="podman",
+        help="The container image to clean up images for (default=podman)"
+    )
+
     worker_subparser.add_argument(
         "--private-data-dir",
         help="base directory containing the ansible-runner metadata "

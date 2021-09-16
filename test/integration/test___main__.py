@@ -7,8 +7,7 @@ import string
 import tempfile
 import shutil
 
-from pytest import raises
-from unittest.mock import patch
+import pytest
 
 from ansible_runner.__main__ import main
 
@@ -42,30 +41,25 @@ def test_main_bad_private_data_dir():
     cmdline('run', tmpfile, '-p', 'fake')
 
     try:
-        with raises(OSError):
+        with pytest.raises(OSError):
             main()
     finally:
         os.remove(tmpfile)
 
 
-def run_role(options, private_data_dir=None, expected_rc=0):
-    try:
-        private_data_dir = private_data_dir or tempfile.mkdtemp()
-        args = ['run', private_data_dir]
-        args.extend(options)
+def run_role(options, mocker, private_data_dir, expected_rc=0):
+    args = ['run', private_data_dir]
+    args.extend(options)
+    mock_run = mocker.patch('ansible_runner.interface.run')
+    with pytest.raises(SystemExit) as exc:
+        main()
+        assert exc.type == SystemExit
+        assert exc.value.code == expected_rc
 
-        with patch('ansible_runner.interface.run') as mock_run:
-            with raises(SystemExit) as exc:
-                main()
-                assert exc.type == SystemExit
-                assert exc.value.code == expected_rc
-
-    finally:
-        shutil.rmtree(private_data_dir)
-        return mock_run
+    return mock_run
 
 
-def test_cmdline_role_defaults():
+def test_cmdline_role_defaults(mocker):
     """Run a role directly with all command line defaults
     """
     private_data_dir = tempfile.mkdtemp()
@@ -78,11 +72,11 @@ def test_cmdline_role_defaults():
         'playbook': playbook
     }
 
-    result = run_role(options, private_data_dir)
+    result = run_role(options, mocker, private_data_dir)
     result.called_with_args([run_options])
 
 
-def test_cmdline_role_skip_facts():
+def test_cmdline_role_skip_facts(mocker):
     """Run a role directly and set --role-skip-facts option
     """
     private_data_dir = tempfile.mkdtemp()
@@ -95,11 +89,11 @@ def test_cmdline_role_skip_facts():
         'playbook': playbook
     }
 
-    result = run_role(options, private_data_dir)
+    result = run_role(options, mocker, private_data_dir)
     result.called_with_args([run_options])
 
 
-def test_cmdline_role_inventory():
+def test_cmdline_role_inventory(mocker):
     """Run a role directly and set --inventory option
     """
     private_data_dir = tempfile.mkdtemp()
@@ -113,11 +107,11 @@ def test_cmdline_role_inventory():
         'inventory': 'hosts'
     }
 
-    result = run_role(options, private_data_dir)
+    result = run_role(options, mocker, private_data_dir)
     result.called_with_args([run_options])
 
 
-def test_cmdline_role_vars():
+def test_cmdline_role_vars(mocker):
     """Run a role directly and set --role-vars option
     """
     private_data_dir = tempfile.mkdtemp()
@@ -137,11 +131,11 @@ def test_cmdline_role_vars():
         'playbook': playbook
     }
 
-    result = run_role(options, private_data_dir)
+    result = run_role(options, mocker, private_data_dir)
     result.called_with_args([run_options])
 
 
-def test_cmdline_roles_path():
+def test_cmdline_roles_path(mocker):
     """Run a role directly and set --roles-path option
     """
     private_data_dir = tempfile.mkdtemp()
@@ -155,7 +149,7 @@ def test_cmdline_roles_path():
         'envvars': {'ANSIBLE_ROLES_PATH': '/tmp/roles'}
     }
 
-    result = run_role(options, private_data_dir)
+    result = run_role(options, mocker, private_data_dir)
     result.called_with_args([run_options])
 
 
@@ -163,7 +157,7 @@ def test_cmdline_role_with_playbook_option():
     """Test error is raised with invalid command line option '-p'
     """
     cmdline('run', 'private_data_dir', '-r', 'fake', '-p', 'fake')
-    with raises(SystemExit) as exc:
+    with pytest.raises(SystemExit) as exc:
         main()
         assert exc == 1
 
@@ -202,7 +196,7 @@ def test_cmdline_playbook_hosts():
     """Test error is raised with trying to pass '--hosts' with '-p'
     """
     cmdline('run', 'private_data_dir', '-p', 'fake', '--hosts', 'all')
-    with raises(SystemExit) as exc:
+    with pytest.raises(SystemExit) as exc:
         main()
         assert exc == 1
 
@@ -211,7 +205,7 @@ def test_cmdline_includes_one_option():
     """Test error is raised if not '-p', '-m' or '-r'
     """
     cmdline('run', 'private_data_dir')
-    with raises(SystemExit) as exc:
+    with pytest.raises(SystemExit) as exc:
         main()
         assert exc == 1
 

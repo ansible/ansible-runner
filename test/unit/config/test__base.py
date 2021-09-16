@@ -10,8 +10,6 @@ from pexpect import TIMEOUT, EOF
 
 import pytest
 
-from unittest.mock import (Mock, patch, PropertyMock)
-
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError
@@ -70,22 +68,23 @@ def test_base_config_project_dir():
     assert rc.project_dir == '/tmp/project'
 
 
-def test_prepare_environment_vars_only_strings():
+def test_prepare_environment_vars_only_strings(mocker):
     rc = BaseConfig(private_data_dir="/tmp", envvars=dict(D='D'))
 
     value = dict(A=1, B=True, C="foo")
     envvar_side_effect = partial(load_file_side_effect, 'env/envvars', value)
 
-    with patch.object(rc.loader, 'load_file', side_effect=envvar_side_effect):
-        rc._prepare_env()
-        assert 'A' in rc.env
-        assert isinstance(rc.env['A'], six.string_types)
-        assert 'B' in rc.env
-        assert isinstance(rc.env['B'], six.string_types)
-        assert 'C' in rc.env
-        assert isinstance(rc.env['C'], six.string_types)
-        assert 'D' in rc.env
-        assert rc.env['D'] == 'D'
+    mocker.patch.object(rc.loader, 'load_file', side_effect=envvar_side_effect)
+
+    rc._prepare_env()
+    assert 'A' in rc.env
+    assert isinstance(rc.env['A'], six.string_types)
+    assert 'B' in rc.env
+    assert isinstance(rc.env['B'], six.string_types)
+    assert 'C' in rc.env
+    assert isinstance(rc.env['C'], six.string_types)
+    assert 'D' in rc.env
+    assert rc.env['D'] == 'D'
 
 
 def test_prepare_environment_pexpect_defaults():
@@ -99,19 +98,19 @@ def test_prepare_environment_pexpect_defaults():
     assert rc.expect_passwords[EOF] is None
 
 
-def test_prepare_env_passwords():
+def test_prepare_env_passwords(mocker):
     rc = BaseConfig(private_data_dir='/tmp')
 
     value = {'^SSH [pP]assword.*$': 'secret'}
     password_side_effect = partial(load_file_side_effect, 'env/passwords', value)
 
-    with patch.object(rc.loader, 'load_file', side_effect=password_side_effect):
-        rc._prepare_env()
-        rc.expect_passwords.pop(TIMEOUT)
-        rc.expect_passwords.pop(EOF)
-        assert len(rc.expect_passwords) == 1
-        assert isinstance(list(rc.expect_passwords.keys())[0], Pattern)
-        assert 'secret' in rc.expect_passwords.values()
+    mocker.patch.object(rc.loader, 'load_file', side_effect=password_side_effect)
+    rc._prepare_env()
+    rc.expect_passwords.pop(TIMEOUT)
+    rc.expect_passwords.pop(EOF)
+    assert len(rc.expect_passwords) == 1
+    assert isinstance(list(rc.expect_passwords.keys())[0], Pattern)
+    assert 'secret' in rc.expect_passwords.values()
 
 
 def test_prepare_environment_subprocess_defaults():
@@ -133,15 +132,15 @@ def test_prepare_env_settings_defaults():
     assert rc.settings == {}
 
 
-def test_prepare_env_settings():
+def test_prepare_env_settings(mocker):
     rc = BaseConfig(private_data_dir='/tmp')
 
     value = {'test': 'string'}
     settings_side_effect = partial(load_file_side_effect, 'env/settings', value)
 
-    with patch.object(rc.loader, 'load_file', side_effect=settings_side_effect):
-        rc._prepare_env()
-        assert rc.settings == value
+    mocker.patch.object(rc.loader, 'load_file', side_effect=settings_side_effect)
+    rc._prepare_env()
+    assert rc.settings == value
 
 
 def test_prepare_env_sshkey_defaults():
@@ -150,31 +149,36 @@ def test_prepare_env_sshkey_defaults():
     assert rc.ssh_key_data is None
 
 
-def test_prepare_env_sshkey():
+def test_prepare_env_sshkey(mocker):
     rc = BaseConfig(private_data_dir='/tmp')
 
     value = '01234567890'
     sshkey_side_effect = partial(load_file_side_effect, 'env/ssh_key', value)
 
-    with patch.object(rc.loader, 'load_file', side_effect=sshkey_side_effect):
-        rc._prepare_env()
-        assert rc.ssh_key_data == value
+    mocker.patch.object(rc.loader, 'load_file', side_effect=sshkey_side_effect)
+    rc._prepare_env()
+    assert rc.ssh_key_data == value
 
 
-def test_prepare_env_defaults():
-    with patch('os.path.exists') as path_exists:
-        path_exists.return_value = True
-        rc = BaseConfig(private_data_dir='/tmp', host_cwd='/tmp/project')
-        rc._prepare_env()
-        assert rc.idle_timeout is None
-        assert rc.job_timeout is None
-        assert rc.pexpect_timeout == 5
-        assert rc.host_cwd == '/tmp/project'
+def test_prepare_env_defaults(mocker):
+    path_exists = mocker.patch('os.path.exists')
+    path_exists.return_value = True
+
+    rc = BaseConfig(private_data_dir='/tmp', host_cwd='/tmp/project')
+    rc._prepare_env()
+
+    assert rc.idle_timeout is None
+    assert rc.job_timeout is None
+    assert rc.pexpect_timeout == 5
+    assert rc.host_cwd == '/tmp/project'
 
 
-@patch.dict('os.environ', {'PYTHONPATH': '/python_path_via_environ',
-                           'AWX_LIB_DIRECTORY': '/awx_lib_directory_via_environ'})
-def test_prepare_env_ansible_vars():
+def test_prepare_env_ansible_vars(mocker):
+    mocker.patch.dict('os.environ', {
+        'PYTHONPATH': '/python_path_via_environ',
+        'AWX_LIB_DIRECTORY': '/awx_lib_directory_via_environ',
+    })
+
     rc = BaseConfig(private_data_dir='/tmp')
     rc.ssh_key_data = None
     rc.artifact_dir = '/tmp/artifact'
@@ -200,8 +204,10 @@ def test_prepare_env_ansible_vars():
         "PYTHONPATH is the union of the explicit env['PYTHONPATH'] override and AWX_LIB_DIRECTORY"
 
 
-@patch('ansible_runner.config._base.open_fifo_write')
-def test_prepare_with_ssh_key(open_fifo_write_mock):
+def test_prepare_with_ssh_key(mocker):
+    open_fifo_write_mock = mocker.patch('ansible_runner.config._base.open_fifo_write')
+    mocker.patch.dict('os.environ', {'AWX_LIB_DIRECTORY': '/tmp/artifact'})
+
     rc = BaseConfig(private_data_dir='/tmp')
     rc.artifact_dir = '/tmp/artifact'
     rc.env = {}
@@ -209,9 +215,7 @@ def test_prepare_with_ssh_key(open_fifo_write_mock):
     rc.ssh_key_data = '01234567890'
     rc.command = 'ansible-playbook'
     rc.cmdline_args = []
-
-    with patch.dict('os.environ', {'AWX_LIB_DIRECTORY': '/tmp/artifact'}):
-        rc._prepare_env()
+    rc._prepare_env()
 
     assert rc.ssh_key_path == '/tmp/artifact/ssh_key_data'
     assert open_fifo_write_mock.called
@@ -247,12 +251,13 @@ def test_wrap_args_with_ssh_agent_silent():
     ]
 
 
-@patch('os.path.isdir', return_value=False)
-@patch('os.path.exists', return_value=True)
-@patch('os.makedirs', return_value=True)
-def test_container_volume_mounting_with_Z(mock_isdir, mock_exists, mock_makedirs, tmp_path):
+def test_container_volume_mounting_with_Z(tmp_path, mocker):
+    mocker.patch('os.path.isdir', return_value=False)
+    mocker.patch('os.path.exists', return_value=True)
+    mocker.patch('os.makedirs', return_value=True)
+
     rc = BaseConfig(private_data_dir=str(tmp_path))
-    os.path.isdir = Mock()
+    os.path.isdir = mocker.Mock()
     rc.container_volume_mounts = ['project_path:project_path:Z']
     rc.container_name = 'foo'
     rc.runner_mode = 'pexpect'
@@ -279,7 +284,7 @@ def test_containerization_settings(tmp_path, container_runtime, mocker):
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()
 
-    mock_containerized = mocker.patch('ansible_runner.config._base.BaseConfig.containerized', new_callable=PropertyMock)
+    mock_containerized = mocker.patch('ansible_runner.config._base.BaseConfig.containerized', new_callable=mocker.PropertyMock)
     mock_containerized.return_value = True
 
     rc = BaseConfig(private_data_dir=tmp_path)
@@ -338,20 +343,21 @@ def test_containerization_settings(tmp_path, container_runtime, mocker):
         ('podman', '1')
     )
 )
-def test_containerization_unsafe_write_setting(tmp_path, container_runtime, expected):
-    with patch('ansible_runner.config._base.BaseConfig.containerized', new_callable=PropertyMock) as mock_containerized:
-        rc = BaseConfig(private_data_dir=tmp_path)
-        rc.ident = 'foo'
-        rc.cmdline_args = ['main.yaml', '-i', '/tmp/inventory']
-        rc.command = ['ansible-playbook'] + rc.cmdline_args
-        rc.process_isolation = True
-        rc.runner_mode = 'pexpect'
-        rc.process_isolation_executable = container_runtime
-        rc.container_image = 'my_container'
-        rc.container_volume_mounts = ['/host1:/container1', 'host2:/container2']
-        mock_containerized.return_value = True
-        rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
-        rc._prepare_env()
-        rc._handle_command_wrap(rc.execution_mode, rc.cmdline_args)
+def test_containerization_unsafe_write_setting(tmp_path, container_runtime, expected, mocker):
+    mock_containerized = mocker.patch('ansible_runner.config._base.BaseConfig.containerized', new_callable=mocker.PropertyMock)
+
+    rc = BaseConfig(private_data_dir=tmp_path)
+    rc.ident = 'foo'
+    rc.cmdline_args = ['main.yaml', '-i', '/tmp/inventory']
+    rc.command = ['ansible-playbook'] + rc.cmdline_args
+    rc.process_isolation = True
+    rc.runner_mode = 'pexpect'
+    rc.process_isolation_executable = container_runtime
+    rc.container_image = 'my_container'
+    rc.container_volume_mounts = ['/host1:/container1', 'host2:/container2']
+    mock_containerized.return_value = True
+    rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
+    rc._prepare_env()
+    rc._handle_command_wrap(rc.execution_mode, rc.cmdline_args)
 
     assert rc.env.get('ANSIBLE_UNSAFE_WRITES') == expected

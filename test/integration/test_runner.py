@@ -6,10 +6,7 @@ import re
 import pytest
 import six
 import sys
-try:
-    from unittest.mock import MagicMock
-except ImportError:
-    from unittest.mock import MagicMock
+
 from ansible_runner import Runner
 
 from ansible_runner.exceptions import AnsibleRunnerException
@@ -56,8 +53,8 @@ def test_run_command_with_unicode(rc):
         assert u"䉪ቒ칸" in data.get('env')
 
 
-def test_run_command_finished_callback(rc):
-    finished_callback = MagicMock()
+def test_run_command_finished_callback(rc, mocker):
+    finished_callback = mocker.MagicMock()
     rc.command = ['sleep', '1']
     runner = Runner(config=rc, finished_callback=finished_callback)
     status, exitcode = runner.run()
@@ -191,9 +188,9 @@ def test_run_command_ansible(rc):
     assert stdout.read() != ""
 
 
-def test_run_command_ansible_event_handler(rc):
-    event_handler = MagicMock()
-    status_handler = MagicMock()
+def test_run_command_ansible_event_handler(rc, mocker):
+    event_handler = mocker.MagicMock()
+    status_handler = mocker.MagicMock()
     rc.module = "debug"
     rc.host_pattern = "localhost"
     rc.prepare()

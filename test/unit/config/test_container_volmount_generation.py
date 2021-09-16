@@ -4,8 +4,6 @@ predictably and consistently """
 import os
 import pytest
 
-from unittest.mock import patch
-
 from typing import NamedTuple
 
 from ansible_runner.config._base import BaseConfig
@@ -71,32 +69,32 @@ def generate_volmount_args(src_str, dst_str, labels):
 
 
 @pytest.mark.parametrize("not_safe", not_safe)
-def test_check_not_safe_to_mount_dir(not_safe):
+def test_check_not_safe_to_mount_dir(not_safe, mocker):
     """Ensure unsafe directories are not mounted"""
     with pytest.raises(ConfigurationError):
         bc = BaseConfig()
-        with patch("os.path.exists", return_value=True):
-            bc._update_volume_mount_paths(
-                args_list=[], src_mount_path=not_safe, dst_mount_path=None
-            )
+        mocker.patch("os.path.exists", return_value=True)
+        bc._update_volume_mount_paths(
+            args_list=[], src_mount_path=not_safe, dst_mount_path=None
+        )
 
 
 @pytest.mark.parametrize("not_safe", not_safe)
-def test_check_not_safe_to_mount_file(not_safe):
+def test_check_not_safe_to_mount_file(not_safe, mocker):
     """Ensure unsafe directories for a given file are not mounted"""
     file_path = os.path.join(not_safe, "file.txt")
     with pytest.raises(ConfigurationError):
         bc = BaseConfig()
-        with patch("os.path.exists", return_value=True):
-            bc._update_volume_mount_paths(
-                args_list=[], src_mount_path=file_path, dst_mount_path=None
-            )
+        mocker.patch("os.path.exists", return_value=True)
+        bc._update_volume_mount_paths(
+            args_list=[], src_mount_path=file_path, dst_mount_path=None
+        )
 
 
-@patch("os.path.exists", return_value=True)
-@patch("os.path.isdir", return_value=True)
 @pytest.mark.parametrize("path", dir_variations, ids=id_for_src)
-def test_duplicate_detection_dst(_mock_ope, _mock_isdir, path):
+def test_duplicate_detection_dst(path, mocker):
+    mocker.patch("os.path.exists", return_value=True)
+    mocker.patch("os.path.isdir", return_value=True)
     """Ensure no duplicate volumne mount entries are created"""
     base_config = BaseConfig()
 
@@ -117,11 +115,11 @@ def test_duplicate_detection_dst(_mock_ope, _mock_isdir, path):
     assert first_pass == second_pass
 
 
-@patch("os.path.exists", return_value=True)
-@patch("os.path.isdir", return_value=True)
 @pytest.mark.parametrize("labels", labels, ids=id_for_label)
 @pytest.mark.parametrize("path", dir_variations, ids=id_for_src)
-def test_no_dst_all_dirs(_mock_ope, _mock_isdir, path, labels):
+def test_no_dst_all_dirs(path, labels, mocker):
+    mocker.patch("os.path.exists", return_value=True)
+    mocker.patch("os.path.isdir", return_value=True)
     """Ensure dst == src when not provided"""
     src_str = os.path.join(resolve_path(path.path), "")
     dst_str = src_str
@@ -141,12 +139,12 @@ def test_no_dst_all_dirs(_mock_ope, _mock_isdir, path, labels):
     assert all(part.endswith('/') for part in result[1].split(':')[0:1]), explanation
 
 
-@patch("os.path.exists", return_value=True)
-@patch("os.path.isdir", return_value=True)
 @pytest.mark.parametrize("labels", labels, ids=id_for_label)
 @pytest.mark.parametrize("dst", dir_variations, ids=id_for_dst)
 @pytest.mark.parametrize("src", dir_variations, ids=id_for_src)
-def test_src_dst_all_dirs(_mock_ope, _mock_isdir, src, dst, labels):
+def test_src_dst_all_dirs(src, dst, labels, mocker):
+    mocker.patch("os.path.exists", return_value=True)
+    mocker.patch("os.path.isdir", return_value=True)
     """Ensure src and dest end with trailing slash"""
     src_str = os.path.join(resolve_path(src.path), "")
     dst_str = os.path.join(resolve_path(dst.path), "")
@@ -168,7 +166,7 @@ def test_src_dst_all_dirs(_mock_ope, _mock_isdir, src, dst, labels):
 
 @pytest.mark.parametrize("labels", labels, ids=id_for_label)
 @pytest.mark.parametrize("path", dir_variations, ids=id_for_src)
-def test_src_dst_all_files(path, labels):
+def test_src_dst_all_files(path, labels, mocker):
     """Ensure file paths are tranformed correctly into dir paths"""
     src_str = os.path.join(resolve_path(path.path), "")
     dst_str = src_str
@@ -179,11 +177,11 @@ def test_src_dst_all_files(path, labels):
     dest_file = src_file
 
     base_config = BaseConfig()
-    with patch("os.path.exists", return_value=True):
-        with patch("os.path.isdir", return_value=False):
-            base_config._update_volume_mount_paths(
-                args_list=result, src_mount_path=src_file, dst_mount_path=dest_file, labels=labels
-            )
+    mocker.patch("os.path.exists", return_value=True)
+    mocker.patch("os.path.isdir", return_value=False)
+    base_config._update_volume_mount_paths(
+        args_list=result, src_mount_path=src_file, dst_mount_path=dest_file, labels=labels
+    )
 
     explanation = (
         f"provided: {src_file}:{dest_file}",
@@ -194,13 +192,13 @@ def test_src_dst_all_files(path, labels):
     assert all(part.endswith('/') for part in result[1].split(':')[0:1]), explanation
 
 
-@patch("os.path.exists", return_value=True)
-@patch("os.path.isdir", return_value=True)
 @pytest.mark.parametrize("relative", (".", "..", "../.."))
 @pytest.mark.parametrize("labels", labels, ids=id_for_label)
 @pytest.mark.parametrize("dst", dir_variations, ids=id_for_dst)
 @pytest.mark.parametrize("src", dir_variations, ids=id_for_src)
-def test_src_dst_all_relative_dirs(_mock_ope, _mock_isdir, src, dst, labels, relative):
+def test_src_dst_all_relative_dirs(src, dst, labels, relative, mocker):
+    mocker.patch("os.path.exists", return_value=True)
+    mocker.patch("os.path.isdir", return_value=True)
     """Ensure src is resolved and dest mapped to workdir when relative"""
     relative_src = f"{relative}{src.path}"
     relative_dst = f"{relative}{dst.path}"

@@ -309,7 +309,8 @@ def test_containerization_settings(tmp_path, container_runtime, mocker):
         '--interactive',
         '--workdir',
         '/runner/project',
-        '-v', '{}/.ssh/:/home/runner/.ssh/'.format(str(tmp_path))
+        '-v', '{}/.ssh/:/home/runner/.ssh/'.format(str(tmp_path)),
+        '-v', '{}/.ssh/:/root/.ssh/'.format(str(tmp_path)),
     ]
 
     if container_runtime == 'podman':

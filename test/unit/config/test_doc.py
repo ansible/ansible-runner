@@ -94,6 +94,7 @@ def test_prepare_plugin_docs_command_with_containerization(tmp_path, container_r
         '--workdir',
         '/runner/project',
         '-v', '{}/.ssh/:/home/runner/.ssh/'.format(rc.private_data_dir),
+        '-v', '{}/.ssh/:/root/.ssh/'.format(rc.private_data_dir),
     ]
 
     if container_runtime == 'podman':
@@ -161,6 +162,7 @@ def test_prepare_plugin_list_command_with_containerization(tmp_path, container_r
         '--workdir',
         '/runner/project',
         '-v', '{}/.ssh/:/home/runner/.ssh/'.format(rc.private_data_dir),
+        '-v', '{}/.ssh/:/root/.ssh/'.format(rc.private_data_dir),
     ]
 
     if container_runtime == 'podman':

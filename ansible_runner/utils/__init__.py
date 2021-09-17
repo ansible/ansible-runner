@@ -433,6 +433,10 @@ def cli_mounts():
                     'dest': '/home/runner/.ssh/'
                 },
                 {
+                    'src': '{}/.ssh/'.format(os.environ['HOME']),
+                    'dest': '/root/.ssh/'
+                },
+                {
                     'src': '/etc/ssh/ssh_known_hosts',
                     'dest': '/etc/ssh/ssh_known_hosts'
                 }

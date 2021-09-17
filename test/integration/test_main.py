@@ -276,11 +276,17 @@ def test_role_run_inventory_missing(is_pre_ansible28):
 def test_role_start():
 
     with temp_directory() as temp_dir:
-        p = multiprocessing.Process(target=main,
-                                    args=[['start', '-r', 'benthomasson.hello_role',
-                                           '--hosts', 'localhost',
-                                           '--roles-path', os.path.join(HERE, 'project/roles'),
-                                           temp_dir]])
+        mpcontext = multiprocessing.get_context('fork')
+        p = mpcontext.Process(
+            target=main,
+            args=[[
+                'start',
+                '-r', 'benthomasson.hello_role',
+                '--hosts', 'localhost',
+                '--roles-path', os.path.join(HERE, 'project/roles'),
+                temp_dir,
+            ]]
+        )
         p.start()
         p.join()
 
@@ -295,13 +301,16 @@ def test_playbook_start(skipif_pre_ansible28):
         ensure_directory(os.path.join(temp_dir, 'inventory'))
         shutil.copy(os.path.join(HERE, inv), os.path.join(temp_dir, 'inventory/localhost'))
 
-        # privateip: removed --hosts command line option from test beause it is
-        # not a supported combination of cli options
-        p = multiprocessing.Process(target=main,
-                                    args=[['start', '-p', 'hello.yml',
-                                           '--inventory', os.path.join(HERE, 'inventory/localhost'),
-                                           # '--hosts', 'localhost',
-                                           temp_dir]])
+        mpcontext = multiprocessing.get_context('fork')
+        p = mpcontext.Process(
+            target=main,
+            args=[[
+                'start',
+                '-p', 'hello.yml',
+                '--inventory', os.path.join(HERE, 'inventory/localhost'),
+                temp_dir,
+            ]]
+        )
         p.start()
 
         time.sleep(5)

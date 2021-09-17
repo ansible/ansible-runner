@@ -88,7 +88,10 @@ def test_temp_directory():
         (['run'], {'out': '', 'err': 'the following arguments are required'}),
     )
 )
-def test_help(command, capsys, expected):
+def test_help(command, expected, capsys, monkeypatch):
+    # Ensure that sys.argv of the test command does not affect the test environment.
+    monkeypatch.setattr('sys.argv', command or [])
+
     with pytest.raises(SystemExit) as exc:
         main(command)
 

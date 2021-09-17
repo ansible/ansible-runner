@@ -1,0 +1,12 @@
+---
+- hosts: all
+  tasks:
+      - name: Pull container images
+        command: "{{ container_command }} pull {{ item }}"
+        delay: 30
+        retries: 3
+        register: result
+        until: result is success
+        loop:
+            - quay.io/ansible/python-builder:latest
+            - quay.io/ansible/python-base:latest

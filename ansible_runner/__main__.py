@@ -414,11 +414,9 @@ logger = logging.getLogger('ansible-runner')
 
 class AnsibleRunnerArgumentParser(argparse.ArgumentParser):
     def error(self, message):
-        # If no sub command was provided, print common usage and exit cleanly.
-        if 'required: command' in message:
-            self.print_usage()
+        # If no sub command was provided, print common usage then exit
+        if 'required: command' in message.lower():
             print_common_usage()
-            self.exit(0, message)
 
         super(AnsibleRunnerArgumentParser, self).error(message)
 
@@ -755,15 +753,7 @@ def main(sys_args=None):
     add_args_to_parser(isalive_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(transmit_container_group, DEFAULT_CLI_ARGS['container_group'])
 
-    try:
-        args = parser.parse_args(sys_args)
-    except SystemExit:
-        # If sys_args is None, assume this is interactive and use the behavior in the custom error() method.
-        if sys_args is None:
-            raise
-
-        # Otherwise, assume a call to main() passed in invalid arguments
-        parser.exit(2)
+    args = parser.parse_args(sys_args)
 
     vargs = vars(args)
 

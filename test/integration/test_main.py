@@ -81,17 +81,22 @@ def test_temp_directory():
 
 
 @pytest.mark.parametrize(
-    ('command', 'exit_code'),
+    ('command', 'expected'),
     (
-        (None, 0),
-        ([], 2),
-        (['run'], 2)
+        (None, {'out': 'These are common Ansible Runner commands', 'err': ''}),
+        ([], {'out': 'These are common Ansible Runner commands', 'err': ''}),
+        (['run'], {'out': '', 'err': 'the following arguments are required'}),
     )
 )
-def test_help(command, exit_code):
+def test_help(command, capsys, expected):
     with pytest.raises(SystemExit) as exc:
         main(command)
-    assert exc.value.code == exit_code, f'Should raise SystemExit with return code {exit_code}'
+
+    stdout, stderr = capsys.readouterr()
+
+    assert exc.value.code == 2, 'Should raise SystemExit with return code 2'
+    assert expected['out'] in stdout
+    assert expected['err'] in stderr
 
 
 def test_module_run():

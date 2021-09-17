@@ -50,9 +50,6 @@ def run_command(cmd):
         print('Stdout:')
         print(stdout)
         raise RuntimeError('Error running command')
-    print('Successfully ran command: {}'.format(' '.join(cmd)))
-    print(stdout)
-    # import pdb; pdb.set_trace()
     return stdout.strip()
 
 
@@ -73,23 +70,22 @@ def is_alive(dir):
 
 
 def cleanup_dirs(pattern, exclude_idents=()):
-    discovered_dirs = glob.glob(pattern)
     ct = 0
     running_idents = []
-    for dir in discovered_dirs:
+    for dir in glob.iglob(pattern):
         if any(ident in dir for ident in exclude_idents):
             continue
         if is_alive(dir):
             running_idents.extend(os.path.listdir(os.path.join(dir, 'artifacts')))
             continue
         shutil.rmtree(dir)
-        print(f'Removed directory {dir}')
         ct += 1
+    if ct:
+        print(f'Removed {ct} private data dir(s) in pattern {pattern}')
     if running_idents:
         print(f'Excluding from cleanup running jobs {running_idents}')
     registry_auth_pattern = f'{registry_auth_prefix}{{ident}}_**'
-    registry_auth_dirs = glob.glob(registry_auth_pattern)
-    for dir in registry_auth_dirs:
+    for dir in glob.iglob(registry_auth_pattern):
         if any(ident in dir for ident in exclude_idents) or any(ident in dir for ident in running_idents):
             continue
         shutil.rmtree(dir)
@@ -107,6 +103,8 @@ def cleanup_images(images, runtime='podman'):
         for discovered_tag in stdout.split('\n'):
             stdout = run_command([runtime, 'rmi', discovered_tag.strip().strip('"'), '-f'])
             rm_ct += stdout.count('Untagged:')
+    if rm_ct:
+        print(f'Removed {rm_ct} image(s)')
     return rm_ct
 
 

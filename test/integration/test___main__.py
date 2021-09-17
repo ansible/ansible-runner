@@ -52,7 +52,7 @@ def run_role(options, mocker, private_data_dir, expected_rc=0):
     args.extend(options)
     mock_run = mocker.patch('ansible_runner.interface.run')
     with pytest.raises(SystemExit) as exc:
-        main()
+        main(args)
 
     assert exc.type == SystemExit
     assert exc.value.code == expected_rc

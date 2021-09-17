@@ -39,6 +39,7 @@ from yaml import safe_dump, safe_load
 
 from ansible_runner import run
 from ansible_runner import output
+from ansible_runner import cleanup
 from ansible_runner.utils import dump_artifact, Bunch, register_for_cleanup
 from ansible_runner.utils.capacity import get_cpu_count, get_mem_in_bytes, get_uuid
 from ansible_runner.runner import Runner
@@ -621,41 +622,14 @@ def main(sys_args=None):
     )
     worker_subcommands = worker_subparser.add_subparsers(
         help="Sub-sub command to invoke",
-        dest='command',
+        dest='worker_subcommand',
         description="ansible-runner worker [sub-sub-command]"
     )
     cleanup_command = worker_subcommands.add_parser(
         'cleanup',
         help="Cleanup private_data_dir patterns from prior jobs and supporting temporary folders."
     )
-    cleanup_command.add_argument(
-        "--file-pattern",
-        help="A file glob to find private_data_dir folders to remove. "
-             "You may use {ident} in place of a ** to identify run IDs. "
-             "Example: --file-pattern=/tmp/foo_{ident}_**"
-    )
-    cleanup_command.add_argument(
-        "--exclude-idents",
-        help="A comma separated list of run IDs to preserve. "
-             "This will only work if the deletion pattern contains the {ident} syntax."
-    )
-    cleanup_command.add_argument(
-        "--untag-images",
-        help="A comma separated list of podman or docker tags to delete. "
-             "This will not remove the corresponding layers, use the image-prune option for that. "
-             "Example: --untag-images=quay.io/user/image:devel,quay.io/user/builder:latest"
-    )
-    cleanup_command.add_argument(
-        "--image-prune",
-        action="store_true",
-        help="If specified, will run docker / podman image prune --force. "
-             "This will only run after untagging."
-    )
-    cleanup_command.add_argument(
-        "--process-isolation-executable",
-        default="podman",
-        help="The container image to clean up images for (default=podman)"
-    )
+    cleanup.add_cleanup_args(cleanup_command)
 
     worker_subparser.add_argument(
         "--private-data-dir",
@@ -796,6 +770,9 @@ def main(sys_args=None):
     vargs = vars(args)
 
     if vargs.get('command') == 'worker':
+        if vargs.get('worker_subcommand') == 'cleanup':
+            cleanup.run_cleanup(vargs)
+            parser.exit(0)
         if vargs.get('worker_info'):
             cpu = get_cpu_count()
             mem = get_mem_in_bytes()

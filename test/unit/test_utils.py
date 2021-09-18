@@ -112,7 +112,7 @@ def test_dump_artifacts_roles():
 def test_dump_artifacts_inventory():
     with patch('ansible_runner.utils.dump_artifact') as mock_dump_artifact:
         # inventory as a string (INI)
-        inv = '[all]\nlocalhost'
+        inv = '[all]\nlocalhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"'
         kwargs = {'private_data_dir': '/tmp', 'inventory': inv}
         dump_artifacts(kwargs)
         assert mock_dump_artifact.call_count == 1

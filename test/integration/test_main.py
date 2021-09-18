@@ -70,10 +70,26 @@ def test_temp_directory():
     assert not os.path.exists(context['saved_temp_dir'])
 
 
-def test_help():
+@pytest.mark.parametrize(
+    ('command', 'expected'),
+    (
+        (None, {'out': 'These are common Ansible Runner commands', 'err': ''}),
+        ([], {'out': 'These are common Ansible Runner commands', 'err': ''}),
+        (['run'], {'out': '', 'err': 'the following arguments are required'}),
+    )
+)
+def test_help(command, expected, capsys, monkeypatch):
+    # Ensure that sys.argv of the test command does not affect the test environment.
+    monkeypatch.setattr('sys.argv', command or [])
+
     with pytest.raises(SystemExit) as exc:
-        main([])
+        main(command)
+
+    stdout, stderr = capsys.readouterr()
+
     assert exc.value.code == 2, 'Should raise SystemExit with return code 2'
+    assert expected['out'] in stdout
+    assert expected['err'] in stderr
 
 
 def test_module_run():

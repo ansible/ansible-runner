@@ -185,10 +185,7 @@ def test_cmdline_playbook(is_pre_ansible28):
 
         inventory = os.path.join(path, 'hosts')
         with open(inventory, 'w') as f:
-            if is_pre_ansible28:
-                f.write('[all]\nlocalhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"')
-            else:
-                f.write('[all]\nlocalhost ansible_connection=local')
+            f.write('[all]\nlocalhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"')
 
         cmdline('run', private_data_dir, '-p', playbook, '--inventory', inventory)
 
@@ -235,10 +232,7 @@ def test_cmdline_cmdline_override(is_pre_ansible28):
 
         inventory = os.path.join(path, 'hosts')
         with open(inventory, 'w') as f:
-            if is_pre_ansible28:
-                f.write('[all]\nlocalhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"')
-            else:
-                f.write('[all]\nlocalhost ansible_connection=local')
+            f.write('[all]\nlocalhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"')
 
         # privateip: removed --hosts command line option from test beause it is
         # not a supported combination of cli options

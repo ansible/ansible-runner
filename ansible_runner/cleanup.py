@@ -128,6 +128,7 @@ def prune_images(runtime='podman'):
     stdout = run_command([runtime, 'image', 'prune', '-f'])
     if not stdout or stdout == "Total reclaimed space: 0B":
         return False
+    print('Pruned images')
     return True
 
 

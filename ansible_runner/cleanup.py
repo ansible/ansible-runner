@@ -3,6 +3,7 @@ import subprocess
 import shutil
 import os
 import signal
+import re
 
 from ansible_runner.defaults import registry_auth_prefix
 
@@ -69,27 +70,41 @@ def is_alive(dir):
         return(1)
 
 
+def _get_idents_from_pdd(dir):
+    # TODO: exclude known files like the command and whatnot
+    try:
+        return os.listdir(os.path.join(dir, 'artifacts'))
+    except FileNotFoundError:
+        return []
+
+
 def cleanup_dirs(pattern, exclude_idents=()):
     ct = 0
     running_idents = []
+    deleted_idents = []
     for dir in glob.iglob(pattern):
         if any(ident in dir for ident in exclude_idents):
             continue
+        dir_idents = _get_idents_from_pdd(dir)
         if is_alive(dir):
-            running_idents.extend(os.path.listdir(os.path.join(dir, 'artifacts')))
+            running_idents.extend(dir_idents)
             continue
+        deleted_idents.extend(dir_idents)
         shutil.rmtree(dir)
         ct += 1
     if ct:
         print(f'Removed {ct} private data dir(s) in pattern {pattern}')
     if running_idents:
         print(f'Excluding from cleanup running jobs {running_idents}')
-    registry_auth_pattern = f'{registry_auth_prefix}{{ident}}_**'
+    registry_auth_pattern = f'/tmp/{registry_auth_prefix}*_*'
+    ident_re = re.compile(f'^/tmp/{registry_auth_prefix}(?P<ident>.*)_.*?$')
     for dir in glob.iglob(registry_auth_pattern):
-        if any(ident in dir for ident in exclude_idents) or any(ident in dir for ident in running_idents):
+        ident = ident_re.match(dir).group('ident')
+        if ident in exclude_idents or ident in running_idents:
             continue
-        shutil.rmtree(dir)
-        print(f'Removed associated registry auth dir {dir}')
+        if ident in deleted_idents:
+            shutil.rmtree(dir)
+            print(f'Removed associated registry auth dir {dir}')
     return ct
 
 

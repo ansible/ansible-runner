@@ -47,20 +47,23 @@ def test_main_bad_private_data_dir():
         os.remove(tmpfile)
 
 
-def run_role(options, mocker, private_data_dir, expected_rc=0):
-    args = ['run', private_data_dir]
-    args.extend(options)
-    mock_run = mocker.patch('ansible_runner.interface.run')
-    with pytest.raises(SystemExit) as exc:
-        main(args)
+@pytest.fixture
+def run_role(mocker):
+    def _run_role(options, private_data_dir, expected_rc=0):
+        args = ['run', private_data_dir]
+        args.extend(options)
+        with mocker.patch('ansible_runner.interface.run') as mock_run:
+            with pytest.raises(SystemExit) as exc:
+                main(args)
 
-    assert exc.type == SystemExit
-    assert exc.value.code == expected_rc
+            assert exc.value.code == expected_rc
 
-    return mock_run
+        return mock_run
+
+    return _run_role
 
 
-def test_cmdline_role_defaults(mocker):
+def test_cmdline_role_defaults(run_role):
     """Run a role directly with all command line defaults
     """
     private_data_dir = tempfile.mkdtemp()
@@ -73,11 +76,11 @@ def test_cmdline_role_defaults(mocker):
         'playbook': playbook
     }
 
-    result = run_role(options, mocker, private_data_dir)
+    result = run_role(options, private_data_dir)
     result.called_with_args([run_options])
 
 
-def test_cmdline_role_skip_facts(mocker):
+def test_cmdline_role_skip_facts(run_role):
     """Run a role directly and set --role-skip-facts option
     """
     private_data_dir = tempfile.mkdtemp()
@@ -90,11 +93,11 @@ def test_cmdline_role_skip_facts(mocker):
         'playbook': playbook
     }
 
-    result = run_role(options, mocker, private_data_dir)
+    result = run_role(options, private_data_dir)
     result.called_with_args([run_options])
 
 
-def test_cmdline_role_inventory(mocker):
+def test_cmdline_role_inventory(run_role):
     """Run a role directly and set --inventory option
     """
     private_data_dir = tempfile.mkdtemp()
@@ -108,11 +111,11 @@ def test_cmdline_role_inventory(mocker):
         'inventory': 'hosts'
     }
 
-    result = run_role(options, mocker, private_data_dir)
+    result = run_role(options, private_data_dir)
     result.called_with_args([run_options])
 
 
-def test_cmdline_role_vars(mocker):
+def test_cmdline_role_vars(run_role):
     """Run a role directly and set --role-vars option
     """
     private_data_dir = tempfile.mkdtemp()
@@ -132,11 +135,11 @@ def test_cmdline_role_vars(mocker):
         'playbook': playbook
     }
 
-    result = run_role(options, mocker, private_data_dir)
+    result = run_role(options, private_data_dir)
     result.called_with_args([run_options])
 
 
-def test_cmdline_roles_path(mocker):
+def test_cmdline_roles_path(run_role):
     """Run a role directly and set --roles-path option
     """
     private_data_dir = tempfile.mkdtemp()
@@ -150,7 +153,7 @@ def test_cmdline_roles_path(mocker):
         'envvars': {'ANSIBLE_ROLES_PATH': '/tmp/roles'}
     }
 
-    result = run_role(options, mocker, private_data_dir)
+    result = run_role(options, private_data_dir)
     result.called_with_args([run_options])
 
 

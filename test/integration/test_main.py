@@ -112,18 +112,16 @@ def test_module_run(tmp_path):
     assert rc == 0
 
 
-def test_module_run_debug():
-    try:
-        rc = main(['run', '-m', 'ping',
-                   '--hosts', 'localhost',
-                   '--debug',
-                   'ping'])
-        assert os.path.exists('./ping')
-        assert os.path.exists('./ping/artifacts')
-        assert rc == 0
-    finally:
-        if os.path.exists('./ping'):
-            shutil.rmtree('./ping')
+def test_module_run_debug(tmp_path):
+    output = tmp_path / 'ping'
+    rc = main(['run', '-m', 'ping',
+               '--hosts', 'localhost',
+               '--debug',
+               str(output)])
+
+    assert output.exists()
+    assert output.joinpath('artifacts').exists()
+    assert rc == 0
 
 
 def test_module_run_clean():

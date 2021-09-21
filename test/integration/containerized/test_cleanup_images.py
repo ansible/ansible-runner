@@ -51,7 +51,7 @@ def test_cleanup_new_image(cli, runtime, tmp_path):
 
     image_ct = cleanup_images(images=[image_name], runtime=runtime)
     assert image_ct == 1
-    prune_images()  # May or may not do anything, depends on docker / podman
+    prune_images(runtime=runtime)  # May or may not do anything, depends on docker / podman
 
     assert layer_id not in cli([runtime, 'images'], bare=True).stdout  # establishes that cleanup was genuine
 

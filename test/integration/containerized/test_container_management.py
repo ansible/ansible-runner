@@ -110,9 +110,7 @@ def test_invalid_registry_host(tmp_path, runtime):
         error_msg = 'unauthorized'
         auth_file_path = res.config.registry_auth_path
         registry_conf = os.path.join(os.path.dirname(res.config.registry_auth_path), 'registries.conf')
-        
     assert error_msg in result_stdout
-
 
     with open(auth_file_path, 'r') as f:
         content = f.read()

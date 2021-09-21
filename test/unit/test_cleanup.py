@@ -47,7 +47,6 @@ def test_registry_auth_cleanup(tmp_path):
         ident='awx_123'
     )
     rc.prepare()
-    # raise Exception((private_data_dir, rc.registry_auth_path))
     assert rc.registry_auth_path
     assert os.path.exists(rc.registry_auth_path)
 

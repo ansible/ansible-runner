@@ -4,12 +4,10 @@ import uuid
 import json
 import random
 import string
-import tempfile
-import shutil
 
 import pytest
 
-from ansible_runner.__main__ import main
+import ansible_runner.__main__
 
 
 def random_string():
@@ -42,119 +40,53 @@ def test_main_bad_private_data_dir():
 
     try:
         with pytest.raises(OSError):
-            main()
+            ansible_runner.__main__.main()
     finally:
         os.remove(tmpfile)
 
 
-@pytest.fixture
-def run_role(mocker):
-    def _run_role(options, private_data_dir, expected_rc=0):
-        args = ['run', private_data_dir]
-        args.extend(options)
-        with mocker.patch('ansible_runner.interface.run') as mock_run:
-            with pytest.raises(SystemExit) as exc:
-                main(args)
+def save_playbook(**kwargs):
+    os.link(kwargs['playbook'], os.path.join(kwargs['private_data_dir'], 'play.yml'))
 
-            assert exc.value.code == expected_rc
-
-        return mock_run
-
-    return _run_role
+    raise AttributeError("Raised intentionally")
 
 
-def test_cmdline_role_defaults(run_role):
-    """Run a role directly with all command line defaults
-    """
-    private_data_dir = tempfile.mkdtemp()
-    options = ['-r', 'test']
+@pytest.mark.parametrize(
+    ('options', 'expected_playbook'),
+    (
+        (
+            ['-r', 'test'],
+            [{'hosts': 'all', 'gather_facts': True, 'roles': [{'name': 'test'}]}],
+        ),
+        (
+            ['-r', 'test', '--role-skip-facts'],
+            [{'hosts': 'all', 'gather_facts': False, 'roles': [{'name': 'test'}]}],
+        ),
+        (
+            ['-r', 'test', '--role-vars', 'foo=bar'],
+            [{'hosts': 'all', 'gather_facts': True, 'roles': [{'name': 'test', 'vars': {'foo': 'bar'}}]}],
+        ),
+        (
+            ['-r', 'test', '--roles-path', '/tmp/roles'],
+            [{'hosts': 'all', 'gather_facts': True, 'roles': [{'name': 'test'}]}],
+        ),
+    )
+)
+def test_cmdline_role(options, expected_playbook, tmp_path, mocker):
+    mocker.patch.object(ansible_runner.__main__, 'run', save_playbook)
+    spy = mocker.spy(ansible_runner.__main__, 'run')
 
-    playbook = [{'hosts': 'all', 'gather_facts': True, 'roles': [{'role': 'test'}]}]
+    command = ['run', str(tmp_path)]
+    command.extend(options)
 
-    run_options = {
-        'private_data_dir': private_data_dir,
-        'playbook': playbook
-    }
+    rc = ansible_runner.__main__.main(command)
 
-    result = run_role(options, private_data_dir)
-    result.called_with_args([run_options])
+    with open(tmp_path / 'play.yml') as f:
+        playbook = json.loads(f.read())
 
-
-def test_cmdline_role_skip_facts(run_role):
-    """Run a role directly and set --role-skip-facts option
-    """
-    private_data_dir = tempfile.mkdtemp()
-    options = ['-r', 'test', '--role-skip-facts']
-
-    playbook = [{'hosts': 'all', 'gather_facts': False, 'roles': [{'role': 'test'}]}]
-
-    run_options = {
-        'private_data_dir': private_data_dir,
-        'playbook': playbook
-    }
-
-    result = run_role(options, private_data_dir)
-    result.called_with_args([run_options])
-
-
-def test_cmdline_role_inventory(run_role):
-    """Run a role directly and set --inventory option
-    """
-    private_data_dir = tempfile.mkdtemp()
-    options = ['-r', 'test', '--inventory hosts']
-
-    playbook = [{'hosts': 'all', 'gather_facts': False, 'roles': [{'role': 'test'}]}]
-
-    run_options = {
-        'private_data_dir': private_data_dir,
-        'playbook': playbook,
-        'inventory': 'hosts'
-    }
-
-    result = run_role(options, private_data_dir)
-    result.called_with_args([run_options])
-
-
-def test_cmdline_role_vars(run_role):
-    """Run a role directly and set --role-vars option
-    """
-    private_data_dir = tempfile.mkdtemp()
-    options = ['-r', 'test', '--role-vars "foo=bar"']
-
-    playbook = [{
-        'hosts': 'all',
-        'gather_facts': False,
-        'roles': [{
-            'role': 'test',
-            'vars': {'foo': 'bar'}
-        }]
-    }]
-
-    run_options = {
-        'private_data_dir': private_data_dir,
-        'playbook': playbook
-    }
-
-    result = run_role(options, private_data_dir)
-    result.called_with_args([run_options])
-
-
-def test_cmdline_roles_path(run_role):
-    """Run a role directly and set --roles-path option
-    """
-    private_data_dir = tempfile.mkdtemp()
-    options = ['-r', 'test', '--roles-path /tmp/roles']
-
-    playbook = [{'hosts': 'all', 'gather_facts': False, 'roles': [{'role': 'test'}]}]
-
-    run_options = {
-        'private_data_dir': private_data_dir,
-        'playbook': playbook,
-        'envvars': {'ANSIBLE_ROLES_PATH': '/tmp/roles'}
-    }
-
-    result = run_role(options, private_data_dir)
-    result.called_with_args([run_options])
+    assert rc == 1
+    assert playbook == expected_playbook
+    assert spy.call_args.kwargs.get('private_data_dir') == str(tmp_path)
 
 
 def test_cmdline_role_with_playbook_option():
@@ -162,38 +94,34 @@ def test_cmdline_role_with_playbook_option():
     """
     cmdline('run', 'private_data_dir', '-r', 'fake', '-p', 'fake')
     with pytest.raises(SystemExit) as exc:
-        main()
+        ansible_runner.__main__.main()
         assert exc == 1
 
 
-def test_cmdline_playbook(is_pre_ansible28):
-    try:
-        private_data_dir = tempfile.mkdtemp()
-        play = [{'hosts': 'all', 'tasks': [{'debug': {'msg': random_string()}}]}]
+def test_cmdline_playbook(is_pre_ansible28, tmp_path):
+    private_data_dir = tmp_path
+    play = [{'hosts': 'all', 'tasks': [{'debug': {'msg': random_string()}}]}]
 
-        path = os.path.join(private_data_dir, 'project')
-        os.makedirs(path)
+    path = private_data_dir / 'project'
+    path.mkdir()
 
-        playbook = os.path.join(path, 'main.yaml')
-        with open(playbook, 'w') as f:
-            f.write(json.dumps(play))
+    playbook = path / 'main.yaml'
+    with open(playbook, 'w') as f:
+        f.write(json.dumps(play))
 
-        path = os.path.join(private_data_dir, 'inventory')
-        os.makedirs(path)
+    path = private_data_dir / 'inventory'
+    os.makedirs(path)
 
-        inventory = os.path.join(path, 'hosts')
-        with open(inventory, 'w') as f:
-            f.write('[all]\nlocalhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"')
+    inventory = path / 'hosts'
+    with open(inventory, 'w') as f:
+        f.write('[all]\nlocalhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"')
 
-        cmdline('run', private_data_dir, '-p', playbook, '--inventory', inventory)
+    cmdline('run', str(private_data_dir), '-p', str(playbook), '--inventory', str(inventory))
 
-        assert main() == 0
+    assert ansible_runner.__main__.main() == 0
 
-        with open(playbook) as f:
-            assert json.loads(f.read()) == play
-
-    finally:
-        shutil.rmtree(private_data_dir)
+    with open(playbook) as f:
+        assert json.loads(f.read()) == play
 
 
 def test_cmdline_playbook_hosts():
@@ -201,7 +129,7 @@ def test_cmdline_playbook_hosts():
     """
     cmdline('run', 'private_data_dir', '-p', 'fake', '--hosts', 'all')
     with pytest.raises(SystemExit) as exc:
-        main()
+        ansible_runner.__main__.main()
         assert exc == 1
 
 
@@ -210,32 +138,26 @@ def test_cmdline_includes_one_option():
     """
     cmdline('run', 'private_data_dir')
     with pytest.raises(SystemExit) as exc:
-        main()
+        ansible_runner.__main__.main()
         assert exc == 1
 
 
-def test_cmdline_cmdline_override(is_pre_ansible28):
-    try:
-        private_data_dir = tempfile.mkdtemp()
-        play = [{'hosts': 'all', 'tasks': [{'debug': {'msg': random_string()}}]}]
+def test_cmdline_cmdline_override(is_pre_ansible28, tmp_path):
+    private_data_dir = tmp_path
+    play = [{'hosts': 'all', 'tasks': [{'debug': {'msg': random_string()}}]}]
 
-        path = os.path.join(private_data_dir, 'project')
-        os.makedirs(path)
+    path = private_data_dir / 'project'
+    path.mkdir()
 
-        playbook = os.path.join(path, 'main.yaml')
-        with open(playbook, 'w') as f:
-            f.write(json.dumps(play))
-        path = os.path.join(private_data_dir, 'inventory')
-        os.makedirs(path)
+    playbook = path / 'main.yaml'
+    with open(playbook, 'w') as f:
+        f.write(json.dumps(play))
+    path = private_data_dir / 'inventory'
+    os.makedirs(path)
 
-        inventory = os.path.join(path, 'hosts')
-        with open(inventory, 'w') as f:
-            f.write('[all]\nlocalhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"')
+    inventory = path / 'hosts'
+    with open(inventory, 'w') as f:
+        f.write('[all]\nlocalhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"')
 
-        # privateip: removed --hosts command line option from test beause it is
-        # not a supported combination of cli options
-        # cmdline('run', private_data_dir, '-p', playbook, '--hosts', 'all', '--cmdline', '-e foo=bar')
-        cmdline('run', private_data_dir, '-p', playbook, '--cmdline', '-e foo=bar')
-        assert main() == 0
-    finally:
-        shutil.rmtree(private_data_dir)
+    cmdline('run', str(private_data_dir), '-p', str(playbook), '--cmdline', '-e foo=bar')
+    assert ansible_runner.__main__.main() == 0

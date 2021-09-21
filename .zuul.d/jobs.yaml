@@ -3,6 +3,7 @@
     name: ansible-runner-container-image-base
     abstract: true
     description: Base ansible-runner container image
+    pre-run: .zuul.d/playbooks/ansible-runner-container-image-base/pre.yaml
     required-projects:
       - name: github.com/ansible/ansible-runner
     timeout: 5400

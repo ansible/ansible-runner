@@ -5,8 +5,6 @@ import os
 import yaml
 import six
 
-from ansible import __version__ as ANSIBLE_VERSION
-
 from ansible_runner.interface import init_runner
 
 import pytest
@@ -288,7 +286,6 @@ def test_callback_plugin_saves_custom_stats(executor, playbook, skipif_pre_ansib
         - my_handler
 '''},  # noqa
 ])
-@pytest.mark.skipif(ANSIBLE_VERSION < '2.5', reason="v2_playbook_on_notify doesn't work before ansible 2.5")
 def test_callback_plugin_records_notify_events(executor, playbook, skipif_pre_ansible28):
     executor.run()
     assert len(list(executor.events))

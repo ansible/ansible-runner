@@ -102,17 +102,14 @@ def test_help(command, expected, capsys, monkeypatch):
     assert expected['err'] in stderr
 
 
-def test_module_run():
-    try:
-        rc = main(['run', '-m', 'ping',
-                   '--hosts', 'localhost',
-                   'ping'])
-        assert os.path.exists('./ping')
-        assert os.path.exists('./ping/artifacts')
-        assert rc == 0
-    finally:
-        if os.path.exists('./ping'):
-            shutil.rmtree('./ping')
+def test_module_run(tmp_path):
+    pvt_data_dir = tmp_path / 'ping'
+    rc = main(['run', '-m', 'ping',
+               '--hosts', 'localhost',
+               str(pvt_data_dir)])
+    assert pvt_data_dir.exists()
+    assert pvt_data_dir.joinpath('artifacts').exists()
+    assert rc == 0
 
 
 def test_module_run_debug(tmp_path):
@@ -134,45 +131,38 @@ def test_module_run_clean(tmp_path):
     assert rc == 0
 
 
-def test_role_run(skipif_pre_ansible28, clear_integration_artifacts):
+def test_role_run(skipif_pre_ansible28, tmp_path):
+    artifact_dir = tmp_path / "otherartifacts"
     rc = main(['run', '-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
                '--roles-path', 'test/integration/roles',
+               # Specify artifact dir when private_data_dir is 'test/integration' to prevent collisions
+               '--artifact-dir', str(artifact_dir),
                "test/integration"])
+    # Assert that the specified artifacts directory is created
+    assert artifact_dir.exists()
     assert rc == 0
 
 
-def test_role_run_abs():
-    with temp_directory() as temp_dir:
-        rc = main(['run', '-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', os.path.join(HERE, 'project/roles'),
-                   temp_dir])
+def test_role_run_abs(tmp_path):
+    rc = main(['run', '-r', 'benthomasson.hello_role',
+               '--hosts', 'localhost',
+               '--roles-path', os.path.join(HERE, 'project/roles'),
+               str(tmp_path)])
+    # Assert that the artifacts directory is created in private_data_dir
+    assert tmp_path.joinpath('artifacts').exists()
     assert rc == 0
 
 
-# FIXME: This test interferes with test_role_logfile_abs. Marking it as serial so it is executed
-#        in a separate test run.
-@pytest.mark.serial
-def test_role_logfile(skipif_pre_ansible28, clear_integration_artifacts, tmp_path):
+def test_role_logfile(skipif_pre_ansible28, tmp_path):
     logfile = tmp_path.joinpath('test_role_logfile')
     rc = main(['run', '-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
                '--roles-path', 'test/integration/project/roles',
                '--logfile', str(logfile),
+               '--artifact-dir', str(tmp_path),
                'test/integration'])
     assert logfile.exists()
-    assert rc == 0
-
-
-def test_role_logfile_abs(tmp_path):
-    rc = main(['run', '-r', 'benthomasson.hello_role',
-               '--hosts', 'localhost',
-               '--roles-path', os.path.join(HERE, 'project/roles'),
-               '--logfile', tmp_path.joinpath('new_logfile').as_posix(),
-               str(tmp_path)])
-
-    assert tmp_path.joinpath('new_logfile').exists()
     assert rc == 0
 
 
@@ -193,47 +183,6 @@ def test_role_bad_project_dir():
         ensure_removed("new_logfile")
 
 
-def test_role_run_clean(skipif_pre_ansible28, clear_integration_artifacts):
-
-    rc = main(['run', '-r', 'benthomasson.hello_role',
-               '--hosts', 'localhost',
-               '--roles-path', 'test/integration/roles',
-               "test/integration"])
-    assert rc == 0
-
-
-def test_role_run_cmd_line_abs():
-    with temp_directory() as temp_dir:
-        rc = main(['run', '-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', os.path.join(HERE, 'project/roles'),
-                   temp_dir])
-    assert rc == 0
-
-
-def test_role_run_artifacts_dir(skipif_pre_ansible28, clear_integration_artifacts):
-    rc = main(['run', '-r', 'benthomasson.hello_role',
-               '--hosts', 'localhost',
-               '--roles-path', 'test/integration/roles',
-               '--artifact-dir', 'otherartifacts',
-               "test/integration"])
-    assert rc == 0
-
-
-def test_role_run_artifacts_dir_abs(skipif_pre_ansible28):
-    try:
-        with temp_directory() as temp_dir:
-            rc = main(['run', '-r', 'benthomasson.hello_role',
-                       '--hosts', 'localhost',
-                       '--roles-path', os.path.join(HERE, 'project/roles'),
-                       '--artifact-dir', 'otherartifacts',
-                       temp_dir])
-        assert os.path.exists(os.path.join('.', 'otherartifacts'))
-        assert rc == 0
-    finally:
-        shutil.rmtree(os.path.join('.', 'otherartifacts'))
-
-
 @pytest.mark.parametrize('envvars', [
     {'msg': 'hi'},
     {
@@ -242,117 +191,110 @@ def test_role_run_artifacts_dir_abs(skipif_pre_ansible28):
     }],
     ids=['regular-text', 'utf-8-text']
 )
-def test_role_run_env_vars(envvars):
+def test_role_run_env_vars(tmp_path, envvars):
 
-    with temp_directory() as temp_dir:
-        ensure_directory(os.path.join(temp_dir, 'env'))
-        with codecs.open(os.path.join(temp_dir, 'env/envvars'), 'w', encoding='utf-8') as f:
-            f.write(yaml.dump(envvars))
+    ensure_directory(str(tmp_path / 'env'))
+    with codecs.open(str(tmp_path / 'env/envvars'), 'w', encoding='utf-8') as f:
+        f.write(yaml.dump(envvars))
 
-        rc = main(['run', '-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', os.path.join(HERE, 'project/roles'),
-                   temp_dir])
+    rc = main(['run', '-r', 'benthomasson.hello_role',
+               '--hosts', 'localhost',
+               '--roles-path', os.path.join(HERE, 'project/roles'),
+               str(tmp_path)])
     assert rc == 0
 
 
-def test_role_run_args():
+def test_role_run_args(tmp_path):
 
-    with temp_directory() as temp_dir:
-        rc = main(['run', '-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', os.path.join(HERE, 'project/roles'),
-                   '--role-vars', 'msg=hi',
-                   temp_dir])
+    rc = main(['run', '-r', 'benthomasson.hello_role',
+               '--hosts', 'localhost',
+               '--roles-path', os.path.join(HERE, 'project/roles'),
+               '--role-vars', 'msg=hi',
+               str(tmp_path)])
     assert rc == 0
 
 
-def test_role_run_inventory(is_pre_ansible28):
+def test_role_run_inventory(is_pre_ansible28, tmp_path):
 
     inv = 'inventory/localhost_preansible28' if is_pre_ansible28 else 'inventory/localhost'
-    with temp_directory() as temp_dir:
-        ensure_directory(os.path.join(temp_dir, 'inventory'))
-        shutil.copy(os.path.join(HERE, inv), os.path.join(temp_dir, 'inventory/localhost'))
+    ensure_directory(str(tmp_path / 'inventory'))
+    inv_file = tmp_path / 'inventory' / 'localhost'
+    shutil.copy(os.path.join(HERE, inv), str(inv_file))
 
-        rc = main(['run', '-r', 'benthomasson.hello_role',
-                   '--hosts', 'localhost',
-                   '--roles-path', os.path.join(HERE, 'project/roles'),
-                   '--inventory', os.path.join(temp_dir, 'inventory/localhost'),
-                   temp_dir])
+    rc = main(['run', '-r', 'benthomasson.hello_role',
+               '--hosts', 'localhost',
+               '--roles-path', os.path.join(HERE, 'project/roles'),
+               '--inventory', str(inv_file),
+               str(tmp_path)])
     assert rc == 0
 
 
-def test_role_run_inventory_missing(is_pre_ansible28):
-
-    inv = 'inventory/localhost_preansible28' if is_pre_ansible28 else 'inventory/localhost'
-    with temp_directory() as temp_dir:
-        ensure_directory(os.path.join(temp_dir, 'inventory'))
-        shutil.copy(os.path.join(HERE, inv), os.path.join(temp_dir, 'inventory/localhost'))
-
-        with pytest.raises(AnsibleRunnerException):
-            main(['run', '-r', 'benthomasson.hello_role',
-                  '--hosts', 'localhost',
-                  '--roles-path', os.path.join(HERE, 'project/roles'),
-                  '--inventory', 'does_not_exist',
-                  temp_dir])
+def test_role_run_inventory_missing(is_pre_ansible28, tmp_path):
+    with pytest.raises(AnsibleRunnerException):
+        main(['run', '-r', 'benthomasson.hello_role',
+              '--hosts', 'localhost',
+              '--roles-path', os.path.join(HERE, 'project/roles'),
+              '--inventory', 'does_not_exist',
+              str(tmp_path)])
 
 
-def test_role_start():
+def test_role_start(tmp_path):
 
-    with temp_directory() as temp_dir:
-        mpcontext = multiprocessing.get_context('fork')
-        p = mpcontext.Process(
-            target=main,
-            args=[[
-                'start',
-                '-r', 'benthomasson.hello_role',
-                '--hosts', 'localhost',
-                '--roles-path', os.path.join(HERE, 'project/roles'),
-                temp_dir,
-            ]]
-        )
-        p.start()
-        p.join()
+    mpcontext = multiprocessing.get_context('fork')
+    p = mpcontext.Process(
+        target=main,
+        args=[[
+            'start',
+            '-r', 'benthomasson.hello_role',
+            '--hosts', 'localhost',
+            '--roles-path', os.path.join(HERE, 'project/roles'),
+            str(tmp_path),
+        ]]
+    )
+    p.start()
+    p.join()
 
 
-def test_playbook_start(skipif_pre_ansible28):
-
+def test_playbook_start(skipif_pre_ansible28, tmp_path):
+    temp_dir = str(tmp_path)
     inv = 'inventory/localhost'
-    with temp_directory() as temp_dir:
-        project_dir = os.path.join(temp_dir, 'project')
-        ensure_directory(project_dir)
-        shutil.copy(os.path.join(HERE, 'project/hello.yml'), project_dir)
-        ensure_directory(os.path.join(temp_dir, 'inventory'))
-        shutil.copy(os.path.join(HERE, inv), os.path.join(temp_dir, 'inventory/localhost'))
+    project_dir = str(tmp_path / 'project')
+    ensure_directory(project_dir)
+    shutil.copy(os.path.join(HERE, 'project/hello.yml'), project_dir)
 
-        mpcontext = multiprocessing.get_context('fork')
-        p = mpcontext.Process(
-            target=main,
-            args=[[
-                'start',
-                '-p', 'hello.yml',
-                '--inventory', os.path.join(HERE, 'inventory/localhost'),
-                temp_dir,
-            ]]
-        )
-        p.start()
+    inventory_dir = tmp_path / 'inventory'
+    ensure_directory(str(inventory_dir))
+    inventory_file = str(inventory_dir / 'localhost')
+    shutil.copy(os.path.join(HERE, inv), inventory_file)
 
-        pid_path = os.path.join(temp_dir, 'pid')
-        for _ in iterate_timeout(30, "pid file creation"):
-            if os.path.exists(pid_path):
-                break
+    mpcontext = multiprocessing.get_context('fork')
+    p = mpcontext.Process(
+        target=main,
+        args=[[
+            'start',
+            '-p', 'hello.yml',
+            '--inventory', inventory_file,
+            temp_dir,
+        ]]
+    )
+    p.start()
 
+    pid_path = os.path.join(temp_dir, 'pid')
+    for _ in iterate_timeout(30, "pid file creation"):
+        if os.path.exists(pid_path):
+            break
+
+    rc = main(['is-alive', temp_dir])
+    assert rc == 0
+    rc = main(['stop', temp_dir])
+    assert rc == 0
+
+    for _ in iterate_timeout(30, "background process to stop"):
         rc = main(['is-alive', temp_dir])
-        assert rc == 0
-        rc = main(['stop', temp_dir])
-        assert rc == 0
+        if rc == 1:
+            break
 
-        for _ in iterate_timeout(30, "background process to stop"):
-            rc = main(['is-alive', temp_dir])
-            if rc == 1:
-                break
+    ensure_removed(pid_path)
 
-        ensure_removed(pid_path)
-
-        rc = main(['stop', temp_dir])
-        assert rc == 1
+    rc = main(['stop', temp_dir])
+    assert rc == 1

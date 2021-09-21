@@ -1,11 +1,10 @@
 import glob
 import subprocess
-import shutil
 import os
 import signal
-import re
 
 from ansible_runner.defaults import registry_auth_prefix
+from ansible_runner.utils import cleanup_folder
 
 
 __all__ = ['add_cleanup_args', 'run_cleanup']
@@ -18,9 +17,8 @@ def add_cleanup_args(command):
              "Example: --file-pattern=/tmp/.ansible-runner-*"
     )
     command.add_argument(
-        "--exclude-idents",
-        help="A comma separated list of run IDs to preserve. "
-             "This will only work if the deletion pattern contains the {ident} syntax."
+        "--exclude-strings",
+        help="A comma separated list of keywords in directory to avoid deleting."
     )
     command.add_argument(
         "--remove-images",
@@ -70,41 +68,38 @@ def is_alive(dir):
         return(1)
 
 
-def _get_idents_from_pdd(dir):
-    # TODO: exclude known files like the command and whatnot
+def project_idents(dir):
+    """Give dir, give list of idents that we have artifacts for"""
     try:
         return os.listdir(os.path.join(dir, 'artifacts'))
-    except FileNotFoundError:
+    except (FileNotFoundError, NotADirectoryError):
         return []
 
 
-def cleanup_dirs(pattern, exclude_idents=()):
+def delete_associated_folders(dir):
+    """Where dir is the private_data_dir for a completed job, this deletes related tmp folders it used"""
+    for ident in project_idents(dir):
+        registry_auth_pattern = f'/tmp/{registry_auth_prefix}{ident}_*'
+        for dir in glob.glob(registry_auth_pattern):
+            changed = cleanup_folder(dir)
+            if changed:
+                print(f'Removed associated registry auth dir {dir}')
+
+
+def cleanup_dirs(pattern, exclude_strings=()):
     ct = 0
-    running_idents = []
-    deleted_idents = []
-    for dir in glob.iglob(pattern):
-        if any(ident in dir for ident in exclude_idents):
+    for dir in glob.glob(pattern):
+        if any(str(ident) in dir for ident in exclude_strings):
             continue
-        dir_idents = _get_idents_from_pdd(dir)
         if is_alive(dir):
-            running_idents.extend(dir_idents)
+            print(f'Excluding running project {dir} from cleanup')
             continue
-        deleted_idents.extend(dir_idents)
-        shutil.rmtree(dir)
-        ct += 1
-    if ct:
-        print(f'Removed {ct} private data dir(s) in pattern {pattern}')
-    if running_idents:
-        print(f'Excluding from cleanup running jobs {running_idents}')
-    registry_auth_pattern = f'/tmp/{registry_auth_prefix}*_*'
-    ident_re = re.compile(f'^/tmp/{registry_auth_prefix}(?P<ident>.*)_.*?$')
-    for dir in glob.iglob(registry_auth_pattern):
-        ident = ident_re.match(dir).group('ident')
-        if ident in exclude_idents or ident in running_idents:
-            continue
-        if ident in deleted_idents:
-            shutil.rmtree(dir)
-            print(f'Removed associated registry auth dir {dir}')
+        delete_associated_folders(dir)
+        changed = cleanup_folder(dir)
+        if changed:
+            print(f'Removed directory {dir}')
+            ct += 1
+
     return ct
 
 
@@ -118,8 +113,6 @@ def cleanup_images(images, runtime='podman'):
         for discovered_tag in stdout.split('\n'):
             stdout = run_command([runtime, 'rmi', discovered_tag.strip().strip('"'), '-f'])
             rm_ct += stdout.count('Untagged:')
-    if rm_ct:
-        print(f'Removed {rm_ct} image(s)')
     return rm_ct
 
 
@@ -128,7 +121,6 @@ def prune_images(runtime='podman'):
     stdout = run_command([runtime, 'image', 'prune', '-f'])
     if not stdout or stdout == "Total reclaimed space: 0B":
         return False
-    print('Pruned images')
     return True
 
 
@@ -139,19 +131,26 @@ def comma_sep_parse(vargs, key):
 
 
 def run_cleanup(vargs):
-    exclude_idents = comma_sep_parse(vargs, 'exclude_idents')
+    exclude_strings = comma_sep_parse(vargs, 'exclude_strings')
     remove_images = comma_sep_parse(vargs, 'remove_images')
+    file_pattern = vargs.get('file_pattern')
     dir_ct = image_ct = 0
     pruned = False
 
-    if vargs.get('file_pattern'):
-        dir_ct = cleanup_dirs(vargs.get('file_pattern'), exclude_idents=exclude_idents)
+    if file_pattern:
+        dir_ct = cleanup_dirs(file_pattern, exclude_strings=exclude_strings)
+        if dir_ct:
+            print(f'Removed {dir_ct} private data dir(s) in pattern {file_pattern}')
 
     if remove_images:
         image_ct = cleanup_images(remove_images, runtime=vargs.get('process_isolation_executable'))
+        if image_ct:
+            print(f'Removed {image_ct} image(s)')
 
     if vargs.get('image_prune'):
         pruned = prune_images(runtime=vargs.get('process_isolation_executable'))
+        if pruned:
+            print('Pruned images')
 
     if dir_ct or image_ct or pruned:
         print('(changed: True)')

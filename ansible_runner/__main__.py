@@ -432,6 +432,15 @@ DEFAULT_CLI_ARGS = {
 logger = logging.getLogger('ansible-runner')
 
 
+class AnsibleRunnerArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        # If no sub command was provided, print common usage then exit
+        if 'required: command' in message.lower():
+            print_common_usage()
+
+        super(AnsibleRunnerArgumentParser, self).error(message)
+
+
 @contextmanager
 def role_manager(vargs):
     if vargs.get('role'):
@@ -583,7 +592,7 @@ def main(sys_args=None):
     :rtype: SystemExit
     """
 
-    parser = argparse.ArgumentParser(
+    parser = AnsibleRunnerArgumentParser(
         prog='ansible-runner',
         description="Use 'ansible-runner' (with no arguments) to see basic usage"
     )
@@ -746,11 +755,6 @@ def main(sys_args=None):
     add_args_to_parser(stop_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(isalive_container_group, DEFAULT_CLI_ARGS['container_group'])
     add_args_to_parser(transmit_container_group, DEFAULT_CLI_ARGS['container_group'])
-
-    if len(sys.argv) == 1:
-        parser.print_usage()
-        print_common_usage()
-        parser.exit(status=0)
 
     args = parser.parse_args(sys_args)
 

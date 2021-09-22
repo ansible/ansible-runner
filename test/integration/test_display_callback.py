@@ -26,10 +26,7 @@ def executor(tmpdir, request, is_pre_ansible28):
     # python interpreter used is not of much interest, we really want to silence warnings
     envvars['ANSIBLE_PYTHON_INTERPRETER'] = 'auto_silent'
 
-    if is_pre_ansible28:
-        inventory = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
-    else:
-        inventory = 'localhost ansible_connection=local'
+    inventory = 'localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"'
 
     r = init_runner(
         private_data_dir=private_data_dir,

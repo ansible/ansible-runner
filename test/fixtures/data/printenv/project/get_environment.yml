@@ -1,0 +1,5 @@
+- hosts: all
+  gather_facts: no
+
+  tasks:
+    - look_at_environment:

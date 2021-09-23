@@ -48,10 +48,10 @@ class CancelStandIn:
 
 
 def test_cancel_will_remove_container(test_data_dir, container_runtime_installed, cli):
-    private_data_dir = os.path.join(test_data_dir, 'sleep')
+    private_data_dir = test_data_dir / 'sleep'
 
-    env_dir = os.path.join(private_data_dir, 'env')
-    if os.path.exists(env_dir):
+    env_dir = private_data_dir / 'env'
+    if env_dir.exists():
         shutil.rmtree(env_dir)
 
     cancel_standin = CancelStandIn(container_runtime_installed, cli)
@@ -148,8 +148,9 @@ def test_registry_auth_file_cleanup(tmp_path, cli, runtime):
         'container_auth_data': {'host': 'https://somedomain.invalid', 'username': 'foouser', 'password': '349sk34'},
     }
 
-    os.mkdir(os.path.join(private_data_dir, 'env'))
-    with open(os.path.join(private_data_dir, 'env', 'settings'), 'w') as f:
+    env_path = pdd_path / 'env'
+    env_path.mkdir()
+    with env_path.joinpath('settings').open('w') as f:
         f.write(json.dumps(settings_data, indent=2))
 
     this_ident = str(uuid4())[:5]

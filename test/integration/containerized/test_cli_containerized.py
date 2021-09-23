@@ -31,7 +31,7 @@ def test_playbook_run(cli, skip_if_no_podman):
 
 
 def test_provide_env_var(cli, skip_if_no_podman, test_data_dir):
-    r = cli(['run', os.path.join(test_data_dir, 'job_env'), '-p', 'printenv.yml'])
+    r = cli(['run', str(test_data_dir / 'job_env'), '-p', 'printenv.yml'])
     assert 'gifmyvqok2' in r.stdout, r.stdout
 
 

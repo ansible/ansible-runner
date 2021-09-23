@@ -31,12 +31,12 @@ def test_run_async(tmp_path):
 
 @pytest.fixture
 def printenv_example(test_data_dir):
-    private_data_dir = os.path.join(test_data_dir, 'printenv')
+    private_data_dir = test_data_dir / 'printenv'
     # TODO: remove if main code can handle this for us
     # https://github.com/ansible/ansible-runner/issues/493
     # for now, necessary to prevent errors on re-run
-    env_dir = os.path.join(private_data_dir, 'env')
-    if os.path.exists(env_dir):
+    env_dir = private_data_dir / 'env'
+    if env_dir.exists():
         shutil.rmtree(env_dir)
     return private_data_dir
 
@@ -115,7 +115,7 @@ def test_env_accuracy_inside_container(request, printenv_example, container_runt
 
 
 def test_multiple_inventories(test_data_dir):
-    private_data_dir = os.path.join(test_data_dir, 'debug')
+    private_data_dir = test_data_dir / 'debug'
 
     res = run(
         private_data_dir=private_data_dir,
@@ -131,13 +131,13 @@ def test_multiple_inventories(test_data_dir):
 
 
 def test_inventory_absolute_path(test_data_dir):
-    private_data_dir = os.path.join(test_data_dir, 'debug')
+    private_data_dir = test_data_dir / 'debug'
 
     res = run(
         private_data_dir=private_data_dir,
         playbook='debug.yml',
         inventory=[
-            os.path.join(private_data_dir, 'inventory', 'inv_1'),
+            str(private_data_dir / 'inventory' / 'inv_1'),
         ],
     )
     stdout = res.stdout.read()
@@ -149,13 +149,13 @@ def test_inventory_absolute_path(test_data_dir):
 
 
 def test_run_command(test_data_dir):
-    private_data_dir = os.path.join(test_data_dir, 'debug')
-    inventory = os.path.join(private_data_dir, 'inventory', 'inv_1')
-    playbook = os.path.join(private_data_dir, 'project', 'debug.yml')
+    private_data_dir = test_data_dir / 'debug'
+    inventory = private_data_dir / 'inventory' / 'inv_1'
+    playbook = private_data_dir / 'project' / 'debug.yml'
     out, err, rc = run_command(
         private_data_dir=private_data_dir,
         executable_cmd='ansible-playbook',
-        cmdline_args=[playbook, '-i', inventory]
+        cmdline_args=[str(playbook), '-i', str(inventory)]
     )
     assert "Hello world!" in out
     assert rc == 0
@@ -163,9 +163,9 @@ def test_run_command(test_data_dir):
 
 
 def test_run_ansible_command_within_container(test_data_dir, container_runtime_installed):
-    private_data_dir = os.path.join(test_data_dir, 'debug')
-    inventory = os.path.join(private_data_dir, 'inventory', 'inv_1')
-    playbook = os.path.join(private_data_dir, 'project', 'debug.yml')
+    private_data_dir = test_data_dir / 'debug'
+    inventory = private_data_dir / 'inventory' / 'inv_1'
+    playbook = private_data_dir / 'project' / 'debug.yml'
     container_kwargs = {
         'process_isolation_executable': container_runtime_installed,
         'process_isolation': True,
@@ -174,7 +174,7 @@ def test_run_ansible_command_within_container(test_data_dir, container_runtime_i
     out, err, rc = run_command(
         private_data_dir=private_data_dir,
         executable_cmd='ansible-playbook',
-        cmdline_args=[playbook, '-i', inventory],
+        cmdline_args=[str(playbook), '-i', str(inventory)],
         **container_kwargs
     )
     assert "Hello world!" in out
@@ -183,8 +183,8 @@ def test_run_ansible_command_within_container(test_data_dir, container_runtime_i
 
 
 def test_run_script_within_container(test_data_dir, container_runtime_installed):
-    private_data_dir = os.path.join(test_data_dir, 'debug')
-    script_path = os.path.join(test_data_dir, 'files')
+    private_data_dir = test_data_dir / 'debug'
+    script_path = test_data_dir / 'files'
     container_volume_mounts = ["{}:{}:Z".format(script_path, script_path)]
     container_kwargs = {
         'process_isolation_executable': container_runtime_installed,
@@ -195,7 +195,7 @@ def test_run_script_within_container(test_data_dir, container_runtime_installed)
     out, _, rc = run_command(
         private_data_dir=private_data_dir,
         executable_cmd='python3',
-        cmdline_args=[os.path.join(script_path, 'test_ee.py')],
+        cmdline_args=[str(script_path / 'test_ee.py')],
         **container_kwargs
     )
 
@@ -204,13 +204,13 @@ def test_run_script_within_container(test_data_dir, container_runtime_installed)
 
 
 def test_run_command_async(test_data_dir):
-    private_data_dir = os.path.join(test_data_dir, 'debug')
-    inventory = os.path.join(private_data_dir, 'inventory', 'inv_1')
-    playbook = os.path.join(private_data_dir, 'project', 'debug.yml')
+    private_data_dir = test_data_dir / 'debug'
+    inventory = private_data_dir / 'inventory' / 'inv_1'
+    playbook = private_data_dir / 'project' / 'debug.yml'
     thread, r = run_command_async(
         private_data_dir=private_data_dir,
         executable_cmd='ansible-playbook',
-        cmdline_args=[playbook, '-i', inventory]
+        cmdline_args=[str(playbook), '-i', str(inventory)]
     )
     thread.join()
     out = r.stdout.read()
@@ -290,13 +290,13 @@ def test_ansible_config():
 
 
 def test_get_inventory(test_data_dir):
-    private_data_dir = os.path.join(test_data_dir, 'debug')
-    inventory1 = os.path.join(private_data_dir, 'inventory', 'inv_1')
-    inventory2 = os.path.join(private_data_dir, 'inventory', 'inv_2')
+    private_data_dir = test_data_dir / 'debug'
+    inventory1 = private_data_dir / 'inventory' / 'inv_1'
+    inventory2 = private_data_dir / 'inventory' / 'inv_2'
 
     out, _ = get_inventory(
         action='list',
-        inventories=[inventory1, inventory2],
+        inventories=[str(inventory1), str(inventory2)],
         response_format='json',
         quiet=True
     )
@@ -310,13 +310,13 @@ def test_get_inventory_within_container(test_data_dir, container_runtime_install
         'process_isolation': True,
         'container_image': defaults.default_container_image
     }
-    private_data_dir = os.path.join(test_data_dir, 'debug')
-    inventory1 = os.path.join(private_data_dir, 'inventory', 'inv_1')
-    inventory2 = os.path.join(private_data_dir, 'inventory', 'inv_2')
+    private_data_dir = test_data_dir / 'debug'
+    inventory1 = private_data_dir / 'inventory' / 'inv_1'
+    inventory2 = private_data_dir / 'inventory' / 'inv_2'
 
     out, _ = get_inventory(
         action='list',
-        inventories=[inventory1, inventory2],
+        inventories=[str(inventory1), str(inventory2)],
         response_format='json',
         quiet=True,
         **container_kwargs

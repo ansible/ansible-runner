@@ -1,7 +1,10 @@
-import pytest
+import shutil
+
 from distutils.version import LooseVersion
+from pathlib import Path
+
 import pkg_resources
-import os
+import pytest
 
 
 @pytest.fixture(autouse=True)
@@ -25,6 +28,10 @@ def skipif_pre_ansible28(is_pre_ansible28):
         pytest.skip("Valid only on Ansible 2.8+")
 
 
-@pytest.fixture(scope='session')
-def test_data_dir():
-    return os.path.join(os.path.dirname(__file__), 'data')
+@pytest.fixture
+def test_data_dir(tmp_path):
+    source = Path(__file__).parent / 'data'
+    dest = tmp_path / 'data'
+    shutil.copytree(source, dest)
+
+    return dest

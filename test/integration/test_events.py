@@ -149,9 +149,9 @@ def test_playbook_on_stats_summary_fields(test_data_dir, is_pre_ansible28):
         assert runner_stats[stat]  # expected at least 1 host in each stat type
 
 
-def test_include_role_events(clear_integration_artifacts):
+def test_include_role_events(project_fixture):
     r = run(
-        private_data_dir=os.path.abspath('test/integration'),
+        private_data_dir=str(project_fixture),
         playbook='use_role.yml'
     )
     role_events = [event for event in r.events if event.get('event_data', {}).get('role', '') == "benthomasson.hello_role"]

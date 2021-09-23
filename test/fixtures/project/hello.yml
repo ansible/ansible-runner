@@ -1,0 +1,5 @@
+- hosts: localhost
+  tasks:
+    - debug: msg="Before!"
+    - shell: sleep 90
+    - debug: msg="After!"

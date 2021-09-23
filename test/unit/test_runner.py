@@ -13,8 +13,6 @@ from ansible_runner import Runner
 from ansible_runner.exceptions import CallbackError, AnsibleRunnerException
 from ansible_runner.config.runner import RunnerConfig
 
-HERE, FILENAME = os.path.split(__file__)
-
 
 @pytest.fixture(scope='function')
 def rc(request, tmp_path):

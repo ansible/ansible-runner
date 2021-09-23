@@ -1,0 +1,13 @@
+---
+galaxy_info:
+  author: Ben Thomasson
+  description: Hello World role
+  company: Red Hat
+
+  license: Apache
+
+  min_ansible_version: 1.2
+
+  galaxy_tags:
+    - hello
+dependencies: []

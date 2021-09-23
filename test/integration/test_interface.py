@@ -78,7 +78,6 @@ def test_env_accuracy(request, printenv_example):
     assert actual_env == res.config.env
 
 
-@pytest.mark.serial
 def test_env_accuracy_inside_container(request, printenv_example, container_runtime_installed):
     os.environ['SET_BEFORE_TEST'] = 'MADE_UP_VALUE'
 

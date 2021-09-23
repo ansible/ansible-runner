@@ -47,7 +47,6 @@ class CancelStandIn:
         return True
 
 
-@pytest.mark.serial
 def test_cancel_will_remove_container(test_data_dir, container_runtime_installed, cli):
     private_data_dir = os.path.join(test_data_dir, 'sleep')
 

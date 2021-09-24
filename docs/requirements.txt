@@ -1,1 +1,3 @@
 pbr
+sphinx
+ansible-core

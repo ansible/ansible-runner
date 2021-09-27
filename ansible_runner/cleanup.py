@@ -22,10 +22,12 @@ def add_cleanup_args(command):
     )
     command.add_argument(
         "--exclude-strings",
-        help="A comma separated list of keywords in directory to avoid deleting."
+        nargs='*',
+        help="A comma separated list of keywords in directory name or path to avoid deleting."
     )
     command.add_argument(
         "--remove-images",
+        nargs='*',
         help="A comma separated list of podman or docker tags to delete. "
              "This may not remove the corresponding layers, use the image-prune option to assure full deletion. "
              "Example: --remove-images=quay.io/user/image:devel,quay.io/user/builder:latest"
@@ -142,15 +144,9 @@ def prune_images(runtime='podman'):
     return True
 
 
-def comma_sep_parse(vargs, key):
-    if vargs.get(key):
-        return vargs.get(key).split(',')
-    return []
-
-
 def run_cleanup(vargs):
-    exclude_strings = comma_sep_parse(vargs, 'exclude_strings')
-    remove_images = comma_sep_parse(vargs, 'remove_images')
+    exclude_strings = vargs.get('exclude_strings') or []
+    remove_images = vargs.get('remove_images') or []
     file_pattern = vargs.get('file_pattern')
     dir_ct = image_ct = 0
     pruned = False

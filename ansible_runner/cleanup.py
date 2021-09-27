@@ -2,12 +2,16 @@ import glob
 import subprocess
 import os
 import signal
+import datetime
 
 from ansible_runner.defaults import registry_auth_prefix
 from ansible_runner.utils import cleanup_folder
 
 
 __all__ = ['add_cleanup_args', 'run_cleanup']
+
+
+GRACE_PERIOD_DEFAULT = 60  # minutes
 
 
 def add_cleanup_args(command):
@@ -25,6 +29,14 @@ def add_cleanup_args(command):
         help="A comma separated list of podman or docker tags to delete. "
              "This may not remove the corresponding layers, use the image-prune option to assure full deletion. "
              "Example: --remove-images=quay.io/user/image:devel,quay.io/user/builder:latest"
+    )
+    command.add_argument(
+        "--grace-period",
+        default=GRACE_PERIOD_DEFAULT,
+        type=int,
+        help="Time (in minutes) after last modification to exclude a folder from deletion for. "
+             "This is to avoid deleting folders that were recently created, or folders not started via the start command. "
+             "Value of 0 indicates that no folders will be excluded based on modified time."
     )
     command.add_argument(
         "--image-prune",
@@ -86,11 +98,17 @@ def delete_associated_folders(dir):
                 print(f'Removed associated registry auth dir {dir}')
 
 
-def cleanup_dirs(pattern, exclude_strings=()):
+def cleanup_dirs(pattern, exclude_strings=(), grace_period=GRACE_PERIOD_DEFAULT):
     ct = 0
+    now_time = datetime.datetime.now()
     for dir in glob.glob(pattern):
-        if any(str(ident) in dir for ident in exclude_strings):
+        if any(str(exclude_string) in dir for exclude_string in exclude_strings):
             continue
+        if grace_period:
+            st = os.stat(dir)
+            modtime = datetime.datetime.fromtimestamp(st.st_mtime)
+            if modtime > now_time - datetime.timedelta(minutes=grace_period):
+                continue
         if is_alive(dir):
             print(f'Excluding running project {dir} from cleanup')
             continue
@@ -138,7 +156,7 @@ def run_cleanup(vargs):
     pruned = False
 
     if file_pattern:
-        dir_ct = cleanup_dirs(file_pattern, exclude_strings=exclude_strings)
+        dir_ct = cleanup_dirs(file_pattern, exclude_strings=exclude_strings, grace_period=vargs.get('grace_period'))
         if dir_ct:
             print(f'Removed {dir_ct} private data dir(s) in pattern {file_pattern}')
 

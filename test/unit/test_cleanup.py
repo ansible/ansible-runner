@@ -1,5 +1,6 @@
 import random
 import os
+import time
 
 from ansible_runner.cleanup import cleanup_dirs
 from ansible_runner.config.runner import RunnerConfig
@@ -20,7 +21,7 @@ def test_simple_dir_cleanup_with_exclusions(tmp_path):
     keep_dir_path = tmp_path / 'pattern_42_alsokeepme'
     keep_dir_path.mkdir()
 
-    ct = cleanup_dirs(pattern=str(tmp_path / 'pattern_*_*'), exclude_strings=[42])
+    ct = cleanup_dirs(pattern=str(tmp_path / 'pattern_*_*'), exclude_strings=[42], grace_period=0)
     assert ct == 3  # cleaned up 3 private_data_dirs
 
     for path in paths:
@@ -29,7 +30,19 @@ def test_simple_dir_cleanup_with_exclusions(tmp_path):
     assert os.path.exists(a_file_path)
     assert os.path.exists(str(keep_dir_path))
 
-    assert cleanup_dirs(pattern=str(tmp_path / 'pattern_*_*'), exclude_strings=[42]) == 0  # no more to cleanup
+    assert cleanup_dirs(pattern=str(tmp_path / 'pattern_*_*'), exclude_strings=[42], grace_period=0) == 0  # no more to cleanup
+
+
+def test_cleanup_command_grace_period(tmp_path):
+    old_dir = str(tmp_path / 'modtime_old_xyz')
+    new_dir = str(tmp_path / 'modtime_new_abc')
+    os.mkdir(old_dir)
+    time.sleep(1)
+    os.mkdir(new_dir)
+    ct = cleanup_dirs(pattern=str(tmp_path / 'modtime_*_*'), grace_period=1. / 60.)
+    assert ct == 1
+    assert not os.path.exists(old_dir)
+    assert os.path.exists(new_dir)
 
 
 def test_registry_auth_cleanup(tmp_path):
@@ -50,7 +63,7 @@ def test_registry_auth_cleanup(tmp_path):
     assert rc.registry_auth_path
     assert os.path.exists(rc.registry_auth_path)
 
-    ct = cleanup_dirs(pattern=private_data_dir)
+    ct = cleanup_dirs(pattern=private_data_dir, grace_period=0)
     assert ct == 1
 
     assert not os.path.exists(private_data_dir)

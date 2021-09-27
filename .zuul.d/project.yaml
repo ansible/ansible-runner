@@ -2,11 +2,12 @@
 - project:
     check:
       jobs: &id001
+        - ansible-buildset-registry
         - ansible-runner-build-container-image
         - ansible-runner-build-container-image-stable-2.9
         - ansible-runner-build-container-image-stable-2.10
         - ansible-runner-build-container-image-stable-2.11
-        - ansible-tox-py38
+        - ansible-runner-integration
         - ansible-tox-docs:
             vars:
               sphinx_build_dir: docs/build
@@ -14,6 +15,7 @@
       jobs: *id001
     post:
       jobs: &id002
+        - ansible-buildset-registry
         - ansible-runner-upload-container-image:
             vars:
               upload_container_image_promote: false

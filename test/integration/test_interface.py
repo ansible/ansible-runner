@@ -29,18 +29,6 @@ def test_run_async(tmp_path):
     assert r.status == 'successful'
 
 
-@pytest.fixture
-def printenv_example(test_data_dir):
-    private_data_dir = test_data_dir / 'printenv'
-    # TODO: remove if main code can handle this for us
-    # https://github.com/ansible/ansible-runner/issues/493
-    # for now, necessary to prevent errors on re-run
-    env_dir = private_data_dir / 'env'
-    if env_dir.exists():
-        shutil.rmtree(env_dir)
-    return private_data_dir
-
-
 def get_env_data(res):
     for event in res.events:
         found = bool(
@@ -56,7 +44,8 @@ def get_env_data(res):
         raise RuntimeError('Count not find look_at_environment task from playbook')
 
 
-def test_env_accuracy(request, printenv_example):
+def test_env_accuracy(request, test_data_dir):
+    printenv_example = test_data_dir / 'printenv'
     os.environ['SET_BEFORE_TEST'] = 'MADE_UP_VALUE'
 
     def remove_test_env_var():
@@ -78,7 +67,8 @@ def test_env_accuracy(request, printenv_example):
     assert actual_env == res.config.env
 
 
-def test_env_accuracy_inside_container(request, printenv_example, container_runtime_installed):
+def test_env_accuracy_inside_container(request, test_data_dir, container_runtime_installed):
+    printenv_example = test_data_dir / 'printenv'
     os.environ['SET_BEFORE_TEST'] = 'MADE_UP_VALUE'
 
     def remove_test_env_var():

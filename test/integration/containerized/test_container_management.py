@@ -50,10 +50,6 @@ class CancelStandIn:
 def test_cancel_will_remove_container(test_data_dir, container_runtime_installed, cli):
     private_data_dir = test_data_dir / 'sleep'
 
-    env_dir = private_data_dir / 'env'
-    if env_dir.exists():
-        shutil.rmtree(env_dir)
-
     cancel_standin = CancelStandIn(container_runtime_installed, cli)
 
     res = run(

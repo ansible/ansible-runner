@@ -1,6 +1,4 @@
 import os
-import pytest
-import shutil
 
 from ansible_runner import defaults
 from ansible_runner.interface import run, run_async, run_command, run_command_async, get_plugin_docs, \

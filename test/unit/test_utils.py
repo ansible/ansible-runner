@@ -102,7 +102,7 @@ def test_dump_artifacts_playbook(mocker):
     mock_dump_artifact.reset_mock()
 
     # invalid playbook structures
-    for obj in ({'foo': 'bar'}, None, True, False, 'foo', []):
+    for obj in (None, True, False, 'foo', []):
         mock_dump_artifact.reset_mock()
         kwargs = {'private_data_dir': '/tmp', 'playbook': obj}
         dump_artifacts(kwargs)

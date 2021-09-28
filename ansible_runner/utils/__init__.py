@@ -18,12 +18,13 @@ import atexit
 import signal
 
 from distutils.spawn import find_executable
+
 from ansible_runner.exceptions import ConfigurationError
 
 try:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Iterable, Mapping, MutableMapping
 except ImportError:
-    from collections import Iterable, Mapping
+    from collections import Iterable, Mapping, MutableMapping
 from io import StringIO
 from six import string_types, PY2, PY3, text_type, binary_type
 
@@ -202,10 +203,15 @@ def dump_artifacts(kwargs):
 
         kwargs['envvars']['ANSIBLE_ROLES_PATH'] = roles_path
 
-    obj = kwargs.get('playbook')
-    if obj and isplaybook(obj):
-        path = os.path.join(private_data_dir, 'project')
-        kwargs['playbook'] = dump_artifact(json.dumps(obj), path, 'main.json')
+    playbook = kwargs.get('playbook')
+    if playbook:
+        # Ensure the play is a list of dictionaries
+        if isinstance(playbook, MutableMapping):
+            playbook = [playbook]
+
+        if isplaybook(playbook):
+            path = os.path.join(private_data_dir, 'project')
+            kwargs['playbook'] = dump_artifact(json.dumps(playbook), path, 'main.json')
 
     obj = kwargs.get('inventory')
     if obj and isinventory(obj):

@@ -30,7 +30,7 @@ def add_cleanup_args(command):
         nargs='*',
         help="A comma separated list of podman or docker tags to delete. "
              "This may not remove the corresponding layers, use the image-prune option to assure full deletion. "
-             "Example: --remove-images=quay.io/user/image:devel,quay.io/user/builder:latest"
+             "Example: --remove-images=quay.io/user/image:devel quay.io/user/builder:latest"
     )
     command.add_argument(
         "--grace-period",

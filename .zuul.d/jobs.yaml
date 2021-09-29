@@ -71,9 +71,8 @@
     vars: &ansible_runner_image_vars_stable_2_12
       container_images: &container_images_stable_2_12
         - context: .
-          # NOTE(pabelanger): Once stable-2.12 exists uncomment.
-          # build_args:
-          #   - ANSIBLE_BRANCH=stable-2.12
+          build_args:
+            - ANSIBLE_BRANCH=stable-2.12
           registry: quay.io
           repository: quay.io/ansible/ansible-runner
           siblings:

@@ -1,8 +1,10 @@
 import glob
 import subprocess
 import os
+import sys
 import signal
 import datetime
+from pathlib import Path
 
 from ansible_runner.defaults import registry_auth_prefix
 from ansible_runner.utils import cleanup_folder
@@ -100,7 +102,26 @@ def delete_associated_folders(dir):
                 print(f'Removed associated registry auth dir {dir}')
 
 
+def validate_pattern(pattern):
+    # do not let user shoot themselves in foot by deleting these important linux folders
+    prohibited_paths = set(Path(s) for s in (
+        '/', '/bin', '/dev', '/home', '/lib', '/mnt', '/proc',
+        '/run', '/sys', '/usr', '/boot', '/etc', '/opt', '/sbin', '/tmp', '/var'
+    ))
+    bad_paths = [dir for dir in glob.glob(pattern) if Path(dir).resolve() in prohibited_paths]
+    if bad_paths:
+        raise RuntimeError(
+            f'Provided pattern could result in deleting system folders:\n{" ".join(bad_paths)}\n'
+            'Refusing to continue for user system safety.'
+        )
+
+
 def cleanup_dirs(pattern, exclude_strings=(), grace_period=GRACE_PERIOD_DEFAULT):
+    try:
+        validate_pattern(pattern)
+    except RuntimeError as e:
+        print(str(e))
+        sys.exit(1)
     ct = 0
     now_time = datetime.datetime.now()
     for dir in glob.glob(pattern):
@@ -117,7 +138,6 @@ def cleanup_dirs(pattern, exclude_strings=(), grace_period=GRACE_PERIOD_DEFAULT)
         delete_associated_folders(dir)
         changed = cleanup_folder(dir)
         if changed:
-            print(f'Removed directory {dir}')
             ct += 1
 
     return ct

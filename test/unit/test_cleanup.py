@@ -2,7 +2,9 @@ import random
 import os
 import time
 
-from ansible_runner.cleanup import cleanup_dirs
+import pytest
+
+from ansible_runner.cleanup import cleanup_dirs, validate_pattern
 from ansible_runner.config.runner import RunnerConfig
 
 
@@ -68,3 +70,17 @@ def test_registry_auth_cleanup(tmp_path):
 
     assert not os.path.exists(private_data_dir)
     assert not os.path.exists(rc.registry_auth_path)
+
+
+@pytest.mark.parametrize('pattern', ['/', '/home'])
+def test_validate_pattern(pattern):
+    with pytest.raises(RuntimeError) as e:
+        validate_pattern(pattern)
+    assert pattern in str(e)
+    assert 'Provided pattern could result in deleting system folders' in str(e)
+
+
+def test_weird_pattern():
+    with pytest.raises(RuntimeError) as e:
+        validate_pattern('/hom*')
+    assert '/home' in str(e)

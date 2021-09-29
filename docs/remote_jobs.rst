@@ -25,13 +25,30 @@ The `ansible-runner worker` command accepts this stream, runs the playbook, and 
 stream of the resulting job events and artifacts.
 This command optionally accepts the `--private-data-dir` option.
 If provided, it will extract the contents sent from `ansible-runner transmit` into that directory.
-If no `--private-data-dir` is given, then it will extract the contents to a temporary directory,
-which will be deleted at the end of execution.
-You can use the `--delete` flag to assure that files are deleted from a location specified by `--private-data-dir` as well.
 
 The `ansible-runner process` command accepts the result stream from the worker, and fires all the normal callbacks
 and does job event processing.  In the command above, this results in printing the playbook output and saving
 artifacts to the data dir.  The `process` command takes a data dir as a parameter, to know where to save artifacts.
+
+Private Data Directory Cleanup
+------------------------------
+
+When running `ansible-runner worker`, if no `--private-data-dir` is given,
+it will extract the contents to a temporary directory which is deleted at the end of execution.
+You can use the `--delete` flag in conjunction with `--private-data-dir` to assure that
+the provided directory is deleted at the end of execution.
+
+The following command offers out-of-band cleanup.
+
+    $ ansible-runner worker cleanup --file-pattern=/tmp/foo_*
+
+This would assure that old directories that fit the file glob "/tmp/foo_*" are deleted,
+which would could be used to assure cleanup of paths created by commands like
+`ansible-runner worker --private_data_dir=/tmp/foo_3`, for example.
+NOTE: see the `--grace-period` option, which sets the time window.
+
+The transmit and process commands do not offer any automatic deletion of the
+private data directory or artifacts, because these are how the user interacts with runner.
 
 Python API
 ----------

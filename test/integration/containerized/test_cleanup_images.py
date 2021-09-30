@@ -14,7 +14,7 @@ from ansible_runner.defaults import default_container_image
 @pytest.mark.parametrize('runtime', ['podman', 'docker'])
 def test_cleanup_new_image(cli, runtime, tmp_path):
     if shutil.which(runtime) is None:
-        pytest.skip(f'{runtime} is unavaialble')
+        pytest.skip(f'{runtime} is unavailable')
 
     # Create new image just for this test with a unique layer
     random_string = ''.join(random.choice(ascii_lowercase) for i in range(10))

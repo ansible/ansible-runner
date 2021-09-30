@@ -43,7 +43,7 @@ up after the job run is complete.
 
 When running a job remotely via AWX or Ansible Tower, Ansible Runner can pick up the authentication
 information from the Container Registry Credential that was provided by the user. The `host`,
-`username`, and `password` from the credential are passed into Ansible Runner via the `container_auth_data`
+`username`, `password`, and `verify_ssl` inputs from the credential are passed into Ansible Runner via the `container_auth_data`
 dictionary as key word arguments into a `json` file which gets deleted at the end of the job run (even if
 the job was canceled/interrupted), enabling the bypassing of sensitive information from any potentially
 persistent job-related files.

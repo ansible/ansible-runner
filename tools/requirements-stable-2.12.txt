@@ -1,0 +1,11 @@
+ansible-core
+ncclient
+paramiko
+pyOpenSSL<20.0.0  # Transient dependency for credssp support.
+pypsrp[kerberos,credssp]
+pywinrm[kerberos,credssp]
+toml
+pexpect>=4.5
+python-daemon
+pyyaml
+six

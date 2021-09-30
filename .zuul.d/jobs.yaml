@@ -257,3 +257,12 @@
 - job:
     name: ansible-runner-integration
     parent: ansible-tox-py38
+
+
+# =============================================================================
+
+- job:
+    name: ansible-runner-tox-linters
+    parent: ansible-tox-linters
+    pre-run: .zuul.d/playbooks/ansible-runner-tox-linters/pre.yaml
+    nodeset: centos-8-stream

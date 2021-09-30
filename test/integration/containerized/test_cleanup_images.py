@@ -1,6 +1,9 @@
-import shutil
 import json
+import random
+import shutil
+
 from base64 import b64decode
+from string import ascii_lowercase
 
 import pytest
 
@@ -14,13 +17,14 @@ def test_cleanup_new_image(cli, runtime, tmp_path):
         pytest.skip(f'{runtime} is unavaialble')
 
     # Create new image just for this test with a unique layer
-    special_string = "Verify this in test - 1QT4r18a7E"
+    random_string = ''.join(random.choice(ascii_lowercase) for i in range(10))
+    special_string = f"Verify this in test - {random_string}"
     dockerfile_path = tmp_path / 'Dockerfile'
     dockerfile_path.write_text('\n'.join([
-        'FROM {}'.format(default_container_image),
-        'RUN echo {} > /tmp/for_test.txt'.format(special_string)
+        f'FROM {default_container_image}',
+        f'RUN echo {special_string} > /tmp/for_test.txt'
     ]))
-    image_name = 'quay.io/fortest/hasfile:latest'
+    image_name = f'quay.io/fortest/{random_string}:latest'
     build_cmd = [runtime, 'build', '--rm=true', '-t', image_name, '-f', str(dockerfile_path), str(tmp_path)]
     cli(build_cmd, bare=True)
 

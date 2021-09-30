@@ -8,14 +8,12 @@ import sys
 from pathlib import Path
 from tempfile import gettempdir
 
+from ansible_runner.defaults import GRACE_PERIOD_DEFAULT
 from ansible_runner.defaults import registry_auth_prefix
 from ansible_runner.utils import cleanup_folder
 
 
 __all__ = ['add_cleanup_args', 'run_cleanup']
-
-
-GRACE_PERIOD_DEFAULT = 60  # minutes
 
 
 def add_cleanup_args(command):

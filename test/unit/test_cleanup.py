@@ -1,5 +1,5 @@
-import random
 import os
+import random
 import time
 
 import pytest
@@ -14,11 +14,11 @@ def test_simple_dir_cleanup_with_exclusions(tmp_path):
         trailing = ''.join(random.choice("abcdefica3829") for i in range(8))
         path = tmp_path / f'pattern_{i}_{trailing}'
         path.mkdir()
-        paths.append(str(path))
+        paths.append(path)
 
-    a_file_path = os.path.join(tmp_path, 'pattern_32_donotcleanme')
-    with open(a_file_path, 'w') as f:
-        f.write('this is a file and should not be cleaned by the cleanup command')
+
+    a_file_path = tmp_path / 'pattern_32_donotcleanme'
+    a_file_path.write_text('this is a file and should not be cleaned by the cleanup command')
 
     keep_dir_path = tmp_path / 'pattern_42_alsokeepme'
     keep_dir_path.mkdir()
@@ -27,10 +27,10 @@ def test_simple_dir_cleanup_with_exclusions(tmp_path):
     assert ct == 3  # cleaned up 3 private_data_dirs
 
     for path in paths:
-        assert not os.path.exists(path)
+        assert not path.exists()
 
-    assert os.path.exists(a_file_path)
-    assert os.path.exists(str(keep_dir_path))
+    assert a_file_path.exists()
+    assert keep_dir_path.exists()
 
     assert cleanup_dirs(pattern=str(tmp_path / 'pattern_*_*'), exclude_strings=[42], grace_period=0) == 0  # no more to cleanup
 
@@ -72,15 +72,15 @@ def test_registry_auth_cleanup(tmp_path):
     assert not os.path.exists(rc.registry_auth_path)
 
 
-@pytest.mark.parametrize('pattern', ['/', '/home'])
-def test_validate_pattern(pattern):
-    with pytest.raises(RuntimeError) as e:
+@pytest.mark.parametrize(
+    ('pattern', 'match'), (
+        ('/', '/'),
+        ('/home', '/home'),
+        ('/', 'Provided pattern could result in deleting system folders'),
+        ('/home', 'Provided pattern could result in deleting system folders'),
+        ('/hom*', '/home'),
+    )
+)
+def test_validate_pattern(pattern, match):
+    with pytest.raises(RuntimeError, match=match):
         validate_pattern(pattern)
-    assert pattern in str(e)
-    assert 'Provided pattern could result in deleting system folders' in str(e)
-
-
-def test_weird_pattern():
-    with pytest.raises(RuntimeError) as e:
-        validate_pattern('/hom*')
-    assert '/home' in str(e)

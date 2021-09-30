@@ -623,11 +623,11 @@ def main(sys_args=None):
     worker_subcommands = worker_subparser.add_subparsers(
         help="Sub-sub command to invoke",
         dest='worker_subcommand',
-        description="ansible-runner worker [sub-sub-command]"
+        description="ansible-runner worker [sub-sub-command]",
     )
     cleanup_command = worker_subcommands.add_parser(
         'cleanup',
-        help="Cleanup private_data_dir patterns from prior jobs and supporting temporary folders."
+        help="Cleanup private_data_dir patterns from prior jobs and supporting temporary folders.",
     )
     cleanup.add_cleanup_args(cleanup_command)
 

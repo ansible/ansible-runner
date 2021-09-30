@@ -1,9 +1,10 @@
-import glob
-import subprocess
-import os
-import sys
-import signal
 import datetime
+import glob
+import os
+import signal
+import subprocess
+import sys
+
 from pathlib import Path
 
 from ansible_runner.defaults import registry_auth_prefix
@@ -85,7 +86,7 @@ def is_alive(dir):
 
 
 def project_idents(dir):
-    """Give dir, give list of idents that we have artifacts for"""
+    """Given dir, give list of idents that we have artifacts for"""
     try:
         return os.listdir(os.path.join(dir, 'artifacts'))
     except (FileNotFoundError, NotADirectoryError):
@@ -120,8 +121,7 @@ def cleanup_dirs(pattern, exclude_strings=(), grace_period=GRACE_PERIOD_DEFAULT)
     try:
         validate_pattern(pattern)
     except RuntimeError as e:
-        print(str(e))
-        sys.exit(1)
+        sys.exit(str(e))
     ct = 0
     now_time = datetime.datetime.now()
     for dir in glob.glob(pattern):

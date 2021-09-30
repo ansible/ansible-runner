@@ -32,12 +32,12 @@ def test_cleanup_new_image(cli, runtime, tmp_path):
     assert layer_id in cli([runtime, 'images'], bare=True).stdout
 
     # workaround for https://github.com/ansible/ansible-runner/issues/758
-    os.mkdir(str(tmp_path / 'project'))
+    tmp_path.joinpath('project').mkdir()
 
     # force no colors so that we can JSON load ad hoc output
-    os.mkdir(str(tmp_path / 'env'))
-    with open(str(tmp_path / 'env' / 'envvars'), 'w') as f:
-        f.write('{"ANSIBLE_NOCOLOR": "true"}')
+    env_path = tmp_path.joinpath('env')
+    env_path.mkdir()
+    env_path.joinpath('envvars').write_text('{"ANSIBLE_NOCOLOR": "true"}')
 
     # assure that the image is usable in ansible-runner as an EE
     r = cli([

@@ -16,14 +16,13 @@ def test_cleanup_new_image(cli, runtime, tmp_path):
 
     # Create new image just for this test with a unique layer
     special_string = "Verify this in test - 1QT4r18a7E"
-    dockerfile_path = str(tmp_path / 'Dockerfile')
-    with open(dockerfile_path, 'w') as f:
-        f.write('\n'.join([
-            'FROM {}'.format(default_container_image),
-            'RUN echo {} > /tmp/for_test.txt'.format(special_string)
-        ]))
-    image_name = 'quay.io/fortest/hasfile:latest'
-    build_cmd = [runtime, 'build', '--rm=true', '-t', image_name, '-f', dockerfile_path, str(tmp_path)]
+dockerfile_path = tmp_path / 'Dockerfile'
+dockerfile_path.write_text('\n'.join([
+    'FROM {}'.format(default_container_image),
+    'RUN echo {} > /tmp/for_test.txt'.format(special_string)
+]))
+image_name = 'quay.io/fortest/hasfile:latest'
+build_cmd = [runtime, 'build', '--rm=true', '-t', image_name, '-f', str(dockerfile_path), str(tmp_path)]
     cli(build_cmd, bare=True)
 
     # get an id for the unique layer

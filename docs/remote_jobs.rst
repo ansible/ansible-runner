@@ -30,8 +30,11 @@ The `ansible-runner process` command accepts the result stream from the worker, 
 and does job event processing.  In the command above, this results in printing the playbook output and saving
 artifacts to the data dir.  The `process` command takes a data dir as a parameter, to know where to save artifacts.
 
-Private Data Directory Cleanup
-------------------------------
+Cleanup of Resources Used by Jobs
+---------------------------------
+
+The transmit and process commands do not offer any automatic deletion of the
+private data directory or artifacts, because these are how the user interacts with runner.
 
 When running `ansible-runner worker`, if no `--private-data-dir` is given,
 it will extract the contents to a temporary directory which is deleted at the end of execution.
@@ -47,8 +50,10 @@ which would could be used to assure cleanup of paths created by commands like
 `ansible-runner worker --private_data_dir=/tmp/foo_3`, for example.
 NOTE: see the `--grace-period` option, which sets the time window.
 
-The transmit and process commands do not offer any automatic deletion of the
-private data directory or artifacts, because these are how the user interacts with runner.
+This command also takes a `--remove-images` option to run the podman or docker `rmi` command.
+There is otherwise no automatic cleanup of images used by a run,
+even if `container_auth_data` is used to pull from a private container registry.
+To be sure that layers are deleted as well, the `--image-prune` flag is necessary.
 
 Python API
 ----------

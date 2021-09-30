@@ -1,10 +1,10 @@
-import glob
 import multiprocessing
 import os
 import re
 import stat
-import tempfile
 import uuid
+
+from pathlib import Path
 
 
 def get_cpu_count():
@@ -26,24 +26,31 @@ def get_mem_in_bytes():
         return error
 
 
-def generate_or_get_uuid():
-    uuid_directory = glob.glob('/tmp/node_uuid_*')  # Location TBD
-    if uuid_directory:
+def get_uuid():
+    uuid_directory = Path('/etc/ansible/facts.d')
+    uuid_file = 'uuid.txt'
+    if uuid_directory.exists():
         # Read the contents of the uuid.txt file if it already exists
-        uuid_file_path = os.path.join(uuid_directory[0], 'uuid.txt')
+        uuid_file_path = uuid_directory / uuid_file
         with open(uuid_file_path) as f:
             saved_uuid = f.read()
         return saved_uuid
     else:
         # Generate a new UUID if no uuid.txt file is found
-        generated_uuid = str(uuid.uuid4())
+        newly_generated_uuid = _generate_uuid()
+        return newly_generated_uuid
 
-        # Store the newly-generated UUID in a new dir/file
-        path = tempfile.mkdtemp(prefix='node_uuid_')
-        uuid_file = 'uuid.txt'
-        uuid_file_path = os.path.join(path, uuid_file)
-        with open(uuid_file_path, 'w') as uuid_file:
-            os.chmod(uuid_file.name, stat.S_IRUSR | stat.S_IWUSR)
-            uuid_file.write(generated_uuid)
-            uuid_file.close()
-        return generated_uuid
+
+def _generate_uuid():
+    generated_uuid = str(uuid.uuid4())
+
+    # Store the newly-generated UUID in a new dir/file
+    uuid_dir_path = Path('/etc/ansible/facts.d')
+    uuid_dir_path.mkdir(parents=True, exist_ok=True)
+    uuid_file = 'uuid.txt'
+    uuid_file_path = uuid_dir_path / uuid_file
+
+    with uuid_file_path.open('w', encoding='utf-8') as uuid_file:
+        os.chmod(uuid_file_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+        uuid_file.write(generated_uuid)
+    return generated_uuid

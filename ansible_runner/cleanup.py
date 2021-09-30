@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 from pathlib import Path
+from tempfile import gettempdir
 
 from ansible_runner.defaults import registry_auth_prefix
 from ansible_runner.utils import cleanup_folder
@@ -96,7 +97,7 @@ def project_idents(dir):
 def delete_associated_folders(dir):
     """Where dir is the private_data_dir for a completed job, this deletes related tmp folders it used"""
     for ident in project_idents(dir):
-        registry_auth_pattern = f'/tmp/{registry_auth_prefix}{ident}_*'
+        registry_auth_pattern = f'{gettempdir()}/{registry_auth_prefix}{ident}_*'
         for dir in glob.glob(registry_auth_pattern):
             changed = cleanup_folder(dir)
             if changed:
@@ -107,7 +108,7 @@ def validate_pattern(pattern):
     # do not let user shoot themselves in foot by deleting these important linux folders
     prohibited_paths = set(Path(s) for s in (
         '/', '/bin', '/dev', '/home', '/lib', '/mnt', '/proc',
-        '/run', '/sys', '/usr', '/boot', '/etc', '/opt', '/sbin', '/tmp', '/var'
+        '/run', '/sys', '/usr', '/boot', '/etc', '/opt', '/sbin', gettempdir(), '/var'
     ))
     bad_paths = [dir for dir in glob.glob(pattern) if Path(dir).resolve() in prohibited_paths]
     if bad_paths:

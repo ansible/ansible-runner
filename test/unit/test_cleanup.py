@@ -16,7 +16,6 @@ def test_simple_dir_cleanup_with_exclusions(tmp_path):
         path.mkdir()
         paths.append(path)
 
-
     a_file_path = tmp_path / 'pattern_32_donotcleanme'
     a_file_path.write_text('this is a file and should not be cleaned by the cleanup command')
 

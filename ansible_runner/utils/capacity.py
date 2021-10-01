@@ -27,11 +27,9 @@ def get_mem_in_bytes():
 
 
 def get_uuid():
-    uuid_directory = Path('/etc/ansible/facts.d')
-    uuid_file = 'uuid.txt'
-    if uuid_directory.exists():
+    uuid_file_path = Path('/etc/ansible/facts.d/uuid.txt')
+    if uuid_file_path.exists():
         # Read the contents of the uuid.txt file if it already exists
-        uuid_file_path = uuid_directory / uuid_file
         with open(uuid_file_path) as f:
             saved_uuid = f.read()
         return saved_uuid
@@ -45,10 +43,10 @@ def _generate_uuid():
     generated_uuid = str(uuid.uuid4())
 
     # Store the newly-generated UUID in a new dir/file
-    uuid_dir_path = Path('/etc/ansible/facts.d')
-    uuid_dir_path.mkdir(parents=True, exist_ok=True)
+    uuid_dir = Path('/etc/ansible/facts.d')
+    uuid_dir.mkdir(parents=True, exist_ok=True)
     uuid_file = 'uuid.txt'
-    uuid_file_path = uuid_dir_path / uuid_file
+    uuid_file_path = uuid_dir / uuid_file
 
     with uuid_file_path.open('w', encoding='utf-8') as uuid_file:
         os.chmod(uuid_file_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)

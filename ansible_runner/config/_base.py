@@ -36,6 +36,7 @@ from six import iteritems, string_types
 from ansible_runner import defaults
 from ansible_runner.output import debug
 from ansible_runner.exceptions import ConfigurationError
+from ansible_runner.defaults import registry_auth_prefix
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.utils import (
     open_fifo_write,
@@ -542,7 +543,7 @@ class BaseConfig(object):
         token = "{}:{}".format(auth_data.get('username'), auth_data.get('password'))
         encoded_container_auth_data = {'auths': {host: {'auth': b64encode(token.encode('UTF-8')).decode('UTF-8')}}}
         # Create a new temp file with container auth data
-        path = tempfile.mkdtemp(prefix='ansible_runner_registry_%s_' % self.ident)
+        path = tempfile.mkdtemp(prefix='%s%s_' % (registry_auth_prefix, self.ident))
         register_for_cleanup(path)
 
         if self.process_isolation_executable == 'docker':

@@ -39,6 +39,7 @@ from yaml import safe_dump, safe_load
 
 from ansible_runner import run
 from ansible_runner import output
+from ansible_runner import cleanup
 from ansible_runner.utils import dump_artifact, Bunch, register_for_cleanup
 from ansible_runner.utils.capacity import get_cpu_count, get_mem_in_bytes, get_uuid
 from ansible_runner.runner import Runner
@@ -619,6 +620,17 @@ def main(sys_args=None):
         'worker',
         help="Execute work streamed from a controlling instance"
     )
+    worker_subcommands = worker_subparser.add_subparsers(
+        help="Sub-sub command to invoke",
+        dest='worker_subcommand',
+        description="ansible-runner worker [sub-sub-command]",
+    )
+    cleanup_command = worker_subcommands.add_parser(
+        'cleanup',
+        help="Cleanup private_data_dir patterns from prior jobs and supporting temporary folders.",
+    )
+    cleanup.add_cleanup_args(cleanup_command)
+
     worker_subparser.add_argument(
         "--private-data-dir",
         help="base directory containing the ansible-runner metadata "
@@ -758,6 +770,9 @@ def main(sys_args=None):
     vargs = vars(args)
 
     if vargs.get('command') == 'worker':
+        if vargs.get('worker_subcommand') == 'cleanup':
+            cleanup.run_cleanup(vargs)
+            parser.exit(0)
         if vargs.get('worker_info'):
             cpu = get_cpu_count()
             mem = get_mem_in_bytes()

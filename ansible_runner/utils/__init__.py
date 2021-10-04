@@ -27,11 +27,13 @@ from io import StringIO
 from six import string_types, PY2, PY3, text_type, binary_type
 
 
-def _cleanup_folder(folder):
+def cleanup_folder(folder):
+    """Deletes folder, returns True or False based on whether a change happened."""
     try:
         shutil.rmtree(folder)
-    except FileNotFoundError:
-        pass
+        return True
+    except (FileNotFoundError, NotADirectoryError):
+        return False
 
 
 def register_for_cleanup(folder):
@@ -39,7 +41,7 @@ def register_for_cleanup(folder):
     Provide the path to a folder to make sure it is deleted when execution finishes.
     The folder need not exist at the time when this is called.
     '''
-    atexit.register(_cleanup_folder, folder)
+    atexit.register(cleanup_folder, folder)
 
 
 class Bunch(object):

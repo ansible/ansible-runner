@@ -29,6 +29,7 @@ def ensure_uuid(uuid_file_path=None, mode=0o0600):
         uuid_file_path = Path.home().joinpath('.ansible_runner_uuid')
 
     if uuid_file_path.exists():
+        uuid_file_path.chmod(mode)
         # Read the contents of file if it already exists
         saved_uuid = uuid_file_path.read_text()
         return saved_uuid.strip()

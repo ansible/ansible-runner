@@ -95,3 +95,14 @@ def test_ensure_uuid_exists(mocker, mock_uuid, tmp_path):
 
     assert uuid == mock_uuid
     assert mock_set_uuid.call_count == 0
+
+
+def test_ensure_uuid_exists_mode(mocker, mock_uuid, tmp_path):
+    mock_set_uuid = mocker.patch('ansible_runner.utils.capacity._set_uuid', return_value=mock_uuid)
+    uuid_path = tmp_path / 'uuid'
+    uuid_path.touch(0o775)
+
+    ensure_uuid(uuid_path)
+
+    assert mock_set_uuid.call_count == 0
+    assert uuid_path.stat().st_mode == 0o100600

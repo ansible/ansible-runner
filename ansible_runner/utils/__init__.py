@@ -15,6 +15,7 @@ import pipes
 import uuid
 import codecs
 import atexit
+import signal
 
 from distutils.spawn import find_executable
 from ansible_runner.exceptions import ConfigurationError
@@ -464,3 +465,17 @@ def get_executable_path(name):
     if exec_path is None:
         raise ConfigurationError(f"{name} command not found")
     return exec_path
+
+
+# signal handler for default cancel_callback
+class SignalHandler:
+    def __init__(self):
+        self._called = False
+        signal.signal(signal.SIGTERM, self._handler)
+        signal.signal(signal.SIGINT, self._handler)
+
+    def _handler(self, signum, frame):
+        self._called = True
+
+    def called(self):
+        return self._called

@@ -34,7 +34,7 @@ def ensure_uuid(uuid_file_path=None, mode=0o0600):
         return saved_uuid.strip()
     else:
         # Generate a new UUID if file is not found
-        newly_generated_uuid = _set_uuid(mode)
+        newly_generated_uuid = _set_uuid(uuid_file_path, mode)
         return newly_generated_uuid
 
 

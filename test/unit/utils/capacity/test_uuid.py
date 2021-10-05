@@ -73,7 +73,7 @@ def test_ensure_uuid(mocker, mock_uuid, mock_home_path, tmp_path):
     uuid = ensure_uuid()
 
     assert uuid == mock_uuid
-    mock_set_uuid.assert_called_with(0o600)
+    mock_set_uuid.assert_called_with(tmp_path / '.ansible_runner_uuid', 0o600)
 
 
 def test_ensure_uuid_does_not_exist(mocker, mock_uuid, tmp_path):
@@ -83,7 +83,7 @@ def test_ensure_uuid_does_not_exist(mocker, mock_uuid, tmp_path):
     uuid = ensure_uuid(uuid_path)
 
     assert uuid == mock_uuid
-    mock_set_uuid.assert_called_once_with(0o600)
+    mock_set_uuid.assert_called_once_with(uuid_path, 0o600)
 
 
 def test_ensure_uuid_exists(mocker, mock_uuid, tmp_path):

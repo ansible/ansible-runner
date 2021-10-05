@@ -24,7 +24,10 @@ def get_mem_in_bytes():
         return error
 
 
-def ensure_uuid(uuid_file_path=Path.home().joinpath('.ansible_runner_uuid')):
+def ensure_uuid(uuid_file_path=None, mode=0o600):
+    if uuid_file_path is None:
+        uuid_file_path = Path.home().joinpath('.ansible_runner_uuid')
+
     if uuid_file_path.exists():
         # Read the contents of file if it already exists
         saved_uuid = uuid_file_path.read_text()
@@ -35,7 +38,10 @@ def ensure_uuid(uuid_file_path=Path.home().joinpath('.ansible_runner_uuid')):
         return newly_generated_uuid
 
 
-def _set_uuid(uuid_file_path=Path.home().joinpath('.ansible_runner_uuid')):
+def _set_uuid(uuid_file_path=None, mode=0o600):
+    if uuid_file_path is None:
+        uuid_file_path = Path.home().joinpath('.ansible_runner_uuid')
+
     generated_uuid = str(uuid.uuid4())
 
     # Store the newly-generated UUID in a new file in home dir

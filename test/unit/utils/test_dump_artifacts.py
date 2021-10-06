@@ -1,5 +1,4 @@
 import pytest
-import json
 
 from ansible_runner.utils import dump_artifacts
 
@@ -44,7 +43,7 @@ def test_dump_artifacts_playbook_object(mocker, playbook):
     mock_dump_artifact.assert_called_once_with(playbook_string, '/tmp/project', 'main.json')
 
 
-def test_dump_artifacts_roles(mocker):
+def test_dump_artifacts_role(mocker):
     mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact')
 
     kwargs = {
@@ -56,13 +55,7 @@ def test_dump_artifacts_roles(mocker):
     dump_artifacts(kwargs)
 
     assert mock_dump_artifact.call_count == 2
-
-    data, envpath, fp = mock_dump_artifact.call_args[0]
-    assert fp == "envvars"
-
-    data = json.loads(data)
-    assert "ANSIBLE_ROLES_PATH" in data
-    assert data['ANSIBLE_ROLES_PATH'] == "/tmp/roles"
+    mock_dump_artifact.assert_called_with('{"ANSIBLE_ROLES_PATH": "/tmp/roles"}', '/tmp/env', 'envvars')
 
 
 def test_dump_artifacts_roles_path(mocker):
@@ -78,13 +71,47 @@ def test_dump_artifacts_roles_path(mocker):
     dump_artifacts(kwargs)
 
     assert mock_dump_artifact.call_count == 2
+    mock_dump_artifact.assert_called_with('{"ANSIBLE_ROLES_PATH": "/tmp/altrole:/tmp/roles"}', '/tmp/env', 'envvars')
 
-    data, envpath, fp = mock_dump_artifact.call_args[0]
-    assert fp == "envvars"
 
-    data = json.loads(data)
-    assert "ANSIBLE_ROLES_PATH" in data
-    assert data['ANSIBLE_ROLES_PATH'] == "/tmp/altrole:/tmp/roles"
+def test_dump_artifacts_role_vars(mocker):
+    mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact', side_effect=AttributeError('Raised intentionally'))
+
+    kwargs = {
+        'private_data_dir': '/tmp',
+        'role': 'test',
+        'role_vars': {'name': 'nginx'},
+        'playbook': [{'playbook': [{'hosts': 'all'}]}],
+    }
+
+    with pytest.raises(AttributeError, match='Raised intentionally'):
+        dump_artifacts(kwargs)
+
+    mock_dump_artifact.assert_called_once_with(
+        '[{"hosts": "all", "roles": [{"name": "test", "vars": {"name": "nginx"}}]}]',
+        '/tmp/project',
+        'main.json'
+    )
+
+
+def test_dump_artifacts_role_skip_facts(mocker):
+    mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact', side_effect=AttributeError('Raised intentionally'))
+
+    kwargs = {
+        'private_data_dir': '/tmp',
+        'role': 'test',
+        'role_skip_facts': {'name': 'nginx'},
+        'playbook': [{'playbook': [{'hosts': 'all'}]}],
+    }
+
+    with pytest.raises(AttributeError, match='Raised intentionally'):
+        dump_artifacts(kwargs)
+
+    mock_dump_artifact.assert_called_once_with(
+        '[{"hosts": "all", "roles": [{"name": "test"}], "gather_facts": false}]',
+        '/tmp/project',
+        'main.json'
+    )
 
 
 def test_dump_artifacts_inventory_string(mocker):

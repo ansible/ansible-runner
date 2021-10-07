@@ -472,16 +472,12 @@ def signal_handler():
     if threading.current_thread() is not threading.main_thread():
         return None
 
-    def _signal_shutdown(signal_event):
+    signal_event = threading.Event()
+    # closure to set signal event
+    def _handler(number, frame):
         signal_event.set()
 
-        def inner(number, frame):
-            pass
-
-        return inner
-
-    signal_event = threading.Event()
-    signal.signal(signal.SIGTERM, _signal_shutdown(signal_event))
-    signal.signal(signal.SIGINT, _signal_shutdown(signal_event))
+    signal.signal(signal.SIGTERM, _handler)
+    signal.signal(signal.SIGINT, _handler)
 
     return signal_event.is_set

@@ -56,9 +56,6 @@ def test_cli_kill_cleanup(cli, test_data_dir, container_runtime_installed):
     else:
         assert container_is_running()
 
-    # give playbook execution time to start
-    time.sleep(5)
-
     # Here, we will do sigterm to kill the parent process, it should handle this gracefully
     with open(os.path.join(pdd, 'pid'), 'r') as f:
         pid = int(f.read().strip())

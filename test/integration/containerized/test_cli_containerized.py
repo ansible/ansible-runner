@@ -36,15 +36,16 @@ def test_provide_env_var(cli, skip_if_no_podman, test_data_dir):
 
 
 @pytest.mark.serial
-def test_cli_kill_cleanup(cli, skip_if_no_podman, test_data_dir):
+def test_cli_kill_cleanup(cli, test_data_dir, container_runtime_installed):
     unique_string = str(uuid4()).replace('-', '')
     ident = f'kill_test_{unique_string}'
     pdd = os.path.join(test_data_dir, 'sleep')
-    cli_args = ['start', pdd, '-p', 'sleep.yml', '--ident', ident]
+    cli_args = ['start', pdd, '-p', 'sleep.yml', '--ident', ident,
+                '--process-isolation', '--process-isolation-executable', container_runtime_installed]
     cli(cli_args)
 
     def container_is_running():
-        r = cli(['podman', 'ps', '-f', f'name=ansible_runner_{ident}', '--format={{.Names}}'], bare=True)
+        r = cli([container_runtime_installed, 'ps', '-f', f'name=ansible_runner_{ident}', '--format={{.Names}}'], bare=True)
         return ident in r.stdout
 
     tries = 5

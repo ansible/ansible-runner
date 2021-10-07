@@ -40,7 +40,7 @@ def test_cli_kill_cleanup(cli, skip_if_no_podman, test_data_dir):
     unique_string = str(uuid4()).replace('-', '')
     ident = f'kill_test_{unique_string}'
     pdd = os.path.join(test_data_dir, 'sleep')
-    cli_args = ['start', pdd, '-p', 'sleep.yml', '--ident', ident, '--process-isolation', '--process-isolation-executable', 'podman']
+    cli_args = ['start', pdd, '-p', 'sleep.yml', '--ident', ident]
     cli(cli_args)
 
     def container_is_running():

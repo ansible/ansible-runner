@@ -467,15 +467,21 @@ def get_executable_path(name):
     return exec_path
 
 
-# signal handler for default cancel_callback
-class SignalHandler:
-    def __init__(self):
-        self._called = False
-        signal.signal(signal.SIGTERM, self._handler)
-        signal.signal(signal.SIGINT, self._handler)
+def signal_handler():
+    # Only the main thread is allowed to set a new signal handler
+    if threading.current_thread() is not threading.main_thread():
+        return None
 
-    def _handler(self, signum, frame):
-        self._called = True
+    def _signal_shutdown(signal_event):
+        signal_event.set()
 
-    def called(self):
-        return self._called
+        def inner(number, frame):
+            pass
+
+        return inner
+
+    signal_event = threading.Event()
+    signal.signal(signal.SIGTERM, _signal_shutdown(signal_event))
+    signal.signal(signal.SIGINT, _signal_shutdown(signal_event))
+
+    return signal_event.is_set

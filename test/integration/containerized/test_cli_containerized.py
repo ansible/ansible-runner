@@ -35,7 +35,6 @@ def test_provide_env_var(cli, skip_if_no_podman, test_data_dir):
     assert 'gifmyvqok2' in r.stdout, r.stdout
 
 
-@pytest.mark.serial
 def test_cli_kill_cleanup(cli, test_data_dir, container_runtime_installed):
     unique_string = str(uuid4()).replace('-', '')
     ident = f'kill_test_{unique_string}'

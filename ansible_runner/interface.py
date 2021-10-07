@@ -39,6 +39,7 @@ from ansible_runner.utils import (
 )
 
 logging.getLogger('ansible-runner').addHandler(logging.NullHandler())
+logger = logging.getLogger('ansible-runner')
 
 
 def init_runner(**kwargs):
@@ -94,9 +95,13 @@ def init_runner(**kwargs):
     artifacts_handler = kwargs.pop('artifacts_handler', None)
     if kwargs.get('cancel_callback'):
         cancel_callback = kwargs.pop('cancel_callback')
-    else:
+    # Only the main thread is allowed to set a new signal handler
+    elif threading.current_thread() is threading.main_thread():
         signal_handler = SignalHandler()
         cancel_callback = signal_handler.called
+    else:
+        logger.warning("Unable to set cancel_callback for signal handling; not in main thread")
+        cancel_callback = None
     finished_callback = kwargs.pop('finished_callback', None)
 
     streamer = kwargs.pop('streamer', None)

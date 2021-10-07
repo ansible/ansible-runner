@@ -34,6 +34,7 @@ def test_provide_env_var(cli, skip_if_no_podman, test_data_dir):
     r = cli(['run', os.path.join(test_data_dir, 'job_env'), '-p', 'printenv.yml'])
     assert 'gifmyvqok2' in r.stdout, r.stdout
 
+
 @pytest.mark.serial
 def test_cli_kill_cleanup(cli, skip_if_no_podman, test_data_dir):
     unique_string = str(uuid4()).replace('-', '')

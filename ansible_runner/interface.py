@@ -93,9 +93,8 @@ def init_runner(**kwargs):
     event_callback_handler = kwargs.pop('event_handler', None)
     status_callback_handler = kwargs.pop('status_handler', None)
     artifacts_handler = kwargs.pop('artifacts_handler', None)
-    if kwargs.get('cancel_callback'):
-        cancel_callback = kwargs.pop('cancel_callback')
-    else:
+    cancel_callback = kwargs.pop('cancel_callback', None)
+    if cancel_callback is None:
         # attempt to load signal handler. will return None and
         # issue warning if we are not in the main thread
         cancel_callback = signal_handler()

@@ -473,6 +473,7 @@ def signal_handler():
         return None
 
     signal_event = threading.Event()
+
     # closure to set signal event
     def _handler(number, frame):
         signal_event.set()

@@ -39,7 +39,6 @@ from ansible_runner.utils import (
 )
 
 logging.getLogger('ansible-runner').addHandler(logging.NullHandler())
-logger = logging.getLogger('ansible-runner')
 
 
 def init_runner(**kwargs):
@@ -95,8 +94,8 @@ def init_runner(**kwargs):
     artifacts_handler = kwargs.pop('artifacts_handler', None)
     cancel_callback = kwargs.pop('cancel_callback', None)
     if cancel_callback is None:
-        # attempt to load signal handler. will return None and
-        # issue warning if we are not in the main thread
+        # attempt to load signal handler.
+        # will return None if we are not in the main thread
         cancel_callback = signal_handler()
     finished_callback = kwargs.pop('finished_callback', None)
 

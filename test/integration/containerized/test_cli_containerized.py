@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import shutil
 import signal
 import time
 
@@ -35,19 +36,24 @@ def test_provide_env_var(cli, skip_if_no_podman, test_data_dir):
     assert 'gifmyvqok2' in r.stdout, r.stdout
 
 
-def test_cli_kill_cleanup(cli, test_data_dir, container_runtime_installed):
+@pytest.mark.serial
+@pytest.mark.parametrize('runtime', ['podman', 'docker'])
+def test_cli_kill_cleanup(cli, runtime, test_data_dir):
+    if shutil.which(runtime) is None:
+        pytest.skip(f'{runtime} is unavailable')
+
     unique_string = str(uuid4()).replace('-', '')
     ident = f'kill_test_{unique_string}'
     pdd = os.path.join(test_data_dir, 'sleep')
     cli_args = ['start', pdd, '-p', 'sleep.yml', '--ident', ident,
-                '--process-isolation', '--process-isolation-executable', container_runtime_installed]
+                '--process-isolation', '--process-isolation-executable', runtime]
     cli(cli_args)
 
     def container_is_running():
-        r = cli([container_runtime_installed, 'ps', '-f', f'name=ansible_runner_{ident}', '--format={{.Names}}'], bare=True)
+        r = cli([runtime, 'ps', '-f', f'name=ansible_runner_{ident}', '--format={{.Names}}'], bare=True)
         return ident in r.stdout
 
-    tries = 5
+    tries = 10
     for i in range(tries):
         if container_is_running():
             break

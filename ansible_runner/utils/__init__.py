@@ -15,6 +15,7 @@ import pipes
 import uuid
 import codecs
 import atexit
+import signal
 
 from distutils.spawn import find_executable
 from ansible_runner.exceptions import ConfigurationError
@@ -464,3 +465,20 @@ def get_executable_path(name):
     if exec_path is None:
         raise ConfigurationError(f"{name} command not found")
     return exec_path
+
+
+def signal_handler():
+    # Only the main thread is allowed to set a new signal handler
+    if threading.current_thread() is not threading.main_thread():
+        return None
+
+    signal_event = threading.Event()
+
+    # closure to set signal event
+    def _handler(number, frame):
+        signal_event.set()
+
+    signal.signal(signal.SIGTERM, _handler)
+    signal.signal(signal.SIGINT, _handler)
+
+    return signal_event.is_set

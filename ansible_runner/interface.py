@@ -34,7 +34,8 @@ from ansible_runner.streaming import Transmitter, Worker, Processor
 from ansible_runner.utils import (
     dump_artifacts,
     check_isolation_executable_installed,
-    santize_json_response
+    santize_json_response,
+    signal_handler,
 )
 
 logging.getLogger('ansible-runner').addHandler(logging.NullHandler())
@@ -92,6 +93,10 @@ def init_runner(**kwargs):
     status_callback_handler = kwargs.pop('status_handler', None)
     artifacts_handler = kwargs.pop('artifacts_handler', None)
     cancel_callback = kwargs.pop('cancel_callback', None)
+    if cancel_callback is None:
+        # attempt to load signal handler.
+        # will return None if we are not in the main thread
+        cancel_callback = signal_handler()
     finished_callback = kwargs.pop('finished_callback', None)
 
     streamer = kwargs.pop('streamer', None)

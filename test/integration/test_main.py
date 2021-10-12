@@ -8,24 +8,14 @@ import multiprocessing
 import shutil
 import yaml
 import tempfile
-import time
 from contextlib import contextmanager
 import pytest
 
 
 from ansible_runner.exceptions import AnsibleRunnerException
+from test.utils.common import iterate_timeout
 
 HERE = os.path.abspath(os.path.dirname(__file__))
-
-
-def iterate_timeout(max_seconds, purpose, interval=2):
-    start = time.time()
-    count = 0
-    while (time.time() < start + max_seconds):
-        count += 1
-        yield count
-        time.sleep(interval)
-    raise Exception("Timeout waiting for %s" % purpose)
 
 
 def ensure_directory(directory):

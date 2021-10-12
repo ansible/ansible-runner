@@ -1,5 +1,6 @@
 import time
 
+
 def iterate_timeout(max_seconds, purpose, interval=2):
     start = time.time()
     count = 0

@@ -2,8 +2,6 @@
 import os
 import shutil
 import signal
-import time
-
 from uuid import uuid4
 
 import pytest

@@ -8,7 +8,6 @@ import multiprocessing
 import shutil
 import yaml
 import tempfile
-import time
 from contextlib import contextmanager
 import pytest
 

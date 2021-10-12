@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import signal
 import tempfile
 import io
 
@@ -14,7 +15,8 @@ from ansible_runner.utils import (
     isinventory,
     dump_artifacts,
     args2cmdline,
-    sanitize_container_name
+    sanitize_container_name,
+    signal_handler,
 )
 from ansible_runner.utils.streaming import stream_dir, unstream_dir
 
@@ -353,3 +355,59 @@ def test_transmit_permissions(tmp_path, fperm):
     # Assure the new file is the same permissions
     new_file_path = dest_dir / 'ordinary_file.txt'
     assert oct(new_file_path.stat().st_mode) == oct(old_file_path.stat().st_mode)
+
+
+def test_signal_handler(mocker):
+    """Test the default handler is set to handle the correct signals"""
+
+    class MockEvent:
+        def __init__(self):
+            self._is_set = False
+
+        def set(self):
+            self._is_set = True
+
+        def is_set(self):
+            return self._is_set
+
+    mocker.patch('ansible_runner.utils.threading.main_thread', return_value='thread0')
+    mocker.patch('ansible_runner.utils.threading.current_thread', return_value='thread0')
+    mocker.patch('ansible_runner.utils.threading.Event', MockEvent)
+    mock_signal = mocker.patch('ansible_runner.utils.signal.signal')
+
+    assert signal_handler()() is False
+    assert mock_signal.call_args_list[0][0][0] == signal.SIGTERM
+    assert mock_signal.call_args_list[1][0][0] == signal.SIGINT
+
+
+def test_signal_handler_outside_main_thread(mocker):
+    """Test that the default handler will not try to set signal handlers if not in the main thread"""
+
+    mocker.patch('ansible_runner.utils.threading.main_thread', return_value='thread0')
+    mocker.patch('ansible_runner.utils.threading.current_thread', return_value='thread1')
+
+    assert signal_handler() is None
+
+
+def test_signal_handler_set(mocker):
+    """Test that the default handler calls the set() method"""
+
+    class MockEvent:
+        def __init__(self):
+            self._is_set = False
+
+        def set(self):
+            raise AttributeError('Raised intentionally')
+
+        def is_set(self):
+            return self._is_set
+
+    mocker.patch('ansible_runner.utils.threading.main_thread', return_value='thread0')
+    mocker.patch('ansible_runner.utils.threading.current_thread', return_value='thread0')
+    mocker.patch('ansible_runner.utils.threading.Event', MockEvent)
+    mock_signal = mocker.patch('ansible_runner.utils.signal.signal')
+
+    signal_handler()
+
+    with pytest.raises(AttributeError, match='Raised intentionally'):
+        mock_signal.call_args[0][1]('number', 'frame')

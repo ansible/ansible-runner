@@ -8,6 +8,8 @@ from uuid import uuid4
 
 import pytest
 
+from test.utils.common import iterate_timeout
+
 HERE = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -53,22 +55,16 @@ def test_cli_kill_cleanup(cli, runtime, test_data_dir):
         r = cli([runtime, 'ps', '-f', f'name=ansible_runner_{ident}', '--format={{.Names}}'], bare=True)
         return ident in r.stdout
 
-    tries = 10
-    for i in range(tries):
+    timeout = 10
+    for _ in iterate_timeout(timeout, 'confirm ansible-runner started container', interval=1):
         if container_is_running():
             break
-        time.sleep(1)
-    else:
-        assert container_is_running()
 
     # Here, we will do sigterm to kill the parent process, it should handle this gracefully
     with open(os.path.join(pdd, 'pid'), 'r') as f:
         pid = int(f.read().strip())
     os.kill(pid, signal.SIGTERM)
 
-    for i in range(tries):
+    for _ in iterate_timeout(timeout, 'confirm container no longer running', interval=1):
         if not container_is_running():
-            break  # yay, test passed
-        time.sleep(1)
-    else:
-        assert not container_is_running()
+            break

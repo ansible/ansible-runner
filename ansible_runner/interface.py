@@ -35,7 +35,7 @@ from ansible_runner.utils import (
     dump_artifacts,
     check_isolation_executable_installed,
     santize_json_response,
-    signal_handler
+    signal_handler,
 )
 
 logging.getLogger('ansible-runner').addHandler(logging.NullHandler())

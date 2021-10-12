@@ -2,6 +2,8 @@
 import os
 import shutil
 import signal
+import sys
+
 from uuid import uuid4
 
 import pytest
@@ -37,6 +39,7 @@ def test_provide_env_var(cli, skip_if_no_podman, test_data_dir):
 
 
 @pytest.mark.serial
+@pytest.mark.skipif(sys.platform == 'darwin', reason='ansible-runner start does not work reliably on macOS')
 @pytest.mark.parametrize('runtime', ['podman', 'docker'])
 def test_cli_kill_cleanup(cli, runtime, test_data_dir):
     if shutil.which(runtime) is None:

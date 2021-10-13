@@ -104,10 +104,11 @@ def delete_associated_folders(dir):
 
 def validate_pattern(pattern):
     # do not let user shoot themselves in foot by deleting these important linux folders
-    prohibited_paths = set(Path(s) for s in (
+    paths = (
         '/', '/bin', '/dev', '/home', '/lib', '/mnt', '/proc',
         '/run', '/sys', '/usr', '/boot', '/etc', '/opt', '/sbin', gettempdir(), '/var'
-    ))
+    )
+    prohibited_paths = {Path(s) for s in paths}.union(Path(s).resolve() for s in paths)
     bad_paths = [dir for dir in glob.glob(pattern) if Path(dir).resolve() in prohibited_paths]
     if bad_paths:
         raise RuntimeError(

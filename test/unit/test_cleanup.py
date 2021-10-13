@@ -1,4 +1,5 @@
 import os
+import pathlib
 import random
 import time
 
@@ -80,6 +81,15 @@ def test_registry_auth_cleanup(tmp_path):
         ('/hom*', '/home'),
     )
 )
-def test_validate_pattern(pattern, match):
+def test_validate_pattern(pattern, match, monkeypatch):
+    def mock_resolve(path):
+        resolved = pathlib.Path(path)
+        if path.as_posix().startswith('/hom'):
+            resolved = pathlib.Path('/System/Volumes/Data/home')
+
+        return resolved
+
+    monkeypatch.setattr('ansible_runner.cleanup.Path.resolve', mock_resolve)
+
     with pytest.raises(RuntimeError, match=match):
         validate_pattern(pattern)

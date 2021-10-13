@@ -12,8 +12,19 @@ def test_run():
     assert r.status == 'successful'
 
 
-def test_run_async():
-    thread, r = run_async(module='debug', host_pattern='localhost')
+@pytest.mark.parametrize(
+    'playbook', (
+        [{'hosts': 'localhost', 'tasks': [{'ping': ''}]}],
+        {'hosts': 'localhost', 'tasks': [{'ping': ''}]},
+    )
+)
+def test_run_playbook_data(playbook, tmp_path):
+    r = run(private_data_dir=str(tmp_path), playbook=playbook)
+    assert r.status == 'successful'
+
+
+def test_run_async(tmp_path):
+    thread, r = run_async(private_data_dir=str(tmp_path), module='debug', host_pattern='localhost')
     thread.join()
     assert r.status == 'successful'
 

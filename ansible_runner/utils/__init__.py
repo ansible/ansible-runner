@@ -16,12 +16,13 @@ import uuid
 import codecs
 
 from distutils.spawn import find_executable
+
 from ansible_runner.exceptions import ConfigurationError
 
 try:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Iterable, MutableMapping
 except ImportError:
-    from collections import Iterable, Mapping
+    from collections import Iterable, MutableMapping
 from io import StringIO
 from six import string_types, PY2, PY3, text_type, binary_type
 
@@ -53,7 +54,7 @@ def isplaybook(obj):
     Returns:
         boolean: True if the object is a list and False if it is not
     '''
-    return isinstance(obj, Iterable) and (not isinstance(obj, string_types) and not isinstance(obj, Mapping))
+    return isinstance(obj, Iterable) and (not isinstance(obj, string_types) and not isinstance(obj, MutableMapping))
 
 
 def isinventory(obj):
@@ -66,7 +67,7 @@ def isinventory(obj):
     Returns:
         boolean: True if the object is an inventory dict and False if it is not
     '''
-    return isinstance(obj, Mapping) or isinstance(obj, string_types)
+    return isinstance(obj, MutableMapping) or isinstance(obj, string_types)
 
 
 def check_isolation_executable_installed(isolation_executable):
@@ -183,15 +184,20 @@ def dump_artifacts(kwargs):
 
         kwargs['envvars']['ANSIBLE_ROLES_PATH'] = roles_path
 
-    obj = kwargs.get('playbook')
-    if obj and isplaybook(obj):
-        path = os.path.join(private_data_dir, 'project')
-        kwargs['playbook'] = dump_artifact(json.dumps(obj), path, 'main.json')
+    playbook = kwargs.get('playbook')
+    if playbook:
+        # Ensure the play is a list of dictionaries
+        if isinstance(playbook, MutableMapping):
+            playbook = [playbook]
+
+        if isplaybook(playbook):
+            path = os.path.join(private_data_dir, 'project')
+            kwargs['playbook'] = dump_artifact(json.dumps(playbook), path, 'main.json')
 
     obj = kwargs.get('inventory')
     if obj and isinventory(obj):
         path = os.path.join(private_data_dir, 'inventory')
-        if isinstance(obj, Mapping):
+        if isinstance(obj, MutableMapping):
             kwargs['inventory'] = dump_artifact(json.dumps(obj), path, 'hosts.json')
         elif isinstance(obj, string_types):
             if not os.path.exists(obj):

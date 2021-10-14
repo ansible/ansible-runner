@@ -649,10 +649,11 @@ def test_profiling_plugin_settings(mocker):
         '--sticky',
         '-g',
         'cpuacct,memory,pids:ansible-runner/{}'.format(rc.ident),
-        'ansible-playbook'
+        'ansible-playbook',
+        'main.yaml',
     ]
-    for index, element in enumerate(expected_command_start):
-        assert rc.command[index] == element
+
+    assert expected_command_start == rc.command
     assert 'main.yaml' in rc.command
     assert rc.env['ANSIBLE_CALLBACK_WHITELIST'] == 'cgroup_perf_recap'
     assert rc.env['CGROUP_CONTROL_GROUP'] == 'ansible-runner/{}'.format(rc.ident)
@@ -687,7 +688,7 @@ def test_container_volume_mounting_with_Z(mocker, tmp_path):
     mocker.patch('os.path.isdir', return_value=True)
     mocker.patch('os.path.exists', return_value=True)
 
-    rc = RunnerConfig(str(tmpdir))
+    rc = RunnerConfig(str(tmp_path))
     rc.container_volume_mounts = ['/tmp/project_path:/tmp/project_path:Z']
     rc.container_name = 'foo'
     rc.env = {}
@@ -723,7 +724,7 @@ def test_containerization_settings(tmp_path, container_runtime, mocker):
     if container_runtime == 'podman':
         extra_container_args = ['--quiet']
     else:
-        extra_container_args = ['--user={os.getuid()}']
+        extra_container_args = [f'--user={os.getuid()}']
 
     expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
         ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
@@ -733,8 +734,4 @@ def test_containerization_settings(tmp_path, container_runtime, mocker):
         ['--name', 'ansible_runner_foo'] + \
         ['my_container', 'ansible-playbook', '-i', '/runner/inventory/hosts', 'main.yaml']
 
-    for index, element in enumerate(expected_command_start):
-        if '--user' in element:
-            assert '--user=' in rc.command[index]
-        else:
-            assert rc.command[index] == element
+    assert expected_command_start == rc.command

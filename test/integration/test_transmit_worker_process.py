@@ -53,10 +53,14 @@ class TestStreamingUsage:
             assert '"ansible_facts"' in stdout
 
     @pytest.mark.parametrize("job_type", ['run', 'adhoc'])
-    def test_remote_job_interface(self, tmpdir, test_data_dir, job_type):
+    def test_remote_job_interface(self, tmp_path, test_data_dir, job_type):
         transmit_dir = os.path.join(test_data_dir, 'debug')
-        worker_dir = str(tmpdir.mkdir('for_worker'))
-        process_dir = str(tmpdir.mkdir('for_process'))
+        worker_dir = tmp_path / 'for_worker'
+        worker_dir.mkdir()
+
+        process_dir = tmp_path / 'for_process'
+        process_dir.mkdir()
+
         job_kwargs = self.get_job_kwargs(job_type)
 
         outgoing_buffer = tempfile.NamedTemporaryFile()
@@ -90,17 +94,21 @@ class TestStreamingUsage:
         processor = Processor(_input=incoming_buffer, private_data_dir=process_dir)
         processor.run()
 
-        self.check_artifacts(process_dir, job_type)
+        self.check_artifacts(str(process_dir), job_type)
 
     @pytest.mark.parametrize("job_type", ['run', 'adhoc'])
-    def test_remote_job_by_sockets(self, tmpdir, test_data_dir, container_runtime_installed, job_type):
+    def test_remote_job_by_sockets(self, tmp_path, test_data_dir, container_runtime_installed, job_type):
         """This test case is intended to be close to how the AWX use case works
         the process interacts with receptorctl with sockets
         sockets are used here, but worker is manually called instead of invoked by receptor
         """
         transmit_dir = os.path.join(test_data_dir, 'debug')
-        worker_dir = str(tmpdir.mkdir('for_worker'))
-        process_dir = str(tmpdir.mkdir('for_process'))
+        worker_dir = tmp_path / 'for_worker'
+        worker_dir.mkdir()
+
+        process_dir = tmp_path / 'for_process'
+        process_dir.mkdir()
+
         job_kwargs = self.get_job_kwargs(job_type)
 
         def transmit_method(transmit_sockfile_write):
@@ -155,7 +163,7 @@ class TestStreamingUsage:
 
         assert set(os.listdir(worker_dir)) == {'artifacts', 'inventory', 'project', 'env'}
 
-        self.check_artifacts(process_dir, job_type)
+        self.check_artifacts(str(process_dir), job_type)
 
 
 def test_missing_private_dir_transmit(tmpdir):
@@ -173,8 +181,9 @@ def test_missing_private_dir_transmit(tmpdir):
     assert "private_data_dir path is either invalid or does not exist" in str(excinfo.value)
 
 
-def test_garbage_private_dir_worker(tmpdir):
-    worker_dir = str(tmpdir.mkdir('for_worker'))
+def test_garbage_private_dir_worker(tmp_path):
+    worker_dir = tmp_path / 'for_worker'
+    worker_dir.mkdir()
     incoming_buffer = io.BytesIO(
         b'{"kwargs": {"playbook": "debug.yml"}}\n{"zipfile": 5}\n\x01\x02\x03\x04\x05{"eof": true}\n')
     outgoing_buffer = io.BytesIO()
@@ -190,8 +199,9 @@ def test_garbage_private_dir_worker(tmpdir):
     assert b'"status": "error"' in sent
 
 
-def test_unparsable_private_dir_worker(tmpdir):
-    worker_dir = str(tmpdir.mkdir('for_worker'))
+def test_unparsable_private_dir_worker(tmp_path):
+    worker_dir = tmp_path / 'for_worker'
+    worker_dir.mkdir()
     incoming_buffer = io.BytesIO(b'')
     outgoing_buffer = io.BytesIO()
 
@@ -206,8 +216,9 @@ def test_unparsable_private_dir_worker(tmpdir):
     assert b'"status": "error"' in sent
 
 
-def test_unparsable_private_dir_processor(tmpdir):
-    process_dir = str(tmpdir.mkdir('for_process'))
+def test_unparsable_private_dir_processor(tmp_path):
+    process_dir = tmp_path / 'for_process'
+    process_dir.mkdir()
     incoming_buffer = io.BytesIO(b'')
 
     processor = run(

@@ -7,14 +7,14 @@ from ansible_runner.config.runner import RunnerConfig
 
 
 @pytest.fixture(scope='function')
-def rc(tmpdir):
-    rc = RunnerConfig(str(tmpdir))
+def rc(tmp_path):
+    rc = RunnerConfig(str(tmp_path))
     rc.suppress_ansible_output = True
     rc.expect_passwords = {
         pexpect.TIMEOUT: None,
         pexpect.EOF: None
     }
-    rc.cwd = str(tmpdir)
+    rc.cwd = str(tmp_path)
     rc.env = {}
     rc.job_timeout = 10
     rc.idle_timeout = 0

@@ -280,7 +280,7 @@ def test_container_volume_mounting_with_Z(tmp_path, mocker):
 
 
 @pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_containerization_settings(tmpdir, container_runtime):
+def test_containerization_settings(tmp_path, container_runtime, mocker):
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()
 
@@ -317,10 +317,8 @@ def test_containerization_settings(tmpdir, container_runtime):
         '-v', '{}/.ssh/:/home/runner/.ssh/'.format(str(tmp_path)),
     ]
 
-    expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
-                             ['-v', '{}/.ssh/:/home/runner/.ssh/'.format(os.environ['HOME'])]
     if container_runtime == 'podman':
-        expected_command_start += ['--group-add=root', '--ipc=host']
+        expected_command_start.extend(['--group-add=root', '--ipc=host'])
 
     expected_command_start.extend([
         '-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir),
@@ -330,19 +328,12 @@ def test_containerization_settings(tmpdir, container_runtime):
 
     expected_command_start.extend(extra_container_args)
 
-    expected_command_start += ['-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir)] + \
-        ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
-        ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
-        extra_container_args + \
-        ['--name', 'ansible_runner_foo'] + \
-        ['my_container', 'ansible-playbook', 'main.yaml', '-i', '/tmp/inventory']
+    expected_command_start.extend([
+        '--name', 'ansible_runner_foo',
+        'my_container', 'ansible-playbook', 'main.yaml', '-i', '/tmp/inventory',
     ])
 
-    for index, element in enumerate(expected_command_start):
-        if '--user=' in element:
-            assert '--user=' in rc.command[index]
-        else:
-            assert rc.command[index] == element
+    assert expected_command_start == rc.command
 
 
 @pytest.mark.parametrize(

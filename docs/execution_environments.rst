@@ -48,36 +48,6 @@ dictionary as key word arguments into a `json` file which gets deleted at the en
 the job was canceled/interrupted), enabling the bypassing of sensitive information from any potentially
 persistent job-related files.
 
-Emulating the Ansible CLI
--------------------------
-
-As previously mentioned, a primary goal of adding the Execution Environment CLI
-interface is to aid in the creation of Ansible Automation jobs and content. The
-approach here is to make it as similar as possible to the way **Ansible** users
-are accustomed to using Ansible today. There are two subcommands, ``adhoc`` and
-``playbook`` that have been added to accommodate this. The ``adhoc`` subcommand
-to ``ansible-runner`` is synonymous with ``ansible`` and the ``playbook``
-subcommand to ``ansible-runner`` is synonymous with ``ansible-playbook``.
-Examples are below.
-
-Running Ansible ``adhoc``
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-An example invocation using the ``ping`` module and ``localhost`` as target::
-
-  $ ansible-runner adhoc localhost -m ping
-
-Something to note here is that implicit ``localhost`` in this context is a containerized instantiation of an Ansible Execution Environment and as such you will not get Ansible Facts about your system if using the ``setup`` module.
-
-Running Ansible ``playbook``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-An example invocation using the ``demo.yml`` playbook and ``inventory.ini`` inventory file::
-
-  $ ansible-runner playbook demo.yml -i inventory.ini
-
-Something to note here is that implicit ``localhost`` in this context is a containerized instantiation of an Ansible Execution Environment and as such you will not get Ansible Facts about your system if using ``gather_facts: true`` and targeting ``localhost`` in your playbook without explicit host definition in your inventory.
-
 Notes and Considerations
 ------------------------
 
@@ -110,12 +80,12 @@ at a later time (e.g., to stop the container when the job is canceled).
 ~/.ssh/ symlinks
 ^^^^^^^^^^^^^^^^
 
-In order to make the ``adhoc`` and ``playbook`` container execution of Ansible
+In order to make the ``run`` container execution of Ansible
 easier, Ansible Runner will automatically bind mount your local ssh agent
 UNIX-domain socket (``SSH_AUTH_SOCK``) into the container runtime. However, this
 does not work if files in your ``~/.ssh/`` directory happen to be symlinked to
-another directory that is also not mounted into the container runtime. Ansible
-Runner ``adhoc`` and ``playbook`` subcommands provide the ``--container-volume-mount``
+another directory that is also not mounted into the container runtime. The Ansible
+Runner ``run`` subcommand provides the ``--container-volume-mount``
 option to address this, among other things.
 
 Here is an example of an ssh config file that is a symlink:
@@ -125,6 +95,7 @@ Here is an example of an ssh config file that is a symlink:
         $ $ ls -l ~/.ssh/config
         lrwxrwxrwx. 1 myuser myuser 34 Jul 15 19:27 /home/myuser/.ssh/config -> /home/myuser/dotfiles/ssh_config
 
-        $ ansible-runner playbook \
+        $ ansible-runner run \
             --container-volume-mount /home/myuser/dotfiles/:/home/myuser/dotfiles/ \
-            my_playbook.yml -i my_inventory.ini
+            --process-isolation --process-isolation-executable podman \
+            /tmp/private --playbook my_playbook.yml -i my_inventory.ini

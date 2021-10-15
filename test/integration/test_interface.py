@@ -152,6 +152,30 @@ def test_run_command(project_fixtures):
     assert err == ''
 
 
+def test_run_command_injection_error():
+    out, err, rc = run_command(
+        executable_cmd='whoami',
+        cmdline_args=[';hostname'],
+        runner_mode='subprocess',
+    )
+    assert rc == 1
+    assert "usage: whoami" in err or "whoami: extra operand ‘;hostname’" in err
+
+
+@pytest.mark.test_all_runtimes
+def test_run_command_injection_error_within_container(runtime):
+    out, err, rc = run_command(
+        executable_cmd='whoami',
+        cmdline_args=[';hostname'],
+        runner_mode='subprocess',
+        process_isolation_executable=runtime,
+        process_isolation=True,
+        container_image=defaults.default_container_image,
+    )
+    assert rc == 1
+    assert "whoami: extra operand ';hostname'" in err
+
+
 @pytest.mark.test_all_runtimes
 def test_run_ansible_command_within_container(project_fixtures, runtime):
     private_data_dir = project_fixtures / 'debug'

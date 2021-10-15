@@ -87,7 +87,7 @@ class DocConfig(BaseConfig):
         if module_path:
             self.cmdline_args.extend(['-M', module_path])
 
-        self.cmdline_args.append(" ".join(plugin_names))
+        self.cmdline_args.extend(plugin_names)
 
         self.command = [self._ansible_doc_exec_path] + self.cmdline_args
         self._handle_command_wrap(self.execution_mode, self.cmdline_args)

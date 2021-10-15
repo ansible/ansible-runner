@@ -52,7 +52,7 @@ def test_prepare_plugin_docs_command():
     plugin_names = ['copy', 'file']
     plugin_type = 'module'
     rc.prepare_plugin_docs_command(plugin_names, plugin_type=plugin_type, snippet=True, playbook_dir='/tmp/test')
-    expected_command = [get_executable_path('ansible-doc'), '-s', '-t', 'module', '--playbook-dir', '/tmp/test', 'copy file']
+    expected_command = [get_executable_path('ansible-doc'), '-s', '-t', 'module', '--playbook-dir', '/tmp/test', 'copy', 'file']
     assert rc.command == expected_command
     assert rc.runner_mode == 'subprocess'
     assert rc.execution_mode == BaseExecutionMode.ANSIBLE_COMMANDS
@@ -113,7 +113,7 @@ def test_prepare_plugin_docs_command_with_containerization(tmp_path, runtime, mo
         '-s',
         '-t', 'module',
         '--playbook-dir', '/tmp/test',
-        'copy '
+        'copy',
         'file',
     ])
 

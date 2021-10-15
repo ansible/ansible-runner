@@ -112,25 +112,22 @@ def test_module_run(tmp_path):
     assert rc == 0
 
 
-def test_module_run_debug():
-    try:
-        rc = main(['run', '-m', 'ping',
-                   '--hosts', 'localhost',
-                   '--debug',
-                   'ping'])
-        assert os.path.exists('./ping')
-        assert os.path.exists('./ping/artifacts')
-        assert rc == 0
-    finally:
-        if os.path.exists('./ping'):
-            shutil.rmtree('./ping')
+def test_module_run_debug(tmp_path):
+    output = tmp_path / 'ping'
+    rc = main(['run', '-m', 'ping',
+               '--hosts', 'localhost',
+               '--debug',
+               str(output)])
+
+    assert output.exists()
+    assert output.joinpath('artifacts').exists()
+    assert rc == 0
 
 
-def test_module_run_clean():
-    with temp_directory() as temp_dir:
-        rc = main(['run', '-m', 'ping',
-                   '--hosts', 'localhost',
-                   temp_dir])
+def test_module_run_clean(tmp_path):
+    rc = main(['run', '-m', 'ping',
+               '--hosts', 'localhost',
+               str(tmp_path)])
     assert rc == 0
 
 
@@ -157,6 +154,9 @@ def test_role_run_abs(tmp_path):
     assert rc == 0
 
 
+# FIXME: This test interferes with test_role_logfile_abs. Marking it as serial so it is executed
+#        in a separate test run.
+@pytest.mark.serial
 def test_role_logfile(skipif_pre_ansible28, tmp_path):
     logfile = tmp_path.joinpath('test_role_logfile')
     rc = main(['run', '-r', 'benthomasson.hello_role',
@@ -166,6 +166,17 @@ def test_role_logfile(skipif_pre_ansible28, tmp_path):
                '--artifact-dir', str(tmp_path),
                'test/integration'])
     assert logfile.exists()
+    assert rc == 0
+
+
+def test_role_logfile_abs(tmp_path):
+    rc = main(['run', '-r', 'benthomasson.hello_role',
+               '--hosts', 'localhost',
+               '--roles-path', os.path.join(HERE, 'project/roles'),
+               '--logfile', tmp_path.joinpath('new_logfile').as_posix(),
+               str(tmp_path)])
+
+    assert tmp_path.joinpath('new_logfile').exists()
     assert rc == 0
 
 

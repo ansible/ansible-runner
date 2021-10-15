@@ -1,5 +1,6 @@
 pytest
+pytest-mock
+pytest-timeout
 pytest-xdist
-mock
 flake8
 yamllint

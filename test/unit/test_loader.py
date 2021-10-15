@@ -1,7 +1,6 @@
 from io import BytesIO
 
 from pytest import raises, fixture
-from unittest.mock import patch
 from six import string_types
 
 import ansible_runner.loader
@@ -54,73 +53,74 @@ def test_abspath(loader):
     assert res.startswith('/')
 
 
-def test_load_file_text(loader):
-    with patch.object(ansible_runner.loader.ArtifactLoader, 'get_contents') as mock_get_contents:
-        mock_get_contents.return_value = 'test\nstring'
+def test_load_file_text(loader, mocker):
+    mock_get_contents = mocker.patch.object(ansible_runner.loader.ArtifactLoader, 'get_contents')
+    mock_get_contents.return_value = 'test\nstring'
 
-        assert not loader._cache
+    assert not loader._cache
 
-        # cache miss
-        res = loader.load_file('/tmp/test', string_types)
-        assert mock_get_contents.called
-        assert mock_get_contents.called_with_args('/tmp/test')
-        assert res == b'test\nstring'
-        assert '/tmp/test' in loader._cache
+    # cache miss
+    res = loader.load_file('/tmp/test', string_types)
+    assert mock_get_contents.called
+    assert mock_get_contents.called_with_args('/tmp/test')
+    assert res == b'test\nstring'
+    assert '/tmp/test' in loader._cache
 
-        mock_get_contents.reset_mock()
+    mock_get_contents.reset_mock()
 
-        # cache hit
-        res = loader.load_file('/tmp/test', string_types)
-        assert not mock_get_contents.called
-        assert res == b'test\nstring'
-        assert '/tmp/test' in loader._cache
-
-
-def test_load_file_json(loader):
-    with patch.object(ansible_runner.loader.ArtifactLoader, 'get_contents') as mock_get_contents:
-        mock_get_contents.return_value = '---\ntest: string'
-
-        assert not loader._cache
-
-        res = loader.load_file('/tmp/test')
-
-        assert mock_get_contents.called
-        assert mock_get_contents.called_with_args('/tmp/test')
-        assert '/tmp/test' in loader._cache
-        assert res['test'] == 'string'
+    # cache hit
+    res = loader.load_file('/tmp/test', string_types)
+    assert not mock_get_contents.called
+    assert res == b'test\nstring'
+    assert '/tmp/test' in loader._cache
 
 
-def test_load_file_type_check(loader):
-    with patch.object(ansible_runner.loader.ArtifactLoader, 'get_contents') as mock_get_contents:
-        mock_get_contents.return_value = '---\ntest: string'
+def test_load_file_json(loader, mocker):
+    mock_get_contents = mocker.patch.object(ansible_runner.loader.ArtifactLoader, 'get_contents')
+    mock_get_contents.return_value = '---\ntest: string'
 
-        assert not loader._cache
+    assert not loader._cache
 
-        # type check passes
+    res = loader.load_file('/tmp/test')
+
+    assert mock_get_contents.called
+    assert mock_get_contents.called_with_args('/tmp/test')
+    assert '/tmp/test' in loader._cache
+    assert res['test'] == 'string'
+
+
+def test_load_file_type_check(loader, mocker):
+    mock_get_contents = mocker.patch.object(ansible_runner.loader.ArtifactLoader, 'get_contents')
+    mock_get_contents.return_value = '---\ntest: string'
+
+    assert not loader._cache
+
+    # type check passes
+    res = loader.load_file('/tmp/test', dict)
+    assert res is not None
+
+    mock_get_contents.reset_mock()
+    mock_get_contents.return_value = 'test string'
+
+    loader._cache = {}
+
+    # type check fails
+    with raises(ConfigurationError):
         res = loader.load_file('/tmp/test', dict)
         assert res is not None
 
-        mock_get_contents.reset_mock()
-        mock_get_contents.return_value = 'test string'
 
-        loader._cache = {}
+def test_get_contents_ok(loader, mocker):
+    mock_open = mocker.patch('codecs.open')
 
-        # type check fails
-        with raises(ConfigurationError):
-            res = loader.load_file('/tmp/test', dict)
-            assert res is not None
+    handler = BytesIO()
+    handler.write(b"test string")
+    handler.seek(0)
 
+    mock_open.return_value.__enter__.return_value = handler
 
-def test_get_contents_ok(loader):
-    with patch('codecs.open') as mock_open:
-        handler = BytesIO()
-        handler.write(b"test string")
-        handler.seek(0)
-
-        mock_open.return_value.__enter__.return_value = handler
-
-        res = loader.get_contents('/tmp')
-        assert res == b'test string'
+    res = loader.get_contents('/tmp')
+    assert res == b'test string'
 
 
 def test_get_contents_invalid_path(loader):

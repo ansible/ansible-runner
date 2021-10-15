@@ -7,16 +7,23 @@ Ansible Runner
 [![Ansible Mailing lists](https://img.shields.io/badge/Mailing%20lists-Ansible-orange.svg)](https://docs.ansible.com/ansible/latest/community/communication.html#mailing-list-information)
 
 
-Ansible Runner is a tool and python library that helps when interfacing with Ansible directly or as part of another system whether that be through a container image interface, as a standalone tool, or as a Python module that can be imported. The goal is to provide a stable and consistent interface abstraction to Ansible.
+Ansible Runner is a tool and Python library that helps when interfacing with Ansible directly or as part of another system. Ansible Runner works as a standalone tool, a container image interface, or a Python module that can be imported. The goal is to provide a stable and consistent interface abstraction to Ansible.
 
-For the latest documentation see: [https://ansible-runner.readthedocs.io](https://ansible-runner.readthedocs.io/en/latest/)
+See the [latest documentation] for usage details.
 
 Get Involved
 ============
 
-* We use [GitHub issues](https://github.com/ansible/ansible-runner/issues) to track bug report and feature ideas...
-* ... and [GitHub Milestones](https://github.com/ansible/ansible-runner/milestones) to track what's for the next release
-* Want to contribute? Please check out our [contributing guide](https://github.com/ansible/ansible-runner/blob/devel/CONTRIBUTING.md)
+* [GitHub issues] to track bug report and feature ideas
+* [GitHub Milestones] to track what's for the next release
+* Want to contribute? Please check out our [contributing guide]
 * Join us in the `#ansible-runner` channel on Libera.chat IRC
-* Join the discussion in [awx-project](https://groups.google.com/forum/#!forum/awx-project)
-* For the full list of Ansible email Lists, IRC channels see the [Ansible Mailing lists](https://docs.ansible.com/ansible/latest/community/communication.html#mailing-list-information)
+* Join the discussion in [`#awx-project`][irc]
+* For the full list of Ansible email Lists, IRC channels see the [Ansible Mailing lists].
+
+[GitHub issues]: https://github.com/ansible/ansible-runner/issues
+[GitHub Milestones]: https://github.com/ansible/ansible-runner/milestones
+[contributing guide]: https://github.com/ansible/ansible-runner/blob/devel/CONTRIBUTING.md
+[irc]: https://groups.google.com/forum/#!forum/awx-project
+[Ansible Mailing lists]: https://docs.ansible.com/ansible/latest/community/communication.html#mailing-list-information
+[latest documentation]: https://ansible-runner.readthedocs.io/en/latest/

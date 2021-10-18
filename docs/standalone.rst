@@ -26,8 +26,6 @@ The different **commands** that runner accepts are:
 * ``start`` starts ``ansible-runner`` as a background daemon process and generates a pid file
 * ``stop`` terminates an ``ansible-runner`` process that was launched in the background with ``start``
 * ``is-alive`` checks the status of an ``ansible-runner`` process that was started in the background with ``start``
-* ``adhoc`` will run ad-hoc ``ansible`` commands inside a containerized Ansible Execution Environment
-* ``playbook`` will run ``ansible-playbook`` commands inside a containerized Ansible Execution Environment
 
 While **Runner** is running it creates an ``artifacts`` directory (see :ref:`artifactdir`) regardless of what mode it was started
 in. The resulting output and status from **Ansible** will be located here. You can control the exact location underneath the ``artifacts`` directory
@@ -102,7 +100,7 @@ Outputting json (raw event data) to the console instead of normal output
 ------------------------------------------------------------------------
 
 **Runner** supports outputting json event data structure directly to the console (and stdout file) instead of the standard **Ansible** output, thus
-mimicing the behavior of the ``json`` output plugin. This is in addition to the event data that's already present in the artifact directory. All that is needed
+mimicking the behavior of the ``json`` output plugin. This is in addition to the event data that's already present in the artifact directory. All that is needed
 is to supply the ``-j`` argument on the command line::
 
   $ ansible-runner ... -j ...

@@ -215,17 +215,15 @@ def test_role_start(tmp_path, project_fixture):
     p.join()
 
 
-def test_playbook_start(tmp_path, project_fixture):
-    private_data_dir = tmp_path
-    inventory_file = project_fixture / 'inventory' / 'hosts.yml'
+def test_playbook_start(tmp_path, test_data_dir):
+    private_data_dir = test_data_dir / 'sleep'
 
     mpcontext = multiprocessing.get_context('fork')
     p = mpcontext.Process(
         target=main,
         args=[[
             'start',
-            '-p', str(project_fixture / 'hello.yml'),
-            '--inventory', str(inventory_file),
+            '-p', 'sleep.yml',
             str(private_data_dir),
         ]]
     )

@@ -1,6 +1,0 @@
-- hosts: all
-  gather_facts: no
-  tasks:
-    - debug: msg="Before!"
-    - shell: sleep 90
-    - debug: msg="After!"

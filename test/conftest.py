@@ -30,13 +30,8 @@ def skipif_pre_ansible28(is_pre_ansible28):
 
 @pytest.fixture
 def test_data_dir(tmp_path):
-    source = Path(__file__).parent / 'fixtures' / 'data'
-    dest = tmp_path / 'data'
+    source = Path(__file__).parent / 'fixtures' / 'projects'
+    dest = tmp_path / 'projects'
     shutil.copytree(source, dest)
 
     return dest
-
-
-@pytest.fixture
-def project_fixture():
-    return Path(__file__).parent / 'fixtures' / 'project'

@@ -15,8 +15,6 @@ import yaml
 from ansible_runner.exceptions import AnsibleRunnerException
 from test.utils.common import iterate_timeout
 
-HERE = os.path.abspath(os.path.dirname(__file__))
-
 
 @contextmanager
 def temp_directory(files=None):
@@ -110,39 +108,38 @@ def test_module_run_clean(tmp_path):
     assert rc == 0
 
 
-def test_role_run(tmp_path, project_fixture):
-    artifact_dir = tmp_path / "artifacts"
+def test_role_run(test_data_dir):
     rc = main(['run', '-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
-               '--roles-path', str(project_fixture / 'roles'),
-               '--artifact-dir', str(artifact_dir),
-               str(tmp_path)])
+               '--roles-path', str(test_data_dir / 'use_role' / 'roles'),
+               str(test_data_dir / 'use_role')])
 
+    artifact_dir = test_data_dir / 'use_role' / 'artifacts'
     assert artifact_dir.exists()
     assert rc == 0
 
 
-def test_role_logfile(tmp_path, project_fixture):
-    logfile = tmp_path / 'test_role_logfile'
+def test_role_logfile(test_data_dir):
+    logfile = test_data_dir / 'use_role' / 'test_role_logfile'
     rc = main(['run', '-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
-               '--roles-path', str(project_fixture / 'roles'),
+               '--roles-path', str(test_data_dir / 'use_role' / 'roles'),
                '--logfile', str(logfile),
-               '--artifact-dir', str(tmp_path),
-               str(tmp_path)])
+               str(test_data_dir / 'use_role')])
+
     assert logfile.exists()
     assert rc == 0
 
 
-def test_role_bad_project_dir(tmp_path, project_fixture):
+def test_role_bad_project_dir(tmp_path, test_data_dir):
     bad_project_path = tmp_path / "bad_project_dir"
     bad_project_path.write_text('not a directory')
 
     with pytest.raises(OSError):
         main(['run', '-r', 'benthomasson.hello_role',
               '--hosts', 'localhost',
-              '--roles-path', str(project_fixture / 'roles'),
-              '--logfile', str(tmp_path / 'new_logfile'),
+              '--roles-path', str(test_data_dir / 'use_role' / 'roles'),
+              '--logfile', str(test_data_dir / 'use_role' / 'new_logfile'),
               str(bad_project_path)])
 
 
@@ -154,52 +151,51 @@ def test_role_bad_project_dir(tmp_path, project_fixture):
     }],
     ids=['regular-text', 'utf-8-text']
 )
-def test_role_run_env_vars(tmp_path, envvars, project_fixture):
-    env_path = tmp_path / 'env'
-    env_path.mkdir()
+def test_role_run_env_vars(envvars, test_data_dir):
+    env_path = test_data_dir / 'use_role' / 'env'
 
     env_vars = env_path / 'envvars'
-    with env_vars.open('w', encoding='utf-8') as f:
+    with env_vars.open('a', encoding='utf-8') as f:
         f.write(yaml.dump(envvars))
 
     rc = main(['run', '-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
-               '--roles-path', str(project_fixture / 'roles'),
-               str(tmp_path)])
+               '--roles-path', str(test_data_dir / 'use_role' / 'roles'),
+               str(test_data_dir / 'use_role')])
 
     assert rc == 0
 
 
-def test_role_run_args(tmp_path, project_fixture):
+def test_role_run_args(test_data_dir):
     rc = main(['run', '-r', 'benthomasson.hello_role',
                '--hosts', 'localhost',
-               '--roles-path', str(project_fixture / 'roles'),
+               '--roles-path', str(test_data_dir / 'use_role' / 'roles'),
                '--role-vars', 'msg=hi',
-               str(tmp_path)])
+               str(test_data_dir / 'use_role')])
 
     assert rc == 0
 
 
-def test_role_run_inventory(tmp_path, project_fixture):
+def test_role_run_inventory(test_data_dir):
     rc = main(['run', '-r', 'benthomasson.hello_role',
                '--hosts', 'testhost',
-               '--roles-path', str(project_fixture / 'roles'),
-               '--inventory', str(project_fixture / 'inventory'),
-               str(tmp_path)])
+               '--roles-path', str(test_data_dir / 'use_role' / 'roles'),
+               '--inventory', str(test_data_dir / 'use_role' / 'inventory'),
+               str(test_data_dir / 'use_role')])
 
     assert rc == 0
 
 
-def test_role_run_inventory_missing(tmp_path, project_fixture):
+def test_role_run_inventory_missing(test_data_dir):
     with pytest.raises(AnsibleRunnerException):
         main(['run', '-r', 'benthomasson.hello_role',
               '--hosts', 'testhost',
-              '--roles-path', str(project_fixture / 'roles'),
+              '--roles-path', str(test_data_dir / 'use_role' / 'roles'),
               '--inventory', 'does_not_exist',
-              str(tmp_path)])
+              str(test_data_dir / 'use_role')])
 
 
-def test_role_start(tmp_path, project_fixture):
+def test_role_start(test_data_dir):
     mpcontext = multiprocessing.get_context('fork')
     p = mpcontext.Process(
         target=main,
@@ -207,15 +203,15 @@ def test_role_start(tmp_path, project_fixture):
             'start',
             '-r', 'benthomasson.hello_role',
             '--hosts', 'localhost',
-            '--roles-path', str(project_fixture / 'roles'),
-            str(tmp_path),
+            '--roles-path', str(test_data_dir / 'use_role' / 'roles'),
+            str(test_data_dir / 'use_role'),
         ]]
     )
     p.start()
     p.join()
 
 
-def test_playbook_start(tmp_path, test_data_dir):
+def test_playbook_start(test_data_dir):
     private_data_dir = test_data_dir / 'sleep'
 
     mpcontext = multiprocessing.get_context('fork')

@@ -10,43 +10,76 @@ import pytest
 
 from test.utils.common import iterate_timeout
 
-HERE = os.path.abspath(os.path.dirname(__file__))
 
+@pytest.mark.parametrize(
+    'runtime', (
+        pytest.param('docker', marks=pytest.mark.skipif(shutil.which('docker') is None, reason='docker is not installed')),
+        pytest.param('podman', marks=pytest.mark.skipif(shutil.which('podman') is None, reason='podman is not installed')),
+    )
+)
+def test_module_run(cli, test_data_dir, runtime):
+    r = cli([
+        'run',
+        '--process-isolation-executable', runtime,
+        '-m', 'ping',
+        '--hosts', 'testhost',
+        test_data_dir.joinpath('containerized').as_posix(),
+    ])
 
-@pytest.fixture
-def skip_if_no_podman(container_runtime_installed):
-    if container_runtime_installed != 'podman':
-        pytest.skip('podman container runtime(s) not available')
-
-
-def test_module_run(cli, skip_if_no_podman):
-    r = cli(['run', '-m', 'ping', '--hosts', 'localhost', os.path.join(HERE, 'priv_data')])
     assert '"ping": "pong"' in r.stdout
 
 
-def test_playbook_run(cli, skip_if_no_podman):
-    r = cli(['run', os.path.join(HERE, 'priv_data'), '-p', 'test-container.yml'])
+@pytest.mark.parametrize(
+    'runtime', (
+        pytest.param('docker', marks=pytest.mark.skipif(shutil.which('docker') is None, reason='docker is not installed')),
+        pytest.param('podman', marks=pytest.mark.skipif(shutil.which('podman') is None, reason='podman is not installed')),
+    )
+)
+def test_playbook_run(cli, test_data_dir, runtime):
+    r = cli([
+        'run',
+        '--process-isolation-executable', runtime,
+        '-p', 'test-container.yml',
+        test_data_dir.joinpath('containerized').as_posix(),
+    ])
     assert 'PLAY RECAP *******' in r.stdout
     assert 'failed=0' in r.stdout
 
 
-def test_provide_env_var(cli, skip_if_no_podman, test_data_dir):
-    r = cli(['run', str(test_data_dir / 'job_env'), '-p', 'printenv.yml'])
+@pytest.mark.parametrize(
+    'runtime', (
+        pytest.param('docker', marks=pytest.mark.skipif(shutil.which('docker') is None, reason='docker is not installed')),
+        pytest.param('podman', marks=pytest.mark.skipif(shutil.which('podman') is None, reason='podman is not installed')),
+    )
+)
+def test_provide_env_var(cli, test_data_dir, runtime):
+    r = cli([
+        'run',
+        '--process-isolation-executable', runtime,
+        '-p', 'printenv.yml',
+        test_data_dir.joinpath('job_env').as_posix(),
+    ])
     assert 'gifmyvqok2' in r.stdout, r.stdout
 
 
-@pytest.mark.serial
 @pytest.mark.skipif(sys.platform == 'darwin', reason='ansible-runner start does not work reliably on macOS')
-@pytest.mark.parametrize('runtime', ['podman', 'docker'])
+@pytest.mark.parametrize(
+    'runtime', (
+        pytest.param('docker', marks=pytest.mark.skipif(shutil.which('docker') is None, reason='docker is not installed')),
+        pytest.param('podman', marks=pytest.mark.skipif(shutil.which('podman') is None, reason='podman is not installed')),
+    )
+)
 def test_cli_kill_cleanup(cli, runtime, test_data_dir):
-    if shutil.which(runtime) is None:
-        pytest.skip(f'{runtime} is unavailable')
-
     unique_string = str(uuid4()).replace('-', '')
     ident = f'kill_test_{unique_string}'
     pdd = os.path.join(test_data_dir, 'sleep')
-    cli_args = ['start', pdd, '-p', 'sleep.yml', '--ident', ident,
-                '--process-isolation', '--process-isolation-executable', runtime]
+    cli_args = [
+        'start', pdd,
+        '-p', 'sleep.yml',
+        '--ident', ident,
+        '--process-isolation',
+        '--process-isolation-executable', runtime,
+    ]
     cli(cli_args)
 
     def container_is_running():

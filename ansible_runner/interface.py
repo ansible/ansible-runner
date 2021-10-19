@@ -135,7 +135,7 @@ def run(**kwargs):
     :param ident: The run identifier for this invocation of Runner. Will be used to create and name
                   the artifact directory holding the results of the invocation.
     :param json_mode: Store event data in place of stdout on the console and in the stdout file
-    :param playbook: The playbook (either supplied here as a list or string... or as a path relative to
+    :param playbook: The playbook (either a list or dictionary of plays, or as a path relative to
                      ``private_data_dir/project``) that will be invoked by runner when executing Ansible.
     :param module: The module that will be invoked in ad-hoc mode by runner when executing Ansible.
     :param module_args: The module arguments that will be supplied to ad-hoc mode.

@@ -9,4 +9,4 @@
     - name:
       assert:
         that:
-          - ansible_facts.virtualization_type in ['docker', 'container', 'containerd']
+          - ansible_facts.virtualization_type in ['docker', 'podman', 'container', 'containerd']

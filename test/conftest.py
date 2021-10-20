@@ -1,7 +1,6 @@
 import shutil
 
 from distutils.version import LooseVersion
-from pathlib import Path
 
 import pkg_resources
 import pytest
@@ -32,15 +31,6 @@ def is_pre_ansible28():
 def skipif_pre_ansible28(is_pre_ansible28):
     if is_pre_ansible28:
         pytest.skip("Valid only on Ansible 2.8+")
-
-
-@pytest.fixture
-def project_fixtures(tmp_path):
-    source = Path(__file__).parent / 'fixtures' / 'projects'
-    dest = tmp_path / 'projects'
-    shutil.copytree(source, dest)
-
-    return dest
 
 
 def pytest_generate_tests(metafunc):

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import shutil
 import signal
 import sys
 
@@ -11,12 +10,7 @@ import pytest
 from test.utils.common import iterate_timeout
 
 
-@pytest.mark.parametrize(
-    'runtime', (
-        pytest.param('docker', marks=pytest.mark.skipif(shutil.which('docker') is None, reason='docker is not installed')),
-        pytest.param('podman', marks=pytest.mark.skipif(shutil.which('podman') is None, reason='podman is not installed')),
-    )
-)
+@pytest.mark.test_all_runtimes
 def test_module_run(cli, test_data_dir, runtime):
     r = cli([
         'run',
@@ -29,12 +23,7 @@ def test_module_run(cli, test_data_dir, runtime):
     assert '"ping": "pong"' in r.stdout
 
 
-@pytest.mark.parametrize(
-    'runtime', (
-        pytest.param('docker', marks=pytest.mark.skipif(shutil.which('docker') is None, reason='docker is not installed')),
-        pytest.param('podman', marks=pytest.mark.skipif(shutil.which('podman') is None, reason='podman is not installed')),
-    )
-)
+@pytest.mark.test_all_runtimes
 def test_playbook_run(cli, test_data_dir, runtime):
     r = cli([
         'run',
@@ -46,12 +35,7 @@ def test_playbook_run(cli, test_data_dir, runtime):
     assert 'failed=0' in r.stdout
 
 
-@pytest.mark.parametrize(
-    'runtime', (
-        pytest.param('docker', marks=pytest.mark.skipif(shutil.which('docker') is None, reason='docker is not installed')),
-        pytest.param('podman', marks=pytest.mark.skipif(shutil.which('podman') is None, reason='podman is not installed')),
-    )
-)
+@pytest.mark.test_all_runtimes
 def test_provide_env_var(cli, test_data_dir, runtime):
     r = cli([
         'run',
@@ -62,13 +46,8 @@ def test_provide_env_var(cli, test_data_dir, runtime):
     assert 'gifmyvqok2' in r.stdout, r.stdout
 
 
+@pytest.mark.test_all_runtimes
 @pytest.mark.skipif(sys.platform == 'darwin', reason='ansible-runner start does not work reliably on macOS')
-@pytest.mark.parametrize(
-    'runtime', (
-        pytest.param('docker', marks=pytest.mark.skipif(shutil.which('docker') is None, reason='docker is not installed')),
-        pytest.param('podman', marks=pytest.mark.skipif(shutil.which('podman') is None, reason='podman is not installed')),
-    )
-)
 def test_cli_kill_cleanup(cli, runtime, test_data_dir):
     unique_string = str(uuid4()).replace('-', '')
     ident = f'kill_test_{unique_string}'

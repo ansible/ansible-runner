@@ -7,6 +7,12 @@ import pkg_resources
 import pytest
 
 
+CONTAINER_RUNTIMES = (
+    'docker',
+    'podman',
+)
+
+
 @pytest.fixture(autouse=True)
 def mock_env_user(monkeypatch):
     monkeypatch.setenv("ANSIBLE_DEVEL_WARNING", "False")
@@ -35,3 +41,27 @@ def test_data_dir(tmp_path):
     shutil.copytree(source, dest)
 
     return dest
+
+
+def pytest_generate_tests(metafunc):
+    """If a test uses the custom marker ``test_all_runtimes``, generate marks
+    for all supported container runtimes. The requires the test to accept
+    and use the ``runtime`` argument.
+
+    Based on examples from https://docs.pytest.org/en/latest/example/parametrize.html.
+    """
+
+    for mark in getattr(metafunc.function, 'pytestmark', []):
+        if getattr(mark, 'name', '') == 'test_all_runtimes':
+            args = tuple(
+                pytest.param(
+                    runtime,
+                    marks=pytest.mark.skipif(
+                        shutil.which(runtime) is None,
+                        reason=f'{runtime} is not installed',
+                    ),
+                )
+                for runtime in CONTAINER_RUNTIMES
+            )
+            metafunc.parametrize('runtime', args)
+            break

@@ -25,6 +25,12 @@ def test_module_run(cli, project_fixtures, runtime):
 
 @pytest.mark.test_all_runtimes
 def test_playbook_run(cli, project_fixtures, runtime):
+    # Ensure the container environment variable is set so that Ansible fact gathering
+    # is able to detect it is running inside a container.
+    envvars_path = project_fixtures / 'containerized' / 'env' / 'envvars'
+    with envvars_path.open('a') as f:
+        f.write(f'container: {runtime}\n')
+
     r = cli([
         'run',
         '--process-isolation-executable', runtime,

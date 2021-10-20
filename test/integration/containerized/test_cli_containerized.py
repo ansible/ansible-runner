@@ -11,47 +11,47 @@ from test.utils.common import iterate_timeout
 
 
 @pytest.mark.test_all_runtimes
-def test_module_run(cli, test_data_dir, runtime):
+def test_module_run(cli, project_fixtures, runtime):
     r = cli([
         'run',
         '--process-isolation-executable', runtime,
         '-m', 'ping',
         '--hosts', 'testhost',
-        test_data_dir.joinpath('containerized').as_posix(),
+        project_fixtures.joinpath('containerized').as_posix(),
     ])
 
     assert '"ping": "pong"' in r.stdout
 
 
 @pytest.mark.test_all_runtimes
-def test_playbook_run(cli, test_data_dir, runtime):
+def test_playbook_run(cli, project_fixtures, runtime):
     r = cli([
         'run',
         '--process-isolation-executable', runtime,
         '-p', 'test-container.yml',
-        test_data_dir.joinpath('containerized').as_posix(),
+        project_fixtures.joinpath('containerized').as_posix(),
     ])
     assert 'PLAY RECAP *******' in r.stdout
     assert 'failed=0' in r.stdout
 
 
 @pytest.mark.test_all_runtimes
-def test_provide_env_var(cli, test_data_dir, runtime):
+def test_provide_env_var(cli, project_fixtures, runtime):
     r = cli([
         'run',
         '--process-isolation-executable', runtime,
         '-p', 'printenv.yml',
-        test_data_dir.joinpath('job_env').as_posix(),
+        project_fixtures.joinpath('job_env').as_posix(),
     ])
     assert 'gifmyvqok2' in r.stdout, r.stdout
 
 
 @pytest.mark.test_all_runtimes
 @pytest.mark.skipif(sys.platform == 'darwin', reason='ansible-runner start does not work reliably on macOS')
-def test_cli_kill_cleanup(cli, runtime, test_data_dir):
+def test_cli_kill_cleanup(cli, runtime, project_fixtures):
     unique_string = str(uuid4()).replace('-', '')
     ident = f'kill_test_{unique_string}'
-    pdd = os.path.join(test_data_dir, 'sleep')
+    pdd = os.path.join(project_fixtures, 'sleep')
     cli_args = [
         'start', pdd,
         '-p', 'sleep.yml',

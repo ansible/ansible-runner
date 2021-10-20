@@ -53,8 +53,8 @@ class TestStreamingUsage:
             assert '"ansible_facts"' in stdout
 
     @pytest.mark.parametrize("job_type", ['run', 'adhoc'])
-    def test_remote_job_interface(self, tmp_path, test_data_dir, job_type):
-        transmit_dir = test_data_dir / 'debug'
+    def test_remote_job_interface(self, tmp_path, project_fixtures, job_type):
+        transmit_dir = project_fixtures / 'debug'
         worker_dir = tmp_path / 'for_worker'
         worker_dir.mkdir()
 
@@ -97,12 +97,12 @@ class TestStreamingUsage:
         self.check_artifacts(str(process_dir), job_type)
 
     @pytest.mark.parametrize("job_type", ['run', 'adhoc'])
-    def test_remote_job_by_sockets(self, tmp_path, test_data_dir, container_runtime_installed, job_type):
+    def test_remote_job_by_sockets(self, tmp_path, project_fixtures, container_runtime_installed, job_type):
         """This test case is intended to be close to how the AWX use case works
         the process interacts with receptorctl with sockets
         sockets are used here, but worker is manually called instead of invoked by receptor
         """
-        transmit_dir = test_data_dir / 'debug'
+        transmit_dir = project_fixtures / 'debug'
         worker_dir = tmp_path / 'for_worker'
         worker_dir.mkdir()
 
@@ -167,11 +167,11 @@ class TestStreamingUsage:
 
 
 @pytest.fixture()
-def transmit_stream(test_data_dir, tmp_path):
+def transmit_stream(project_fixtures, tmp_path):
     outgoing_buffer = tmp_path / 'buffer'
     outgoing_buffer.touch()
 
-    transmit_dir = test_data_dir / 'debug'
+    transmit_dir = project_fixtures / 'debug'
     with outgoing_buffer.open('wb') as f:
         transmitter = Transmitter(_output=f, private_data_dir=transmit_dir, playbook='debug.yml')
         status, rc = transmitter.run()

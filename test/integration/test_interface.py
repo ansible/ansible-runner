@@ -43,8 +43,8 @@ def get_env_data(res):
         raise RuntimeError('Count not find look_at_environment task from playbook')
 
 
-def test_env_accuracy(request, test_data_dir):
-    printenv_example = test_data_dir / 'printenv'
+def test_env_accuracy(request, project_fixtures):
+    printenv_example = project_fixtures / 'printenv'
     os.environ['SET_BEFORE_TEST'] = 'MADE_UP_VALUE'
 
     def remove_test_env_var():
@@ -66,8 +66,8 @@ def test_env_accuracy(request, test_data_dir):
     assert actual_env == res.config.env
 
 
-def test_env_accuracy_inside_container(request, test_data_dir, container_runtime_installed):
-    printenv_example = test_data_dir / 'printenv'
+def test_env_accuracy_inside_container(request, project_fixtures, container_runtime_installed):
+    printenv_example = project_fixtures / 'printenv'
     os.environ['SET_BEFORE_TEST'] = 'MADE_UP_VALUE'
 
     def remove_test_env_var():
@@ -103,8 +103,8 @@ def test_env_accuracy_inside_container(request, test_data_dir, container_runtime
     assert env_data['cwd'] == res.config.cwd
 
 
-def test_multiple_inventories(test_data_dir):
-    private_data_dir = test_data_dir / 'debug'
+def test_multiple_inventories(project_fixtures):
+    private_data_dir = project_fixtures / 'debug'
 
     res = run(
         private_data_dir=private_data_dir,
@@ -119,8 +119,8 @@ def test_multiple_inventories(test_data_dir):
     assert 'host_2' in stdout
 
 
-def test_inventory_absolute_path(test_data_dir):
-    private_data_dir = test_data_dir / 'debug'
+def test_inventory_absolute_path(project_fixtures):
+    private_data_dir = project_fixtures / 'debug'
 
     res = run(
         private_data_dir=private_data_dir,
@@ -137,8 +137,8 @@ def test_inventory_absolute_path(test_data_dir):
     assert 'host_2' not in stdout
 
 
-def test_run_command(test_data_dir):
-    private_data_dir = test_data_dir / 'debug'
+def test_run_command(project_fixtures):
+    private_data_dir = project_fixtures / 'debug'
     inventory = private_data_dir / 'inventory' / 'inv_1'
     playbook = private_data_dir / 'project' / 'debug.yml'
     out, err, rc = run_command(
@@ -151,8 +151,8 @@ def test_run_command(test_data_dir):
     assert err == ''
 
 
-def test_run_ansible_command_within_container(test_data_dir, container_runtime_installed):
-    private_data_dir = test_data_dir / 'debug'
+def test_run_ansible_command_within_container(project_fixtures, container_runtime_installed):
+    private_data_dir = project_fixtures / 'debug'
     inventory = private_data_dir / 'inventory' / 'inv_1'
     playbook = private_data_dir / 'project' / 'debug.yml'
     container_kwargs = {
@@ -171,9 +171,9 @@ def test_run_ansible_command_within_container(test_data_dir, container_runtime_i
     assert err == ''
 
 
-def test_run_script_within_container(test_data_dir, container_runtime_installed):
-    private_data_dir = test_data_dir / 'debug'
-    script_path = test_data_dir / 'files'
+def test_run_script_within_container(project_fixtures, container_runtime_installed):
+    private_data_dir = project_fixtures / 'debug'
+    script_path = project_fixtures / 'files'
     container_volume_mounts = ["{}:{}:Z".format(script_path, script_path)]
     container_kwargs = {
         'process_isolation_executable': container_runtime_installed,
@@ -192,8 +192,8 @@ def test_run_script_within_container(test_data_dir, container_runtime_installed)
     assert rc == 0
 
 
-def test_run_command_async(test_data_dir):
-    private_data_dir = test_data_dir / 'debug'
+def test_run_command_async(project_fixtures):
+    private_data_dir = project_fixtures / 'debug'
     inventory = private_data_dir / 'inventory' / 'inv_1'
     playbook = private_data_dir / 'project' / 'debug.yml'
     thread, r = run_command_async(
@@ -278,8 +278,8 @@ def test_ansible_config():
     assert 'DEFAULT_VERBOSITY' in out
 
 
-def test_get_inventory(test_data_dir):
-    private_data_dir = test_data_dir / 'debug'
+def test_get_inventory(project_fixtures):
+    private_data_dir = project_fixtures / 'debug'
     inventory1 = private_data_dir / 'inventory' / 'inv_1'
     inventory2 = private_data_dir / 'inventory' / 'inv_2'
 
@@ -293,13 +293,13 @@ def test_get_inventory(test_data_dir):
     assert 'host_2' in out['ungrouped']['hosts']
 
 
-def test_get_inventory_within_container(test_data_dir, container_runtime_installed):
+def test_get_inventory_within_container(project_fixtures, container_runtime_installed):
     container_kwargs = {
         'process_isolation_executable': container_runtime_installed,
         'process_isolation': True,
         'container_image': defaults.default_container_image
     }
-    private_data_dir = test_data_dir / 'debug'
+    private_data_dir = project_fixtures / 'debug'
     inventory1 = private_data_dir / 'inventory' / 'inv_1'
     inventory2 = private_data_dir / 'inventory' / 'inv_2'
 

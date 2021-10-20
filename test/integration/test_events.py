@@ -130,10 +130,10 @@ def test_runner_on_start(rc, skipif_pre_ansible28):
     assert len(start_events) == 1
 
 
-def test_playbook_on_stats_summary_fields(test_data_dir, is_pre_ansible28):
+def test_playbook_on_stats_summary_fields(project_fixtures, is_pre_ansible28):
     if is_pre_ansible28:
         pytest.skip('Test is for post 2.8 status types.')
-    private_data_dir = test_data_dir / 'host_status'
+    private_data_dir = project_fixtures / 'host_status'
 
     res = run(
         private_data_dir=private_data_dir,
@@ -149,9 +149,9 @@ def test_playbook_on_stats_summary_fields(test_data_dir, is_pre_ansible28):
         assert runner_stats[stat]  # expected at least 1 host in each stat type
 
 
-def test_include_role_events(test_data_dir):
+def test_include_role_events(project_fixtures):
     r = run(
-        private_data_dir=str(test_data_dir / 'use_role'),
+        private_data_dir=str(project_fixtures / 'use_role'),
         playbook='use_role.yml'
     )
     role_events = [event for event in r.events if event.get('event_data', {}).get('role', '') == "benthomasson.hello_role"]

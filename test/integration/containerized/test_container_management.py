@@ -49,8 +49,8 @@ class CancelStandIn:
         return True
 
 
-def test_cancel_will_remove_container(test_data_dir, container_runtime_installed, cli):
-    private_data_dir = test_data_dir / 'sleep'
+def test_cancel_will_remove_container(project_fixtures, container_runtime_installed, cli):
+    private_data_dir = project_fixtures / 'sleep'
     ident = uuid4().hex[:12]
     container_name = f'ansible_runner_{ident}'
 

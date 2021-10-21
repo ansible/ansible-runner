@@ -1,7 +1,15 @@
-import pytest
+import shutil
+
 from distutils.version import LooseVersion
+
 import pkg_resources
-import os
+import pytest
+
+
+CONTAINER_RUNTIMES = (
+    'docker',
+    'podman',
+)
 
 
 @pytest.fixture(autouse=True)
@@ -25,6 +33,25 @@ def skipif_pre_ansible28(is_pre_ansible28):
         pytest.skip("Valid only on Ansible 2.8+")
 
 
-@pytest.fixture(scope='session')
-def test_data_dir():
-    return os.path.join(os.path.dirname(__file__), 'data')
+def pytest_generate_tests(metafunc):
+    """If a test uses the custom marker ``test_all_runtimes``, generate marks
+    for all supported container runtimes. The requires the test to accept
+    and use the ``runtime`` argument.
+
+    Based on examples from https://docs.pytest.org/en/latest/example/parametrize.html.
+    """
+
+    for mark in getattr(metafunc.function, 'pytestmark', []):
+        if getattr(mark, 'name', '') == 'test_all_runtimes':
+            args = tuple(
+                pytest.param(
+                    runtime,
+                    marks=pytest.mark.skipif(
+                        shutil.which(runtime) is None,
+                        reason=f'{runtime} is not installed',
+                    ),
+                )
+                for runtime in CONTAINER_RUNTIMES
+            )
+            metafunc.parametrize('runtime', args)
+            break

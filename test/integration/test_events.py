@@ -12,10 +12,7 @@ from ansible_runner import defaults, run, run_async
 @pytest.mark.parametrize('containerized', [True, False])
 def test_basic_events(containerized, is_pre_ansible28, runtime, tmp_path, is_run_async=False, g_facts=False):
 
-    if is_pre_ansible28:
-        inventory = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
-    else:
-        inventory = 'localhost ansible_connection=local'
+    inventory = 'localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"'
 
     playbook = [{'hosts': 'all', 'gather_facts': g_facts, 'tasks': [{'debug': {'msg': "test"}}]}]
     run_args = {'private_data_dir': str(tmp_path),
@@ -64,10 +61,7 @@ def test_async_events(containerized, is_pre_ansible28, runtime, tmp_path):
 
 
 def test_basic_serializeable(is_pre_ansible28, tmp_path):
-    if is_pre_ansible28:
-        inv = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
-    else:
-        inv = 'localhost ansible_connection=local'
+    inv = 'localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"'
     r = run(private_data_dir=str(tmp_path),
             inventory=inv,
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
@@ -76,10 +70,7 @@ def test_basic_serializeable(is_pre_ansible28, tmp_path):
 
 
 def test_event_omission(is_pre_ansible28, tmp_path):
-    if is_pre_ansible28:
-        inv = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
-    else:
-        inv = 'localhost ansible_connection=local'
+    inv = 'localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"'
     r = run(private_data_dir=str(tmp_path),
             inventory=inv,
             omit_event_data=True,
@@ -96,10 +87,7 @@ def test_event_omission(is_pre_ansible28, tmp_path):
 
 
 def test_event_omission_except_failed(is_pre_ansible28, tmp_path):
-    if is_pre_ansible28:
-        inv = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
-    else:
-        inv = 'localhost ansible_connection=local'
+    inv = 'localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"'
     r = run(private_data_dir=str(tmp_path),
             inventory=inv,
             only_failed_event_data=True,
@@ -119,7 +107,7 @@ def test_event_omission_except_failed(is_pre_ansible28, tmp_path):
 
 def test_runner_on_start(rc, skipif_pre_ansible28, tmp_path):
     r = run(private_data_dir=str(tmp_path),
-            inventory="localhost ansible_connection=local",
+            inventory='localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"',
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
     start_events = [x for x in filter(lambda x: 'event' in x and x['event'] == 'runner_on_start',
                                       r.events)]
@@ -164,7 +152,7 @@ def test_include_role_events(project_fixtures):
 def test_profile_data(skipif_pre_ansible28, tmp_path):
     try:
         r = run(private_data_dir=str(tmp_path),
-                inventory="localhost ansible_connection=local",
+                inventory='localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"',
                 resource_profiling=True,
                 resource_profiling_base_cgroup='ansible-runner',
                 playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])

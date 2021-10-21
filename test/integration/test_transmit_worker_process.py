@@ -53,8 +53,8 @@ class TestStreamingUsage:
             assert '"ansible_facts"' in stdout
 
     @pytest.mark.parametrize("job_type", ['run', 'adhoc'])
-    def test_remote_job_interface(self, tmp_path, test_data_dir, job_type):
-        transmit_dir = os.path.join(test_data_dir, 'debug')
+    def test_remote_job_interface(self, tmp_path, project_fixtures, job_type):
+        transmit_dir = project_fixtures / 'debug'
         worker_dir = tmp_path / 'for_worker'
         worker_dir.mkdir()
 
@@ -97,12 +97,12 @@ class TestStreamingUsage:
         self.check_artifacts(str(process_dir), job_type)
 
     @pytest.mark.parametrize("job_type", ['run', 'adhoc'])
-    def test_remote_job_by_sockets(self, tmp_path, test_data_dir, container_runtime_installed, job_type):
+    def test_remote_job_by_sockets(self, tmp_path, project_fixtures, container_runtime_installed, job_type):
         """This test case is intended to be close to how the AWX use case works
         the process interacts with receptorctl with sockets
         sockets are used here, but worker is manually called instead of invoked by receptor
         """
-        transmit_dir = os.path.join(test_data_dir, 'debug')
+        transmit_dir = project_fixtures / 'debug'
         worker_dir = tmp_path / 'for_worker'
         worker_dir.mkdir()
 
@@ -166,38 +166,42 @@ class TestStreamingUsage:
         self.check_artifacts(str(process_dir), job_type)
 
 
-@pytest.fixture(scope='session')
-def transmit_stream(test_data_dir):
-    outgoing_buffer = tempfile.NamedTemporaryFile()
-    transmit_dir = os.path.join(test_data_dir, 'debug')
-    transmitter = Transmitter(_output=outgoing_buffer, private_data_dir=transmit_dir, playbook='debug.yml')
-    status, rc = transmitter.run()
-    assert rc in (None, 0)
-    assert status == 'unstarted'
-    return outgoing_buffer
+@pytest.fixture()
+def transmit_stream(project_fixtures, tmp_path):
+    outgoing_buffer = tmp_path / 'buffer'
+    outgoing_buffer.touch()
+
+    transmit_dir = project_fixtures / 'debug'
+    with outgoing_buffer.open('wb') as f:
+        transmitter = Transmitter(_output=f, private_data_dir=transmit_dir, playbook='debug.yml')
+        status, rc = transmitter.run()
+
+        assert rc in (None, 0)
+        assert status == 'unstarted'
+        return outgoing_buffer
 
 
 @pytest.mark.parametrize('delete', [False, True])
 def test_worker_preserve_or_delete_dir(tmp_path, cli, transmit_stream, delete):
-    worker_dir = str(tmp_path / 'for_worker')
-    os.mkdir(worker_dir)
+    worker_dir = tmp_path / 'for_worker'
+    worker_dir.mkdir()
 
-    test_file_path = os.path.join(worker_dir, 'test_file.txt')
-    with open(os.path.join(worker_dir, 'test_file.txt'), 'w') as f:
+    test_file_path = worker_dir / 'test_file.txt'
+    with test_file_path.open('w') as f:
         f.write('foobar')
 
-    with open(transmit_stream.name, 'r') as f:
-        worker_args = ['worker', '--private-data-dir', worker_dir]
+    with open(transmit_stream, 'rb') as f:
+        worker_args = ['worker', '--private-data-dir', str(worker_dir)]
         if delete is True:
             worker_args.append('--delete')
         r = cli(worker_args, stdin=f)
 
     assert '{"eof": true}' in r.stdout
-    for test_path in (test_file_path, os.path.join(worker_dir, 'project', 'debug.yml')):
+    for test_path in (test_file_path, worker_dir / 'project' / 'debug.yml'):
         if delete:
-            assert not os.path.exists(test_path)
+            assert not test_path.exists()
         else:
-            assert os.path.exists(test_path)
+            assert test_path.exists()
 
 
 def test_missing_private_dir_transmit(tmpdir):

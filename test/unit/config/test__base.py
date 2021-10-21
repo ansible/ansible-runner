@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from functools import partial
 import os
 import re
-from tempfile import gettempdir
-
 import six
-from pexpect import TIMEOUT, EOF
+
+from functools import partial
 
 import pytest
+
+from pexpect import TIMEOUT, EOF
 
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.loader import ArtifactLoader
@@ -42,13 +42,13 @@ def test_base_config_init_defaults():
     assert isinstance(rc.loader, ArtifactLoader)
 
 
-def test_base_config_with_artifact_dir():
+def test_base_config_with_artifact_dir(tmp_path, patch_private_data_dir):
     rc = BaseConfig(artifact_dir='/tmp/this-is-some-dir')
     assert rc.artifact_dir == os.path.join('/tmp/this-is-some-dir', rc.ident)
 
     # Check that the private data dir is placed in our default location with our default prefix
     # and has some extra uniqueness on the end.
-    base_private_data_dir = os.path.join(gettempdir(), '.ansible-runner-')
+    base_private_data_dir = tmp_path.joinpath('.ansible-runner-').as_posix()
     assert rc.private_data_dir.startswith(base_private_data_dir)
     assert len(rc.private_data_dir) > len(base_private_data_dir)
 

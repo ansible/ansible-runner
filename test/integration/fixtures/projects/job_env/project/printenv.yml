@@ -1,0 +1,6 @@
+- hosts: all
+  gather_facts: no
+
+  tasks:
+    - debug:
+        msg: "{{ lookup('env', 'FOO') }}"

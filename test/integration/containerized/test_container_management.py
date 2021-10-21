@@ -1,14 +1,12 @@
-import os
-import shutil
 import time
 
-import pytest
+from uuid import uuid4
 
 from ansible_runner.interface import run
 
 
 def is_running(cli, container_runtime_installed, container_name):
-    cmd = [container_runtime_installed, 'ps', '-aq', '--filter', 'name=ansible_runner_foo_bar']
+    cmd = [container_runtime_installed, 'ps', '-aq', '--filter', f'name={container_name}']
     r = cli(cmd, bare=True)
     output = '{}{}'.format(r.stdout, r.stderr)
     print(' '.join(cmd))
@@ -17,10 +15,11 @@ def is_running(cli, container_runtime_installed, container_name):
 
 
 class CancelStandIn:
-    def __init__(self, runtime, cli, delay=0.2):
+    def __init__(self, runtime, cli, container_name, delay=0.2):
         self.runtime = runtime
         self.cli = cli
         self.delay = 0.2
+        self.container_name = container_name
         self.checked_running = False
         self.start_time = None
 
@@ -33,7 +32,7 @@ class CancelStandIn:
         # guard against false passes by checking for running container
         if not self.checked_running:
             for i in range(5):
-                if is_running(self.cli, self.runtime, 'ansible_runner_foo_bar'):
+                if is_running(self.cli, self.runtime, self.container_name):
                     break
                 time.sleep(0.2)
             else:
@@ -44,15 +43,12 @@ class CancelStandIn:
         return True
 
 
-@pytest.mark.serial
-def test_cancel_will_remove_container(test_data_dir, container_runtime_installed, cli):
-    private_data_dir = os.path.join(test_data_dir, 'sleep')
+def test_cancel_will_remove_container(project_fixtures, container_runtime_installed, cli):
+    private_data_dir = project_fixtures / 'sleep'
+    ident = uuid4().hex[:12]
+    container_name = f'ansible_runner_{ident}'
 
-    env_dir = os.path.join(private_data_dir, 'env')
-    if os.path.exists(env_dir):
-        shutil.rmtree(env_dir)
-
-    cancel_standin = CancelStandIn(container_runtime_installed, cli)
+    cancel_standin = CancelStandIn(container_runtime_installed, cli, container_name)
 
     res = run(
         private_data_dir=private_data_dir,
@@ -62,11 +58,11 @@ def test_cancel_will_remove_container(test_data_dir, container_runtime_installed
             'process_isolation': True
         },
         cancel_callback=cancel_standin.cancel,
-        ident='foo?bar'  # question mark invalid char, but should still work
+        ident=ident
     )
     assert res.rc == 254, res.stdout.read()
     assert res.status == 'canceled'
 
     assert not is_running(
-        cli, container_runtime_installed, 'ansible_runner_foo_bar'
+        cli, container_runtime_installed, container_name
     ), 'Found a running container, they should have all been stopped'

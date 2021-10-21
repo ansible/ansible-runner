@@ -1,31 +1,44 @@
 # -*- coding: utf-8 -*-
-import os
-
 import pytest
 
-HERE = os.path.abspath(os.path.dirname(__file__))
 
+@pytest.mark.test_all_runtimes
+def test_module_run(cli, project_fixtures, runtime):
+    r = cli([
+        'run',
+        '--process-isolation-executable', runtime,
+        '-m', 'ping',
+        '--hosts', 'testhost',
+        project_fixtures.joinpath('containerized').as_posix(),
+    ])
 
-@pytest.fixture
-def skip_if_no_podman(container_runtime_installed):
-    if container_runtime_installed != 'podman':
-        pytest.skip('podman container runtime(s) not available')
-
-
-@pytest.mark.serial
-def test_module_run(cli, skip_if_no_podman):
-    r = cli(['run', '-m', 'ping', '--hosts', 'localhost', os.path.join(HERE, 'priv_data')])
     assert '"ping": "pong"' in r.stdout
 
 
-@pytest.mark.serial
-def test_playbook_run(cli, skip_if_no_podman):
-    r = cli(['run', os.path.join(HERE, 'priv_data'), '-p', 'test-container.yml'])
+@pytest.mark.test_all_runtimes
+def test_playbook_run(cli, project_fixtures, runtime):
+    # Ensure the container environment variable is set so that Ansible fact gathering
+    # is able to detect it is running inside a container.
+    envvars_path = project_fixtures / 'containerized' / 'env' / 'envvars'
+    with envvars_path.open('a') as f:
+        f.write(f'container: {runtime}\n')
+
+    r = cli([
+        'run',
+        '--process-isolation-executable', runtime,
+        '-p', 'test-container.yml',
+        project_fixtures.joinpath('containerized').as_posix(),
+    ])
     assert 'PLAY RECAP *******' in r.stdout
     assert 'failed=0' in r.stdout
 
 
-@pytest.mark.serial
-def test_provide_env_var(cli, skip_if_no_podman, test_data_dir):
-    r = cli(['run', os.path.join(test_data_dir, 'job_env'), '-p', 'printenv.yml'])
+@pytest.mark.test_all_runtimes
+def test_provide_env_var(cli, project_fixtures, runtime):
+    r = cli([
+        'run',
+        '--process-isolation-executable', runtime,
+        '-p', 'printenv.yml',
+        project_fixtures.joinpath('job_env').as_posix(),
+    ])
     assert 'gifmyvqok2' in r.stdout, r.stdout

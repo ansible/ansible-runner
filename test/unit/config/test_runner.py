@@ -595,13 +595,13 @@ def test_bwrap_process_isolation_and_directory_isolation(mocker, patch_private_d
     ]
 
 
-def test_process_isolation_settings(mocker):
+def test_process_isolation_settings(mocker, tmp_path):
     mocker.patch('os.path.isdir', return_value=False)
     mocker.patch('os.path.exists', return_value=True)
     mocker.patch('os.makedirs', return_value=True)
 
     rc = RunnerConfig('/')
-    rc.artifact_dir = '/tmp/artifacts'
+    rc.artifact_dir = tmp_path.joinpath('artifacts').as_posix()
     rc.playbook = 'main.yaml'
     rc.command = 'ansible-playbook'
     rc.process_isolation = True
@@ -609,10 +609,9 @@ def test_process_isolation_settings(mocker):
     rc.process_isolation_hide_paths = ['/home', '/var']
     rc.process_isolation_show_paths = ['/usr']
     rc.process_isolation_ro_paths = ['/venv']
-    rc.process_isolation_path = '/tmp'
+    rc.process_isolation_path = tmp_path.as_posix()
 
-    path_exists = mocker.patch('os.path.exists')
-    path_exists.return_value = True
+    mocker.patch('os.path.exists', return_value=True)
 
     rc.prepare()
     print(rc.command)

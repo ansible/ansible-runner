@@ -1,0 +1,11 @@
+1_ok
+2_skipped
+3_changed
+4_failed
+5_ignored
+6_rescued
+7_unreachable ansible_connection=ssh
+
+[all:vars]
+ansible_connection=local
+ansible_python_interpreter="{{ ansible_playbook_python }}"

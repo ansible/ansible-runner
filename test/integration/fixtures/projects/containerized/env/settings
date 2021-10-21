@@ -1,0 +1,4 @@
+idle_timeout: 60
+job_timeout: 360
+pexpect_timeout: 10
+process_isolation: true

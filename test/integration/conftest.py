@@ -1,11 +1,14 @@
+import json
 import os
 import shutil
 import subprocess
-import json
 import yaml
+
+from pathlib import Path
 
 import pytest
 import pexpect
+
 from ansible_runner.config.runner import RunnerConfig
 
 
@@ -127,3 +130,12 @@ def cli(request):
 
         return ret
     return run
+
+
+@pytest.fixture
+def project_fixtures(tmp_path):
+    source = Path(__file__).parent / 'fixtures' / 'projects'
+    dest = tmp_path / 'projects'
+    shutil.copytree(source, dest)
+
+    return dest

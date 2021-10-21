@@ -1,0 +1,38 @@
+- name: Get at least one host in each state
+  hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: A debug msg all hosts will show except for skipped ones
+      debug:
+        msg: Playing {{ ansible_host }}
+      when: inventory_hostname is not search('skipped|ignored')
+
+    - name: Hosts haven't really changed, but we will say they have
+      debug:
+        msg: Intentionally changed
+      changed_when: true
+      when: "'_changed' in inventory_hostname"
+
+    - name: All failhosts aboard the failboat
+      fail:
+        msg: Intentional failure
+      when: "'_failed' in inventory_hostname"
+
+    - name: Ignore this failure for some hosts
+      fail:
+      ignore_errors: true
+      when: "'_ignored' in inventory_hostname"
+
+    - name: Reach out to the unreachable hosts
+      ping:
+      when: "'_unreachable' in inventory_hostname"
+
+    - name: Fail and rescue - collection of tasks
+      block:
+        - fail:
+            msg: "HALP!!!"
+          when: "'_rescued' in inventory_hostname"
+      rescue:
+        - debug:
+            msg: "ε-(´・｀) ﾌ"

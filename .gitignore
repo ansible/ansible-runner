@@ -6,7 +6,6 @@
 *~
 /.idea
 
-/test/integration/artifacts
 /demo/artifacts
 /demo/daemon.log
 /docs/_build
@@ -19,15 +18,11 @@
 *.py[c,o]
 .pytest_cache
 pytestdebug.log
-test/integration/containerized/priv_data/artifacts/
 .coverage
 *,cover
 .venv
 /venv
 .env
-/test/data/debug/
-/test/data/printenv/env/
-/test/data/**/artifacts/
 /.eggs/
 docs/build
 AUTHORS

@@ -1,0 +1,12 @@
+- hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: Gather container facts
+      gather_facts:
+        gather_subset: virtual
+
+    - name:
+      assert:
+        that:
+          - ansible_facts.virtualization_type in ['docker', 'podman', 'container', 'containerd']

@@ -1,3 +1,0 @@
----
-process_isolation_executable: podman
-process_isolation: true

@@ -1,0 +1,10 @@
+- name: Sleep playbook for testing things while process is running
+  hosts: all
+  gather_facts: no
+
+  vars:
+    sleep_interval: 30
+
+  tasks:
+    - name: Sleep for a specified interval
+      command: sleep {{ sleep_interval }}

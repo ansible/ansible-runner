@@ -24,6 +24,13 @@ RUN if [ "$ANSIBLE_BRANCH" != "" ] ; then \
 # over using existing wheels. Do this upstream too so we can better catch
 # issues.
 ENV PIP_OPTS=--no-build-isolation
+
+ENV PBR_VERSION=1.2.3
+
+WORKDIR /tmp/src
+
+RUN python3 setup.py sdist
+
 RUN assemble
 
 FROM $PYTHON_BASE_IMAGE

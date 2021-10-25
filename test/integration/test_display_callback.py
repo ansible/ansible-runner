@@ -332,7 +332,7 @@ def test_output_when_given_invalid_playbook(tmp_path):
     private_data_dir = str(tmp_path)
     executor = init_runner(
         private_data_dir=private_data_dir,
-        inventory="localhost ansible_connection=local",
+        inventory='localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"',
         envvars={"ANSIBLE_DEPRECATION_WARNINGS": "False"},
         playbook=os.path.join(private_data_dir, 'fake_playbook.yml')
     )
@@ -368,7 +368,7 @@ def test_output_when_given_non_playbook_script(tmp_path):
 
     executor = init_runner(
         private_data_dir=private_data_dir,
-        inventory="localhost ansible_connection=local",
+        inventory='localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"',
         envvars={"ANSIBLE_DEPRECATION_WARNINGS": "False"}
     )
 

@@ -548,25 +548,38 @@ def test_bwrap_process_isolation_defaults(mocker):
     ]
 
 
-def test_bwrap_process_isolation_and_directory_isolation(mocker):
-    mocker.patch('os.makedirs', return_value=True)
-    mocker.patch('shutil.copytree', return_value=True)
-    mocker.patch('tempfile.mkdtemp', return_value="/tmp/dirisolation/foo")
-    mocker.patch('os.chmod', return_value=True)
-    mocker.patch('shutil.rmtree', return_value=True)
+def test_bwrap_process_isolation_and_directory_isolation(mocker, patch_private_data_dir, tmp_path):
 
-    def new_exists(path):
+    def mock_exists(path):
         if path == "/project":
             return False
         return True
+
+    class MockArtifactLoader:
+        def __init__(self, base_path):
+            self.base_path = base_path
+
+        def load_file(self, path, objtype=None, encoding='utf-8'):
+            raise ConfigurationError
+
+        def isfile(self, path):
+            return False
+
+    mocker.patch('ansible_runner.config.runner.os.makedirs', return_value=True)
+    mocker.patch('ansible_runner.config.runner.os.chmod', return_value=True)
+    mocker.patch('ansible_runner.config.runner.os.path.exists', mock_exists)
+    mocker.patch('ansible_runner.config._base.ArtifactLoader', new=MockArtifactLoader)
+
+    artifact_path = tmp_path / 'artifacts'
+    artifact_path.mkdir()
+
     rc = RunnerConfig('/')
-    rc.artifact_dir = '/tmp/artifacts'
-    rc.directory_isolation_path = '/tmp/dirisolation'
+    rc.artifact_dir = tmp_path / 'artifacts'
+    rc.directory_isolation_path = tmp_path / 'dirisolation'
     rc.playbook = 'main.yaml'
     rc.command = 'ansible-playbook'
     rc.process_isolation = True
     rc.process_isolation_executable = 'bwrap'
-    mocker.patch('os.path.exists', new=new_exists)
 
     rc.prepare()
 
@@ -582,13 +595,13 @@ def test_bwrap_process_isolation_and_directory_isolation(mocker):
     ]
 
 
-def test_process_isolation_settings(mocker):
+def test_process_isolation_settings(mocker, tmp_path):
     mocker.patch('os.path.isdir', return_value=False)
     mocker.patch('os.path.exists', return_value=True)
     mocker.patch('os.makedirs', return_value=True)
 
     rc = RunnerConfig('/')
-    rc.artifact_dir = '/tmp/artifacts'
+    rc.artifact_dir = tmp_path.joinpath('artifacts').as_posix()
     rc.playbook = 'main.yaml'
     rc.command = 'ansible-playbook'
     rc.process_isolation = True
@@ -596,10 +609,9 @@ def test_process_isolation_settings(mocker):
     rc.process_isolation_hide_paths = ['/home', '/var']
     rc.process_isolation_show_paths = ['/usr']
     rc.process_isolation_ro_paths = ['/venv']
-    rc.process_isolation_path = '/tmp'
+    rc.process_isolation_path = tmp_path.as_posix()
 
-    path_exists = mocker.patch('os.path.exists')
-    path_exists.return_value = True
+    mocker.patch('os.path.exists', return_value=True)
 
     rc.prepare()
     print(rc.command)
@@ -703,8 +715,8 @@ def test_container_volume_mounting_with_Z(mocker, tmp_path):
         raise Exception('Could not find expected mount, args: {}'.format(new_args))
 
 
-@pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_containerization_settings(tmp_path, container_runtime, mocker):
+@pytest.mark.test_all_runtimes
+def test_containerization_settings(tmp_path, runtime, mocker):
     mocker.patch('os.path.isdir', return_value=True)
     mocker.patch('os.path.exists', return_value=True)
     mock_containerized = mocker.patch('ansible_runner.runner_config.RunnerConfig.containerized', new_callable=mocker.PropertyMock)
@@ -715,18 +727,18 @@ def test_containerization_settings(tmp_path, container_runtime, mocker):
     rc.playbook = 'main.yaml'
     rc.command = 'ansible-playbook'
     rc.process_isolation = True
-    rc.process_isolation_executable = container_runtime
+    rc.process_isolation_executable = runtime
     rc.container_image = 'my_container'
     rc.container_volume_mounts = ['/host1:/container1', '/host2:/container2']
     rc.prepare()
 
     extra_container_args = []
-    if container_runtime == 'podman':
+    if runtime == 'podman':
         extra_container_args = ['--quiet']
     else:
         extra_container_args = [f'--user={os.getuid()}']
 
-    expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
+    expected_command_start = [runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
         ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
         ['-v', '/host1/:/container1/', '-v', '/host2/:/container2/'] + \
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \

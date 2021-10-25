@@ -29,38 +29,6 @@ def rc(tmp_path):
     return rc
 
 
-# TODO: determine if we want to add docker / podman
-# to zuul instances in order to run these tests
-@pytest.fixture(scope="session", autouse=True)
-def container_runtime_available():
-    import subprocess
-    import warnings
-
-    runtimes_available = True
-    for runtime in ('docker', 'podman'):
-        try:
-            subprocess.run([runtime, '-v'])
-        except FileNotFoundError:
-            warnings.warn(UserWarning(f"{runtime} not available"))
-            runtimes_available = False
-    return runtimes_available
-
-
-# TODO: determine if we want to add docker / podman
-# to zuul instances in order to run these tests
-@pytest.fixture(scope="session")
-def container_runtime_installed():
-    import subprocess
-
-    for runtime in ('podman', 'docker'):
-        try:
-            subprocess.run([runtime, '-v'])
-            return runtime
-        except FileNotFoundError:
-            pass
-    pytest.skip('No container runtime is available.')
-
-
 @pytest.fixture(scope='session')
 def clear_integration_artifacts(request):
     '''Fixture is session scoped to allow parallel runs without error

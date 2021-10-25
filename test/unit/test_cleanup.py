@@ -47,7 +47,8 @@ def test_cleanup_command_grace_period(tmp_path):
     assert os.path.exists(new_dir)
 
 
-def test_registry_auth_cleanup(tmp_path):
+@pytest.mark.test_all_runtimes
+def test_registry_auth_cleanup(tmp_path, runtime):
     pdd_path = tmp_path / 'private_data_dir'
     pdd_path.mkdir()
     private_data_dir = str(pdd_path)
@@ -55,7 +56,7 @@ def test_registry_auth_cleanup(tmp_path):
     rc = RunnerConfig(
         private_data_dir=private_data_dir,
         playbook='ping.yml',
-        process_isolation_executable='podman',
+        process_isolation_executable=runtime,
         process_isolation=True,
         container_image='foo.invalid/alan/runner',
         container_auth_data={'host': 'https://somedomain.invalid', 'username': 'foouser', 'password': '349sk34'},

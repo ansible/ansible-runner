@@ -715,8 +715,8 @@ def test_container_volume_mounting_with_Z(mocker, tmp_path):
         raise Exception('Could not find expected mount, args: {}'.format(new_args))
 
 
-@pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_containerization_settings(tmp_path, container_runtime, mocker):
+@pytest.mark.test_all_runtimes
+def test_containerization_settings(tmp_path, runtime, mocker):
     mocker.patch('os.path.isdir', return_value=True)
     mocker.patch('os.path.exists', return_value=True)
     mock_containerized = mocker.patch('ansible_runner.runner_config.RunnerConfig.containerized', new_callable=mocker.PropertyMock)
@@ -727,18 +727,18 @@ def test_containerization_settings(tmp_path, container_runtime, mocker):
     rc.playbook = 'main.yaml'
     rc.command = 'ansible-playbook'
     rc.process_isolation = True
-    rc.process_isolation_executable = container_runtime
+    rc.process_isolation_executable = runtime
     rc.container_image = 'my_container'
     rc.container_volume_mounts = ['/host1:/container1', '/host2:/container2']
     rc.prepare()
 
     extra_container_args = []
-    if container_runtime == 'podman':
+    if runtime == 'podman':
         extra_container_args = ['--quiet']
     else:
         extra_container_args = [f'--user={os.getuid()}']
 
-    expected_command_start = [container_runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
+    expected_command_start = [runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
         ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
         ['-v', '/host1/:/container1/', '-v', '/host2/:/container2/'] + \
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \

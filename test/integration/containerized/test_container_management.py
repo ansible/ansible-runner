@@ -1,5 +1,4 @@
 import os
-import shutil
 import time
 import json
 
@@ -11,8 +10,9 @@ import pytest
 from ansible_runner.interface import run
 
 
-def is_running(cli, container_runtime_installed, container_name):
-    cmd = [container_runtime_installed, 'ps', '-aq', '--filter', f'name={container_name}']
+@pytest.mark.test_all_runtimes
+def is_running(cli, runtime, container_name):
+    cmd = [runtime, 'ps', '-aq', '--filter', f'name={container_name}']
     r = cli(cmd, bare=True)
     output = '{}{}'.format(r.stdout, r.stderr)
     print(' '.join(cmd))
@@ -49,18 +49,19 @@ class CancelStandIn:
         return True
 
 
-def test_cancel_will_remove_container(project_fixtures, container_runtime_installed, cli):
+@pytest.mark.test_all_runtimes
+def test_cancel_will_remove_container(project_fixtures, runtime, cli):
     private_data_dir = project_fixtures / 'sleep'
     ident = uuid4().hex[:12]
     container_name = f'ansible_runner_{ident}'
 
-    cancel_standin = CancelStandIn(container_runtime_installed, cli, container_name)
+    cancel_standin = CancelStandIn(runtime, cli, container_name)
 
     res = run(
         private_data_dir=private_data_dir,
         playbook='sleep.yml',
         settings={
-            'process_isolation_executable': container_runtime_installed,
+            'process_isolation_executable': runtime,
             'process_isolation': True
         },
         cancel_callback=cancel_standin.cancel,
@@ -70,14 +71,12 @@ def test_cancel_will_remove_container(project_fixtures, container_runtime_instal
     assert res.status == 'canceled'
 
     assert not is_running(
-        cli, container_runtime_installed, container_name
+        cli, runtime, container_name
     ), 'Found a running container, they should have all been stopped'
 
 
-@pytest.mark.parametrize('runtime', ['podman', 'docker'])
+@pytest.mark.test_all_runtimes
 def test_invalid_registry_host(tmp_path, runtime):
-    if shutil.which(runtime) is None:
-        pytest.skip(f'{runtime} is unavaialble')
     pdd_path = tmp_path / 'private_data_dir'
     pdd_path.mkdir()
     private_data_dir = str(pdd_path)
@@ -125,10 +124,8 @@ def test_invalid_registry_host(tmp_path, runtime):
         ])
 
 
-@pytest.mark.parametrize('runtime', ['podman', 'docker'])
+@pytest.mark.test_all_runtimes
 def test_registry_auth_file_cleanup(tmp_path, cli, runtime):
-    if shutil.which(runtime) is None:
-        pytest.skip(f'{runtime} is unavaialble')
     pdd_path = tmp_path / 'private_data_dir'
     pdd_path.mkdir()
     private_data_dir = str(pdd_path)

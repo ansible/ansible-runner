@@ -3,20 +3,18 @@
 import os
 import pytest
 
-from tempfile import gettempdir
-
 from ansible_runner.config.doc import DocConfig
 from ansible_runner.config._base import BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.utils import get_executable_path
 
 
-def test_ansible_doc_defaults():
+def test_ansible_doc_defaults(tmp_path, patch_private_data_dir):
     rc = DocConfig()
 
     # Check that the private data dir is placed in our default location with our default prefix
     # and has some extra uniqueness on the end.
-    base_private_data_dir = os.path.join(gettempdir(), '.ansible-runner-')
+    base_private_data_dir = tmp_path.joinpath('.ansible-runner-').as_posix()
     assert rc.private_data_dir.startswith(base_private_data_dir)
     assert len(rc.private_data_dir) > len(base_private_data_dir)
 

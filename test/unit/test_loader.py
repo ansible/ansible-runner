@@ -9,8 +9,8 @@ from ansible_runner.exceptions import ConfigurationError
 
 
 @fixture
-def loader():
-    return ansible_runner.loader.ArtifactLoader('/tmp')
+def loader(tmp_path):
+    return ansible_runner.loader.ArtifactLoader(str(tmp_path))
 
 
 def test__load_json_success(loader):
@@ -42,61 +42,66 @@ def test__load_yaml_failure(loader):
     assert res is None
 
 
-def test_abspath(loader):
+def test_abspath(loader, tmp_path):
     res = loader.abspath('/test')
     assert res == '/test'
 
     res = loader.abspath('test')
-    assert res == '/tmp/test'
+    assert res == tmp_path.joinpath('test').as_posix()
 
     res = loader.abspath('~/test')
     assert res.startswith('/')
 
 
-def test_load_file_text(loader, mocker):
+def test_load_file_text_cache_hit(loader, mocker, tmp_path):
     mock_get_contents = mocker.patch.object(ansible_runner.loader.ArtifactLoader, 'get_contents')
     mock_get_contents.return_value = 'test\nstring'
 
     assert not loader._cache
 
+    testfile = tmp_path.joinpath('test').as_posix()
+
     # cache miss
-    res = loader.load_file('/tmp/test', string_types)
+    res = loader.load_file(testfile, string_types)
     assert mock_get_contents.called
-    assert mock_get_contents.called_with_args('/tmp/test')
+    assert mock_get_contents.called_with_args(testfile)
     assert res == b'test\nstring'
-    assert '/tmp/test' in loader._cache
+    assert testfile in loader._cache
 
     mock_get_contents.reset_mock()
 
     # cache hit
-    res = loader.load_file('/tmp/test', string_types)
+    res = loader.load_file(testfile, string_types)
     assert not mock_get_contents.called
     assert res == b'test\nstring'
-    assert '/tmp/test' in loader._cache
+    assert testfile in loader._cache
 
 
-def test_load_file_json(loader, mocker):
+def test_load_file_json(loader, mocker, tmp_path):
     mock_get_contents = mocker.patch.object(ansible_runner.loader.ArtifactLoader, 'get_contents')
     mock_get_contents.return_value = '---\ntest: string'
 
     assert not loader._cache
 
-    res = loader.load_file('/tmp/test')
+    testfile = tmp_path.joinpath('test').as_posix()
+    res = loader.load_file(testfile)
 
     assert mock_get_contents.called
-    assert mock_get_contents.called_with_args('/tmp/test')
-    assert '/tmp/test' in loader._cache
+    assert mock_get_contents.called_with_args(testfile)
+    assert testfile in loader._cache
     assert res['test'] == 'string'
 
 
-def test_load_file_type_check(loader, mocker):
+def test_load_file_type_check(loader, mocker, tmp_path):
     mock_get_contents = mocker.patch.object(ansible_runner.loader.ArtifactLoader, 'get_contents')
     mock_get_contents.return_value = '---\ntest: string'
 
     assert not loader._cache
 
+    testfile = tmp_path.joinpath('test').as_posix()
+
     # type check passes
-    res = loader.load_file('/tmp/test', dict)
+    res = loader.load_file(testfile, dict)
     assert res is not None
 
     mock_get_contents.reset_mock()
@@ -106,7 +111,7 @@ def test_load_file_type_check(loader, mocker):
 
     # type check fails
     with raises(ConfigurationError):
-        res = loader.load_file('/tmp/test', dict)
+        res = loader.load_file(testfile, dict)
         assert res is not None
 
 
@@ -123,11 +128,11 @@ def test_get_contents_ok(loader, mocker):
     assert res == b'test string'
 
 
-def test_get_contents_invalid_path(loader):
+def test_get_contents_invalid_path(loader, tmp_path):
     with raises(ConfigurationError):
-        loader.get_contents('/tmp/invalid')
+        loader.get_contents(tmp_path.joinpath('invalid').as_posix())
 
 
-def test_get_contents_exception(loader):
+def test_get_contents_exception(loader, tmp_path):
     with raises(ConfigurationError):
-        loader.get_contents('/tmp')
+        loader.get_contents(tmp_path.as_posix())

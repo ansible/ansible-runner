@@ -19,7 +19,7 @@ def test_basic_events(containerized, container_runtime_available, is_pre_ansible
         inventory = 'localhost ansible_connection=local'
 
     playbook = [{'hosts': 'all', 'gather_facts': g_facts, 'tasks': [{'debug': {'msg': "test"}}]}]
-    run_args = {'private_data_dir': tdir,
+    run_args = {'private_data_dir': str(tmp_path),
                 'inventory': inventory,
                 'envvars': {"ANSIBLE_DEPRECATION_WARNINGS": "False", 'ANSIBLE_PYTHON_INTERPRETER': 'auto_silent'},
                 'playbook': playbook}
@@ -27,7 +27,7 @@ def test_basic_events(containerized, container_runtime_available, is_pre_ansible
         run_args.update({'process_isolation': True,
                          'process_isolation_executable': 'podman',
                          'container_image': defaults.default_container_image,
-                         'container_volume_mounts': [f'{tdir}:{tdir}']})
+                         'container_volume_mounts': [f'{tmp_path}:{tmp_path}']})
 
     if not is_run_async:
         r = run(**run_args)
@@ -63,26 +63,24 @@ def test_async_events(containerized, container_runtime_available, is_pre_ansible
     test_basic_events(containerized, container_runtime_available, is_pre_ansible28, is_run_async=True, g_facts=True)
 
 
-def test_basic_serializeable(is_pre_ansible28):
-    tdir = tempfile.mkdtemp()
+def test_basic_serializeable(is_pre_ansible28, tmp_path):
     if is_pre_ansible28:
         inv = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
     else:
         inv = 'localhost ansible_connection=local'
-    r = run(private_data_dir=tdir,
+    r = run(private_data_dir=str(tmp_path),
             inventory=inv,
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
     events = [x for x in r.events]
     json.dumps(events)
 
 
-def test_event_omission(is_pre_ansible28):
-    tdir = tempfile.mkdtemp()
+def test_event_omission(is_pre_ansible28, tmp_path):
     if is_pre_ansible28:
         inv = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
     else:
         inv = 'localhost ansible_connection=local'
-    r = run(private_data_dir=tdir,
+    r = run(private_data_dir=str(tmp_path),
             inventory=inv,
             omit_event_data=True,
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
@@ -97,13 +95,12 @@ def test_event_omission(is_pre_ansible28):
     assert not any([x['event_data'] for x in events])
 
 
-def test_event_omission_except_failed(is_pre_ansible28):
-    tdir = tempfile.mkdtemp()
+def test_event_omission_except_failed(is_pre_ansible28, tmp_path):
     if is_pre_ansible28:
         inv = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
     else:
         inv = 'localhost ansible_connection=local'
-    r = run(private_data_dir=tdir,
+    r = run(private_data_dir=str(tmp_path),
             inventory=inv,
             only_failed_event_data=True,
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'fail': {'msg': "test"}}]}])
@@ -120,9 +117,8 @@ def test_event_omission_except_failed(is_pre_ansible28):
     assert len(all_event_datas) == 1
 
 
-def test_runner_on_start(rc, skipif_pre_ansible28):
-    tdir = tempfile.mkdtemp()
-    r = run(private_data_dir=tdir,
+def test_runner_on_start(rc, skipif_pre_ansible28, tmp_path):
+    r = run(private_data_dir=str(tmp_path),
             inventory="localhost ansible_connection=local",
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
     start_events = [x for x in filter(lambda x: 'event' in x and x['event'] == 'runner_on_start',
@@ -165,17 +161,16 @@ def test_include_role_events(project_fixtures):
 
 @pytest.mark.skipif(find_executable('cgexec') is None,
                     reason="cgexec not available")
-def test_profile_data(skipif_pre_ansible28):
-    tdir = tempfile.mkdtemp()
+def test_profile_data(skipif_pre_ansible28, tmp_path):
     try:
-        r = run(private_data_dir=tdir,
+        r = run(private_data_dir=str(tmp_path),
                 inventory="localhost ansible_connection=local",
                 resource_profiling=True,
                 resource_profiling_base_cgroup='ansible-runner',
                 playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
         assert r.config.env['ANSIBLE_CALLBACK_WHITELIST'] == 'cgroup_perf_recap'
         assert r.config.env['CGROUP_CONTROL_GROUP'].startswith('ansible-runner/')
-        expected_datadir = os.path.join(tdir, 'profiling_data')
+        expected_datadir = os.path.join(str(tmp_path), 'profiling_data')
         assert r.config.env['CGROUP_OUTPUT_DIR'] == expected_datadir
         assert r.config.env['CGROUP_OUTPUT_FORMAT'] == 'json'
         assert r.config.env['CGROUP_CPU_POLL_INTERVAL'] == '0.25'

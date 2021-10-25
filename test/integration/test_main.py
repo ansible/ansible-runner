@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-import os
 import multiprocessing
-import shutil
-import tempfile
-
-from contextlib import contextmanager
 
 from ansible_runner.__main__ import main
 
@@ -14,45 +9,6 @@ import yaml
 
 from ansible_runner.exceptions import AnsibleRunnerException
 from test.utils.common import iterate_timeout
-
-
-@contextmanager
-def temp_directory(files=None):
-    temp_dir = tempfile.mkdtemp()
-    print(temp_dir)
-    try:
-        yield temp_dir
-        shutil.rmtree(temp_dir)
-    except BaseException:
-        if files is not None:
-            for file in files:
-                if os.path.exists(file):
-                    with open(file) as f:
-                        print(f.read())
-        raise
-
-
-def test_temp_directory():
-
-    context = dict()
-
-    def will_fail():
-        with temp_directory() as temp_dir:
-            context['saved_temp_dir'] = temp_dir
-            assert False
-
-    def will_pass():
-        with temp_directory() as temp_dir:
-            context['saved_temp_dir'] = temp_dir
-            assert True
-
-    with pytest.raises(AssertionError):
-        will_fail()
-    assert os.path.exists(context['saved_temp_dir'])
-    shutil.rmtree(context['saved_temp_dir'])
-
-    will_pass()
-    assert not os.path.exists(context['saved_temp_dir'])
 
 
 @pytest.mark.parametrize(

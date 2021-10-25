@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from functools import partial
 import os
 import re
-from tempfile import gettempdir
-
 import six
-from pexpect import TIMEOUT, EOF
+
+from functools import partial
 
 import pytest
+
+from pexpect import TIMEOUT, EOF
 
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.loader import ArtifactLoader
@@ -28,9 +28,9 @@ def load_file_side_effect(path, value=None, *args, **kwargs):
     raise ConfigurationError
 
 
-def test_base_config_init_defaults():
-    rc = BaseConfig(private_data_dir='/tmp')
-    assert rc.private_data_dir == '/tmp'
+def test_base_config_init_defaults(tmp_path):
+    rc = BaseConfig(private_data_dir=tmp_path.as_posix())
+    assert rc.private_data_dir == tmp_path.as_posix()
     assert rc.ident is not None
     assert rc.process_isolation is False
     assert rc.fact_cache_type == 'jsonfile'
@@ -38,26 +38,26 @@ def test_base_config_init_defaults():
     assert rc.quiet is False
     assert rc.quiet is False
     assert rc.rotate_artifacts == 0
-    assert rc.artifact_dir == os.path.join('/tmp/artifacts/%s' % rc.ident)
+    assert rc.artifact_dir == tmp_path.joinpath('artifacts').joinpath(rc.ident).as_posix()
     assert isinstance(rc.loader, ArtifactLoader)
 
 
-def test_base_config_with_artifact_dir():
-    rc = BaseConfig(artifact_dir='/tmp/this-is-some-dir')
-    assert rc.artifact_dir == os.path.join('/tmp/this-is-some-dir', rc.ident)
+def test_base_config_with_artifact_dir(tmp_path, patch_private_data_dir):
+    rc = BaseConfig(artifact_dir=tmp_path.joinpath('this-is-some-dir').as_posix())
+    assert rc.artifact_dir == tmp_path.joinpath('this-is-some-dir').joinpath(rc.ident).as_posix()
 
     # Check that the private data dir is placed in our default location with our default prefix
     # and has some extra uniqueness on the end.
-    base_private_data_dir = os.path.join(gettempdir(), '.ansible-runner-')
+    base_private_data_dir = tmp_path.joinpath('.ansible-runner-').as_posix()
     assert rc.private_data_dir.startswith(base_private_data_dir)
     assert len(rc.private_data_dir) > len(base_private_data_dir)
 
 
-def test_base_config_init_with_ident():
-    rc = BaseConfig(private_data_dir='/tmp', ident='test')
-    assert rc.private_data_dir == '/tmp'
+def test_base_config_init_with_ident(tmp_path):
+    rc = BaseConfig(private_data_dir=tmp_path.as_posix(), ident='test')
+    assert rc.private_data_dir == tmp_path.as_posix()
     assert rc.ident == 'test'
-    assert rc.artifact_dir == os.path.join('/tmp/artifacts/test')
+    assert rc.artifact_dir == tmp_path.joinpath('artifacts').joinpath('test').as_posix()
     assert isinstance(rc.loader, ArtifactLoader)
 
 
@@ -279,8 +279,8 @@ def test_container_volume_mounting_with_Z(tmp_path, mocker):
         raise Exception('Could not find expected mount, args: {}'.format(new_args))
 
 
-@pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_containerization_settings(tmp_path, container_runtime, mocker):
+@pytest.mark.test_all_runtimes
+def test_containerization_settings(tmp_path, runtime, mocker):
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()
 
@@ -293,7 +293,7 @@ def test_containerization_settings(tmp_path, container_runtime, mocker):
     rc.command = ['ansible-playbook'] + rc.cmdline_args
     rc.process_isolation = True
     rc.runner_mode = 'pexpect'
-    rc.process_isolation_executable = container_runtime
+    rc.process_isolation_executable = runtime
     rc.container_image = 'my_container'
     rc.container_volume_mounts = ['/host1:/container1', 'host2:/container2']
     rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
@@ -301,13 +301,13 @@ def test_containerization_settings(tmp_path, container_runtime, mocker):
     rc._handle_command_wrap(rc.execution_mode, rc.cmdline_args)
 
     extra_container_args = []
-    if container_runtime == 'podman':
+    if runtime == 'podman':
         extra_container_args = ['--quiet']
     else:
         extra_container_args = [f'--user={os.getuid()}']
 
     expected_command_start = [
-        container_runtime,
+        runtime,
         'run',
         '--rm',
         '--tty',
@@ -317,7 +317,7 @@ def test_containerization_settings(tmp_path, container_runtime, mocker):
         '-v', '{}/.ssh/:/home/runner/.ssh/'.format(str(tmp_path)),
     ]
 
-    if container_runtime == 'podman':
+    if runtime == 'podman':
         expected_command_start.extend(['--group-add=root', '--ipc=host'])
 
     expected_command_start.extend([
@@ -336,13 +336,8 @@ def test_containerization_settings(tmp_path, container_runtime, mocker):
     assert expected_command_start == rc.command
 
 
-@pytest.mark.parametrize(
-    'container_runtime, expected', (
-        ('docker', None),
-        ('podman', '1')
-    )
-)
-def test_containerization_unsafe_write_setting(tmp_path, container_runtime, expected, mocker):
+@pytest.mark.test_all_runtimes
+def test_containerization_unsafe_write_setting(tmp_path, runtime, mocker):
     mock_containerized = mocker.patch('ansible_runner.config._base.BaseConfig.containerized', new_callable=mocker.PropertyMock)
 
     rc = BaseConfig(private_data_dir=tmp_path)
@@ -351,7 +346,7 @@ def test_containerization_unsafe_write_setting(tmp_path, container_runtime, expe
     rc.command = ['ansible-playbook'] + rc.cmdline_args
     rc.process_isolation = True
     rc.runner_mode = 'pexpect'
-    rc.process_isolation_executable = container_runtime
+    rc.process_isolation_executable = runtime
     rc.container_image = 'my_container'
     rc.container_volume_mounts = ['/host1:/container1', 'host2:/container2']
     mock_containerized.return_value = True
@@ -359,4 +354,9 @@ def test_containerization_unsafe_write_setting(tmp_path, container_runtime, expe
     rc._prepare_env()
     rc._handle_command_wrap(rc.execution_mode, rc.cmdline_args)
 
-    assert rc.env.get('ANSIBLE_UNSAFE_WRITES') == expected
+    expected = {
+        'docker': None,
+        'podman': 1,
+    }
+
+    assert rc.env.get('ANSIBLE_UNSAFE_WRITES') == expected[runtime]

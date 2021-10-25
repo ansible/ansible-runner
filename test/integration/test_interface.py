@@ -66,7 +66,8 @@ def test_env_accuracy(request, project_fixtures):
     assert actual_env == res.config.env
 
 
-def test_env_accuracy_inside_container(request, project_fixtures, container_runtime_installed):
+@pytest.mark.test_all_runtimes
+def test_env_accuracy_inside_container(request, project_fixtures, runtime):
     printenv_example = project_fixtures / 'printenv'
     os.environ['SET_BEFORE_TEST'] = 'MADE_UP_VALUE'
 
@@ -83,7 +84,7 @@ def test_env_accuracy_inside_container(request, project_fixtures, container_runt
         inventory=None,
         envvars={'FROM_TEST': 'FOOBAR'},
         settings={
-            'process_isolation_executable': container_runtime_installed,
+            'process_isolation_executable': runtime,
             'process_isolation': True
         }
     )
@@ -151,12 +152,13 @@ def test_run_command(project_fixtures):
     assert err == ''
 
 
-def test_run_ansible_command_within_container(project_fixtures, container_runtime_installed):
+@pytest.mark.test_all_runtimes
+def test_run_ansible_command_within_container(project_fixtures, runtime):
     private_data_dir = project_fixtures / 'debug'
     inventory = private_data_dir / 'inventory' / 'inv_1'
     playbook = private_data_dir / 'project' / 'debug.yml'
     container_kwargs = {
-        'process_isolation_executable': container_runtime_installed,
+        'process_isolation_executable': runtime,
         'process_isolation': True,
         'container_image': defaults.default_container_image
     }
@@ -171,12 +173,13 @@ def test_run_ansible_command_within_container(project_fixtures, container_runtim
     assert err == ''
 
 
-def test_run_script_within_container(project_fixtures, container_runtime_installed):
+@pytest.mark.test_all_runtimes
+def test_run_script_within_container(project_fixtures, runtime):
     private_data_dir = project_fixtures / 'debug'
     script_path = project_fixtures / 'files'
     container_volume_mounts = ["{}:{}:Z".format(script_path, script_path)]
     container_kwargs = {
-        'process_isolation_executable': container_runtime_installed,
+        'process_isolation_executable': runtime,
         'process_isolation': True,
         'container_image': defaults.default_container_image,
         'container_volume_mounts': container_volume_mounts
@@ -230,9 +233,10 @@ def test_get_plugin_docs_async():
     assert r.status == 'successful'
 
 
-def test_get_plugin_docs_within_container(container_runtime_installed):
+@pytest.mark.test_all_runtimes
+def test_get_plugin_docs_within_container(runtime):
     container_kwargs = {
-        'process_isolation_executable': container_runtime_installed,
+        'process_isolation_executable': runtime,
         'process_isolation': True,
         'container_image': defaults.default_container_image
     }
@@ -255,9 +259,10 @@ def test_get_plugin_docs_list():
     assert 'file' in out
 
 
-def test_get_plugin_docs_list_within_container(container_runtime_installed):
+@pytest.mark.test_all_runtimes
+def test_get_plugin_docs_list_within_container(runtime):
     container_kwargs = {
-        'process_isolation_executable': container_runtime_installed,
+        'process_isolation_executable': runtime,
         'process_isolation': True,
         'container_image': defaults.default_container_image
     }
@@ -293,9 +298,10 @@ def test_get_inventory(project_fixtures):
     assert 'host_2' in out['ungrouped']['hosts']
 
 
-def test_get_inventory_within_container(project_fixtures, container_runtime_installed):
+@pytest.mark.test_all_runtimes
+def test_get_inventory_within_container(project_fixtures, runtime):
     container_kwargs = {
-        'process_isolation_executable': container_runtime_installed,
+        'process_isolation_executable': runtime,
         'process_isolation': True,
         'container_image': defaults.default_container_image
     }

@@ -52,8 +52,8 @@ def test_prepare_config_invalid_action():
     assert "Invalid action test, valid value is one of either list, dump, view" == exc.value.args[0]
 
 
-@pytest.mark.parametrize('container_runtime', ['docker', 'podman'])
-def test_prepare_config_command_with_containerization(tmp_path, container_runtime, mocker):
+@pytest.mark.test_all_runtimes
+def test_prepare_config_command_with_containerization(tmp_path, runtime, mocker):
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()
 
@@ -61,7 +61,7 @@ def test_prepare_config_command_with_containerization(tmp_path, container_runtim
         'private_data_dir': tmp_path,
         'process_isolation': True,
         'container_image': 'my_container',
-        'process_isolation_executable': container_runtime
+        'process_isolation_executable': runtime
     }
     rc = AnsibleCfgConfig(**kwargs)
     rc.ident = 'foo'
@@ -69,13 +69,13 @@ def test_prepare_config_command_with_containerization(tmp_path, container_runtim
 
     assert rc.runner_mode == 'subprocess'
     extra_container_args = []
-    if container_runtime == 'podman':
+    if runtime == 'podman':
         extra_container_args = ['--quiet']
     else:
         extra_container_args = [f'--user={os.getuid()}']
 
     expected_command_start = [
-        container_runtime,
+        runtime,
         'run',
         '--rm',
         '--interactive',
@@ -84,7 +84,7 @@ def test_prepare_config_command_with_containerization(tmp_path, container_runtim
         '-v', '{}/.ssh/:/home/runner/.ssh/'.format(rc.private_data_dir),
     ]
 
-    if container_runtime == 'podman':
+    if runtime == 'podman':
         expected_command_start.extend(['--group-add=root', '--ipc=host'])
 
     expected_command_start.extend([

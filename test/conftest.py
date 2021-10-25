@@ -33,6 +33,8 @@ def skipif_pre_ansible28(is_pre_ansible28):
         pytest.skip("Valid only on Ansible 2.8+")
 
 
+# TODO: determine if we want to add docker / podman
+# to zuul instances in order to run these tests
 def pytest_generate_tests(metafunc):
     """If a test uses the custom marker ``test_all_runtimes``, generate marks
     for all supported container runtimes. The requires the test to accept

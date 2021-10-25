@@ -204,8 +204,12 @@ class Runner(object):
             user = getpass.getuser()
             group = grp.getgrgid(os.getgid()).gr_name
 
-            cmd = 'cgcreate -a {user}:{group} -t {user}:{group} -g cpuacct,memory,pids:{}'.format(cgroup_path, user=user, group=group)
-            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+            cmd = ['cgcreate',
+                   '-a', f'{user}:{group}',
+                   '-t', f'{user}:{group}',
+                   '-g', f'cpuacct,memory,pids:{cgroup_path}',
+                   ]
+            proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
             _, stderr = proc.communicate()
             if proc.returncode:
                 # Unable to create cgroup
@@ -249,12 +253,11 @@ class Runner(object):
                     'stderr': error_fd,
                     'check': True,
                     'universal_newlines': True,
-                    'shell': True
                 }
                 if subprocess_timeout is not None:
                     kwargs.update({'timeout': subprocess_timeout})
 
-                proc_out = run_subprocess(" ".join(command), **kwargs)
+                proc_out = run_subprocess(command, **kwargs)
 
                 stdout_response = proc_out.stdout
                 stderr_response = proc_out.stderr
@@ -391,8 +394,8 @@ class Runner(object):
                 return True
             _delete()
         if self.resource_profiling:
-            cmd = 'cgdelete -g cpuacct,memory,pids:{}'.format(cgroup_path)
-            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+            cmd = ['cgdelete', '-g', f'cpuacct,memory,pids:{cgroup_path}']
+            proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
             _, stderr = proc.communicate()
             if proc.returncode:
                 logger.error('Failed to delete cgroup: {}'.format(stderr))
@@ -532,8 +535,8 @@ class Runner(object):
         container_name = self.config.container_name
         if container_name:
             container_cli = self.config.process_isolation_executable
-            cmd = '{} kill {}'.format(container_cli, container_name)
-            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+            cmd = [container_cli, 'kill', container_name]
+            proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
             _, stderr = proc.communicate()
             if proc.returncode:
                 logger.info('Error from {} kill {} command:\n{}'.format(container_cli, container_name, stderr))

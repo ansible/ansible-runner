@@ -3,7 +3,6 @@ import os
 import socket
 import concurrent.futures
 import time
-import tempfile
 
 import pytest
 import json
@@ -63,7 +62,9 @@ class TestStreamingUsage:
 
         job_kwargs = self.get_job_kwargs(job_type)
 
-        outgoing_buffer = tempfile.NamedTemporaryFile()
+        outgoing_buffer_file = tmp_path / 'buffer_out'
+        outgoing_buffer_file.touch()
+        outgoing_buffer = outgoing_buffer_file.open('b+r')
 
         transmitter = Transmitter(_output=outgoing_buffer, private_data_dir=transmit_dir, **job_kwargs)
 
@@ -79,7 +80,9 @@ class TestStreamingUsage:
         assert sent  # should not be blank at least
         assert b'zipfile' in sent
 
-        incoming_buffer = tempfile.NamedTemporaryFile()
+        incoming_buffer_file = tmp_path / 'buffer_in'
+        incoming_buffer_file.touch()
+        incoming_buffer = incoming_buffer_file.open('b+r')
 
         outgoing_buffer.seek(0)
 

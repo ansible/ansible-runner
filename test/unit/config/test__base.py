@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from functools import partial
 import os
 import re
-from tempfile import gettempdir
-
 import six
-from pexpect import TIMEOUT, EOF
+
+from functools import partial
 
 import pytest
+
+from pexpect import TIMEOUT, EOF
 
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.loader import ArtifactLoader
@@ -28,9 +28,9 @@ def load_file_side_effect(path, value=None, *args, **kwargs):
     raise ConfigurationError
 
 
-def test_base_config_init_defaults():
-    rc = BaseConfig(private_data_dir='/tmp')
-    assert rc.private_data_dir == '/tmp'
+def test_base_config_init_defaults(tmp_path):
+    rc = BaseConfig(private_data_dir=tmp_path.as_posix())
+    assert rc.private_data_dir == tmp_path.as_posix()
     assert rc.ident is not None
     assert rc.process_isolation is False
     assert rc.fact_cache_type == 'jsonfile'
@@ -38,26 +38,26 @@ def test_base_config_init_defaults():
     assert rc.quiet is False
     assert rc.quiet is False
     assert rc.rotate_artifacts == 0
-    assert rc.artifact_dir == os.path.join('/tmp/artifacts/%s' % rc.ident)
+    assert rc.artifact_dir == tmp_path.joinpath('artifacts').joinpath(rc.ident).as_posix()
     assert isinstance(rc.loader, ArtifactLoader)
 
 
-def test_base_config_with_artifact_dir():
-    rc = BaseConfig(artifact_dir='/tmp/this-is-some-dir')
-    assert rc.artifact_dir == os.path.join('/tmp/this-is-some-dir', rc.ident)
+def test_base_config_with_artifact_dir(tmp_path, patch_private_data_dir):
+    rc = BaseConfig(artifact_dir=tmp_path.joinpath('this-is-some-dir').as_posix())
+    assert rc.artifact_dir == tmp_path.joinpath('this-is-some-dir').joinpath(rc.ident).as_posix()
 
     # Check that the private data dir is placed in our default location with our default prefix
     # and has some extra uniqueness on the end.
-    base_private_data_dir = os.path.join(gettempdir(), '.ansible-runner-')
+    base_private_data_dir = tmp_path.joinpath('.ansible-runner-').as_posix()
     assert rc.private_data_dir.startswith(base_private_data_dir)
     assert len(rc.private_data_dir) > len(base_private_data_dir)
 
 
-def test_base_config_init_with_ident():
-    rc = BaseConfig(private_data_dir='/tmp', ident='test')
-    assert rc.private_data_dir == '/tmp'
+def test_base_config_init_with_ident(tmp_path):
+    rc = BaseConfig(private_data_dir=tmp_path.as_posix(), ident='test')
+    assert rc.private_data_dir == tmp_path.as_posix()
     assert rc.ident == 'test'
-    assert rc.artifact_dir == os.path.join('/tmp/artifacts/test')
+    assert rc.artifact_dir == tmp_path.joinpath('artifacts').joinpath('test').as_posix()
     assert isinstance(rc.loader, ArtifactLoader)
 
 

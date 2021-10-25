@@ -8,10 +8,9 @@ import pytest
 from ansible_runner import defaults, run, run_async
 
 
+@pytest.mark.test_all_runtimes
 @pytest.mark.parametrize('containerized', [True, False])
-def test_basic_events(containerized, container_runtime_available, is_pre_ansible28, tmp_path, is_run_async=False, g_facts=False):
-    if containerized and not container_runtime_available:
-        pytest.skip('container runtime(s) not available')
+def test_basic_events(containerized, is_pre_ansible28, runtime, tmp_path, is_run_async=False, g_facts=False):
 
     if is_pre_ansible28:
         inventory = 'localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python"'
@@ -25,7 +24,7 @@ def test_basic_events(containerized, container_runtime_available, is_pre_ansible
                 'playbook': playbook}
     if containerized:
         run_args.update({'process_isolation': True,
-                         'process_isolation_executable': 'podman',
+                         'process_isolation_executable': runtime,
                          'container_image': defaults.default_container_image,
                          'container_volume_mounts': [f'{tmp_path}:{tmp_path}']})
 
@@ -58,9 +57,10 @@ def test_basic_events(containerized, container_runtime_available, is_pre_ansible
     assert "event_data" in okay_event and len(okay_event['event_data']) > 0
 
 
+@pytest.mark.test_all_runtimes
 @pytest.mark.parametrize('containerized', [True, False])
-def test_async_events(containerized, container_runtime_available, is_pre_ansible28, tmp_path):
-    test_basic_events(containerized, container_runtime_available, is_pre_ansible28, tmp_path, is_run_async=True, g_facts=True)
+def test_async_events(containerized, is_pre_ansible28, runtime, tmp_path):
+    test_basic_events(containerized, is_pre_ansible28, runtime, tmp_path, is_run_async=True, g_facts=True)
 
 
 def test_basic_serializeable(is_pre_ansible28, tmp_path):

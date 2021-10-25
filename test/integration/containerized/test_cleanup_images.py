@@ -1,6 +1,5 @@
 import json
 import random
-import shutil
 
 from base64 import b64decode
 from string import ascii_lowercase
@@ -11,11 +10,8 @@ from ansible_runner.cleanup import cleanup_images, prune_images
 from ansible_runner.defaults import default_container_image
 
 
-@pytest.mark.parametrize('runtime', ['podman', 'docker'])
+@pytest.mark.test_all_runtimes
 def test_cleanup_new_image(cli, runtime, tmp_path):
-    if shutil.which(runtime) is None:
-        pytest.skip(f'{runtime} is unavailable')
-
     # Create new image just for this test with a unique layer
     random_string = ''.join(random.choice(ascii_lowercase) for i in range(10))
     special_string = f"Verify this in test - {random_string}"

@@ -100,7 +100,7 @@ class TestStreamingUsage:
         self.check_artifacts(str(process_dir), job_type)
 
     @pytest.mark.parametrize("job_type", ['run', 'adhoc'])
-    def test_remote_job_by_sockets(self, tmp_path, project_fixtures, container_runtime_installed, job_type):
+    def test_remote_job_by_sockets(self, tmp_path, project_fixtures, job_type):
         """This test case is intended to be close to how the AWX use case works
         the process interacts with receptorctl with sockets
         sockets are used here, but worker is manually called instead of invoked by receptor

@@ -28,7 +28,6 @@ import errno
 import json
 import stat
 import os
-import shutil
 import textwrap
 import tempfile
 
@@ -40,7 +39,7 @@ from yaml import safe_dump, safe_load
 from ansible_runner import run
 from ansible_runner import output
 from ansible_runner import cleanup
-from ansible_runner.utils import dump_artifact, Bunch, register_for_cleanup
+from ansible_runner.utils import dump_artifact, Bunch, register_for_cleanup, cleanup_folder
 from ansible_runner.utils.capacity import get_cpu_count, get_mem_in_bytes, ensure_uuid
 from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
@@ -504,7 +503,7 @@ def role_manager(vargs):
     if vargs.get('role'):
         if not project_exists and os.path.exists(project_path):
             logger.debug('removing dynamically generated project folder')
-            shutil.rmtree(project_path)
+            cleanup_folder(project_path)
         elif playbook and os.path.isfile(playbook):
             logger.debug('removing dynamically generated playbook')
             os.remove(playbook)
@@ -521,7 +520,7 @@ def role_manager(vargs):
         # since ansible-runner created the env folder, remove it
         if not env_exists and os.path.exists(env_path):
             logger.debug('removing dynamically generated env folder')
-            shutil.rmtree(env_path)
+            cleanup_folder(env_path)
 
 
 def print_common_usage():
@@ -793,18 +792,13 @@ def main(sys_args=None):
             print(safe_dump(info, default_flow_style=True))
             parser.exit(0)
 
-        cleanup_data_dir = True
-        if vargs.get('private_data_dir'):
-            if os.path.exists(vargs.get('private_data_dir')):
-                if vargs.get('delete_directory', False):
-                    shutil.rmtree(vargs['private_data_dir'])
-                else:
-                    cleanup_data_dir = False
-        else:
+        if vargs.get('private_data_dir') and vargs.get('delete_directory', False):
+            cleanup_folder(vargs['private_data_dir'])
+            register_for_cleanup(vargs['private_data_dir'])
+        elif not vargs.get('private_data_dir'):
             temp_private_dir = tempfile.mkdtemp()
             vargs['private_data_dir'] = temp_private_dir
-        if cleanup_data_dir:
-            register_for_cleanup(vargs['private_data_dir'])
+            register_for_cleanup(temp_private_dir)
 
     if vargs.get('command') == 'process':
         # the process command is the final destination of artifacts, user expects private_data_dir to not be cleaned up

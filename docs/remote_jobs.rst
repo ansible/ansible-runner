@@ -38,8 +38,8 @@ private data directory or artifacts, because these are how the user interacts wi
 
 When running `ansible-runner worker`, if no `--private-data-dir` is given,
 it will extract the contents to a temporary directory which is deleted at the end of execution.
-You can use the `--delete` flag in conjunction with `--private-data-dir` to assure that
-the provided directory is deleted at the end of execution.
+If the `--private-data-dir` option is given, then the directory will persist after the run finishes,
+unless you give the `--delete` flag, in which case the directory will be deleted both before and after the run.
 
 The following command offers out-of-band cleanup.
 

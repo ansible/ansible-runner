@@ -207,6 +207,28 @@ def test_worker_preserve_or_delete_dir(tmp_path, cli, transmit_stream, delete):
             assert test_path.exists()
 
 
+@pytest.mark.parametrize('delete', [False, True])
+def test_worker_preserve_or_delete_new_dir(tmp_path, cli, transmit_stream, delete):
+    """
+    Cases where non-existing --private-data-dir is provided to worker command
+    it should create it as needed, and delete it depending on the --delete flag
+    """
+    worker_dir = tmp_path / 'for_worker'
+
+    with open(transmit_stream, 'rb') as f:
+        worker_args = ['worker', '--private-data-dir', str(worker_dir)]
+        if delete is True:
+            worker_args.append('--delete')
+        r = cli(worker_args, stdin=f)
+
+    assert '{"eof": true}' in r.stdout
+    for test_path in (worker_dir, worker_dir / 'project' / 'debug.yml'):
+        if delete:
+            assert not test_path.exists()
+        else:
+            assert test_path.exists()
+
+
 def test_missing_private_dir_transmit(tmpdir):
     outgoing_buffer = io.BytesIO()
 

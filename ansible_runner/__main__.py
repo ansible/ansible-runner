@@ -792,10 +792,12 @@ def main(sys_args=None):
             print(safe_dump(info, default_flow_style=True))
             parser.exit(0)
 
-        if vargs.get('private_data_dir') and vargs.get('delete_directory', False):
-            cleanup_folder(vargs['private_data_dir'])
-            register_for_cleanup(vargs['private_data_dir'])
-        elif not vargs.get('private_data_dir'):
+        private_data_dir = vargs.get('private_data_dir')
+        delete_directory = vargs.get('delete_directory', False)
+        if private_data_dir and delete_directory:
+            shutil.rmtree(private_data_dir, True)
+            register_for_cleanup(private_data_dir)removed?
+        elif private_data_dir is None:
             temp_private_dir = tempfile.mkdtemp()
             vargs['private_data_dir'] = temp_private_dir
             register_for_cleanup(temp_private_dir)

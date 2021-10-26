@@ -28,6 +28,7 @@ import errno
 import json
 import stat
 import os
+import shutil
 import textwrap
 import tempfile
 
@@ -39,7 +40,7 @@ from yaml import safe_dump, safe_load
 from ansible_runner import run
 from ansible_runner import output
 from ansible_runner import cleanup
-from ansible_runner.utils import dump_artifact, Bunch, register_for_cleanup, cleanup_folder
+from ansible_runner.utils import dump_artifact, Bunch, register_for_cleanup
 from ansible_runner.utils.capacity import get_cpu_count, get_mem_in_bytes, ensure_uuid
 from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
@@ -503,7 +504,7 @@ def role_manager(vargs):
     if vargs.get('role'):
         if not project_exists and os.path.exists(project_path):
             logger.debug('removing dynamically generated project folder')
-            cleanup_folder(project_path)
+            shutil.rmtree(project_path)
         elif playbook and os.path.isfile(playbook):
             logger.debug('removing dynamically generated playbook')
             os.remove(playbook)
@@ -520,7 +521,7 @@ def role_manager(vargs):
         # since ansible-runner created the env folder, remove it
         if not env_exists and os.path.exists(env_path):
             logger.debug('removing dynamically generated env folder')
-            cleanup_folder(env_path)
+            shutil.rmtree(env_path)
 
 
 def print_common_usage():
@@ -795,8 +796,8 @@ def main(sys_args=None):
         private_data_dir = vargs.get('private_data_dir')
         delete_directory = vargs.get('delete_directory', False)
         if private_data_dir and delete_directory:
-            shutil.rmtree(private_data_dir, True)
-            register_for_cleanup(private_data_dir)removed?
+            shutil.rmtree(private_data_dir, ignore_errors=True)
+            register_for_cleanup(private_data_dir)
         elif private_data_dir is None:
             temp_private_dir = tempfile.mkdtemp()
             vargs['private_data_dir'] = temp_private_dir

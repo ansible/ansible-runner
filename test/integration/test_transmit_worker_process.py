@@ -184,49 +184,49 @@ def transmit_stream(project_fixtures, tmp_path):
         return outgoing_buffer
 
 
-@pytest.mark.parametrize('delete', [False, True])
-def test_worker_preserve_or_delete_dir(tmp_path, cli, transmit_stream, delete):
+@pytest.mark.parametrize('old_dir', [False, True])
+def test_worker_without_delete(tmp_path, cli, transmit_stream, old_dir):
     worker_dir = tmp_path / 'for_worker'
-    worker_dir.mkdir()
 
-    test_file_path = worker_dir / 'test_file.txt'
-    with test_file_path.open('w') as f:
-        f.write('foobar')
+    test_file_path = None
+    if old_dir:
+        worker_dir.mkdir()
+        test_file_path = worker_dir / 'test_file.txt'
+        with test_file_path.open('w') as f:
+            f.write('foobar')
 
     with open(transmit_stream, 'rb') as f:
         worker_args = ['worker', '--private-data-dir', str(worker_dir)]
-        if delete is True:
-            worker_args.append('--delete')
         r = cli(worker_args, stdin=f)
 
     assert '{"eof": true}' in r.stdout
-    for test_path in (test_file_path, worker_dir / 'project' / 'debug.yml'):
-        if delete:
-            assert not test_path.exists()
-        else:
-            assert test_path.exists()
+    check_paths = [worker_dir / 'project' / 'debug.yml']
+    if test_file_path:
+        check_paths.append(test_file_path)
+    for test_path in check_paths:
+        assert test_path.exists()
 
 
-@pytest.mark.parametrize('delete', [False, True])
-def test_worker_preserve_or_delete_new_dir(tmp_path, cli, transmit_stream, delete):
+@pytest.mark.parametrize('old_dir', [False, True])
+def test_worker_with_delete(tmp_path, cli, transmit_stream, old_dir):
     """
-    Cases where non-existing --private-data-dir is provided to worker command
-    it should create it as needed, and delete it depending on the --delete flag
+    Cases where non-existing --delete is provided to worker command
+    it should always delete everything both before and after the run
     """
     worker_dir = tmp_path / 'for_worker'
 
+    if old_dir:
+        worker_dir.mkdir()
+        with (worker_dir / 'test_file.txt').open('w') as f:
+            f.write('foobar')
+
     with open(transmit_stream, 'rb') as f:
-        worker_args = ['worker', '--private-data-dir', str(worker_dir)]
-        if delete is True:
-            worker_args.append('--delete')
+        worker_args = ['worker', '--private-data-dir', str(worker_dir), '--delete']
         r = cli(worker_args, stdin=f)
 
     assert '{"eof": true}' in r.stdout
     for test_path in (worker_dir, worker_dir / 'project' / 'debug.yml'):
-        if delete:
-            assert not test_path.exists()
-        else:
-            assert test_path.exists()
+        assert not test_path.exists()
 
 
 def test_missing_private_dir_transmit(tmpdir):

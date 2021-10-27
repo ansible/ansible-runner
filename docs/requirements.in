@@ -1,0 +1,5 @@
+ansible-core
+pbr
+pexpect
+six
+sphinx

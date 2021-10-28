@@ -202,6 +202,13 @@ Usage examples
 
 .. code-block:: python
 
+  # run the role named 'myrole' contained in the '<private_data_dir>/project/roles' directory
+  r = ansible_runner.run(private_data_dir='/tmp/demo', role='myrole')
+  print("{}: {}".format(r.status, r.rc))
+  print(r.stats)
+
+.. code-block:: python
+
   # run ansible/generic commands in interactive mode within container
   out, err, rc = ansible_runner.run_command(
       executable_cmd='ansible-playbook',
@@ -219,7 +226,7 @@ Usage examples
 
 .. code-block:: python
 
-  # run ansible/generic commands in interactive mode locally  
+  # run ansible/generic commands in interactive mode locally
   out, err, rc = ansible_runner.run_command(
       executable_cmd='ansible-playbook',
       cmdline_args=['gather.yaml', '-i', 'inventory', '-vvvv', '-k'],
@@ -233,7 +240,7 @@ Usage examples
 
 .. code-block:: python
 
-  # get plugin docs from within container  
+  # get plugin docs from within container
   out, err = ansible_runner.get_plugin_docs(
       plugin_names=['vyos.vyos.vyos_command'],
       plugin_type='module',
@@ -246,7 +253,7 @@ Usage examples
 
 .. code-block:: python
 
-  # get plugin docs from within container in async mode  
+  # get plugin docs from within container in async mode
   thread_obj, runner_obj = ansible_runner.get_plugin_docs_async(
       plugin_names=['ansible.netcommon.cli_config', 'ansible.netcommon.cli_command'],
       plugin_type='module',

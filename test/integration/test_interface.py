@@ -342,3 +342,16 @@ def test_get_inventory_within_container(project_fixtures, runtime):
     )
     assert 'host_1' in out['ungrouped']['hosts']
     assert 'host_2' in out['ungrouped']['hosts']
+
+
+def test_run_role(project_fixtures):
+    ''' Test that we can run a role via the API. '''
+    private_data_dir = project_fixtures / 'debug'
+
+    res = run(
+        private_data_dir=private_data_dir,
+        role='hello_world',
+    )
+    stdout = res.stdout.read()
+    assert res.rc == 0, stdout
+    assert 'Hello World!' in stdout

@@ -148,6 +148,7 @@ def run(**kwargs):
             - A text INI formatted string
             - A list of inventory sources, or an empty list to disable passing inventory
 
+    :param role: Name of the role to execute.
     :param roles_path: Directory or list of directories to assign to ANSIBLE_ROLES_PATH
     :param envvars: Environment variables to be used when running Ansible. Environment variables will also be
                     read from ``env/envvars`` in ``private_data_dir``
@@ -207,6 +208,8 @@ def run(**kwargs):
     :type json_mode: bool
     :type playbook: str or filename or list
     :type inventory: str or dict or list
+    :type role: str
+    :type roles_path: dict or list
     :type envvars: dict
     :type extravars: dict
     :type passwords: dict

@@ -13,18 +13,14 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import datetime
-import importlib.metadata
-import sys
 
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from ansible_runner.__main__ import VERSION
 
 
 # -- Project information -----------------------------------------------------
 
 def _get_version():
-    version_parts = importlib.metadata.version('ansible-runner').split('.', 3)[:3]
+    version_parts = VERSION.split('.', 3)[:3]
 
     return '.'.join(version_parts)
 

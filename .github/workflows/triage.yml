@@ -1,0 +1,26 @@
+name: Triage
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+on:
+  issues:
+    types:
+      - opened
+
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    name: Label
+
+    steps:
+      - name: Apply labels
+        uses: actions/labeler@v3
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"

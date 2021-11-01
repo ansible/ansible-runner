@@ -1,0 +1,9 @@
+"component:docs":
+  - docs/*
+
+needs_triage:
+  - '*'
+  - '.*'
+
+test:
+  - 'test/*'

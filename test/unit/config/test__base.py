@@ -360,4 +360,4 @@ def test_containerization_unsafe_write_setting(tmp_path, runtime, mocker):
         'podman': 1,
     }
 
-    assert rc.env.get('ANSIBLE_UNSAFE_WRITES') == expected[runtime]
+    assert str(rc.env.get('ANSIBLE_UNSAFE_WRITES')) == str(expected[runtime])

@@ -1,6 +1,5 @@
 ---
 - project:
-    merge-mode: squash-merge
     check:
       jobs: &id001
         - ansible-buildset-registry

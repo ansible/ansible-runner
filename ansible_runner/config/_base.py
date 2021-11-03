@@ -147,7 +147,7 @@ class BaseConfig(object):
         self.runner_mode = runner_mode
         try:
             if self.settings and isinstance(self.settings, dict):
-                self.settings = self.settings.update(self.loader.load_file('env/settings', Mapping))
+                self.settings.update(self.loader.load_file('env/settings', Mapping))
             else:
                 self.settings = self.loader.load_file('env/settings', Mapping)
         except ConfigurationError:
@@ -157,7 +157,7 @@ class BaseConfig(object):
         if self.runner_mode == 'pexpect':
             try:
                 if self.passwords and isinstance(self.passwords, dict):
-                    self.passwords = self.passwords.update(self.loader.load_file('env/passwords', Mapping))
+                    self.passwords.update(self.loader.load_file('env/passwords', Mapping))
                 else:
                     self.passwords = self.passwords or self.loader.load_file('env/passwords', Mapping)
                 self.expect_passwords = {

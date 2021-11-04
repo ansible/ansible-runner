@@ -12,18 +12,23 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
-import sys
-sys.path.insert(0, os.path.abspath('../'))
-sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('./'))
+import datetime
+
+from ansible_runner.__main__ import VERSION
 
 
 # -- Project information -----------------------------------------------------
 
+def _get_version():
+    version_parts = VERSION.split('.', 3)[:3]
+
+    return '.'.join(version_parts)
+
+
 project = 'ansible-runner'
-copyright = '2018, Red Hat Ansible'
-author = 'Red Hat Ansible'
+copyright = f'2018-{datetime.datetime.today().year}, Red Hat, Inc'
+author = 'Red Hat, Inc.'
+version = _get_version()
 
 # -- General configuration ---------------------------------------------------
 

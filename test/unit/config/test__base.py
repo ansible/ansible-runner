@@ -52,6 +52,10 @@ def test_base_config_with_artifact_dir(tmp_path, patch_private_data_dir):
     assert rc.private_data_dir.startswith(base_private_data_dir)
     assert len(rc.private_data_dir) > len(base_private_data_dir)
 
+    rc._prepare_env()
+    assert not tmp_path.joinpath('artifacts').exists()
+    assert tmp_path.joinpath('this-is-some-dir').exists()
+
 
 def test_base_config_init_with_ident(tmp_path):
     rc = BaseConfig(private_data_dir=tmp_path.as_posix(), ident='test')
@@ -61,15 +65,15 @@ def test_base_config_init_with_ident(tmp_path):
     assert isinstance(rc.loader, ArtifactLoader)
 
 
-def test_base_config_project_dir():
-    rc = BaseConfig(private_data_dir='/tmp', project_dir='/another/path')
+def test_base_config_project_dir(tmp_path):
+    rc = BaseConfig(private_data_dir=tmp_path.as_posix(), project_dir='/another/path')
     assert rc.project_dir == '/another/path'
-    rc = BaseConfig(private_data_dir='/tmp')
-    assert rc.project_dir == '/tmp/project'
+    rc = BaseConfig(private_data_dir=tmp_path.as_posix())
+    assert rc.project_dir == tmp_path.joinpath('project').as_posix()
 
 
 def test_prepare_environment_vars_only_strings(mocker):
-    rc = BaseConfig(private_data_dir="/tmp", envvars=dict(D='D'))
+    rc = BaseConfig(envvars=dict(D='D'))
 
     value = dict(A=1, B=True, C="foo")
     envvar_side_effect = partial(load_file_side_effect, 'env/envvars', value)
@@ -88,7 +92,7 @@ def test_prepare_environment_vars_only_strings(mocker):
 
 
 def test_prepare_environment_pexpect_defaults():
-    rc = BaseConfig(private_data_dir="/tmp")
+    rc = BaseConfig()
     rc._prepare_env()
 
     assert len(rc.expect_passwords) == 2
@@ -99,7 +103,7 @@ def test_prepare_environment_pexpect_defaults():
 
 
 def test_prepare_env_passwords(mocker):
-    rc = BaseConfig(private_data_dir='/tmp')
+    rc = BaseConfig()
 
     value = {'^SSH [pP]assword.*$': 'secret'}
     password_side_effect = partial(load_file_side_effect, 'env/passwords', value)
@@ -114,26 +118,26 @@ def test_prepare_env_passwords(mocker):
 
 
 def test_prepare_environment_subprocess_defaults():
-    rc = BaseConfig(private_data_dir="/tmp")
+    rc = BaseConfig()
     rc._prepare_env(runner_mode="subprocess")
     assert rc.subprocess_timeout is None
 
 
 def test_prepare_environment_subprocess_timeout():
-    rc = BaseConfig(private_data_dir="/tmp", timeout=100)
+    rc = BaseConfig(timeout=100)
     rc._prepare_env(runner_mode="subprocess")
 
     assert rc.subprocess_timeout == 100
 
 
 def test_prepare_env_settings_defaults():
-    rc = BaseConfig(private_data_dir='/tmp')
+    rc = BaseConfig()
     rc._prepare_env()
     assert rc.settings == {}
 
 
 def test_prepare_env_settings(mocker):
-    rc = BaseConfig(private_data_dir='/tmp')
+    rc = BaseConfig()
 
     value = {'test': 'string'}
     settings_side_effect = partial(load_file_side_effect, 'env/settings', value)
@@ -144,13 +148,13 @@ def test_prepare_env_settings(mocker):
 
 
 def test_prepare_env_sshkey_defaults():
-    rc = BaseConfig(private_data_dir='/tmp')
+    rc = BaseConfig()
     rc._prepare_env()
     assert rc.ssh_key_data is None
 
 
 def test_prepare_env_sshkey(mocker):
-    rc = BaseConfig(private_data_dir='/tmp')
+    rc = BaseConfig()
 
     value = '01234567890'
     sshkey_side_effect = partial(load_file_side_effect, 'env/ssh_key', value)
@@ -160,11 +164,8 @@ def test_prepare_env_sshkey(mocker):
     assert rc.ssh_key_data == value
 
 
-def test_prepare_env_defaults(mocker):
-    path_exists = mocker.patch('os.path.exists')
-    path_exists.return_value = True
-
-    rc = BaseConfig(private_data_dir='/tmp', host_cwd='/tmp/project')
+def test_prepare_env_defaults():
+    rc = BaseConfig(host_cwd='/tmp/project')
     rc._prepare_env()
 
     assert rc.idle_timeout is None
@@ -173,15 +174,15 @@ def test_prepare_env_defaults(mocker):
     assert rc.host_cwd == '/tmp/project'
 
 
-def test_prepare_env_ansible_vars(mocker):
+def test_prepare_env_ansible_vars(mocker, tmp_path):
     mocker.patch.dict('os.environ', {
         'PYTHONPATH': '/python_path_via_environ',
         'AWX_LIB_DIRECTORY': '/awx_lib_directory_via_environ',
     })
 
-    rc = BaseConfig(private_data_dir='/tmp')
+    artifact_dir = tmp_path.joinpath('some_artifacts')
+    rc = BaseConfig(artifact_dir=artifact_dir.as_posix())
     rc.ssh_key_data = None
-    rc.artifact_dir = '/tmp/artifact'
     rc.env = {}
     rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
 
@@ -193,7 +194,7 @@ def test_prepare_env_ansible_vars(mocker):
     assert rc.env['ANSIBLE_STDOUT_CALLBACK'] == 'awx_display'
     assert rc.env['ANSIBLE_RETRY_FILES_ENABLED'] == 'False'
     assert rc.env['ANSIBLE_HOST_KEY_CHECKING'] == 'False'
-    assert rc.env['AWX_ISOLATED_DATA_DIR'] == '/tmp/artifact'
+    assert rc.env['AWX_ISOLATED_DATA_DIR'] == artifact_dir.joinpath(rc.ident).as_posix()
     assert rc.env['PYTHONPATH'] == '/python_path_via_environ:/awx_lib_directory_via_environ', \
         "PYTHONPATH is the union of the env PYTHONPATH and AWX_LIB_DIRECTORY"
 
@@ -204,12 +205,12 @@ def test_prepare_env_ansible_vars(mocker):
         "PYTHONPATH is the union of the explicit env['PYTHONPATH'] override and AWX_LIB_DIRECTORY"
 
 
-def test_prepare_with_ssh_key(mocker):
+def test_prepare_with_ssh_key(mocker, tmp_path):
     open_fifo_write_mock = mocker.patch('ansible_runner.config._base.open_fifo_write')
-    mocker.patch.dict('os.environ', {'AWX_LIB_DIRECTORY': '/tmp/artifact'})
+    custom_artifacts = tmp_path.joinpath('custom_arts')
 
-    rc = BaseConfig(private_data_dir='/tmp')
-    rc.artifact_dir = '/tmp/artifact'
+    rc = BaseConfig(private_data_dir=tmp_path.as_posix(), artifact_dir=custom_artifacts.as_posix())
+    rc.artifact_dir = custom_artifacts.as_posix()
     rc.env = {}
     rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
     rc.ssh_key_data = '01234567890'
@@ -217,37 +218,37 @@ def test_prepare_with_ssh_key(mocker):
     rc.cmdline_args = []
     rc._prepare_env()
 
-    assert rc.ssh_key_path == '/tmp/artifact/ssh_key_data'
+    assert rc.ssh_key_path == custom_artifacts.joinpath('ssh_key_data').as_posix()
     assert open_fifo_write_mock.called
 
 
-def test_wrap_args_with_ssh_agent_defaults():
-    rc = BaseConfig(private_data_dir='/tmp')
-    res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], '/tmp/sshkey')
+def test_wrap_args_with_ssh_agent_defaults(tmp_path):
+    rc = BaseConfig(private_data_dir=str(tmp_path))
+    res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], f'{tmp_path}/sshkey')
     assert res == [
         'ssh-agent',
         'sh', '-c',
-        "trap 'rm -f /tmp/sshkey' EXIT && ssh-add /tmp/sshkey && rm -f /tmp/sshkey && ansible-playbook main.yaml"
+        f"trap 'rm -f {tmp_path}/sshkey' EXIT && ssh-add {tmp_path}/sshkey && rm -f {tmp_path}/sshkey && ansible-playbook main.yaml"
     ]
 
 
-def test_wrap_args_with_ssh_agent_with_auth():
-    rc = BaseConfig(private_data_dir='/tmp')
-    res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], '/tmp/sshkey', '/tmp/sshauth')
+def test_wrap_args_with_ssh_agent_with_auth(tmp_path):
+    rc = BaseConfig(private_data_dir=str(tmp_path))
+    res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], f'{tmp_path}/sshkey', f'{tmp_path}/sshauth')
     assert res == [
-        'ssh-agent', '-a', '/tmp/sshauth',
+        'ssh-agent', '-a', f'{tmp_path}/sshauth',
         'sh', '-c',
-        "trap 'rm -f /tmp/sshkey' EXIT && ssh-add /tmp/sshkey && rm -f /tmp/sshkey && ansible-playbook main.yaml"
+        f"trap 'rm -f {tmp_path}/sshkey' EXIT && ssh-add {tmp_path}/sshkey && rm -f {tmp_path}/sshkey && ansible-playbook main.yaml"
     ]
 
 
-def test_wrap_args_with_ssh_agent_silent():
-    rc = BaseConfig(private_data_dir='/tmp')
-    res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], '/tmp/sshkey', silence_ssh_add=True)
+def test_wrap_args_with_ssh_agent_silent(tmp_path):
+    rc = BaseConfig(private_data_dir=str(tmp_path))
+    res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], f'{tmp_path}/sshkey', silence_ssh_add=True)
     assert res == [
         'ssh-agent',
         'sh', '-c',
-        "trap 'rm -f /tmp/sshkey' EXIT && ssh-add /tmp/sshkey 2>/dev/null && rm -f /tmp/sshkey && ansible-playbook main.yaml"
+        f"trap 'rm -f {tmp_path}/sshkey' EXIT && ssh-add {tmp_path}/sshkey 2>/dev/null && rm -f {tmp_path}/sshkey && ansible-playbook main.yaml"
     ]
 
 

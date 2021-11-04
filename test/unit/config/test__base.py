@@ -223,35 +223,32 @@ def test_prepare_with_ssh_key(mocker, tmp_path):
 
 
 def test_wrap_args_with_ssh_agent_defaults(tmp_path):
-    tp = tmp_path.as_posix()
-    rc = BaseConfig(private_data_dir=tp)
-    res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], f'{tp}/sshkey')
+    rc = BaseConfig(private_data_dir=str(tmp_path))
+    res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], f'{tmp_path}/sshkey')
     assert res == [
         'ssh-agent',
         'sh', '-c',
-        f"trap 'rm -f {tp}/sshkey' EXIT && ssh-add {tp}/sshkey && rm -f {tp}/sshkey && ansible-playbook main.yaml"
+        f"trap 'rm -f {tmp_path}/sshkey' EXIT && ssh-add {tmp_path}/sshkey && rm -f {tmp_path}/sshkey && ansible-playbook main.yaml"
     ]
 
 
 def test_wrap_args_with_ssh_agent_with_auth(tmp_path):
-    tp = tmp_path.as_posix()
-    rc = BaseConfig(private_data_dir=tp)
-    res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], f'{tp}/sshkey', f'{tp}/sshauth')
+    rc = BaseConfig(private_data_dir=str(tmp_path))
+    res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], f'{tmp_path}/sshkey', f'{tmp_path}/sshauth')
     assert res == [
-        'ssh-agent', '-a', f'{tp}/sshauth',
+        'ssh-agent', '-a', f'{tmp_path}/sshauth',
         'sh', '-c',
-        f"trap 'rm -f {tp}/sshkey' EXIT && ssh-add {tp}/sshkey && rm -f {tp}/sshkey && ansible-playbook main.yaml"
+        f"trap 'rm -f {tmp_path}/sshkey' EXIT && ssh-add {tmp_path}/sshkey && rm -f {tmp_path}/sshkey && ansible-playbook main.yaml"
     ]
 
 
 def test_wrap_args_with_ssh_agent_silent(tmp_path):
-    tp = tmp_path.as_posix()
-    rc = BaseConfig(private_data_dir=tp)
-    res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], f'{tp}/sshkey', silence_ssh_add=True)
+    rc = BaseConfig(private_data_dir=str(tmp_path))
+    res = rc.wrap_args_with_ssh_agent(['ansible-playbook', 'main.yaml'], f'{tmp_path}/sshkey', silence_ssh_add=True)
     assert res == [
         'ssh-agent',
         'sh', '-c',
-        f"trap 'rm -f {tp}/sshkey' EXIT && ssh-add {tp}/sshkey 2>/dev/null && rm -f {tp}/sshkey && ansible-playbook main.yaml"
+        f"trap 'rm -f {tmp_path}/sshkey' EXIT && ssh-add {tmp_path}/sshkey 2>/dev/null && rm -f {tmp_path}/sshkey && ansible-playbook main.yaml"
     ]
 
 

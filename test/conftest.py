@@ -2,6 +2,8 @@ import shutil
 
 from distutils.version import LooseVersion
 
+from ansible_runner import defaults
+
 import pkg_resources
 import pytest
 
@@ -15,6 +17,11 @@ CONTAINER_RUNTIMES = (
 @pytest.fixture(autouse=True)
 def mock_env_user(monkeypatch):
     monkeypatch.setenv("ANSIBLE_DEVEL_WARNING", "False")
+
+
+@pytest.fixture(autouse=True)
+def change_save_path(tmp_path, mocker):
+    mocker.patch.object(defaults, 'auto_create_dir', str(tmp_path))
 
 
 @pytest.fixture(scope='session')

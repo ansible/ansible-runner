@@ -1,0 +1,16 @@
+[run]
+source = ansible_runner
+data_file = test/coverage/data/coverage
+
+[report]
+skip_covered = True
+skip_empty = True
+
+[html]
+directory = test/coverage/reports/html
+
+[xml]
+output = test/coverage/reports/coverage.xml
+
+[json]
+output = test/coverage/reports/coverage.json

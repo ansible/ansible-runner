@@ -175,6 +175,7 @@ This function will be called any time the ``status`` changes, expected values ar
 * `canceled`: The task was manually canceled either via callback or the cli
 * `timeout`: The timeout configured in Runner Settings was reached (see :ref:`runnersettings`)
 * `failed`: The **Ansible** process failed
+* `successful`: The **Ansible** process succeeded
 
 Usage examples
 --------------

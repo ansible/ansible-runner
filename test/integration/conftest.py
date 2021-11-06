@@ -21,7 +21,7 @@ def rc(tmp_path):
         pexpect.EOF: None
     }
     rc.cwd = str(tmp_path)
-    rc.env = {}
+    rc.env = {"PATH": os.environ["PATH"]}
     rc.job_timeout = 10
     rc.idle_timeout = 0
     rc.pexpect_timeout = 2.

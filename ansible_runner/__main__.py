@@ -793,18 +793,15 @@ def main(sys_args=None):
             print(safe_dump(info, default_flow_style=True))
             parser.exit(0)
 
-        cleanup_data_dir = True
-        if vargs.get('private_data_dir'):
-            if os.path.exists(vargs.get('private_data_dir')):
-                if vargs.get('delete_directory', False):
-                    shutil.rmtree(vargs['private_data_dir'])
-                else:
-                    cleanup_data_dir = False
-        else:
+        private_data_dir = vargs.get('private_data_dir')
+        delete_directory = vargs.get('delete_directory', False)
+        if private_data_dir and delete_directory:
+            shutil.rmtree(private_data_dir, ignore_errors=True)
+            register_for_cleanup(private_data_dir)
+        elif private_data_dir is None:
             temp_private_dir = tempfile.mkdtemp()
             vargs['private_data_dir'] = temp_private_dir
-        if cleanup_data_dir:
-            register_for_cleanup(vargs['private_data_dir'])
+            register_for_cleanup(temp_private_dir)
 
     if vargs.get('command') == 'process':
         # the process command is the final destination of artifacts, user expects private_data_dir to not be cleaned up

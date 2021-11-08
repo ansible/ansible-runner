@@ -1,29 +1,35 @@
-# Mac OS X
-*.DS_Store
+# Test artifacts
+*.py,cover
+.pytest_cache/
+docs/_build/
+docs/build/
+pytestdebug.log
+test/coverage/
 
-# Editors
-*.sw[poj]
-*~
-/.idea
+# Byte-complied files
+*.py[cod]
+__pycache__/
 
+# Distribution / packaging
+*.egg
+*.egg-info/
+.eggs/
+AUTHORS
+Changelog
+build/
+deb-build/
+dist/
+eggs/
+rpm-build/
+
+# Environments
+.env
+.python-version
+.tox/
+.venv
+env/
+venv/
+
+# Demo files
 /demo/artifacts
 /demo/daemon.log
-/docs/_build
-/.tox
-/dist
-/build
-/rpm-build
-/deb-build
-/*.egg-info
-*.py[c,o]
-.pytest_cache
-pytestdebug.log
-.coverage
-*,cover
-.venv
-/venv
-.env
-/.eggs/
-docs/build
-AUTHORS
-ChangeLog

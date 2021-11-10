@@ -897,3 +897,55 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     response = r.stdout.read()
     error = r.stderr.read()
     return response, error
+
+
+def get_role_list(collection=None, **kwargs):
+    '''
+    Run an ``ansible-doc`` command to get list of installed collection roles.
+    '''
+    event_callback_handler = kwargs.pop('event_handler', None)
+    status_callback_handler = kwargs.pop('status_handler', None)
+    artifacts_handler = kwargs.pop('artifacts_handler', None)
+    cancel_callback = kwargs.pop('cancel_callback', None)
+    finished_callback = kwargs.pop('finished_callback', None)
+
+    rd = DocConfig(**kwargs)
+    rd.prepare_role_list_command(collection)
+    r = Runner(rd,
+               event_handler=event_callback_handler,
+               status_handler=status_callback_handler,
+               artifacts_handler=artifacts_handler,
+               cancel_callback=cancel_callback,
+               finished_callback=finished_callback)
+    r.run()
+    response = r.stdout.read()
+    error = r.stderr.read()
+    if response:
+        response = json.loads(santize_json_response(response))
+    return response, error
+
+
+def get_role_argspec(role, collection=None, **kwargs):
+    '''
+    Run an ``ansible-doc`` command to get a collection role argument spec.
+    '''
+    event_callback_handler = kwargs.pop('event_handler', None)
+    status_callback_handler = kwargs.pop('status_handler', None)
+    artifacts_handler = kwargs.pop('artifacts_handler', None)
+    cancel_callback = kwargs.pop('cancel_callback', None)
+    finished_callback = kwargs.pop('finished_callback', None)
+
+    rd = DocConfig(**kwargs)
+    rd.prepare_role_argspec_command(role, collection)
+    r = Runner(rd,
+               event_handler=event_callback_handler,
+               status_handler=status_callback_handler,
+               artifacts_handler=artifacts_handler,
+               cancel_callback=cancel_callback,
+               finished_callback=finished_callback)
+    r.run()
+    response = r.stdout.read()
+    error = r.stderr.read()
+    if response:
+        response = json.loads(santize_json_response(response))
+    return response, error

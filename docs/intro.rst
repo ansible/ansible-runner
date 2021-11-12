@@ -158,7 +158,7 @@ The process isolation settings are meant to control the process isolation featur
 Container-based Execution
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``--containerized`` setting instructs **Ansible Runner** to execute **Ansible** tasks inside a container environment. A default execution environment is provided on Docker Hub at [ansible/ansible-runner](https://hub.docker.com/r/ansible/ansible-runner). Users also have the option of building their own container for executing playbooks, however.
+The ``--containerized`` setting instructs **Ansible Runner** to execute **Ansible** tasks inside a container environment. A default execution environment is provided on Quay.io at `ansible/ansible-runner <https://quay.io/repository/ansible/ansible-runner>`_. Users also have the option of building their own container for executing playbooks, however.
 
 To build an execution environment locally, run:
 

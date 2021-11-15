@@ -356,7 +356,7 @@ def test_containerization_unsafe_write_setting(tmp_path, runtime, mocker):
 
     expected = {
         'docker': None,
-        'podman': 1,
+        'podman': '1',
     }
 
     assert rc.env.get('ANSIBLE_UNSAFE_WRITES') == expected[runtime]

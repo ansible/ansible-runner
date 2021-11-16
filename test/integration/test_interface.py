@@ -3,7 +3,8 @@ import pytest
 
 from ansible_runner import defaults
 from ansible_runner.interface import run, run_async, run_command, run_command_async, get_plugin_docs, \
-    get_plugin_docs_async, get_plugin_list, get_ansible_config, get_inventory
+    get_plugin_docs_async, get_plugin_list, get_ansible_config, get_inventory, \
+    get_role_list
 
 
 def test_run():
@@ -355,3 +356,38 @@ def test_run_role(project_fixtures):
     stdout = res.stdout.read()
     assert res.rc == 0, stdout
     assert 'Hello World!' in stdout
+
+
+def test_get_role_list(project_fixtures):
+    '''
+    Test get_role_list() running locally, specifying a playbook directory
+    containing our test role.
+    '''
+    use_role_example = str(project_fixtures / 'music' / 'project')
+    expected_role = {
+        "collection": "",
+        "entry_points": {
+            "main": "The main entry point for the Into_The_Mystic role."
+        }
+    }
+
+    resp, err = get_role_list(playbook_dir=use_role_example)
+    assert isinstance(resp, dict)
+    assert 'Into_The_Mystic' in resp
+    assert resp['Into_The_Mystic'] == expected_role
+
+
+@pytest.mark.test_all_runtimes
+def test_get_role_list_within_container(project_fixtures, runtime):
+    '''
+    Test get_role_list() running in a container. Because the test container
+    has no roles/collections installed, the returned output should be empty.
+    '''
+    container_kwargs = {
+        'process_isolation_executable': runtime,
+        'process_isolation': True,
+        'container_image': defaults.default_container_image
+    }
+    resp, err = get_role_list(**container_kwargs)
+    assert isinstance(resp, dict)
+    assert resp == {}

@@ -99,6 +99,33 @@ and it can be customized to return only the changed configuration value by setti
 view of the active configuration file. The exectuin will be in the foreground and return a tuple of output and error response when finished.
 While running the command within the container the current local working diretory will be volume mounted within the container.
 
+``get_role_list()`` helper function
+-----------------------------------
+
+:meth:`ansible_runner.interface.get_role_list`
+
+*Version added: 2.2*
+
+This function will execute the ``ansible-doc`` command to return the list of installed roles.
+This data can be fetched from either the local environment or from within a container image
+based on the parameters passed. It will run in the foreground and return a tuple of output
+and error response when finished. Successful output will be in JSON format as returned from
+``ansible-doc``.
+
+``get_role_argspec()`` helper function
+--------------------------------------
+
+:meth:`ansible_runner.interface.get_role_argspec`
+
+*Version added: 2.2*
+
+This function will execute the ``ansible-doc`` command to return a role argument specification.
+This data can be fetched from either the local environment or from within a container image
+based on the parameters passed. It will run in the foreground and return a tuple of output
+and error response when finished. Successful output will be in JSON format as returned from
+``ansible-doc``.
+
+
 The ``Runner`` object
 ---------------------
 

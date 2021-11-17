@@ -903,6 +903,8 @@ def get_role_list(collection=None, playbook_dir=None, **kwargs):
     '''
     Run an ``ansible-doc`` command to get list of installed collection roles.
 
+    .. note:: Version added: 2.2
+
     :param str collection: A fully qualified collection name used to filter the results.
     :param str playbook_dir: This parameter is used to sets the relative path to handle playbook adjacent installed roles.
 
@@ -973,7 +975,9 @@ def get_role_list(collection=None, playbook_dir=None, **kwargs):
 
 def get_role_argspec(role, collection=None, **kwargs):
     '''
-    Run an ``ansible-doc`` command to get a collection role argument spec.
+    Run an ``ansible-doc`` command to get a collection role argument specification.
+
+    .. note:: Version added: 2.2
     '''
     event_callback_handler = kwargs.pop('event_handler', None)
     status_callback_handler = kwargs.pop('status_handler', None)

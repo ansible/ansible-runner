@@ -358,7 +358,7 @@ def test_run_role(project_fixtures):
     assert 'Hello World!' in stdout
 
 
-def test_get_role_list(project_fixtures):
+def test_get_role_list(project_fixtures, skipif_pre_ansible211):
     '''
     Test get_role_list() running locally, specifying a playbook directory
     containing our test role.
@@ -378,7 +378,7 @@ def test_get_role_list(project_fixtures):
 
 
 @pytest.mark.test_all_runtimes
-def test_get_role_list_within_container(project_fixtures, runtime):
+def test_get_role_list_within_container(project_fixtures, runtime, skipif_pre_ansible211):
     '''
     Test get_role_list() running in a container. Because the test container
     has no roles/collections installed, the returned output should be empty.

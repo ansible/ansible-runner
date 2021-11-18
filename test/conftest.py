@@ -32,20 +32,15 @@ def is_pre_ansible211():
     """
     Check if the version of Ansible is less than 2.11.
 
-    We test with either ansible-core (>=2.11), ansible-base (==2.10), and ansible (<=2.9).
-    Since either might be installed, based on the test environment, test in succession
-    until one is found.
+    CI tests with either ansible-core (>=2.11), ansible-base (==2.10), and ansible (<=2.9).
     """
 
     try:
         if pkg_resources.get_distribution('ansible-core').version:
             return False
     except pkg_resources.DistributionNotFound:
-        try:
-            if pkg_resources.get_distribution('ansible-base').version:
-                return True
-        except pkg_resources.DistributionNotFound:
-            return True
+        # Must be ansible-base or ansible
+        return True
 
 
 @pytest.fixture(scope='session')

@@ -4,7 +4,7 @@ import pytest
 from ansible_runner import defaults
 from ansible_runner.interface import run, run_async, run_command, run_command_async, get_plugin_docs, \
     get_plugin_docs_async, get_plugin_list, get_ansible_config, get_inventory, \
-    get_role_list
+    get_role_list, get_role_argspec
 
 
 def test_run():
@@ -359,10 +359,10 @@ def test_run_role(project_fixtures):
 
 
 def test_get_role_list(project_fixtures, skipif_pre_ansible211):
-    '''
+    """
     Test get_role_list() running locally, specifying a playbook directory
     containing our test role.
-    '''
+    """
     use_role_example = str(project_fixtures / 'music' / 'project')
     expected_role = {
         "collection": "",
@@ -379,10 +379,10 @@ def test_get_role_list(project_fixtures, skipif_pre_ansible211):
 
 @pytest.mark.test_all_runtimes
 def test_get_role_list_within_container(project_fixtures, runtime, skipif_pre_ansible211):
-    '''
+    """
     Test get_role_list() running in a container. Because the test container
     has no roles/collections installed, the returned output should be empty.
-    '''
+    """
     container_kwargs = {
         'process_isolation_executable': runtime,
         'process_isolation': True,
@@ -391,3 +391,38 @@ def test_get_role_list_within_container(project_fixtures, runtime, skipif_pre_an
     resp, err = get_role_list(**container_kwargs)
     assert isinstance(resp, dict)
     assert resp == {}
+
+
+def test_get_role_argspec(project_fixtures, skipif_pre_ansible211):
+    """
+    Test get_role_argspec() running locally, specifying a playbook directory
+    containing our test role.
+    """
+    use_role_example = str(project_fixtures / 'music' / 'project')
+    expected_epoint = {
+        "main": {
+            "options": {
+                "foghorn": {
+                    "default": True,
+                    "description": "If true, the foghorn blows.",
+                    "required": False,
+                    "type": "bool"
+                },
+                "soul": {
+                    "choices": [
+                        "gypsy",
+                        "normal"
+                    ],
+                    "description": "Type of soul to rock",
+                    "required": True,
+                    "type": "str"
+                }
+            },
+            "short_description": "The main entry point for the Into_The_Mystic role."
+        }
+    }
+
+    resp, err = get_role_argspec('Into_The_Mystic', playbook_dir=use_role_example)
+    assert isinstance(resp, dict)
+    assert 'Into_The_Mystic' in resp
+    assert resp['Into_The_Mystic']['entry_points'] == expected_epoint

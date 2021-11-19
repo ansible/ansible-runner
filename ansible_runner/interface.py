@@ -903,6 +903,8 @@ def get_role_list(collection=None, playbook_dir=None, **kwargs):
     '''
     Run an ``ansible-doc`` command to get list of installed collection roles.
 
+    Only roles that have an argument specification defined are returned.
+
     .. note:: Version added: 2.2
 
     :param str collection: A fully qualified collection name used to filter the results.

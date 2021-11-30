@@ -211,7 +211,7 @@ def run(**kwargs):
     :type private_data_dir: str
     :type ident: str
     :type json_mode: bool
-    :type playbook: str or filename or list
+    :type playbook: str or list
     :type inventory: str or dict or list
     :type role: str
     :type roles_path: dict or list
@@ -230,13 +230,13 @@ def run(**kwargs):
     :type quiet: bool
     :type verbosity: int
     :type streamer: str
-    :type _input: file
-    :type _output: file
-    :type event_handler: function
-    :type cancel_callback: function
-    :type finished_callback: function
-    :type status_handler: function
-    :type artifacts_handler: function
+    :type _input: io.FileIO
+    :type _output: io.FileIO
+    :type event_handler: Callable
+    :type cancel_callback: Callable
+    :type finished_callback: Callable
+    :type status_handler: Callable
+    :type artifacts_handler: Callable
     :type process_isolation: bool
     :type process_isolation_executable: str
     :type process_isolation_path: str
@@ -360,9 +360,9 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
 
     :type executable_cmd: str
     :type cmdline_args: list
-    :type input_fd: file descriptor
-    :type output_fd: file descriptor
-    :type error_fd: file descriptor
+    :type input_fd: int
+    :type output_fd: int
+    :type error_fd: int
     :type runner_mode: str
     :type host_cwd: str
     :type envvars: dict
@@ -385,11 +385,11 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
     :type ssh_key: str
     :type quiet: bool
     :type json_mode: bool
-    :type event_handler: function
-    :type cancel_callback: function
-    :type finished_callback: function
-    :type status_handler: function
-    :type artifacts_handler: function
+    :type event_handler: Callable
+    :type cancel_callback: Callable
+    :type finished_callback: Callable
+    :type status_handler: Callable
+    :type artifacts_handler: Callable
     :type check_job_event_data: bool
 
     :returns: Returns a tuple of response, error string and return code.
@@ -523,11 +523,11 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format=None, snippe
     :type ssh_key: str
     :type quiet: bool
     :type json_mode: bool
-    :type event_handler: function
-    :type cancel_callback: function
-    :type finished_callback: function
-    :type status_handler: function
-    :type artifacts_handler: function
+    :type event_handler: Callable
+    :type cancel_callback: Callable
+    :type finished_callback: Callable
+    :type status_handler: Callable
+    :type artifacts_handler: Callable
     :type check_job_event_data: bool
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is empty as
@@ -639,11 +639,11 @@ def get_plugin_list(list_files=None, response_format=None, plugin_type=None, pla
     :type ssh_key: str
     :type quiet: bool
     :type json_mode: bool
-    :type event_handler: function
-    :type cancel_callback: function
-    :type finished_callback: function
-    :type status_handler: function
-    :type artifacts_handler: function
+    :type event_handler: Callable
+    :type cancel_callback: Callable
+    :type finished_callback: Callable
+    :type status_handler: Callable
+    :type artifacts_handler: Callable
     :type check_job_event_data: bool
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is empty as
@@ -738,7 +738,7 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
     :type vault_ids: str
     :type vault_password_file: str
     :type output_file: str
-    :type: export: bool
+    :type export: bool
     :type runner_mode: str
     :type host_cwd: str
     :type envvars: dict
@@ -761,11 +761,11 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
     :type ssh_key: str
     :type quiet: bool
     :type json_mode: bool
-    :type event_handler: function
-    :type cancel_callback: function
-    :type finished_callback: function
-    :type status_handler: function
-    :type artifacts_handler: function
+    :type event_handler: Callable
+    :type cancel_callback: Callable
+    :type finished_callback: Callable
+    :type status_handler: Callable
+    :type artifacts_handler: Callable
     :type check_job_event_data: bool
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is
@@ -868,12 +868,12 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     :type timeout: int
     :type ssh_key: str
     :type quiet: bool
-    :type: json_mode: bool
-    :type event_handler: function
-    :type cancel_callback: function
-    :type finished_callback: function
-    :type status_handler: function
-    :type artifacts_handler: function
+    :type json_mode: bool
+    :type event_handler: Callable
+    :type cancel_callback: Callable
+    :type finished_callback: Callable
+    :type status_handler: Callable
+    :type artifacts_handler: Callable
     :type check_job_event_data: bool
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is
@@ -940,12 +940,12 @@ def get_role_list(collection=None, playbook_dir=None, **kwargs):
         module. Output artifacts will also be stored here for later consumption.
     :param str ident: The run identifier for this invocation of Runner. Will be used to create and name
         the artifact directory holding the results of the invocation.
-    :param function event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
-    :param function cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
-    :param function finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
-    :param function status_handler: An optional callback that will be invoked any time the status changes
+    :param Callable event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
+    :param Callable cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
+    :param Callable finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
+    :param Callable status_handler: An optional callback that will be invoked any time the status changes
         (for example: started, running, failed, successful, timeout)
-    :param function artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
+    :param Callable artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
     :param bool check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
         value is set to 'True' it will raise 'AnsibleRunnerException' exception. If set to 'False', log a debug message and continue execution.
         Default value is 'False'
@@ -1017,12 +1017,12 @@ def get_role_argspec(role, collection=None, playbook_dir=None, **kwargs):
         module. Output artifacts will also be stored here for later consumption.
     :param str ident: The run identifier for this invocation of Runner. Will be used to create and name
         the artifact directory holding the results of the invocation.
-    :param function event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
-    :param function cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
-    :param function finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
-    :param function status_handler: An optional callback that will be invoked any time the status changes
+    :param Callable event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
+    :param Callable cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
+    :param Callable finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
+    :param Callable status_handler: An optional callback that will be invoked any time the status changes
         (for example: started, running, failed, successful, timeout)
-    :param function artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
+    :param Callable artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
     :param bool check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
         value is set to 'True' it will raise 'AnsibleRunnerException' exception. If set to 'False', log a debug message and continue execution.
         Default value is 'False'

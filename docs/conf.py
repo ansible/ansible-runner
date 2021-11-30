@@ -176,17 +176,7 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
-# Strictness settings
-nitpicky = True
 nitpick_ignore = [
-    # FIXME: The following entries are used incorrectly in multiple docstrings:
-    ('py:class', 'export: bool'),
-    ('py:class', 'file'),
-    ('py:class', 'file descriptor'),
-    ('py:class', 'filename'),
-    ('py:class', 'function'),
-    ('py:class', 'json_mode: bool'),
-
     # FIXME: Undocumented classes picked up by autodoc as via inheritance:
     ('py:class', 'ansible.plugins.callback.CallbackBase'),
     ('py:class', 'ansible.plugins.callback.default.CallbackModule'),

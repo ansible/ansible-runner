@@ -454,7 +454,7 @@ def cli_mounts():
     ]
 
 
-def santize_json_response(data):
+def sanitize_json_response(data):
     '''
     Removes warning message from response message emitted by ansible
     command line utilities.

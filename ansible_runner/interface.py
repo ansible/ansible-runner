@@ -34,7 +34,7 @@ from ansible_runner.streaming import Transmitter, Worker, Processor
 from ansible_runner.utils import (
     dump_artifacts,
     check_isolation_executable_installed,
-    santize_json_response,
+    sanitize_json_response,
     signal_handler,
 )
 
@@ -540,7 +540,7 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format=None, snippe
     response = r.stdout.read()
     error = r.stderr.read()
     if response and response_format == 'json':
-        response = json.loads(santize_json_response(response))
+        response = json.loads(sanitize_json_response(response))
     return response, error
 
 
@@ -647,7 +647,7 @@ def get_plugin_list(list_files=None, response_format=None, plugin_type=None, pla
     :type check_job_event_data: bool
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is empty as
-              ``pexpect`` uses same output descriptor for stdout and stderr. If the vaue of ``response_format`` is ``json``
+              ``pexpect`` uses same output descriptor for stdout and stderr. If the value of ``response_format`` is ``json``
               it returns a python dictionary object.
     '''
     event_callback_handler = kwargs.pop('event_handler', None)
@@ -669,7 +669,7 @@ def get_plugin_list(list_files=None, response_format=None, plugin_type=None, pla
     response = r.stdout.read()
     error = r.stderr.read()
     if response and response_format == 'json':
-        response = json.loads(santize_json_response(response))
+        response = json.loads(sanitize_json_response(response))
     return response, error
 
 
@@ -792,7 +792,7 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
     response = r.stdout.read()
     error = r.stderr.read()
     if response and response_format == 'json':
-        response = json.loads(santize_json_response(response))
+        response = json.loads(sanitize_json_response(response))
     return response, error
 
 
@@ -896,4 +896,158 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     r.run()
     response = r.stdout.read()
     error = r.stderr.read()
+    return response, error
+
+
+def get_role_list(collection=None, playbook_dir=None, **kwargs):
+    '''
+    Run an ``ansible-doc`` command to get list of installed collection roles.
+
+    Only roles that have an argument specification defined are returned.
+
+    .. note:: Version added: 2.2
+
+    :param str collection: A fully qualified collection name used to filter the results.
+    :param str playbook_dir: This parameter is used to set the relative path to handle playbook adjacent installed roles.
+
+    :param str runner_mode: The applicable values are ``pexpect`` and ``subprocess``. Default is set to ``subprocess``.
+    :param str host_cwd: The host current working directory to be mounted within the container (if enabled) and will be
+                     the work directory within container.
+    :param dict envvars: Environment variables to be used when running Ansible. Environment variables will also be
+                    read from ``env/envvars`` in ``private_data_dir``
+    :param dict passwords: A dictionary containing password prompt patterns and response values used when processing output from
+                      Ansible. Passwords will also be read from ``env/passwords`` in ``private_data_dir``.
+    :param dict settings: A dictionary containing settings values for the ``ansible-runner`` runtime environment. These will also
+                     be read from ``env/settings`` in ``private_data_dir``.
+    :param str ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
+    :param bool quiet: Disable all output
+    :param bool json_mode: Store event data in place of stdout on the console and in the stdout file
+    :param str artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
+    :param str project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
+    :param int rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
+    :param int timeout: The timeout value in seconds that will be passed to either ``pexpect`` of ``subprocess`` invocation
+        (based on ``runner_mode`` selected) while executing command. If the timeout is triggered, it will force cancel the execution.
+    :param bool process_isolation: Enable process isolation using a container engine, such as podman.
+    :param str process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
+    :param str container_image: Container image to use when running an Ansible task (default: quay.io/ansible/ansible-runner:devel)
+    :param list container_volume_mounts: List of bind mounts in the form ``host_dir:/container_dir:labels``. (default: None)
+    :param list container_options: List of container options to pass to execution engine.
+    :param str container_workdir: The working directory within the container.
+    :param str fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
+                       This is only used for 'jsonfile' type fact caches.
+    :param str fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
+    :param str private_data_dir: The directory containing all runner metadata needed to invoke the runner
+        module. Output artifacts will also be stored here for later consumption.
+    :param str ident: The run identifier for this invocation of Runner. Will be used to create and name
+        the artifact directory holding the results of the invocation.
+    :param function event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
+    :param function cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
+    :param function finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
+    :param function status_handler: An optional callback that will be invoked any time the status changes
+        (for example: started, running, failed, successful, timeout)
+    :param function artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
+    :param bool check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
+        value is set to 'True' it will raise 'AnsibleRunnerException' exception. If set to 'False', log a debug message and continue execution.
+        Default value is 'False'
+
+    :returns: A tuple of response and error string. The response is a dictionary object
+        (as returned by ansible-doc JSON output) containing each role found, or an empty dict
+        if none are found.
+    '''
+    event_callback_handler = kwargs.pop('event_handler', None)
+    status_callback_handler = kwargs.pop('status_handler', None)
+    artifacts_handler = kwargs.pop('artifacts_handler', None)
+    cancel_callback = kwargs.pop('cancel_callback', None)
+    finished_callback = kwargs.pop('finished_callback', None)
+
+    rd = DocConfig(**kwargs)
+    rd.prepare_role_list_command(collection, playbook_dir)
+    r = Runner(rd,
+               event_handler=event_callback_handler,
+               status_handler=status_callback_handler,
+               artifacts_handler=artifacts_handler,
+               cancel_callback=cancel_callback,
+               finished_callback=finished_callback)
+    r.run()
+    response = r.stdout.read()
+    error = r.stderr.read()
+    if response:
+        response = json.loads(sanitize_json_response(response))
+    return response, error
+
+
+def get_role_argspec(role, collection=None, playbook_dir=None, **kwargs):
+    '''
+    Run an ``ansible-doc`` command to get a role argument specification.
+
+    .. note:: Version added: 2.2
+
+    :param str role: Simple role name, or fully qualified collection role name, to query.
+    :param str collection: If specified, will be combined with the role name to form a fully qualified collection role name.
+        If this is supplied, the ``role`` param should not be fully qualified.
+    :param str playbook_dir: This parameter is used to set the relative path to handle playbook adjacent installed roles.
+
+    :param str runner_mode: The applicable values are ``pexpect`` and ``subprocess``. Default is set to ``subprocess``.
+    :param str host_cwd: The host current working directory to be mounted within the container (if enabled) and will be
+                     the work directory within container.
+    :param dict envvars: Environment variables to be used when running Ansible. Environment variables will also be
+                    read from ``env/envvars`` in ``private_data_dir``
+    :param dict passwords: A dictionary containing password prompt patterns and response values used when processing output from
+                      Ansible. Passwords will also be read from ``env/passwords`` in ``private_data_dir``.
+    :param dict settings: A dictionary containing settings values for the ``ansible-runner`` runtime environment. These will also
+                     be read from ``env/settings`` in ``private_data_dir``.
+    :param str ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
+    :param bool quiet: Disable all output
+    :param bool json_mode: Store event data in place of stdout on the console and in the stdout file
+    :param str artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
+    :param str project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
+    :param int rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
+    :param int timeout: The timeout value in seconds that will be passed to either ``pexpect`` of ``subprocess`` invocation
+        (based on ``runner_mode`` selected) while executing command. If the timeout is triggered, it will force cancel the execution.
+    :param bool process_isolation: Enable process isolation using a container engine, such as podman.
+    :param str process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
+    :param str container_image: Container image to use when running an Ansible task (default: quay.io/ansible/ansible-runner:devel)
+    :param list container_volume_mounts: List of bind mounts in the form ``host_dir:/container_dir:labels``. (default: None)
+    :param list container_options: List of container options to pass to execution engine.
+    :param str container_workdir: The working directory within the container.
+    :param str fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
+                       This is only used for 'jsonfile' type fact caches.
+    :param str fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
+    :param str private_data_dir: The directory containing all runner metadata needed to invoke the runner
+        module. Output artifacts will also be stored here for later consumption.
+    :param str ident: The run identifier for this invocation of Runner. Will be used to create and name
+        the artifact directory holding the results of the invocation.
+    :param function event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
+    :param function cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
+    :param function finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
+    :param function status_handler: An optional callback that will be invoked any time the status changes
+        (for example: started, running, failed, successful, timeout)
+    :param function artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
+    :param bool check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
+        value is set to 'True' it will raise 'AnsibleRunnerException' exception. If set to 'False', log a debug message and continue execution.
+        Default value is 'False'
+
+    :returns: A tuple of response and error string. The response is a dictionary object
+        (as returned by ansible-doc JSON output) containing each role found, or an empty dict
+        if none are found.
+    '''
+    event_callback_handler = kwargs.pop('event_handler', None)
+    status_callback_handler = kwargs.pop('status_handler', None)
+    artifacts_handler = kwargs.pop('artifacts_handler', None)
+    cancel_callback = kwargs.pop('cancel_callback', None)
+    finished_callback = kwargs.pop('finished_callback', None)
+
+    rd = DocConfig(**kwargs)
+    rd.prepare_role_argspec_command(role, collection, playbook_dir)
+    r = Runner(rd,
+               event_handler=event_callback_handler,
+               status_handler=status_callback_handler,
+               artifacts_handler=artifacts_handler,
+               cancel_callback=cancel_callback,
+               finished_callback=finished_callback)
+    r.run()
+    response = r.stdout.read()
+    error = r.stderr.read()
+    if response:
+        response = json.loads(sanitize_json_response(response))
     return response, error

@@ -28,9 +28,31 @@ def is_pre_ansible28():
 
 
 @pytest.fixture(scope='session')
+def is_pre_ansible211():
+    """
+    Check if the version of Ansible is less than 2.11.
+
+    CI tests with either ansible-core (>=2.11), ansible-base (==2.10), and ansible (<=2.9).
+    """
+
+    try:
+        if pkg_resources.get_distribution('ansible-core').version:
+            return False
+    except pkg_resources.DistributionNotFound:
+        # Must be ansible-base or ansible
+        return True
+
+
+@pytest.fixture(scope='session')
 def skipif_pre_ansible28(is_pre_ansible28):
     if is_pre_ansible28:
         pytest.skip("Valid only on Ansible 2.8+")
+
+
+@pytest.fixture(scope='session')
+def skipif_pre_ansible211(is_pre_ansible211):
+    if is_pre_ansible211:
+        pytest.skip("Valid only on Ansible 2.11+")
 
 
 # TODO: determine if we want to add docker / podman

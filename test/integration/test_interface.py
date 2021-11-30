@@ -2,8 +2,19 @@ import os
 import pytest
 
 from ansible_runner import defaults
-from ansible_runner.interface import run, run_async, run_command, run_command_async, get_plugin_docs, \
-    get_plugin_docs_async, get_plugin_list, get_ansible_config, get_inventory
+from ansible_runner.interface import (
+    get_ansible_config,
+    get_inventory,
+    get_plugin_docs,
+    get_plugin_docs_async,
+    get_plugin_list,
+    get_role_argspec,
+    get_role_list,
+    run,
+    run_async,
+    run_command,
+    run_command_async,
+)
 
 
 def test_run():
@@ -355,3 +366,126 @@ def test_run_role(project_fixtures):
     stdout = res.stdout.read()
     assert res.rc == 0, stdout
     assert 'Hello World!' in stdout
+
+
+def test_get_role_list(project_fixtures, skipif_pre_ansible211):
+    """
+    Test get_role_list() running locally, specifying a playbook directory
+    containing our test role.
+    """
+    pdir = str(project_fixtures / 'music' / 'project')
+    expected_role = {
+        "collection": "",
+        "entry_points": {
+            "main": "The main entry point for the Into_The_Mystic role."
+        }
+    }
+
+    resp, err = get_role_list(playbook_dir=pdir)
+    assert isinstance(resp, dict)
+
+    # So that tests can work locally, where multiple roles might be returned,
+    # we check for this single role.
+    assert 'Into_The_Mystic' in resp
+    assert resp['Into_The_Mystic'] == expected_role
+
+
+@pytest.mark.test_all_runtimes
+def test_get_role_list_within_container(project_fixtures, runtime, skipif_pre_ansible211):
+    """
+    Test get_role_list() running in a container.
+    """
+    pdir = str(project_fixtures / 'music')
+    expected = {
+        "Into_The_Mystic": {
+            "collection": "",
+            "entry_points": {
+                "main": "The main entry point for the Into_The_Mystic role."
+            }
+        }
+    }
+    container_kwargs = {
+        'process_isolation_executable': runtime,
+        'process_isolation': True,
+        'container_image': defaults.default_container_image
+    }
+    resp, err = get_role_list(private_data_dir=pdir, playbook_dir="/runner/project", **container_kwargs)
+    assert isinstance(resp, dict)
+    assert resp == expected
+
+
+def test_get_role_argspec(project_fixtures, skipif_pre_ansible211):
+    """
+    Test get_role_argspec() running locally, specifying a playbook directory
+    containing our test role.
+    """
+    use_role_example = str(project_fixtures / 'music' / 'project')
+    expected_epoint = {
+        "main": {
+            "options": {
+                "foghorn": {
+                    "default": True,
+                    "description": "If true, the foghorn blows.",
+                    "required": False,
+                    "type": "bool"
+                },
+                "soul": {
+                    "choices": [
+                        "gypsy",
+                        "normal"
+                    ],
+                    "description": "Type of soul to rock",
+                    "required": True,
+                    "type": "str"
+                }
+            },
+            "short_description": "The main entry point for the Into_The_Mystic role."
+        }
+    }
+
+    resp, err = get_role_argspec('Into_The_Mystic', playbook_dir=use_role_example)
+    assert isinstance(resp, dict)
+    assert 'Into_The_Mystic' in resp
+    assert resp['Into_The_Mystic']['entry_points'] == expected_epoint
+
+
+@pytest.mark.test_all_runtimes
+def test_get_role_argspec_within_container(project_fixtures, runtime, skipif_pre_ansible211):
+    """
+    Test get_role_argspec() running inside a container. Since the test container
+    does not currently contain any collections or roles, specify playbook_dir
+    pointing to the project dir of private_data_dir so that we will find a role.
+    """
+    pdir = str(project_fixtures / 'music')
+    expected_epoint = {
+        "main": {
+            "options": {
+                "foghorn": {
+                    "default": True,
+                    "description": "If true, the foghorn blows.",
+                    "required": False,
+                    "type": "bool"
+                },
+                "soul": {
+                    "choices": [
+                        "gypsy",
+                        "normal"
+                    ],
+                    "description": "Type of soul to rock",
+                    "required": True,
+                    "type": "str"
+                }
+            },
+            "short_description": "The main entry point for the Into_The_Mystic role."
+        }
+    }
+
+    container_kwargs = {
+        'process_isolation_executable': runtime,
+        'process_isolation': True,
+        'container_image': defaults.default_container_image
+    }
+    resp, err = get_role_argspec('Into_The_Mystic', private_data_dir=pdir, playbook_dir="/runner/project", **container_kwargs)
+    assert isinstance(resp, dict)
+    assert 'Into_The_Mystic' in resp
+    assert resp['Into_The_Mystic']['entry_points'] == expected_epoint

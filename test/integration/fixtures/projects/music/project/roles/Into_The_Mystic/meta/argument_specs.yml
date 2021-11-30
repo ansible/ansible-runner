@@ -1,0 +1,17 @@
+---
+argument_specs:
+  main:
+    short_description: The main entry point for the Into_The_Mystic role.
+    options:
+      foghorn:
+        type: "bool"
+        required: false
+        default: true
+        description: "If true, the foghorn blows."
+      soul:
+        type: "str"
+        required: true
+        description: "Type of soul to rock"
+        choices:
+          - "gypsy"
+          - "normal"

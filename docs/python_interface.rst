@@ -99,6 +99,33 @@ and it can be customized to return only the changed configuration value by setti
 view of the active configuration file. The exectuin will be in the foreground and return a tuple of output and error response when finished.
 While running the command within the container the current local working diretory will be volume mounted within the container.
 
+``get_role_list()`` helper function
+-----------------------------------
+
+:meth:`ansible_runner.interface.get_role_list`
+
+*Version added: 2.2*
+
+This function will execute the ``ansible-doc`` command to return the list of installed roles
+that have an argument specification defined. This data can be fetched from either the local
+environment or from within a container image based on the parameters passed. It will run in
+the foreground and return a tuple of output and error response when finished. Successful output
+will be in JSON format as returned from ``ansible-doc``.
+
+``get_role_argspec()`` helper function
+--------------------------------------
+
+:meth:`ansible_runner.interface.get_role_argspec`
+
+*Version added: 2.2*
+
+This function will execute the ``ansible-doc`` command to return a role argument specification.
+This data can be fetched from either the local environment or from within a container image
+based on the parameters passed. It will run in the foreground and return a tuple of output
+and error response when finished. Successful output will be in JSON format as returned from
+``ansible-doc``.
+
+
 The ``Runner`` object
 ---------------------
 
@@ -298,6 +325,34 @@ Usage examples
       process_isolation=True,
       container_image='network-ee'
   )
+  print("out: {}".format(out))
+  print("err: {}".format(err))
+
+.. code-block:: python
+
+  # get all roles with an arg spec installed locally
+  out, err = ansible_runner.get_role_list()
+  print("out: {}".format(out))
+  print("err: {}".format(err))
+
+.. code-block:: python
+
+  # get roles with an arg spec from the `foo.bar` collection in a container
+  out, err = ansible_runner.get_role_list(collection='foo.bar', process_isolation=True, container_image='network-ee')
+  print("out: {}".format(out))
+  print("err: {}".format(err))
+
+.. code-block:: python
+
+  # get the arg spec for role `baz` from the locally installed `foo.bar` collection
+  out, err = ansible_runner.get_role_argspec('baz', collection='foo.bar')
+  print("out: {}".format(out))
+  print("err: {}".format(err))
+
+.. code-block:: python
+
+  # get the arg spec for role `baz` from the `foo.bar` collection installed in a container
+  out, err = ansible_runner.get_role_argspec('baz', collection='foo.bar', process_isolation=True, container_image='network-ee')
   print("out: {}".format(out))
   print("err: {}".format(err))
 

@@ -121,3 +121,32 @@ class DocConfig(BaseConfig):
 
         self.command = [self._ansible_doc_exec_path] + self.cmdline_args
         self._handle_command_wrap(self.execution_mode, self.cmdline_args)
+
+    def prepare_role_list_command(self, collection_name, playbook_dir):
+        """
+        ansible-doc -t role -l -j <collection_name>
+        """
+        self._prepare_env(runner_mode=self.runner_mode)
+        self.cmdline_args = ['-t', 'role', '-l', '-j']
+        if playbook_dir:
+            self.cmdline_args.extend(['--playbook-dir', playbook_dir])
+        if collection_name:
+            self.cmdline_args.append(collection_name)
+
+        self.command = [self._ansible_doc_exec_path] + self.cmdline_args
+        self._handle_command_wrap(self.execution_mode, self.cmdline_args)
+
+    def prepare_role_argspec_command(self, role_name, collection_name, playbook_dir):
+        """
+        ansible-doc -t role -j <collection_name>.<role_name>
+        """
+        self._prepare_env(runner_mode=self.runner_mode)
+        self.cmdline_args = ['-t', 'role', '-j']
+        if playbook_dir:
+            self.cmdline_args.extend(['--playbook-dir', playbook_dir])
+        if collection_name:
+            role_name = ".".join([collection_name, role_name])
+        self.cmdline_args.append(role_name)
+
+        self.command = [self._ansible_doc_exec_path] + self.cmdline_args
+        self._handle_command_wrap(self.execution_mode, self.cmdline_args)

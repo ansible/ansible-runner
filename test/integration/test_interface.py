@@ -2,9 +2,19 @@ import os
 import pytest
 
 from ansible_runner import defaults
-from ansible_runner.interface import run, run_async, run_command, run_command_async, get_plugin_docs, \
-    get_plugin_docs_async, get_plugin_list, get_ansible_config, get_inventory, \
-    get_role_list, get_role_argspec
+from ansible_runner.interface import (
+    get_ansible_config,
+    get_inventory,
+    get_plugin_docs,
+    get_plugin_docs_async,
+    get_plugin_list,
+    get_role_argspec,
+    get_role_list,
+    run,
+    run_async,
+    run_command,
+    run_command_async,
+)
 
 
 def test_run():

@@ -908,7 +908,7 @@ def get_role_list(collection=None, playbook_dir=None, **kwargs):
     .. note:: Version added: 2.2
 
     :param str collection: A fully qualified collection name used to filter the results.
-    :param str playbook_dir: This parameter is used to sets the relative path to handle playbook adjacent installed roles.
+    :param str playbook_dir: This parameter is used to set the relative path to handle playbook adjacent installed roles.
 
     :param str runner_mode: The applicable values are ``pexpect`` and ``subprocess``. Default is set to ``subprocess``.
     :param str host_cwd: The host current working directory to be mounted within the container (if enabled) and will be
@@ -926,11 +926,11 @@ def get_role_list(collection=None, playbook_dir=None, **kwargs):
     :param str project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param int rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
     :param int timeout: The timeout value in seconds that will be passed to either ``pexpect`` of ``subprocess`` invocation
-        (based on ``runner_mode`` selected) while executing command. It the timeout is triggered it will force cancel the execution.
-    :param bool process_isolation: Enable process isolation, using a container engine (e.g. podman).
+        (based on ``runner_mode`` selected) while executing command. If the timeout is triggered, it will force cancel the execution.
+    :param bool process_isolation: Enable process isolation using a container engine, such as podman.
     :param str process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
-    :param str container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
-    :param list container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
+    :param str container_image: Container image to use when running an Ansible task (default: quay.io/ansible/ansible-runner:devel)
+    :param list container_volume_mounts: List of bind mounts in the form ``host_dir:/container_dir:labels``. (default: None)
     :param list container_options: List of container options to pass to execution engine.
     :param str container_workdir: The working directory within the container.
     :param str fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
@@ -943,13 +943,14 @@ def get_role_list(collection=None, playbook_dir=None, **kwargs):
     :param function event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
     :param function cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
     :param function finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
-    :param function status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
+    :param function status_handler: An optional callback that will be invoked any time the status changes
+        (for example: started, running, failed, successful, timeout)
     :param function artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
     :param bool check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
-        value is set to 'True' it will raise 'AnsibleRunnerException' exception, if set to 'False' it log a debug message and continue execution.
+        value is set to 'True' it will raise 'AnsibleRunnerException' exception. If set to 'False', log a debug message and continue execution.
         Default value is 'False'
 
-    :returns: A tuple of response and error string. The response is a python dictionary object
+    :returns: A tuple of response and error string. The response is a dictionary object
         (as returned by ansible-doc JSON output) containing each role found, or an empty dict
         if none are found.
     '''
@@ -984,7 +985,7 @@ def get_role_argspec(role, collection=None, playbook_dir=None, **kwargs):
     :param str role: Simple role name, or fully qualified collection role name, to query.
     :param str collection: If specified, will be combined with the role name to form a fully qualified collection role name.
         If this is supplied, the ``role`` param should not be fully qualified.
-    :param str playbook_dir: This parameter is used to sets the relative path to handle playbook adjacent installed roles.
+    :param str playbook_dir: This parameter is used to set the relative path to handle playbook adjacent installed roles.
 
     :param str runner_mode: The applicable values are ``pexpect`` and ``subprocess``. Default is set to ``subprocess``.
     :param str host_cwd: The host current working directory to be mounted within the container (if enabled) and will be
@@ -1002,11 +1003,11 @@ def get_role_argspec(role, collection=None, playbook_dir=None, **kwargs):
     :param str project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
     :param int rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
     :param int timeout: The timeout value in seconds that will be passed to either ``pexpect`` of ``subprocess`` invocation
-        (based on ``runner_mode`` selected) while executing command. It the timeout is triggered it will force cancel the execution.
-    :param bool process_isolation: Enable process isolation, using a container engine (e.g. podman).
+        (based on ``runner_mode`` selected) while executing command. If the timeout is triggered, it will force cancel the execution.
+    :param bool process_isolation: Enable process isolation using a container engine, such as podman.
     :param str process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
-    :param str container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
-    :param list container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
+    :param str container_image: Container image to use when running an Ansible task (default: quay.io/ansible/ansible-runner:devel)
+    :param list container_volume_mounts: List of bind mounts in the form ``host_dir:/container_dir:labels``. (default: None)
     :param list container_options: List of container options to pass to execution engine.
     :param str container_workdir: The working directory within the container.
     :param str fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
@@ -1019,13 +1020,14 @@ def get_role_argspec(role, collection=None, playbook_dir=None, **kwargs):
     :param function event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
     :param function cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
     :param function finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
-    :param function status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
+    :param function status_handler: An optional callback that will be invoked any time the status changes
+        (for example: started, running, failed, successful, timeout)
     :param function artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
     :param bool check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
-        value is set to 'True' it will raise 'AnsibleRunnerException' exception, if set to 'False' it log a debug message and continue execution.
+        value is set to 'True' it will raise 'AnsibleRunnerException' exception. If set to 'False', log a debug message and continue execution.
         Default value is 'False'
 
-    :returns: A tuple of response and error string. The response is a python dictionary object
+    :returns: A tuple of response and error string. The response is a dictionary object
         (as returned by ansible-doc JSON output) containing each role found, or an empty dict
         if none are found.
     '''

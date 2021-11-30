@@ -1,0 +1,24 @@
+name: Documentation Report
+description: Report an issue with documentation
+labels:
+  - needs_triage
+  - docs
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Thank you reporting an issue with Ansible Runner documentation.**
+
+        If you are looking for community support, please reach out on IRC:
+
+          [#ansible](https://web.libera.chat/#ansible)
+          [#ansible-runner](https://web.libera.chat/#ansible-runner)
+
+
+  - type:
+    attributes:
+      label: Summary
+      description: Describe the problem or suggestion with the documentation
+      validations:
+        required: true

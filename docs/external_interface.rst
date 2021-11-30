@@ -40,13 +40,13 @@ pip::
 
 In order to configure it, you can provide details in the Runner Settings file (see :ref:`runnersettings`):
 
-* `runner_http_url`: The url to receive the ``POST``
-* `runner_http_headers`: Headers to send along with the request.
+* ``runner_http_url``: The url to receive the ``POST``
+* ``runner_http_headers``: Headers to send along with the request.
 
 The plugin also supports unix file-based sockets with:
 
-* `runner_http_url`: The path to the unix socket
-* `runner_http_path`: The path that will be included as part of the request to the socket
+* ``runner_http_url``: The path to the unix socket
+* ``runner_http_path``: The path that will be included as part of the request to the socket
 
 Some of these settings are also available as environment variables:
 

@@ -402,17 +402,17 @@ def ensure_str(s, encoding='utf-8', errors='strict'):
     """
     Copied from six==1.12
 
-    Coerce *s* to `str`.
+    Coerce *s* to ``str``.
 
     For Python 2:
 
-      - `unicode` -> encoded to `str`
-      - `str` -> `str`
+      - ``unicode`` -> encoded to ``str``
+      - ``str`` -> ``str``
 
     For Python 3:
 
-      - `str` -> `str`
-      - `bytes` -> decoded to `str`
+      - ``str`` -> ``str``
+      - ``bytes`` -> decoded to ``str``
     """
     if not isinstance(s, (text_type, binary_type)):
         raise TypeError("not expecting type '%s'" % type(s))

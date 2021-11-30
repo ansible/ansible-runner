@@ -84,8 +84,8 @@ response when finished. While running the command within the container the curre
 :meth:`ansible_runner.interface.get_inventory`
 
 When called, this function will take the inputs, and execute the ansible-inventory command to return the inventory releated information based on the action.
-If `action` is `list` it will return all the applicable configuration options for ansible, for `host` action it will return information
-of a single host andf for `graph` action it will return the inventory. The exectuin will be in the foreground and return a tuple of output and error
+If ``action`` is ``list`` it will return all the applicable configuration options for ansible, for ``host`` action it will return information
+of a single host andf for ``graph`` action it will return the inventory. The exectuin will be in the foreground and return a tuple of output and error
 response when finished. While running the command within the container the current local working diretory will be volume mounted within the container.
 
 ``get_ansible_config()`` helper function
@@ -94,8 +94,8 @@ response when finished. While running the command within the container the curre
 :meth:`ansible_runner.interface.get_ansible_config`
 
 When called, this function will take the inputs, and execute the ansible-config command to return the Ansible configuration releated information based on the action.
-If `action` is `list` it will return all the hosts related information including the host and group variables, for `dump` action it will return the enitre active configuration
-and it can be customized to return only the changed configuration value by settingg the `only_changed` boolean parameter to `True`. For `view` action it will return the
+If ``action`` is ``list`` it will return all the hosts related information including the host and group variables, for ``dump`` action it will return the enitre active configuration
+and it can be customized to return only the changed configuration value by settingg the ``only_changed`` boolean parameter to ``True``. For ``view`` action it will return the
 view of the active configuration file. The exectuin will be in the foreground and return a tuple of output and error response when finished.
 While running the command within the container the current local working diretory will be volume mounted within the container.
 
@@ -143,7 +143,7 @@ properties:
 -----------------
 
 The :class:`Runner <ansible_runner.runner.Runner>` object contains a property :attr:`ansible_runner.runner.Runner.stdout` which will return an open file
-handle containing the ``stdout`` of the **Ansible** process.
+handle containing the `stdout` of the **Ansible** process.
 
 ``Runner.stderr``
 -----------------
@@ -173,8 +173,8 @@ will return an open file handle containing the ``stderr`` of the **Ansible** pro
 ``Runner.event_handler``
 ------------------------
 
-A function passed to `__init__` of :class:`Runner <ansible_runner.runner.Runner>`, this is invoked every time an Ansible event is received. You can use this to
-inspect/process/handle events as they come out of Ansible. This function should return `True` to keep the event, otherwise it will be discarded.
+A function passed to ``__init__`` of :class:``Runner <ansible_runner.runner.Runner>``, this is invoked every time an Ansible event is received. You can use this to
+inspect/process/handle events as they come out of Ansible. This function should return ``True`` to keep the event, otherwise it will be discarded.
 
 ``Runner.cancel_callback``
 --------------------------
@@ -197,12 +197,12 @@ This function will be called immediately before the **Runner** event loop finish
 A function passed to ``__init__`` of :class:`Runner <ansible_runner.runner.Runner>` and to the :meth:`ansible_runner.interface.run` interface functions.
 This function will be called any time the ``status`` changes, expected values are:
 
-* `starting`: Preparing to start but hasn't started running yet
-* `running`: The **Ansible** task is running
-* `canceled`: The task was manually canceled either via callback or the cli
-* `timeout`: The timeout configured in Runner Settings was reached (see :ref:`runnersettings`)
-* `failed`: The **Ansible** process failed
-* `successful`: The **Ansible** process succeeded
+* ``starting``: Preparing to start but hasn't started running yet
+* ``running``: The **Ansible** task is running
+* ``canceled``: The task was manually canceled either via callback or the cli
+* ``timeout``: The timeout configured in Runner Settings was reached (see :ref:`runnersettings`)
+* ``failed``: The **Ansible** process failed
+* ``successful``: The **Ansible** process succeeded
 
 Usage examples
 --------------

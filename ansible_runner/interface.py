@@ -259,7 +259,7 @@ def run(**kwargs):
     :type only_failed_event_data: bool
     :type check_job_event_data: bool
 
-    :returns: A :py:class:`ansible_runner.runner.Runner` object, or a simple object containing `rc` if run remotely
+    :returns: A :py:class:`ansible_runner.runner.Runner` object, or a simple object containing ``rc`` if run remotely
     '''
     r = init_runner(**kwargs)
     r.run()

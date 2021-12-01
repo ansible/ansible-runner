@@ -365,5 +365,5 @@ The helper methods are just one possible entrypoint, extending the classes used 
 
 Show:
 
-* How :class:`Runner Config <ansible_runner.runner_config.RunnerConfig>` is used and how overriding the methods and behavior can work
+* How :class:`Runner Config <ansible_runner.config.runner.RunnerConfig>` is used and how overriding the methods and behavior can work
 * Show how custom cancel and status callbacks can be supplied.

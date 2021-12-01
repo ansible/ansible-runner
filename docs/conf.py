@@ -182,7 +182,4 @@ nitpick_ignore = [
     ('py:class', 'ansible.plugins.callback.default.CallbackModule'),
     ('py:class', 'display_callback.module.AWXDefaultCallbackModule'),
     ('py:class', 'display_callback.module.AWXMinimalCallbackModule'),
-
-    # FIXME: Undocumented classes referenced explicitly in the RST documents:
-    ('py:class', 'ansible_runner.runner_config.RunnerConfig'),
 ]

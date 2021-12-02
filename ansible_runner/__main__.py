@@ -548,11 +548,9 @@ def add_args_to_parser(parser, args):
     """
     Traverse a tuple of argments to add to a parser
 
-    :param parser: Instance of a parser, subparser, or argument group
-    :type sys_args: argparse.ArgumentParser
+    :param argparse.ArgumentParser parser: Instance of a parser, subparser, or argument group
 
-    :param args: Tuple of tuples, format ((arg1, arg2), {'kwarg1':'val1'},)
-    :type sys_args: tuple
+    :param tuple args: Tuple of tuples, format ((arg1, arg2), {'kwarg1':'val1'},)
 
     :returns: None
     """
@@ -566,8 +564,7 @@ def main(sys_args=None):
     When the ```ansible-runner``` command is executed, this function
     is the main entry point that is called and executed.
 
-    :param sys_args: List of arguments to be parsed by the parser
-    :type sys_args: list
+    :param list sys_args: List of arguments to be parsed by the parser
 
     :returns: an instance of SystemExit
     :rtype: SystemExit

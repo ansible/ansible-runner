@@ -428,7 +428,10 @@ def sanitize_container_name(original_name):
     Docker and podman will only accept certain characters in container names
     This takes a given name from user-specified values and replaces the
     invalid characters so it can be used in docker/podman CLI commands
+
+    :param str original_name: Container name containing potentially invalid characters
     """
+
     return re.sub('[^a-zA-Z0-9_-]', '_', text_type(original_name))
 
 
@@ -456,10 +459,10 @@ def cli_mounts():
 
 def sanitize_json_response(data):
     '''
-    Removes warning message from response message emitted by ansible
+    Removes warning message from response message emitted by Ansible
     command line utilities.
-    :param action: The string data to be santizied
-    :type action: str
+
+    :param str data: The string data to be sanitized
     '''
     start_re = re.compile("{(.|\n)*", re.MULTILINE)
     data = start_re.search(data).group().strip()

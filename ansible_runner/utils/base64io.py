@@ -306,7 +306,7 @@ class Base64IO(io.IOBase):
             Because the source that this reads from may not contain any OEL characters, we
             read "lines" in chunks of length ``io.DEFAULT_BUFFER_SIZE``.
 
-        :type limit: int
+        :param int limit: Maximum number of bytes to read
         :rtype: bytes
         """
         return self.read(limit if limit > 0 else io.DEFAULT_BUFFER_SIZE)
@@ -318,7 +318,7 @@ class Base64IO(io.IOBase):
         ``hint`` can be specified to control the number of lines read: no more lines will
         be read if the total size (in bytes/characters) of all lines so far exceeds hint.
 
-        :type hint: int
+        :param int hint: Number of lines to read
         :returns: Lines of data
         :rtype: list of bytes
         """

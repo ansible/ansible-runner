@@ -1,0 +1,24 @@
+name: Feature Request
+description: Suggest a new feature
+labels:
+  - needs_triage
+  - enhancement
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Thank you for suggesting a new feature for Ansible Runner.**
+
+        If you are looking for community support, please reach out on IRC:
+
+          [#ansible](https://web.libera.chat/#ansible)
+          [#ansible-runner](https://web.libera.chat/#ansible-runner)
+
+
+  - type:
+    attributes:
+      label: Summary
+      description: Describe the new feature and how it would be used.
+      validations:
+        required: true

@@ -1,0 +1,77 @@
+name: Bug report
+description: Report a problem so it can be fixed
+labels:
+  - needs_triage
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Thank you for reporting a bug in Ansible Runner.**
+
+        If you are looking for community support, please reach out on IRC:
+
+          [#ansible](https://web.libera.chat/#ansible)
+          [#ansible-runner](https://web.libera.chat/#ansible-runner)
+
+  - type: input
+    label: Ansible Runner version
+    description: Output from `ansible-runner --version`
+    render: console
+    validations:
+      required: true
+
+  - type: textarea
+    label: Python version
+    description: Output from `python -VV`
+    render: console
+    validations:
+      required: true
+
+  - type: textarea
+    label: Operating System and Environment
+    description: Provide relevant information about the operating system and environment
+    render: console
+    placeholder: RHEL 8, Debian 10, output from `/etc/os-release`, any other relevant information
+    validations:
+      required: true
+
+  - type: input
+    label: Container Runtime
+    description: Output from `podman|docker --version`
+    render: console
+    placeholder: podman --version
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Summary
+      description: Briefly explain the problem
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      description: Describe in detail how to reproduce the problem
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Expected Results
+      description: What was expected to happen when running the steps above
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Actual Results
+      description: What actually happened when running the steps above
+    validations:
+      required: true

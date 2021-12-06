@@ -546,7 +546,7 @@ class Runner(object):
     @classmethod
     def handle_termination(cls, pid, pidfile=None, is_cancel=True):
         '''
-        Internal method to terminate a subprocess spawned by `pexpect` representing an invocation of runner.
+        Internal method to terminate a subprocess spawned by ``pexpect`` representing an invocation of runner.
 
         :param pid:       the process id of the running the job.
         :param pidfile:   the daemon's PID file

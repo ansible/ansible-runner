@@ -34,17 +34,17 @@ Using Execution Environments from Protected Registries
 When a job is run that uses an execution environment container image from a private/protected registry,
 you will first need to authenticate to the registry.
 
-If you are running the job manually via `ansible-runner run`, logging in on the command line via
-`podman login` first is a method of authentication. Alternatively, creating a `container_auth_data`
-dictionary with the keys `host`, `username`, and `password` and putting that in the job's `env/settings`
+If you are running the job manually via ``ansible-runner run``, logging in on the command line via
+``podman login`` first is a method of authentication. Alternatively, creating a ``container_auth_data``
+dictionary with the keys ``host``, ``username``, and ``password`` and putting that in the job's ``env/settings``
 file is another way to ensure a successful pull of a protected execution environment container image.
 Note that this involves listing sensitive information in a file which will not automatically get cleaned
 up after the job run is complete.
 
 When running a job remotely via AWX or Ansible Tower, Ansible Runner can pick up the authentication
-information from the Container Registry Credential that was provided by the user. The `host`,
-`username`, `password`, and `verify_ssl` inputs from the credential are passed into Ansible Runner via the `container_auth_data`
-dictionary as key word arguments into a `json` file which gets deleted at the end of the job run (even if
+information from the Container Registry Credential that was provided by the user. The ``host``,
+``username``, ``password``, and ``verify_ssl`` inputs from the credential are passed into Ansible Runner via the ``container_auth_data``
+dictionary as key word arguments into a ``json`` file which gets deleted at the end of the job run (even if
 the job was canceled/interrupted), enabling the bypassing of sensitive information from any potentially
 persistent job-related files.
 

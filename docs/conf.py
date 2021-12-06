@@ -25,6 +25,8 @@ def _get_version():
     return '.'.join(version_parts)
 
 
+nitpicky = True
+default_role = 'any'  # This catches single backticks (incorrectly) used for inline code formatting
 project = 'ansible-runner'
 copyright = f'2018-{datetime.datetime.today().year}, Red Hat, Inc'
 author = 'Red Hat, Inc.'

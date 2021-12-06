@@ -175,11 +175,3 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
-
-nitpick_ignore = [
-    # FIXME: Undocumented classes picked up by autodoc as via inheritance:
-    ('py:class', 'ansible.plugins.callback.CallbackBase'),
-    ('py:class', 'ansible.plugins.callback.default.CallbackModule'),
-    ('py:class', 'display_callback.module.AWXDefaultCallbackModule'),
-    ('py:class', 'display_callback.module.AWXMinimalCallbackModule'),
-]

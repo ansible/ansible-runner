@@ -135,17 +135,17 @@ def run(**kwargs):
     '''
     Run an Ansible Runner task in the foreground and return a Runner object when complete.
 
-    :param private_data_dir: The directory containing all runner metadata needed to invoke the runner
+    :param str private_data_dir: The directory containing all runner metadata needed to invoke the runner
                              module. Output artifacts will also be stored here for later consumption.
-    :param ident: The run identifier for this invocation of Runner. Will be used to create and name
+    :param str ident: The run identifier for this invocation of Runner. Will be used to create and name
                   the artifact directory holding the results of the invocation.
-    :param json_mode: Store event data in place of stdout on the console and in the stdout file
-    :param playbook: The playbook (either a list or dictionary of plays, or as a path relative to
+    :param bool json_mode: Store event data in place of stdout on the console and in the stdout file
+    :param str or list playbook: The playbook (either a list or dictionary of plays, or as a path relative to
                      ``private_data_dir/project``) that will be invoked by runner when executing Ansible.
-    :param module: The module that will be invoked in ad-hoc mode by runner when executing Ansible.
-    :param module_args: The module arguments that will be supplied to ad-hoc mode.
-    :param host_pattern: The host pattern to match when running in ad-hoc mode.
-    :param inventory: Overrides the inventory directory/file (supplied at ``private_data_dir/inventory``) with
+    :param str module: The module that will be invoked in ad-hoc mode by runner when executing Ansible.
+    :param str module_args: The module arguments that will be supplied to ad-hoc mode.
+    :param str host_pattern: The host pattern to match when running in ad-hoc mode.
+    :param str or dict or list inventory: Overrides the inventory directory/file (supplied at ``private_data_dir/inventory``) with
         a specific host or list of hosts. This can take the form of:
 
             - Path to the inventory file in the ``private_data_dir``
@@ -153,113 +153,64 @@ def run(**kwargs):
             - A text INI formatted string
             - A list of inventory sources, or an empty list to disable passing inventory
 
-    :param role: Name of the role to execute.
-    :param roles_path: Directory or list of directories to assign to ANSIBLE_ROLES_PATH
-    :param envvars: Environment variables to be used when running Ansible. Environment variables will also be
+    :param str role: Name of the role to execute.
+    :param dict or list roles_path: Directory or list of directories to assign to ANSIBLE_ROLES_PATH
+    :param dict envvars: Environment variables to be used when running Ansible. Environment variables will also be
                     read from ``env/envvars`` in ``private_data_dir``
-    :param extravars: Extra variables to be passed to Ansible at runtime using ``-e``. Extra vars will also be
+    :param dict extravars: Extra variables to be passed to Ansible at runtime using ``-e``. Extra vars will also be
                       read from ``env/extravars`` in ``private_data_dir``.
-    :param passwords: A dictionary containing password prompt patterns and response values used when processing output from
+    :param dict passwords: A dictionary containing password prompt patterns and response values used when processing output from
                       Ansible. Passwords will also be read from ``env/passwords`` in ``private_data_dir``.
-    :param settings: A dictionary containing settings values for the ``ansible-runner`` runtime environment. These will also
+    :param dict settings: A dictionary containing settings values for the ``ansible-runner`` runtime environment. These will also
                      be read from ``env/settings`` in ``private_data_dir``.
-    :param ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
-    :param cmdline: Command line options passed to Ansible read from ``env/cmdline`` in ``private_data_dir``
-    :param limit: Matches ansible's ``--limit`` parameter to further constrain the inventory to be used
-    :param forks: Control Ansible parallel concurrency
-    :param verbosity: Control how verbose the output of ansible-playbook is
-    :param quiet: Disable all output
-    :param artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
-    :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
-    :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
-    :param timeout: The timeout value in seconds that will be passed to either ``pexpect`` of ``subprocess`` invocation
+    :param str ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
+    :param str cmdline: Command line options passed to Ansible read from ``env/cmdline`` in ``private_data_dir``
+    :param str limit: Matches ansible's ``--limit`` parameter to further constrain the inventory to be used
+    :param int forks: Control Ansible parallel concurrency
+    :param int verbosity: Control how verbose the output of ansible-playbook is
+    :param bool quiet: Disable all output
+    :param str artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
+    :param str project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
+    :param int rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
+    :param int timeout: The timeout value in seconds that will be passed to either ``pexpect`` of ``subprocess`` invocation
                     (based on ``runner_mode`` selected) while executing command. It the timeout is triggered it will force cancel the
                     execution.
-    :param streamer: Optionally invoke ansible-runner as one of the steps in the streaming pipeline
-    :param _input: An optional file or file-like object for use as input in a streaming pipeline
-    :param _output: An optional file or file-like object for use as output in a streaming pipeline
-    :param event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
-    :param cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
-    :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
-    :param status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
-    :param artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
-    :param process_isolation: Enable process isolation, using either a container engine (e.g. podman) or a sandbox (e.g. bwrap).
-    :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
-    :param process_isolation_path: Path that an isolated playbook run will use for staging. (default: /tmp)
-    :param process_isolation_hide_paths: A path or list of paths on the system that should be hidden from the playbook run.
-    :param process_isolation_show_paths: A path or list of paths on the system that should be exposed to the playbook run.
-    :param process_isolation_ro_paths: A path or list of paths on the system that should be exposed to the playbook run as read-only.
-    :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
-    :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir. (default: None)
-    :param container_options: List of container options to pass to execution engine.
-    :param resource_profiling: Enable collection of resource utilization data during playbook execution.
-    :param resource_profiling_base_cgroup: Name of existing cgroup which will be sub-grouped in order to measure resource utilization (default: ansible-runner)
-    :param resource_profiling_cpu_poll_interval: Interval (in seconds) between CPU polling for determining CPU usage (default: 0.25)
-    :param resource_profiling_memory_poll_interval: Interval (in seconds) between memory polling for determining memory usage (default: 0.25)
-    :param resource_profiling_pid_poll_interval: Interval (in seconds) between polling PID count for determining number of processes used (default: 0.25)
-    :param resource_profiling_results_dir: Directory where profiling data files should be saved (defaults to profiling_data folder inside private data dir)
-    :param directory_isolation_base_path: An optional path will be used as the base path to create a temp directory, the project contents will be
+    :param str streamer: Optionally invoke ansible-runner as one of the steps in the streaming pipeline
+    :param io.FileIO _input: An optional file or file-like object for use as input in a streaming pipeline
+    :param io.FileIO _output: An optional file or file-like object for use as output in a streaming pipeline
+    :param Callable event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
+    :param Callable cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
+    :param Callable finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
+    :param Callable status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
+    :param Callable artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
+    :param bool process_isolation: Enable process isolation, using either a container engine (e.g. podman) or a sandbox (e.g. bwrap).
+    :param str process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
+    :param str process_isolation_path: Path that an isolated playbook run will use for staging. (default: /tmp)
+    :param str or list process_isolation_hide_paths: A path or list of paths on the system that should be hidden from the playbook run.
+    :param str or list process_isolation_show_paths: A path or list of paths on the system that should be exposed to the playbook run.
+    :param str or list process_isolation_ro_paths: A path or list of paths on the system that should be exposed to the playbook run as read-only.
+    :param str container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
+    :param list container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir. (default: None)
+    :param list container_options: List of container options to pass to execution engine.
+    :param bool resource_profiling: Enable collection of resource utilization data during playbook execution.
+    :param str resource_profiling_base_cgroup: Name of existing cgroup which will be sub-grouped in order to measure
+                    resource utilization (default: ansible-runner)
+    :param float resource_profiling_cpu_poll_interval: Interval (in seconds) between CPU polling for determining CPU usage (default: 0.25)
+    :param float resource_profiling_memory_poll_interval: Interval (in seconds) between memory polling for determining memory usage (default: 0.25)
+    :param float resource_profiling_pid_poll_interval: Interval (in seconds) between polling PID count for determining number of processes used (default: 0.25)
+    :param str resource_profiling_results_dir: Directory where profiling data files should be saved (defaults to profiling_data folder inside private data dir)
+    :param str directory_isolation_base_path: An optional path will be used as the base path to create a temp directory, the project contents will be
                                           copied to this location which will then be used as the working directory during playbook execution.
-    :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
+    :param str fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
                        This is only used for 'jsonfile' type fact caches.
-    :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
-    :param omit_event_data: Omits extra ansible event data from event payload (stdout and event still included)
-    :param only_failed_event_data: Omits extra ansible event data unless it's a failed event (stdout and event still included)
-    :param check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
+    :param str fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
+    :param bool omit_event_data: Omits extra ansible event data from event payload (stdout and event still included)
+    :param bool only_failed_event_data: Omits extra ansible event data unless it's a failed event (stdout and event still included)
+    :param bool check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
                                  value is set to 'True' it will raise 'AnsibleRunnerException' exception,
                                  if set to 'False' it log a debug message and continue execution. Default value is 'False'
-    :type private_data_dir: str
-    :type ident: str
-    :type json_mode: bool
-    :type playbook: str or filename or list
-    :type inventory: str or dict or list
-    :type role: str
-    :type roles_path: dict or list
-    :type envvars: dict
-    :type extravars: dict
-    :type passwords: dict
-    :type settings: dict
-    :type ssh_key: str
-    :type artifact_dir: str
-    :type project_dir: str
-    :type rotate_artifacts: int
-    :type timeout: int
-    :type cmdline: str
-    :type limit: str
-    :type forks: int
-    :type quiet: bool
-    :type verbosity: int
-    :type streamer: str
-    :type _input: file
-    :type _output: file
-    :type event_handler: function
-    :type cancel_callback: function
-    :type finished_callback: function
-    :type status_handler: function
-    :type artifacts_handler: function
-    :type process_isolation: bool
-    :type process_isolation_executable: str
-    :type process_isolation_path: str
-    :type process_isolation_hide_paths: str or list
-    :type process_isolation_show_paths: str or list
-    :type process_isolation_ro_paths: str or list
-    :type container_image: str
-    :type container_volume_mounts: list
-    :type container_options: list
-    :type resource_profiling: bool
-    :type resource_profiling_base_cgroup: str
-    :type resource_profiling_cpu_poll_interval: float
-    :type resource_profiling_memory_poll_interval: float
-    :type resource_profiling_pid_poll_interval: float
-    :type resource_profiling_results_dir: str
-    :type directory_isolation_base_path: str
-    :type fact_cache: str
-    :type fact_cache_type: str
-    :type omit_event_data: bool
-    :type only_failed_event_data: bool
-    :type check_job_event_data: bool
 
-    :returns: A :py:class:`ansible_runner.runner.Runner` object, or a simple object containing `rc` if run remotely
+    :returns: A :py:class:`ansible_runner.runner.Runner` object, or a simple object containing ``rc`` if run remotely
     '''
     r = init_runner(**kwargs)
     r.run()
@@ -309,88 +260,54 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
     '''
     Run an (Ansible) commands in the foreground and return a Runner object when complete.
 
-    :param executable_cmd: The command to be executed.
-    :param cmdline_args: A list of arguments to be passed to the executable command.
-    :param input_fd: This parameter is applicable when ``runner_mode`` is set to ``subprocess``, it provides the
+    :param str executable_cmd: The command to be executed.
+    :param list cmdline_args: A list of arguments to be passed to the executable command.
+    :param int input_fd: This parameter is applicable when ``runner_mode`` is set to ``subprocess``, it provides the
                      input file descrption to interact with the sub-process running the command.
-    :param output_fd: The output file descriptor to stream the output of command execution.
-    :param error_fd: This parameter is applicable when ``runner_mode`` is set to ``subprocess``, it provides the
+    :param int output_fd: The output file descriptor to stream the output of command execution.
+    :param int error_fd: This parameter is applicable when ``runner_mode`` is set to ``subprocess``, it provides the
                      error file descrption to read the error received while executing the command.
-    :param runner_mode: The applicable values are ``pexpect`` and ``subprocess``. If the value of ``input_fd`` parameter
+    :param str runner_mode: The applicable values are ``pexpect`` and ``subprocess``. If the value of ``input_fd`` parameter
                         is set or the executable command is one of ``ansible-config``, ``ansible-doc`` or ``ansible-galaxy``
                         the default value is set to ``subprocess`` else in other cases it is set to ``pexpect``.
-    :param host_cwd: The host current working directory to be mounted within the container (if enabled) and will be
+    :param str host_cwd: The host current working directory to be mounted within the container (if enabled) and will be
                      the work directory within container.
-    :param envvars: Environment variables to be used when running Ansible. Environment variables will also be
+    :param dict envvars: Environment variables to be used when running Ansible. Environment variables will also be
                     read from ``env/envvars`` in ``private_data_dir``
-    :param passwords: A dictionary containing password prompt patterns and response values used when processing output from
+    :param dict passwords: A dictionary containing password prompt patterns and response values used when processing output from
                       Ansible. Passwords will also be read from ``env/passwords`` in ``private_data_dir``.
-    :param settings: A dictionary containing settings values for the ``ansible-runner`` runtime environment. These will also
+    :param dict settings: A dictionary containing settings values for the ``ansible-runner`` runtime environment. These will also
                      be read from ``env/settings`` in ``private_data_dir``.
-    :param ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
-    :param quiet: Disable all output
-    :param json_mode: Store event data in place of stdout on the console and in the stdout file
-    :param artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
-    :param project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
-    :param rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
-    :param timeout: The timeout value in seconds that will be passed to either ``pexpect`` of ``subprocess`` invocation
+    :param str ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
+    :param bool quiet: Disable all output
+    :param bool json_mode: Store event data in place of stdout on the console and in the stdout file
+    :param str artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
+    :param str project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
+    :param int rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
+    :param int timeout: The timeout value in seconds that will be passed to either ``pexpect`` of ``subprocess`` invocation
                     (based on ``runner_mode`` selected) while executing command. It the timeout is triggered it will force cancel the
                     execution.
-    :param process_isolation: Enable process isolation, using a container engine (e.g. podman).
-    :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
-    :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
-    :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
-    :param container_options: List of container options to pass to execution engine.
-    :param container_workdir: The working directory within the container.
-    :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
+    :param bool process_isolation: Enable process isolation, using a container engine (e.g. podman).
+    :param str process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
+    :param str container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
+    :param list container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
+    :param list container_options: List of container options to pass to execution engine.
+    :param str container_workdir: The working directory within the container.
+    :param str fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
                        This is only used for 'jsonfile' type fact caches.
-    :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
-    :param private_data_dir: The directory containing all runner metadata needed to invoke the runner
+    :param str fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
+    :param str private_data_dir: The directory containing all runner metadata needed to invoke the runner
                              module. Output artifacts will also be stored here for later consumption.
-    :param ident: The run identifier for this invocation of Runner. Will be used to create and name
+    :param str ident: The run identifier for this invocation of Runner. Will be used to create and name
                   the artifact directory holding the results of the invocation.
-    :param event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
-    :param cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
-    :param finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
-    :param status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
-    :param artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
-    :param check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
+    :param Callable event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
+    :param Callable cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
+    :param Callable finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
+    :param Callable status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
+    :param Callable artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
+    :param bool check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
                                  value is set to 'True' it will raise 'AnsibleRunnerException' exception,
                                  if set to 'False' it log a debug message and continue execution. Default value is 'False'
-
-    :type executable_cmd: str
-    :type cmdline_args: list
-    :type input_fd: file descriptor
-    :type output_fd: file descriptor
-    :type error_fd: file descriptor
-    :type runner_mode: str
-    :type host_cwd: str
-    :type envvars: dict
-    :type passwords: dict
-    :type settings: dict
-    :type private_data_dir: str
-    :type project_dir: str
-    :type artifact_dir: str
-    :type fact_cache_type: str
-    :type fact_cache: str
-    :type process_isolation: bool
-    :type process_isolation_executable: str
-    :type container_image: str
-    :type container_volume_mounts: list
-    :type container_options: list
-    :type container_workdir: str
-    :type ident: str
-    :type rotate_artifacts: int
-    :type timeout: int
-    :type ssh_key: str
-    :type quiet: bool
-    :type json_mode: bool
-    :type event_handler: function
-    :type cancel_callback: function
-    :type finished_callback: function
-    :type status_handler: function
-    :type artifacts_handler: function
-    :type check_job_event_data: bool
 
     :returns: Returns a tuple of response, error string and return code.
               In case if ``runner_mode`` is set to ``pexpect`` the error value is empty as
@@ -523,11 +440,11 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format=None, snippe
     :type ssh_key: str
     :type quiet: bool
     :type json_mode: bool
-    :type event_handler: function
-    :type cancel_callback: function
-    :type finished_callback: function
-    :type status_handler: function
-    :type artifacts_handler: function
+    :type event_handler: Callable
+    :type cancel_callback: Callable
+    :type finished_callback: Callable
+    :type status_handler: Callable
+    :type artifacts_handler: Callable
     :type check_job_event_data: bool
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is empty as
@@ -639,11 +556,11 @@ def get_plugin_list(list_files=None, response_format=None, plugin_type=None, pla
     :type ssh_key: str
     :type quiet: bool
     :type json_mode: bool
-    :type event_handler: function
-    :type cancel_callback: function
-    :type finished_callback: function
-    :type status_handler: function
-    :type artifacts_handler: function
+    :type event_handler: Callable
+    :type cancel_callback: Callable
+    :type finished_callback: Callable
+    :type status_handler: Callable
+    :type artifacts_handler: Callable
     :type check_job_event_data: bool
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is empty as
@@ -738,7 +655,7 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
     :type vault_ids: str
     :type vault_password_file: str
     :type output_file: str
-    :type: export: bool
+    :type export: bool
     :type runner_mode: str
     :type host_cwd: str
     :type envvars: dict
@@ -761,11 +678,11 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
     :type ssh_key: str
     :type quiet: bool
     :type json_mode: bool
-    :type event_handler: function
-    :type cancel_callback: function
-    :type finished_callback: function
-    :type status_handler: function
-    :type artifacts_handler: function
+    :type event_handler: Callable
+    :type cancel_callback: Callable
+    :type finished_callback: Callable
+    :type status_handler: Callable
+    :type artifacts_handler: Callable
     :type check_job_event_data: bool
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is
@@ -868,12 +785,12 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     :type timeout: int
     :type ssh_key: str
     :type quiet: bool
-    :type: json_mode: bool
-    :type event_handler: function
-    :type cancel_callback: function
-    :type finished_callback: function
-    :type status_handler: function
-    :type artifacts_handler: function
+    :type json_mode: bool
+    :type event_handler: Callable
+    :type cancel_callback: Callable
+    :type finished_callback: Callable
+    :type status_handler: Callable
+    :type artifacts_handler: Callable
     :type check_job_event_data: bool
 
     :returns: Returns a tuple of response and error string. In case if ``runner_mode`` is set to ``pexpect`` the error value is
@@ -940,12 +857,12 @@ def get_role_list(collection=None, playbook_dir=None, **kwargs):
         module. Output artifacts will also be stored here for later consumption.
     :param str ident: The run identifier for this invocation of Runner. Will be used to create and name
         the artifact directory holding the results of the invocation.
-    :param function event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
-    :param function cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
-    :param function finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
-    :param function status_handler: An optional callback that will be invoked any time the status changes
+    :param Callable event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
+    :param Callable cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
+    :param Callable finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
+    :param Callable status_handler: An optional callback that will be invoked any time the status changes
         (for example: started, running, failed, successful, timeout)
-    :param function artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
+    :param Callable artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
     :param bool check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
         value is set to 'True' it will raise 'AnsibleRunnerException' exception. If set to 'False', log a debug message and continue execution.
         Default value is 'False'
@@ -1017,12 +934,12 @@ def get_role_argspec(role, collection=None, playbook_dir=None, **kwargs):
         module. Output artifacts will also be stored here for later consumption.
     :param str ident: The run identifier for this invocation of Runner. Will be used to create and name
         the artifact directory holding the results of the invocation.
-    :param function event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
-    :param function cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
-    :param function finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
-    :param function status_handler: An optional callback that will be invoked any time the status changes
+    :param Callable event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
+    :param Callable cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
+    :param Callable finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
+    :param Callable status_handler: An optional callback that will be invoked any time the status changes
         (for example: started, running, failed, successful, timeout)
-    :param function artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
+    :param Callable artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
     :param bool check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
         value is set to 'True' it will raise 'AnsibleRunnerException' exception. If set to 'False', log a debug message and continue execution.
         Default value is 'False'

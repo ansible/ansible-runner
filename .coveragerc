@@ -1,6 +1,9 @@
 [run]
-source = ansible_runner
+branch = True
 data_file = test/coverage/data/coverage
+source =
+    ansible_runner
+    test
 
 [report]
 skip_covered = True

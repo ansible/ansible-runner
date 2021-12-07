@@ -65,7 +65,7 @@ class RunnerConfig(BaseConfig):
     def __init__(self,
                  private_data_dir, playbook=None, inventory=None, roles_path=None, limit=None,
                  module=None, module_args=None, verbosity=None, host_pattern=None, binary=None,
-                 extravars=None, suppress_ansible_output=False, process_isolation_path=None,
+                 extravars=None, suppress_output_file=False, suppress_ansible_output=False, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None,
                  process_isolation_ro_paths=None, resource_profiling=False,
                  resource_profiling_base_cgroup='ansible-runner', resource_profiling_cpu_poll_interval=0.25,
@@ -101,6 +101,7 @@ class RunnerConfig(BaseConfig):
 
         self.directory_isolation_path = directory_isolation_base_path
         self.verbosity = verbosity
+        self.suppress_output_file = suppress_output_file
         self.suppress_ansible_output = suppress_ansible_output
         self.tags = tags
         self.skip_tags = skip_tags

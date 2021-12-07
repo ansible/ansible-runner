@@ -4,6 +4,7 @@ import codecs
 import os
 
 import json
+from pathlib import Path
 import pexpect
 import pytest
 import six
@@ -152,3 +153,25 @@ def test_status_callback_interface(rc, mocker):
     assert runner.status_handler.call_count == 1
     runner.status_handler.assert_called_with(dict(status='running', runner_ident=str(rc.ident)), runner_config=runner.config)
     assert runner.status == 'running'
+
+
+@pytest.mark.parametrize('runner_mode', ['pexpect', 'subprocess'])
+def test_stdout_file_write(rc, runner_mode):
+    rc.command = ['echo', 'hello_world_marker']
+    rc.runner_mode = runner_mode
+    status, exitcode = Runner(config=rc).run()
+    assert status == 'successful'
+    stdout_path = Path(rc.artifact_dir) / 'stdout'
+    assert stdout_path.read_text().strip() == 'hello_world_marker'
+
+
+@pytest.mark.parametrize('runner_mode', ['pexpect', 'subprocess'])
+def test_stdout_file_no_write(rc, runner_mode):
+    rc.command = ['echo', 'hello_world_marker']
+    rc.runner_mode = runner_mode
+    rc.suppress_output_file = True
+    status, exitcode = Runner(config=rc).run()
+    assert status == 'successful'
+    for filename in ('stdout', 'stderr'):
+        stdout_path = Path(rc.artifact_dir) / filename
+        assert not stdout_path.exists()

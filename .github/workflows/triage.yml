@@ -9,10 +9,9 @@ on:
   issues:
     types:
       - opened
+      - reopened
 
-  pull_request:
-    types:
-      - opened
+  pull_request_target:
 
 jobs:
   triage:

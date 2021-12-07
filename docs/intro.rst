@@ -139,7 +139,8 @@ The **settings** file is a little different than the other files provided in thi
 * ``pexpect_timeout``: ``10`` Number of seconds for the internal pexpect command to wait to block on input before continuing
 * ``pexpect_use_poll``: ``True`` Use ``poll()`` function for communication with child processes instead of ``select()``. ``select()`` is used when the value is set to ``False``. ``select()`` has a known limitation of using only up to 1024 file descriptors.
 
-* ``suppress_ansible_output``: ``False`` Allow output from ansible to not be printed to the screen
+* ``suppress_output_file``: ``False`` Allow output from ansible to not be streamed to the ``stdout`` or ``stderr`` files inside of the artifacts directory.
+* ``suppress_ansible_output``: ``False`` Allow output from ansible to not be printed to the screen.
 * ``fact_cache``: ``'fact_cache'`` The directory relative to ``artifacts`` where ``jsonfile`` fact caching will be stored.  Defaults to ``fact_cache``.  This is ignored if ``fact_cache_type`` is different than ``jsonfile``.
 * ``fact_cache_type``: ``'jsonfile'`` The type of fact cache to use.  Defaults to ``jsonfile``.
 

@@ -100,7 +100,7 @@ class BaseConfig(object):
             # attempt to compromise the directories via a race.
             os.makedirs(self.private_data_dir, exist_ok=True, mode=0o700)
         else:
-            self.private_data_dir = tempfile.mkdtemp(prefix=defaults.auto_create_naming, dir=defaults.auto_create_dir)
+            self.private_data_dir = tempfile.mkdtemp(prefix=defaults.AUTO_CREATE_NAMING, dir=defaults.AUTO_CREATE_DIR)
 
         if artifact_dir is None:
             artifact_dir = os.path.join(self.private_data_dir, 'artifacts')

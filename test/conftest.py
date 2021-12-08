@@ -21,7 +21,7 @@ def mock_env_user(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def change_save_path(tmp_path, mocker):
-    mocker.patch.object(defaults, 'auto_create_dir', str(tmp_path))
+    mocker.patch.object(defaults, 'AUTO_CREATE_DIR', str(tmp_path))
 
 
 @pytest.fixture(scope='session')

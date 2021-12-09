@@ -3,10 +3,12 @@ name: Triage
 on:
   issues:
     types:
-      - opened
       - reopened
 
   pull_request_target:
+    types:
+      - reopened
+      - synchronize
 
 jobs:
   triage:
@@ -18,7 +20,7 @@ jobs:
         uses: actions/labeler@v3
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          configuration-path: .github/pr-labeler.yml
+          configuration-path: .github/pr_labeler_existing.yml
         if: github.event_name == 'pull_request_target'
 
       - name: Label issues
@@ -28,6 +30,6 @@ jobs:
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           not-before: 2021-12-07T07:00:00Z
-          configuration-path: .github/issue-labeler.yml
+          configuration-path: .github/issue_labeler.yml
           enable-versioned-regex: 0
         if: github.event_name == 'issues'

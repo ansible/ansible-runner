@@ -24,9 +24,7 @@ jobs:
         if: github.event_name == 'pull_request_target'
 
       - name: Label issues
-        # This is the latest commit in the v2.4 branch. Waiting for a 2.4.1 or newer release.
-        # https://github.com/github/issue-labeler/issues/24
-        uses: github/issue-labeler@99b4c5dda477c65f4ef08486b73c5787e1e33601
+        uses: github/issue-labeler@v2.4.1
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           not-before: 2021-12-07T07:00:00Z

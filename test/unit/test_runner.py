@@ -4,10 +4,13 @@ import codecs
 import os
 
 import json
+from pathlib import Path
 import pexpect
 import pytest
 import six
 import sys
+
+from test.utils.common import iterate_timeout
 
 from ansible_runner import Runner
 from ansible_runner.exceptions import CallbackError, AnsibleRunnerException
@@ -29,16 +32,6 @@ def rc(request, tmp_path):
     rc.pexpect_timeout = .1
     rc.pexpect_use_poll = True
     return rc
-
-
-@pytest.fixture(autouse=True)
-def mock_sleep(request, mocker):
-    # the handle_termination process teardown mechanism uses `time.sleep` to
-    # wait on processes to respond to SIGTERM; these are tests and don't care
-    # about being nice
-    m = mocker.patch('time.sleep')
-    m.start()
-    request.addfinalizer(m.stop)
 
 
 def test_simple_spawn(rc):
@@ -152,3 +145,30 @@ def test_status_callback_interface(rc, mocker):
     assert runner.status_handler.call_count == 1
     runner.status_handler.assert_called_with(dict(status='running', runner_ident=str(rc.ident)), runner_config=runner.config)
     assert runner.status == 'running'
+
+
+@pytest.mark.parametrize('runner_mode', ['pexpect', 'subprocess'])
+def test_stdout_file_write(rc, runner_mode):
+    if runner_mode == 'pexpect':
+        pytest.skip('Writing to stdout can be flaky, probably due to some pexpect bug')
+    rc.command = ['echo', 'hello_world_marker']
+    rc.runner_mode = runner_mode
+    status, exitcode = Runner(config=rc).run()
+    assert status == 'successful'
+    stdout_path = Path(rc.artifact_dir) / 'stdout'
+    # this can be subject to a race condition so we will be patient with the check
+    for _ in iterate_timeout(30.0, 'stdout file to be written', interval=0.2):
+        if 'hello_world_marker' in stdout_path.read_text():
+            break
+
+
+@pytest.mark.parametrize('runner_mode', ['pexpect', 'subprocess'])
+def test_stdout_file_no_write(rc, runner_mode):
+    rc.command = ['echo', 'hello_world_marker']
+    rc.runner_mode = runner_mode
+    rc.suppress_output_file = True
+    status, exitcode = Runner(config=rc).run()
+    assert status == 'successful'
+    for filename in ('stdout', 'stderr'):
+        stdout_path = Path(rc.artifact_dir) / filename
+        assert not stdout_path.exists()

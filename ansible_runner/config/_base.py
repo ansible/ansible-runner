@@ -244,6 +244,7 @@ class BaseConfig(object):
             self.ssh_key_path = os.path.join(self.artifact_dir, 'ssh_key_data')
             open_fifo_write(self.ssh_key_path, self.ssh_key_data)
 
+        self.suppress_output_file = self.settings.get('suppress_output_file', False)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
 
         if 'fact_cache' in self.settings:

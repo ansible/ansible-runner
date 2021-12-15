@@ -10,6 +10,7 @@ import codecs
 import collections
 import datetime
 import logging
+from io import StringIO
 
 import six
 import pexpect
@@ -117,9 +118,7 @@ class Runner(object):
         password_values = []
 
         self.status_callback('starting')
-        stdout_filename = os.path.join(self.config.artifact_dir, 'stdout')
         command_filename = os.path.join(self.config.artifact_dir, 'command')
-        stderr_filename = os.path.join(self.config.artifact_dir, 'stderr')
 
         try:
             os.makedirs(self.config.artifact_dir, mode=0o700)
@@ -128,7 +127,6 @@ class Runner(object):
                 pass
             else:
                 raise
-        os.close(os.open(stdout_filename, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
 
         job_events_path = os.path.join(self.config.artifact_dir, 'job_events')
         if not os.path.exists(job_events_path):
@@ -151,9 +149,17 @@ class Runner(object):
         else:
             suppress_ansible_output = False
 
-        stdout_handle = codecs.open(stdout_filename, 'w', encoding='utf-8')
+        if not self.config.suppress_output_file:
+            stdout_filename = os.path.join(self.config.artifact_dir, 'stdout')
+            stderr_filename = os.path.join(self.config.artifact_dir, 'stderr')
+            os.close(os.open(stdout_filename, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
+            stdout_handle = codecs.open(stdout_filename, 'w', encoding='utf-8')
+            stderr_handle = codecs.open(stderr_filename, 'w', encoding='utf-8')
+        else:
+            stdout_handle = StringIO()
+            stderr_handle = StringIO()
+
         stdout_handle = OutputEventFilter(stdout_handle, self.event_callback, suppress_ansible_output, output_json=self.config.json_mode)
-        stderr_handle = codecs.open(stderr_filename, 'w', encoding='utf-8')
         stderr_handle = OutputEventFilter(stderr_handle, self.event_callback, suppress_ansible_output, output_json=self.config.json_mode)
 
         if self.runner_mode == 'pexpect' and not isinstance(self.config.expect_passwords, collections.OrderedDict):
@@ -307,7 +313,8 @@ class Runner(object):
                     echo=False,
                     use_poll=self.config.pexpect_use_poll,
                 )
-                child.logfile_read = stdout_handle
+                if not self.config.suppress_output_file:
+                    child.logfile_read = stdout_handle
             except pexpect.exceptions.ExceptionPexpect as e:
                 child = collections.namedtuple(
                     'MissingProcess', 'exitstatus isalive close'

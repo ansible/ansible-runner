@@ -11,6 +11,8 @@ from ansible_runner import Runner
 
 from ansible_runner.exceptions import AnsibleRunnerException
 
+from test.utils.common import iterate_timeout
+
 
 def test_password_prompt(rc):
     rc.command = [sys.executable, '-c' 'import time; print(input("Password: "))']
@@ -18,8 +20,11 @@ def test_password_prompt(rc):
     status, exitcode = Runner(config=rc).run()
     assert status == 'successful'
     assert exitcode == 0
-    with open(os.path.join(rc.artifact_dir, 'stdout')) as f:
-        assert '1234' in f.read()
+    # stdout file can be subject to a race condition
+    for _ in iterate_timeout(30.0, 'stdout file to be written with 1234 in it', interval=0.2):
+        with open(os.path.join(rc.artifact_dir, 'stdout')) as f:
+            if '1234' in f.read():
+                break
 
 
 def test_run_command(rc):
@@ -270,5 +275,8 @@ def test_set_extra_vars(rc):
     rc.prepare()
     runner = Runner(config=rc)
     status, exitcode = runner.run()
-    with open(os.path.join(rc.artifact_dir, 'stdout')) as f:
-        assert 'hello there' in f.read()
+    # stdout file can be subject to a race condition
+    for _ in iterate_timeout(30.0, 'stdout file to be written with "hello there" in it', interval=0.2):
+        with open(os.path.join(rc.artifact_dir, 'stdout')) as f:
+            if 'hello there' in f.read():
+                break

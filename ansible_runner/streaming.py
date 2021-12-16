@@ -178,9 +178,14 @@ class Processor(object):
                 settings = {}
         self.config = MockConfig(settings)
 
-        artifact_dir = kwargs.get('artifact_dir')
-        self.artifact_dir = os.path.abspath(
-            artifact_dir or os.path.join(self.private_data_dir, 'artifacts'))
+        if kwargs.get('artifact_dir'):
+            self.artifact_dir = os.path.abspath(kwargs.get('artifact_dir'))
+        else:
+            project_artifacts = os.path.abspath(os.path.join(self.private_data_dir, 'artifacts'))
+            if kwargs.get('ident'):
+                self.artifact_dir = os.path.join(project_artifacts, "{}".format(kwargs.get('ident')))
+            else:
+                self.artifact_dir = project_artifacts
 
         self.status_handler = status_handler
         self.event_handler = event_handler

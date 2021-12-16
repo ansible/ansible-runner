@@ -55,6 +55,17 @@ There is otherwise no automatic cleanup of images used by a run,
 even if ``container_auth_data`` is used to pull from a private container registry.
 To be sure that layers are deleted as well, the ``--image-prune`` flag is necessary.
 
+Artifact Directory Specification
+--------------------------------
+
+The ``worker`` command does not write artifacts, these are streamed instead, and
+the ``process`` command is what ultimately writes the artifacts folder contents.
+
+With the default behavior, ``ansible-runner process ./demo`` would write artifacts to ``./demo/artifacts``.
+If you wish to better align with normal ansible-runner use, you can pass the
+``--ident`` option to save to a subfolder, so ``ansible-runner process ./demo --ident=43``
+would extract artifacts to the folder ``./demo/artifacts/43``.
+
 Python API
 ----------
 

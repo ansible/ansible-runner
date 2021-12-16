@@ -656,6 +656,14 @@ def main(sys_args=None):
         help="Receive the output of remote ansible-runner work and distribute the results"
     )
     add_args_to_parser(process_subparser, DEFAULT_CLI_ARGS['positional_args'])
+    process_subparser.add_argument(
+        "-i", "--ident",
+        default=None,
+        help=(
+            "An identifier to use as a subdirectory when saving artifacts. "
+            "Generally intended to match the --ident passed to the transmit command."
+        )
+    )
 
     # generic args for all subparsers
     add_args_to_parser(run_subparser, DEFAULT_CLI_ARGS['generic_args'])

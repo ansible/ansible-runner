@@ -169,7 +169,7 @@ class TestStreamingUsage:
         self.check_artifacts(str(process_dir), job_type)
 
 
-@pytest.fixture()
+@pytest.fixture
 def transmit_stream(project_fixtures, tmp_path):
     outgoing_buffer = tmp_path / 'buffer'
     outgoing_buffer.touch()
@@ -179,9 +179,26 @@ def transmit_stream(project_fixtures, tmp_path):
         transmitter = Transmitter(_output=f, private_data_dir=transmit_dir, playbook='debug.yml')
         status, rc = transmitter.run()
 
-        assert rc in (None, 0)
-        assert status == 'unstarted'
-        return outgoing_buffer
+    assert rc in (None, 0)
+    assert status == 'unstarted'
+    return outgoing_buffer
+
+
+@pytest.fixture
+def worker_stream(transmit_stream, tmp_path):
+    ingoing_buffer = tmp_path / 'buffer2'  # basically how some demos work
+    ingoing_buffer.touch()
+
+    worker_dir = tmp_path / 'worker_dir'
+    worker_dir.mkdir()
+    with transmit_stream.open('rb') as out:
+        with ingoing_buffer.open('wb') as f:
+            worker = Worker(_input=out, _output=f, private_data_dir=worker_dir)
+            status, rc = worker.run()
+
+            assert rc in (None, 0)
+            assert status == 'successful'
+            return ingoing_buffer
 
 
 def test_worker_without_delete_no_dir(tmp_path, cli, transmit_stream):
@@ -245,6 +262,20 @@ def test_worker_delete_dir_exists(tmp_path, cli, transmit_stream):
     assert '{"eof": true}' in r.stdout
     assert not worker_dir.exists()
     assert not worker_dir.joinpath('project', 'debug.yml').exists()
+
+
+def test_process_with_custom_ident(tmp_path, cli, worker_stream):
+    process_dir = tmp_path / 'for_process'
+    process_dir.mkdir()
+
+    with open(worker_stream, 'rb') as f:
+        process_args = ['process', str(process_dir), '--ident', 'custom_ident']
+        r = cli(process_args, stdin=f)
+
+    assert 'Hello world!' in r.stdout
+    assert (process_dir / 'artifacts').exists()
+    assert (process_dir / 'artifacts' / 'custom_ident').exists()
+    assert (process_dir / 'artifacts' / 'custom_ident' / 'job_events').exists()
 
 
 def test_missing_private_dir_transmit(tmpdir):

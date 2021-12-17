@@ -81,6 +81,12 @@ jobs:
         run: |
           tox
 
+      - name: Upload coverage report
+        run: |
+          curl --silent --show-error --output codecov https://ansible-ci-files.s3.us-east-1.amazonaws.com/codecov/linux/codecov
+          chmod +x codecov
+          ./codecov --file test/coverage/reports/coverage.xml --flags {{ matrix.py_version.tox_env }}
+
 
   unit:
     name: Unit - ${{ matrix.py_version.name}}
@@ -114,3 +120,6 @@ jobs:
 
       - name: Run tests
         run: tox
+
+      - name: Upload coverage report
+        run: codecov --file test/coverage/reports/coverage.xml --flags {{ matrix.py_version.tox_env }}

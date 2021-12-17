@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+
+
+jobs:
+  sanity:
+    name: ${{ matrix.test.name }}
+    runs-on: ubuntu-20.04
+    container:
+      image: quay.io/ansible/ansible-runner-test-container:2.0.0
+      env:
+        PIP_CACHE_DIR: ${{ runner.temp }}/.cache/pip
+        PY_COLORS: 1
+        TOXENV: ${{ matrix.test.tox_env }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - name: Lint
+            tox_env: linters
+
+          - name: Docs
+            tox_env: docs
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Create tox environment
+        run: tox --notest
+
+      - name: Run tests
+        run: tox
+
+
+  unit:
+    name: Unit - ${{ matrix.py_version.name}}
+    runs-on: ubuntu-20.04
+    container:
+      image: quay.io/ansible/ansible-runner-test-container:2.0.0
+      env:
+        PIP_CACHE_DIR: ${{ runner.temp }}/.cache/pip
+        TOXENV: ${{ matrix.py_version.tox_env }}
+        PY_COLORS: 1
+
+    strategy:
+      fail-fast: false
+      matrix:
+        py_version:
+          - name: '3.8'
+            tox_env: unit-py38
+
+          - name: '3.9'
+            tox_env: unit-py39
+
+          - name: '3.10'
+            tox_env: unit-py310
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Create tox environment
+        run: tox --notest
+
+      - name: Run tests
+        run: tox

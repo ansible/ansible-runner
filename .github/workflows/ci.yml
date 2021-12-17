@@ -37,6 +37,51 @@ jobs:
         run: tox
 
 
+  integration:
+    runs-on: ubuntu-20.04
+    name: Integration - ${{ matrix.py_version.name }}
+
+    env:
+      TOXENV: ${{ matrix.py_version.tox_env }}
+      PY_COLORS: 1
+
+    strategy:
+      fail-fast: false
+      matrix:
+        py_version:
+          - name: '3.8'
+            tox_env: integration-py38
+
+          - name: '3.9'
+            tox_env: integration-py39
+
+          - name: '3.10'
+            tox_env: integration-py310
+
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Python ${{ matrix.py_version.name }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py_version.name }}
+
+      - name: Install tox
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install tox
+
+      - name: Create tox environment
+        run: |
+          tox --notest
+
+      - name: Run integration tests
+        run: |
+          tox
+
+
   unit:
     name: Unit - ${{ matrix.py_version.name}}
     runs-on: ubuntu-20.04

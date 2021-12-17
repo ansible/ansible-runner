@@ -279,7 +279,8 @@ class OutputEventFilter(object):
         self.suppress_ansible_output = suppress_ansible_output
 
     def flush(self):
-        self._handle.flush()
+        if self._handle:
+            self._handle.flush()
 
     def write(self, data):
         self._buffer.write(data)
@@ -318,8 +319,9 @@ class OutputEventFilter(object):
                     )
                     sys.stdout.write("\n")
                     sys.stdout.flush()
-                self._handle.write(stdout_actual + "\n")
-                self._handle.flush()
+                if self._handle:
+                    self._handle.write(stdout_actual + "\n")
+                    self._handle.flush()
 
             self._last_chunk = remainder
         else:
@@ -338,8 +340,9 @@ class OutputEventFilter(object):
                         sys.stdout.write(
                             line.encode('utf-8') if PY2 else line
                         )
-                    self._handle.write(line)
-                    self._handle.flush()
+                    if self._handle:
+                        self._handle.write(line)
+                        self._handle.flush()
                 self._buffer = StringIO()
                 # put final partial line back on buffer
                 if remainder:
@@ -351,7 +354,8 @@ class OutputEventFilter(object):
             self._emit_event(value)
             self._buffer = StringIO()
         self._event_callback(dict(event='EOF'))
-        self._handle.close()
+        if self._handle:
+            self._handle.close()
 
     def _emit_event(self, buffered_stdout, next_event_data=None):
         next_event_data = next_event_data or {}

@@ -151,24 +151,31 @@ def test_status_callback_interface(rc, mocker):
 def test_stdout_file_write(rc, runner_mode):
     if runner_mode == 'pexpect':
         pytest.skip('Writing to stdout can be flaky, probably due to some pexpect bug')
-    rc.command = ['echo', 'hello_world_marker']
+    rc.command = ['echo', 'hello_world_marker ']  # workaround bug in stdout handl wrapper
     rc.runner_mode = runner_mode
-    status, exitcode = Runner(config=rc).run()
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
     assert status == 'successful'
     stdout_path = Path(rc.artifact_dir) / 'stdout'
-    # this can be subject to a race condition so we will be patient with the check
+    # poll until we are sure the file has been written to
     for _ in iterate_timeout(30.0, 'stdout file to be written', interval=0.2):
-        if 'hello_world_marker' in stdout_path.read_text():
+        if stdout_path.read_text().strip():
             break
+    assert 'hello_world_marker' in stdout_path.read_text()
+    assert list(runner.events)
+    assert 'hello_world_marker' in list(runner.events)[0]['stdout']
 
 
 @pytest.mark.parametrize('runner_mode', ['pexpect', 'subprocess'])
 def test_stdout_file_no_write(rc, runner_mode):
-    rc.command = ['echo', 'hello_world_marker']
+    rc.command = ['echo', 'hello_world_marker ']  # workaround bug in stdout handl wrapper
     rc.runner_mode = runner_mode
     rc.suppress_output_file = True
-    status, exitcode = Runner(config=rc).run()
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
     assert status == 'successful'
     for filename in ('stdout', 'stderr'):
         stdout_path = Path(rc.artifact_dir) / filename
         assert not stdout_path.exists()
+    assert list(runner.events)
+    assert 'hello_world_marker' in list(runner.events)[0]['stdout']

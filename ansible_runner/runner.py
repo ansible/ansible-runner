@@ -10,7 +10,6 @@ import codecs
 import collections
 import datetime
 import logging
-from io import StringIO
 
 import six
 import pexpect
@@ -156,8 +155,8 @@ class Runner(object):
             stdout_handle = codecs.open(stdout_filename, 'w', encoding='utf-8')
             stderr_handle = codecs.open(stderr_filename, 'w', encoding='utf-8')
         else:
-            stdout_handle = StringIO()
-            stderr_handle = StringIO()
+            stdout_handle = None
+            stderr_handle = None
 
         stdout_handle = OutputEventFilter(stdout_handle, self.event_callback, suppress_ansible_output, output_json=self.config.json_mode)
         stderr_handle = OutputEventFilter(stderr_handle, self.event_callback, suppress_ansible_output, output_json=self.config.json_mode)
@@ -313,8 +312,7 @@ class Runner(object):
                     echo=False,
                     use_poll=self.config.pexpect_use_poll,
                 )
-                if not self.config.suppress_output_file:
-                    child.logfile_read = stdout_handle
+                child.logfile_read = stdout_handle
             except pexpect.exceptions.ExceptionPexpect as e:
                 child = collections.namedtuple(
                     'MissingProcess', 'exitstatus isalive close'

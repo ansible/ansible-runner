@@ -28,28 +28,21 @@ from copy import copy
 
 # Ansible
 from ansible import constants as C
-from ansible.plugins.callback import CallbackBase
 from ansible.plugins.loader import callback_loader
 
 from .events import event_context
 
-user_specified_callback = os.getenv('ORIGINAL_STDOUT_CALLBACK')
-runner_callback = os.environ.pop('ANSIBLE_STDOUT_CALLBACK', 'awx_display')
-
-if user_specified_callback:
-    os.environ['ANSIBLE_STDOUT_CALLBACK'] = user_specified_callback
-
-is_adhoc = os.getenv('AD_HOC_COMMAND_ID', False)
+IS_ADHOC = os.getenv('AD_HOC_COMMAND_ID', False)
 
 # Dynamically construct base classes for our callback module, to support custom stdout callbacks.
-if is_adhoc:
+if os.getenv('ORIGINAL_STDOUT_CALLBACK'):
+    default_stdout_callback = os.getenv('ORIGINAL_STDOUT_CALLBACK')
+elif IS_ADHOC:
     default_stdout_callback = 'minimal'
 else:
-    default_stdout_callback = C.config.get_config_value('DEFAULT_STDOUT_CALLBACK')
+    default_stdout_callback = 'default'
 
 DefaultCallbackModule = callback_loader.get(default_stdout_callback).__class__
-
-os.environ['ANSIBLE_STDOUT_CALLBACK'] = runner_callback
 
 CENSORED = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"  # noqa
 
@@ -58,10 +51,12 @@ def current_time():
     return datetime.datetime.utcnow()
 
 
-class BaseCallbackModule(CallbackBase):
+class AWXCallbackModule(DefaultCallbackModule):
     '''
     Callback module for logging ansible/ansible-playbook events.
     '''
+
+    CALLBACK_NAME = 'awx_display'
 
     CALLBACK_VERSION = 2.0
     CALLBACK_TYPE = 'stdout'
@@ -83,7 +78,7 @@ class BaseCallbackModule(CallbackBase):
     ]
 
     def __init__(self):
-        super(BaseCallbackModule, self).__init__()
+        super(AWXCallbackModule, self).__init__()
         self._host_start = {}
         self.task_uuids = set()
         self.duplicate_task_counts = collections.defaultdict(lambda: 1)
@@ -188,7 +183,7 @@ class BaseCallbackModule(CallbackBase):
             uuid=self.playbook_uuid,
         )
         with self.capture_event_data('playbook_on_start', **event_data):
-            super(BaseCallbackModule, self).v2_playbook_on_start(playbook)
+            super(AWXCallbackModule, self).v2_playbook_on_start(playbook)
 
     def v2_playbook_on_vars_prompt(self, varname, private=True, prompt=None,
                                    encrypt=None, confirm=False, salt_size=None,
@@ -205,7 +200,7 @@ class BaseCallbackModule(CallbackBase):
             unsafe=unsafe,
         )
         with self.capture_event_data('playbook_on_vars_prompt', **event_data):
-            super(BaseCallbackModule, self).v2_playbook_on_vars_prompt(
+            super(AWXCallbackModule, self).v2_playbook_on_vars_prompt(
                 varname, private, prompt, encrypt, confirm, salt_size, salt,
                 default,
             )
@@ -215,9 +210,11 @@ class BaseCallbackModule(CallbackBase):
             included_file=included_file._filename if included_file is not None else None,
         )
         with self.capture_event_data('playbook_on_include', **event_data):
-            super(BaseCallbackModule, self).v2_playbook_on_include(included_file)
+            super(AWXCallbackModule, self).v2_playbook_on_include(included_file)
 
     def v2_playbook_on_play_start(self, play):
+        if IS_ADHOC:
+            return
         play_uuid = str(play._uuid)
         if play_uuid in self.play_uuids:
             # When this play UUID repeats, it means the play is using the
@@ -251,24 +248,27 @@ class BaseCallbackModule(CallbackBase):
             uuid=str(play._uuid),
         )
         with self.capture_event_data('playbook_on_play_start', **event_data):
-            super(BaseCallbackModule, self).v2_playbook_on_play_start(play)
+            super(AWXCallbackModule, self).v2_playbook_on_play_start(play)
 
     def v2_playbook_on_import_for_host(self, result, imported_file):
         # NOTE: Not used by Ansible 2.x.
         with self.capture_event_data('playbook_on_import_for_host'):
-            super(BaseCallbackModule, self).v2_playbook_on_import_for_host(result, imported_file)
+            super(AWXCallbackModule, self).v2_playbook_on_import_for_host(result, imported_file)
 
     def v2_playbook_on_not_import_for_host(self, result, missing_file):
         # NOTE: Not used by Ansible 2.x.
         with self.capture_event_data('playbook_on_not_import_for_host'):
-            super(BaseCallbackModule, self).v2_playbook_on_not_import_for_host(result, missing_file)
+            super(AWXCallbackModule, self).v2_playbook_on_not_import_for_host(result, missing_file)
 
     def v2_playbook_on_setup(self):
         # NOTE: Not used by Ansible 2.x.
         with self.capture_event_data('playbook_on_setup'):
-            super(BaseCallbackModule, self).v2_playbook_on_setup()
+            super(AWXCallbackModule, self).v2_playbook_on_setup()
 
     def v2_playbook_on_task_start(self, task, is_conditional):
+        if IS_ADHOC:
+            self.set_task(task)
+            return
         # FIXME: Flag task path output as vv.
         task_uuid = str(task._uuid)
         if task_uuid in self.task_uuids:
@@ -294,7 +294,7 @@ class BaseCallbackModule(CallbackBase):
             uuid=task_uuid,
         )
         with self.capture_event_data('playbook_on_task_start', **event_data):
-            super(BaseCallbackModule, self).v2_playbook_on_task_start(task, is_conditional)
+            super(AWXCallbackModule, self).v2_playbook_on_task_start(task, is_conditional)
 
     def v2_playbook_on_cleanup_task_start(self, task):
         # NOTE: Not used by Ansible 2.x.
@@ -306,7 +306,7 @@ class BaseCallbackModule(CallbackBase):
             is_conditional=True,
         )
         with self.capture_event_data('playbook_on_task_start', **event_data):
-            super(BaseCallbackModule, self).v2_playbook_on_cleanup_task_start(task)
+            super(AWXCallbackModule, self).v2_playbook_on_cleanup_task_start(task)
 
     def v2_playbook_on_handler_task_start(self, task):
         # NOTE: Re-using playbook_on_task_start event for this v2-specific
@@ -320,15 +320,15 @@ class BaseCallbackModule(CallbackBase):
             is_conditional=True,
         )
         with self.capture_event_data('playbook_on_task_start', **event_data):
-            super(BaseCallbackModule, self).v2_playbook_on_handler_task_start(task)
+            super(AWXCallbackModule, self).v2_playbook_on_handler_task_start(task)
 
     def v2_playbook_on_no_hosts_matched(self):
         with self.capture_event_data('playbook_on_no_hosts_matched'):
-            super(BaseCallbackModule, self).v2_playbook_on_no_hosts_matched()
+            super(AWXCallbackModule, self).v2_playbook_on_no_hosts_matched()
 
     def v2_playbook_on_no_hosts_remaining(self):
         with self.capture_event_data('playbook_on_no_hosts_remaining'):
-            super(BaseCallbackModule, self).v2_playbook_on_no_hosts_remaining()
+            super(AWXCallbackModule, self).v2_playbook_on_no_hosts_remaining()
 
     def v2_playbook_on_notify(self, handler, host):
         # NOTE: Not used by Ansible < 2.5.
@@ -337,7 +337,7 @@ class BaseCallbackModule(CallbackBase):
             handler=handler.get_name(),
         )
         with self.capture_event_data('playbook_on_notify', **event_data):
-            super(BaseCallbackModule, self).v2_playbook_on_notify(handler, host)
+            super(AWXCallbackModule, self).v2_playbook_on_notify(handler, host)
 
     '''
     ansible_stats is, retoractively, added in 2.2
@@ -358,7 +358,7 @@ class BaseCallbackModule(CallbackBase):
         )
 
         with self.capture_event_data('playbook_on_stats', **event_data):
-            super(BaseCallbackModule, self).v2_playbook_on_stats(stats)
+            super(AWXCallbackModule, self).v2_playbook_on_stats(stats)
 
     @staticmethod
     def _get_event_loop(task):
@@ -395,7 +395,7 @@ class BaseCallbackModule(CallbackBase):
             event_loop=self._get_event_loop(result._task),
         )
         with self.capture_event_data('runner_on_ok', **event_data):
-            super(BaseCallbackModule, self).v2_runner_on_ok(result)
+            super(AWXCallbackModule, self).v2_runner_on_ok(result)
 
     def v2_runner_on_failed(self, result, ignore_errors=False):
         # FIXME: Add verbosity for exception/results output.
@@ -412,7 +412,7 @@ class BaseCallbackModule(CallbackBase):
             event_loop=self._get_event_loop(result._task),
         )
         with self.capture_event_data('runner_on_failed', **event_data):
-            super(BaseCallbackModule, self).v2_runner_on_failed(result, ignore_errors)
+            super(AWXCallbackModule, self).v2_runner_on_failed(result, ignore_errors)
 
     def v2_runner_on_skipped(self, result):
         host_start, end_time, duration = self._get_result_timing_data(result)
@@ -426,7 +426,7 @@ class BaseCallbackModule(CallbackBase):
             event_loop=self._get_event_loop(result._task),
         )
         with self.capture_event_data('runner_on_skipped', **event_data):
-            super(BaseCallbackModule, self).v2_runner_on_skipped(result)
+            super(AWXCallbackModule, self).v2_runner_on_skipped(result)
 
     def v2_runner_on_unreachable(self, result):
         host_start, end_time, duration = self._get_result_timing_data(result)
@@ -440,7 +440,7 @@ class BaseCallbackModule(CallbackBase):
             res=result._result,
         )
         with self.capture_event_data('runner_on_unreachable', **event_data):
-            super(BaseCallbackModule, self).v2_runner_on_unreachable(result)
+            super(AWXCallbackModule, self).v2_runner_on_unreachable(result)
 
     def v2_runner_on_no_hosts(self, task):
         # NOTE: Not used by Ansible 2.x.
@@ -448,7 +448,7 @@ class BaseCallbackModule(CallbackBase):
             task=task,
         )
         with self.capture_event_data('runner_on_no_hosts', **event_data):
-            super(BaseCallbackModule, self).v2_runner_on_no_hosts(task)
+            super(AWXCallbackModule, self).v2_runner_on_no_hosts(task)
 
     def v2_runner_on_async_poll(self, result):
         # NOTE: Not used by Ansible 2.x.
@@ -459,7 +459,7 @@ class BaseCallbackModule(CallbackBase):
             jid=result._result.get('ansible_job_id'),
         )
         with self.capture_event_data('runner_on_async_poll', **event_data):
-            super(BaseCallbackModule, self).v2_runner_on_async_poll(result)
+            super(AWXCallbackModule, self).v2_runner_on_async_poll(result)
 
     def v2_runner_on_async_ok(self, result):
         # NOTE: Not used by Ansible 2.x.
@@ -470,7 +470,7 @@ class BaseCallbackModule(CallbackBase):
             jid=result._result.get('ansible_job_id'),
         )
         with self.capture_event_data('runner_on_async_ok', **event_data):
-            super(BaseCallbackModule, self).v2_runner_on_async_ok(result)
+            super(AWXCallbackModule, self).v2_runner_on_async_ok(result)
 
     def v2_runner_on_async_failed(self, result):
         # NOTE: Not used by Ansible 2.x.
@@ -481,7 +481,7 @@ class BaseCallbackModule(CallbackBase):
             jid=result._result.get('ansible_job_id'),
         )
         with self.capture_event_data('runner_on_async_failed', **event_data):
-            super(BaseCallbackModule, self).v2_runner_on_async_failed(result)
+            super(AWXCallbackModule, self).v2_runner_on_async_failed(result)
 
     def v2_runner_on_file_diff(self, result, diff):
         # NOTE: Not used by Ansible 2.x.
@@ -491,7 +491,7 @@ class BaseCallbackModule(CallbackBase):
             diff=diff,
         )
         with self.capture_event_data('runner_on_file_diff', **event_data):
-            super(BaseCallbackModule, self).v2_runner_on_file_diff(result, diff)
+            super(AWXCallbackModule, self).v2_runner_on_file_diff(result, diff)
 
     def v2_on_file_diff(self, result):
         # NOTE: Logged as runner_on_file_diff.
@@ -501,7 +501,7 @@ class BaseCallbackModule(CallbackBase):
             diff=result._result.get('diff'),
         )
         with self.capture_event_data('runner_on_file_diff', **event_data):
-            super(BaseCallbackModule, self).v2_on_file_diff(result)
+            super(AWXCallbackModule, self).v2_on_file_diff(result)
 
     def v2_runner_item_on_ok(self, result):
         event_data = dict(
@@ -510,7 +510,7 @@ class BaseCallbackModule(CallbackBase):
             res=result._result,
         )
         with self.capture_event_data('runner_item_on_ok', **event_data):
-            super(BaseCallbackModule, self).v2_runner_item_on_ok(result)
+            super(AWXCallbackModule, self).v2_runner_item_on_ok(result)
 
     def v2_runner_item_on_failed(self, result):
         event_data = dict(
@@ -519,7 +519,7 @@ class BaseCallbackModule(CallbackBase):
             res=result._result,
         )
         with self.capture_event_data('runner_item_on_failed', **event_data):
-            super(BaseCallbackModule, self).v2_runner_item_on_failed(result)
+            super(AWXCallbackModule, self).v2_runner_item_on_failed(result)
 
     def v2_runner_item_on_skipped(self, result):
         event_data = dict(
@@ -528,7 +528,7 @@ class BaseCallbackModule(CallbackBase):
             res=result._result,
         )
         with self.capture_event_data('runner_item_on_skipped', **event_data):
-            super(BaseCallbackModule, self).v2_runner_item_on_skipped(result)
+            super(AWXCallbackModule, self).v2_runner_item_on_skipped(result)
 
     def v2_runner_retry(self, result):
         event_data = dict(
@@ -537,7 +537,7 @@ class BaseCallbackModule(CallbackBase):
             res=result._result,
         )
         with self.capture_event_data('runner_retry', **event_data):
-            super(BaseCallbackModule, self).v2_runner_retry(result)
+            super(AWXCallbackModule, self).v2_runner_retry(result)
 
     def v2_runner_on_start(self, host, task):
         event_data = dict(
@@ -546,22 +546,4 @@ class BaseCallbackModule(CallbackBase):
         )
         self._host_start[host.get_name()] = current_time()
         with self.capture_event_data('runner_on_start', **event_data):
-            super(BaseCallbackModule, self).v2_runner_on_start(host, task)
-
-
-class AWXCallbackModule(BaseCallbackModule, DefaultCallbackModule):
-
-    CALLBACK_NAME = 'awx_display'
-
-    def v2_playbook_on_play_start(self, play):
-        if is_adhoc:
-            pass
-        else:
-            super().v2_playbook_on_play_start(play)
-
-
-    def v2_playbook_on_task_start(self, task, is_conditional):
-        if is_adhoc:
-            self.set_task(task)
-        else:
-            super().v2_playbook_on_task_start(task, is_conditional)
+            super(AWXCallbackModule, self).v2_runner_on_start(host, task)

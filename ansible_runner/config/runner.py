@@ -243,13 +243,6 @@ class RunnerConfig(BaseConfig):
         self.env["RUNNER_OMIT_EVENTS"] = str(self.omit_event_data)
         self.env["RUNNER_ONLY_FAILED_EVENTS"] = str(self.only_failed_event_data)
 
-        original_stdout_callback = os.getenv('ANSIBLE_STDOUT_CALLBACK')
-        if original_stdout_callback:
-            self.env['ORIGINAL_STDOUT_CALLBACK'] = original_stdout_callback
-
-        self.env['ANSIBLE_STDOUT_CALLBACK'] = 'awx_display'
-        self.env["ANSIBLE_LOAD_CALLBACK_PLUGINS"] = '1'
-
     def prepare_command(self):
         try:
             cmdline_args = self.loader.load_file('args', string_types, encoding=None)

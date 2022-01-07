@@ -177,5 +177,3 @@ def test_stdout_file_no_write(rc, runner_mode):
     for filename in ('stdout', 'stderr'):
         stdout_path = Path(rc.artifact_dir) / filename
         assert not stdout_path.exists()
-    assert list(runner.events)
-    assert 'hello_world_marker' in list(runner.events)[0]['stdout']

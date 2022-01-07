@@ -265,6 +265,17 @@ class BaseConfig(object):
                 python_path += ':'
             self.env['ANSIBLE_CALLBACK_PLUGINS'] = ':'.join(filter(None, (self.env.get('ANSIBLE_CALLBACK_PLUGINS'), callback_dir)))
 
+        if self.env.get('ANSIBLE_STDOUT_CALLBACK'):
+            # a custom stdout plugin should not be respected for adhoc command, unless load_callback_plugins set
+            if (not self.env.get('AD_HOC_COMMAND_ID')) or (not self.env.get('ANSIBLE_LOAD_CALLBACK_PLUGINS')):
+                self.env['ORIGINAL_STDOUT_CALLBACK'] = self.env.get('ANSIBLE_STDOUT_CALLBACK')
+
+        if 'AD_HOC_COMMAND_ID' in self.env:
+            # force loading awx_display stdout callback for adhoc commands
+            self.env["ANSIBLE_LOAD_CALLBACK_PLUGINS"] = '1'
+
+        self.env['ANSIBLE_STDOUT_CALLBACK'] = 'awx_display'
+
         self.env['ANSIBLE_RETRY_FILES_ENABLED'] = 'False'
         if 'ANSIBLE_HOST_KEY_CHECKING' not in self.env:
             self.env['ANSIBLE_HOST_KEY_CHECKING'] = 'False'

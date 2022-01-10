@@ -29,24 +29,6 @@ def rc(tmp_path):
     return rc
 
 
-@pytest.fixture(scope='session')
-def clear_integration_artifacts(request):
-    '''Fixture is session scoped to allow parallel runs without error
-    '''
-    if 'PYTEST_XDIST_WORKER' in os.environ:
-        # we never want to clean artifacts if running parallel tests
-        # because we cannot know when all processes are finished and it is
-        # safe to clean up
-        return
-
-    def rm_integration_artifacts():
-        path = "test/integration/artifacts"
-        if os.path.exists(path):
-            shutil.rmtree(path)
-
-    request.addfinalizer(rm_integration_artifacts)
-
-
 class CompletedProcessProxy(object):
 
     def __init__(self, result):
@@ -106,4 +88,6 @@ def project_fixtures(tmp_path):
     dest = tmp_path / 'projects'
     shutil.copytree(source, dest)
 
-    return dest
+    yield dest
+
+    shutil.rmtree(dest, ignore_errors=True)

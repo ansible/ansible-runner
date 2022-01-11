@@ -265,14 +265,17 @@ class BaseConfig(object):
                 python_path += ':'
             self.env['ANSIBLE_CALLBACK_PLUGINS'] = ':'.join(filter(None, (self.env.get('ANSIBLE_CALLBACK_PLUGINS'), callback_dir)))
 
-        if self.env.get('ANSIBLE_STDOUT_CALLBACK'):
-            # a custom stdout plugin should not be respected for adhoc command, unless load_callback_plugins set
-            if (not self.env.get('AD_HOC_COMMAND_ID')) or (not self.env.get('ANSIBLE_LOAD_CALLBACK_PLUGINS')):
-                self.env['ORIGINAL_STDOUT_CALLBACK'] = self.env.get('ANSIBLE_STDOUT_CALLBACK')
+        # this is an adhoc command if the module is specified, TODO: combine with logic in RunnerConfig class
+        is_adhoc = bool((self.binary is None) and (self.module is not None))
 
-        if 'AD_HOC_COMMAND_ID' in self.env:
+        if self.env.get('ANSIBLE_STDOUT_CALLBACK'):
+            self.env['ORIGINAL_STDOUT_CALLBACK'] = self.env.get('ANSIBLE_STDOUT_CALLBACK')
+
+        if is_adhoc:
             # force loading awx_display stdout callback for adhoc commands
             self.env["ANSIBLE_LOAD_CALLBACK_PLUGINS"] = '1'
+            if 'AD_HOC_COMMAND_ID' not in self.env:
+                self.env['AD_HOC_COMMAND_ID'] = '1'
 
         self.env['ANSIBLE_STDOUT_CALLBACK'] = 'awx_display'
 

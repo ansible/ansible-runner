@@ -266,7 +266,7 @@ class BaseConfig(object):
             self.env['ANSIBLE_CALLBACK_PLUGINS'] = ':'.join(filter(None, (self.env.get('ANSIBLE_CALLBACK_PLUGINS'), callback_dir)))
 
         # this is an adhoc command if the module is specified, TODO: combine with logic in RunnerConfig class
-        is_adhoc = bool((self.binary is None) and (self.module is not None))
+        is_adhoc = bool((getattr(self, 'binary', None) is None) and (getattr(self, 'module', None) is not None))
 
         if self.env.get('ANSIBLE_STDOUT_CALLBACK'):
             self.env['ORIGINAL_STDOUT_CALLBACK'] = self.env.get('ANSIBLE_STDOUT_CALLBACK')

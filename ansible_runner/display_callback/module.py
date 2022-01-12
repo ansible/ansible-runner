@@ -32,24 +32,24 @@ DOCUMENTATION = '''
 '''
 
 # Python
-import json  # noqa
-import stat  # noqa
-import multiprocessing  # noqa
-import threading  # noqa
-import base64  # noqa
-import functools  # noqa
-import collections  # noqa
-import contextlib  # noqa
-import datetime  # noqa
-import os  # noqa
-import sys  # noqa
-import uuid  # noqa
-from copy import copy  # noqa
+import json
+import stat
+import multiprocessing
+import threading
+import base64
+import functools
+import collections
+import contextlib
+import datetime
+import os
+import sys
+import uuid
+from copy import copy
 
 # Ansible
-from ansible import constants as C  # noqa
-from ansible.plugins.loader import callback_loader  # noqa
-from ansible.utils.display import Display  # noqa
+from ansible import constants as C
+from ansible.plugins.loader import callback_loader
+from ansible.utils.display import Display
 
 IS_ADHOC = os.getenv('AD_HOC_COMMAND_ID', False)
 
@@ -63,7 +63,7 @@ else:
 
 DefaultCallbackModule = callback_loader.get(default_stdout_callback).__class__
 
-CENSORED = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"  # noqa
+CENSORED = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"
 
 
 def current_time():

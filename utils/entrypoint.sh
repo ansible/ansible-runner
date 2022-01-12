@@ -24,14 +24,6 @@ EOF
 
 fi
 
-if [[ -n "${LAUNCHED_BY_RUNNER}" ]]; then
-    RUNNER_CALLBACKS=$(python3 -c "import ansible_runner.callbacks; print(ansible_runner.callbacks.__file__)")
-
-    # TODO: respect user callback settings via
-    # env ANSIBLE_CALLBACK_PLUGINS or ansible.cfg
-    export ANSIBLE_CALLBACK_PLUGINS="$(dirname $RUNNER_CALLBACKS)"
-fi
-
 if [[ -d ${AWX_ISOLATED_DATA_DIR} ]]; then
     if output=$(ansible-galaxy collection list --format json 2> /dev/null); then
         echo $output > ${AWX_ISOLATED_DATA_DIR}/collections.json

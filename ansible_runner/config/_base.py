@@ -199,8 +199,6 @@ class BaseConfig(object):
         if self.containerized:
             self.container_name = "ansible_runner_{}".format(sanitize_container_name(self.ident))
             self.env = {}
-            # Special flags to convey info to entrypoint or process in container
-            self.env['LAUNCHED_BY_RUNNER'] = '1'
 
             if self.process_isolation_executable == 'podman':
                 # A kernel bug in RHEL < 8.5 causes podman to use the fuse-overlayfs driver. This results in errors when

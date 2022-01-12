@@ -30,8 +30,6 @@ class TestStreamingUsage:
             job_kwargs = dict(module='setup', host_pattern='localhost')
         # also test use of user env vars
         job_kwargs['envvars'] = dict(MY_ENV_VAR='bogus')
-        if job_type == 'adhoc':
-            job_kwargs['envvars']['AD_HOC_COMMAND_ID'] = '1'
         return job_kwargs
 
     def check_artifacts(self, process_dir, job_type):

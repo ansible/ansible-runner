@@ -39,6 +39,8 @@ from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.defaults import registry_auth_prefix
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.utils import (
+    get_plugin_dir,
+    get_callback_dir,
     open_fifo_write,
     args2cmdline,
     sanitize_container_name,
@@ -256,11 +258,7 @@ class BaseConfig(object):
         if not self.containerized:
             callback_dir = self.env.get('AWX_LIB_DIRECTORY', os.getenv('AWX_LIB_DIRECTORY'))
             if callback_dir is None:
-                callback_dir = os.path.join(os.path.split(os.path.abspath(__file__))[0], "..", "callbacks")
-            python_path = self.env.get('PYTHONPATH', os.getenv('PYTHONPATH', ''))
-            self.env['PYTHONPATH'] = ':'.join([python_path, callback_dir])
-            if python_path and not python_path.endswith(':'):
-                python_path += ':'
+                callback_dir = get_callback_dir()
             self.env['ANSIBLE_CALLBACK_PLUGINS'] = ':'.join(filter(None, (self.env.get('ANSIBLE_CALLBACK_PLUGINS'), callback_dir)))
 
         # this is an adhoc command if the module is specified, TODO: combine with logic in RunnerConfig class
@@ -487,20 +485,17 @@ class BaseConfig(object):
                                             dst_mount_path="/runner/artifacts",
                                             labels=":Z")
 
-            # Mount the entire private_data_dir
-            # custom show paths inside private_data_dir do not make sense
-            self._update_volume_mount_paths(new_args,
-                                            "{}".format(self.private_data_dir),
-                                            dst_mount_path="/runner",
-                                            labels=":Z")
         else:
             subdir_path = os.path.join(self.private_data_dir, 'artifacts')
             if not os.path.exists(subdir_path):
                 os.mkdir(subdir_path, 0o700)
 
-            # Mount the entire private_data_dir
-            # custom show paths inside private_data_dir do not make sense
-            self._update_volume_mount_paths(new_args, "{}".format(self.private_data_dir), dst_mount_path="/runner", labels=":Z")
+        # Mount the entire private_data_dir
+        # custom show paths inside private_data_dir do not make sense
+        self._update_volume_mount_paths(new_args, "{}".format(self.private_data_dir), dst_mount_path="/runner", labels=":Z")
+
+        # Mount the stdout callback plugin from the ansible-runner code base
+        self._update_volume_mount_paths(new_args, "{}".format(get_plugin_dir()), dst_mount_path="/home/runner/.ansible/plugins", labels=":Z")
 
         if self.container_auth_data:
             # Pull in the necessary registry auth info, if there is a container cred

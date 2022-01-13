@@ -46,6 +46,14 @@ def register_for_cleanup(folder):
     atexit.register(cleanup_folder, folder)
 
 
+def get_plugin_dir():
+    return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "display_callback"))
+
+
+def get_callback_dir():
+    return os.path.join(get_plugin_dir(), 'callback')
+
+
 class Bunch(object):
 
     '''

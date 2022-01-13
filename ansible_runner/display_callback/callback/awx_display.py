@@ -80,6 +80,10 @@ class AnsibleJSONEncoderLocal(json.JSONEncoder):
     '''
 
     def default(self, o):
+        '''
+        Returns JSON-valid representation for special Ansible python objects
+        which including vault objects and datetime objects
+        '''
         if getattr(o, 'yaml_tag', None) == '!vault':
             encrypted_form = o._ciphertext
             if isinstance(encrypted_form, bytes):

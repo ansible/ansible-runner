@@ -13,6 +13,7 @@ from pexpect import TIMEOUT, EOF
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError
+from ansible_runner.utils import get_plugin_dir
 
 try:
     Pattern = re._pattern_type
@@ -176,7 +177,6 @@ def test_prepare_env_defaults():
 
 def test_prepare_env_ansible_vars(mocker, tmp_path):
     mocker.patch.dict('os.environ', {
-        'PYTHONPATH': '/python_path_via_environ',
         'AWX_LIB_DIRECTORY': '/awx_lib_directory_via_environ',
     })
 
@@ -195,14 +195,6 @@ def test_prepare_env_ansible_vars(mocker, tmp_path):
     assert rc.env['ANSIBLE_RETRY_FILES_ENABLED'] == 'False'
     assert rc.env['ANSIBLE_HOST_KEY_CHECKING'] == 'False'
     assert rc.env['AWX_ISOLATED_DATA_DIR'] == artifact_dir.joinpath(rc.ident).as_posix()
-    assert rc.env['PYTHONPATH'] == '/python_path_via_environ:/awx_lib_directory_via_environ', \
-        "PYTHONPATH is the union of the env PYTHONPATH and AWX_LIB_DIRECTORY"
-
-    del rc.env['PYTHONPATH']
-    os.environ['PYTHONPATH'] = "/foo/bar/python_path_via_environ"
-    rc._prepare_env()
-    assert rc.env['PYTHONPATH'] == "/foo/bar/python_path_via_environ:/awx_lib_directory_via_environ", \
-        "PYTHONPATH is the union of the explicit env['PYTHONPATH'] override and AWX_LIB_DIRECTORY"
 
 
 def test_prepare_with_ssh_key(mocker, tmp_path):
@@ -325,6 +317,7 @@ def test_containerization_settings(tmp_path, runtime, mocker):
     expected_command_start.extend([
         '-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir),
         '-v', '{}/:/runner/:Z'.format(rc.private_data_dir),
+        '-v', '{}/:/home/runner/.ansible/plugins/:Z'.format(get_plugin_dir()),
         '--env-file', '{}/env.list'.format(rc.artifact_dir),
     ])
 

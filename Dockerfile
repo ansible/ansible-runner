@@ -59,5 +59,7 @@ ENV HOME=/home/runner
 ADD utils/entrypoint.sh /bin/entrypoint
 RUN chmod +x /bin/entrypoint
 
+RUN echo "raise Exception('alan')" >> /usr/local/lib/python3.8/site-packages/ansible_runner/display_callback/display.py
+
 ENTRYPOINT ["entrypoint"]
 CMD ["ansible-runner", "run", "/runner"]

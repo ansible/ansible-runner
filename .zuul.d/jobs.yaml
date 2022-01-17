@@ -252,7 +252,7 @@
     dependencies:
       - ansible-runner-build-container-image
     vars:
-      container_command: docker
+      container_command: podman
 
 - job:
     name: ansible-runner-integration

@@ -54,6 +54,18 @@ def get_callback_dir():
     return os.path.join(get_plugin_dir(), 'callback')
 
 
+def callback_mount():
+    '''
+    Return a tuple that gives mount points for the standard out callback
+    in the form of (<host location>, <location in container>)
+    '''
+    container_dot_ansible = '/home/runner/.ansible'
+    rel_path = ('callback', '',)
+    callback_file = os.path.join(get_plugin_dir(), *rel_path)
+    container_path = os.path.join(container_dot_ansible, 'plugins', *rel_path)
+    return (callback_file, container_path)
+
+
 class Bunch(object):
 
     '''

@@ -14,7 +14,7 @@ from ansible_runner.config.runner import RunnerConfig, ExecutionMode
 from ansible_runner.interface import init_runner
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError
-from ansible_runner.utils import get_plugin_dir
+from ansible_runner.utils import callback_mount
 
 try:
     Pattern = re._pattern_type
@@ -732,7 +732,7 @@ def test_containerization_settings(tmp_path, runtime, mocker):
 
     expected_command_start = [runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
         ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
-        ['-v', '{}/:/home/runner/.ansible/plugins/:Z'.format(get_plugin_dir())] + \
+        ['-v', '{0}:{1}:Z'.format(*callback_mount())] + \
         ['-v', '/host1/:/container1/', '-v', '/host2/:/container2/'] + \
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \

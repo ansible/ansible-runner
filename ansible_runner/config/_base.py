@@ -39,7 +39,7 @@ from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.defaults import registry_auth_prefix
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.utils import (
-    get_plugin_dir,
+    callback_mount,
     get_callback_dir,
     open_fifo_write,
     args2cmdline,
@@ -495,7 +495,7 @@ class BaseConfig(object):
         self._update_volume_mount_paths(new_args, "{}".format(self.private_data_dir), dst_mount_path="/runner", labels=":Z")
 
         # Mount the stdout callback plugin from the ansible-runner code base
-        self._update_volume_mount_paths(new_args, "{}".format(get_plugin_dir()), dst_mount_path="/home/runner/.ansible/plugins", labels=":Z")
+        self._update_volume_mount_paths(new_args, callback_mount()[0], dst_mount_path=callback_mount()[1], labels=":Z")
 
         if self.container_auth_data:
             # Pull in the necessary registry auth info, if there is a container cred

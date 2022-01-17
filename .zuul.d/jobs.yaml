@@ -9,7 +9,9 @@
     timeout: 5400
     vars:
       zuul_work_dir: "{{ zuul.projects['github.com/ansible/ansible-runner'].src_dir }}"
-    nodeset: ubuntu-bionic-1vcpu
+      container_command: docker
+    nodeset: centos-8-stream
+
 
 # =============================================================================
 

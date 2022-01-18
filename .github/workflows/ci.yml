@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+
+
+jobs:
+  sanity:
+    name: ${{ matrix.test.name }}
+    runs-on: ubuntu-20.04
+    container:
+      image: quay.io/ansible/ansible-runner-test-container:2.0.0
+      env:
+        PIP_CACHE_DIR: ${{ runner.temp }}/.cache/pip
+        PY_COLORS: 1
+        TOXENV: ${{ matrix.test.tox_env }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - name: Lint
+            tox_env: linters
+
+          - name: Docs
+            tox_env: docs
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Create tox environment
+        run: tox --notest
+
+      - name: Run tests
+        run: tox
+
+
+  integration:
+    runs-on: ubuntu-20.04
+    name: Integration - ${{ matrix.py_version.name }}
+
+    env:
+      TOXENV: ${{ matrix.py_version.tox_env }}
+      PY_COLORS: 1
+
+    strategy:
+      fail-fast: false
+      matrix:
+        py_version:
+          - name: '3.8'
+            tox_env: integration-py38
+
+          - name: '3.9'
+            tox_env: integration-py39
+
+          - name: '3.10'
+            tox_env: integration-py310
+
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Python ${{ matrix.py_version.name }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py_version.name }}
+
+      - name: Install tox
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install tox
+
+      - name: Create tox environment
+        run: |
+          tox --notest
+
+      - name: Run integration tests
+        run: |
+          docker build --rm=true -t quay.io/ansible/ansible-runner:devel -t quay.io/ansible/ansible-runner:latest .
+          podman build --rm=true -t quay.io/ansible/ansible-runner:devel -t quay.io/ansible/ansible-runner:latest .
+          tox
+
+      - name: Upload coverage report
+        run: |
+          curl --silent --show-error --output codecov https://ansible-ci-files.s3.us-east-1.amazonaws.com/codecov/linux/codecov
+          chmod +x codecov
+          ./codecov --file test/coverage/reports/coverage.xml --flags {{ matrix.py_version.tox_env }}
+
+
+  unit:
+    name: Unit - ${{ matrix.py_version.name}}
+    runs-on: ubuntu-20.04
+    container:
+      image: quay.io/ansible/ansible-runner-test-container:2.0.0
+      env:
+        PIP_CACHE_DIR: ${{ runner.temp }}/.cache/pip
+        TOXENV: ${{ matrix.py_version.tox_env }}
+        PY_COLORS: 1
+
+    strategy:
+      fail-fast: false
+      matrix:
+        py_version:
+          - name: '3.8'
+            tox_env: unit-py38
+
+          - name: '3.9'
+            tox_env: unit-py39
+
+          - name: '3.10'
+            tox_env: unit-py310
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Create tox environment
+        run: tox --notest
+
+      - name: Run tests
+        run: tox
+
+      - name: Upload coverage report
+        run: codecov --file test/coverage/reports/coverage.xml --flags {{ matrix.py_version.tox_env }}

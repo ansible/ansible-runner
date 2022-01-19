@@ -16,8 +16,6 @@
 - job:
     name: ansible-runner-build-container-image
     parent: ansible-build-container-image
-    provides:
-      - ansible-runner-container-image
     requires:
       - python-base-container-image
       - python-builder-container-image
@@ -43,8 +41,6 @@
 - job:
     name: ansible-runner-upload-container-image
     parent: ansible-upload-container-image
-    provides:
-      - ansible-runner-container-image
     requires:
       - python-base-container-image
       - python-builder-container-image
@@ -78,7 +74,9 @@
           repository: quay.io/ansible/ansible-runner
           siblings:
             - github.com/ansible/ansible
-          tags: ['stable-2.12-devel']
+          tags:
+            - stable-2.12-devel
+            - latest
       docker_images: *container_images_stable_2_12
 
 - job:
@@ -126,7 +124,6 @@
             - github.com/ansible/ansible
           tags:
             - stable-2.11-devel
-            - latest
       docker_images: *container_images_stable_2_11
 
 - job:
@@ -244,20 +241,11 @@
     parent: ansible-runner-container-image-base
 
 # =============================================================================
-- job:
-    name: ansible-runner-integration
-    parent: ansible-buildset-registry-consumer
-    requires:
-      - ansible-runner-container-image
-    dependencies:
-      - ansible-runner-build-container-image
-    vars:
-      container_command: docker
 
 - job:
     name: ansible-runner-integration
     parent: ansible-tox-py38
-
+    pre-run: .zuul.d/playbooks/ansible-runner-integration/pre.yaml
 
 # =============================================================================
 

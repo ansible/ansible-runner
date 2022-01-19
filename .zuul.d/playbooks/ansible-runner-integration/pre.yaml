@@ -1,0 +1,18 @@
+---
+- hosts: all
+  tasks:
+
+    - import_role:
+        name: ensure-docker
+      vars:
+        # upstream version seems to prevent install of podman on centos8 stream
+        use_upstream_docker: no
+
+    - import_role:
+        name: ensure-podman
+
+    - name: Build docker image
+      command: docker build --rm=true -t quay.io/ansible/ansible-runner:devel -t quay.io/ansible/ansible-runner:latest .
+
+    - name: Build podman image
+      command: podman build --rm=true -t quay.io/ansible/ansible-runner:devel -t quay.io/ansible/ansible-runner:latest .

@@ -1,3 +1,4 @@
+import time
 import tempfile
 import zipfile
 import os
@@ -84,6 +85,11 @@ def unstream_dir(stream, length, target_directory):
                         continue
 
                 archive.extract(info.filename, path=target_directory)
+
+                # Fancy logic to preserve modification times
+                # https://stackoverflow.com/questions/9813243/extract-files-from-zip-file-and-retain-mod-date
+                date_time = time.mktime(info.date_time + (0, 0, -1))
+                os.utime(out_path, times=(date_time, date_time))
 
                 if is_symlink:
                     link = open(out_path).read()

@@ -12,6 +12,7 @@ from ansible_runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
 
 
+@pytest.mark.xfail(reason='Test is unstable')
 def test_password_prompt(rc):
     rc.command = [sys.executable, '-c' 'import time; print(input("Password: "))']
     rc.expect_passwords[re.compile(r'Password:\s*?$', re.M)] = '1234'

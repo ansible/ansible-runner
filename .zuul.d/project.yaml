@@ -8,10 +8,6 @@
         - ansible-runner-build-container-image-stable-2.10
         - ansible-runner-build-container-image-stable-2.11
         - ansible-runner-integration
-        - ansible-runner-tox-linters
-        - ansible-tox-docs:
-            vars:
-              sphinx_build_dir: docs/build
     gate:
       jobs: *id001
     post:

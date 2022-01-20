@@ -78,7 +78,9 @@
           repository: quay.io/ansible/ansible-runner
           siblings:
             - github.com/ansible/ansible
-          tags: ['stable-2.12-devel']
+          tags:
+            - stable-2.12-devel
+            - latest
       docker_images: *container_images_stable_2_12
 
 - job:
@@ -126,7 +128,6 @@
             - github.com/ansible/ansible
           tags:
             - stable-2.11-devel
-            - latest
       docker_images: *container_images_stable_2_11
 
 - job:

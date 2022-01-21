@@ -243,27 +243,3 @@
 - job:
     name: ansible-runner-upload-container-image-stable-2.9
     parent: ansible-runner-container-image-base
-
-# =============================================================================
-- job:
-    name: ansible-runner-integration
-    parent: ansible-buildset-registry-consumer
-    requires:
-      - ansible-runner-container-image
-    dependencies:
-      - ansible-runner-build-container-image
-    vars:
-      container_command: docker
-
-- job:
-    name: ansible-runner-integration
-    parent: ansible-tox-py38
-
-
-# =============================================================================
-
-- job:
-    name: ansible-runner-tox-linters
-    parent: ansible-tox-linters
-    pre-run: .zuul.d/playbooks/ansible-runner-tox-linters/pre.yaml
-    nodeset: centos-8-stream

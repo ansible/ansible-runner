@@ -8,7 +8,6 @@
         - ansible-runner-build-container-image-stable-2.10
         - ansible-runner-build-container-image-stable-2.11
         - ansible-runner-build-container-image-stable-2.12
-        - ansible-runner-integration
     gate:
       jobs: *id001
     post:

@@ -223,7 +223,7 @@ def test_prepare_env_directory_isolation_from_settings(mocker, project_fixtures)
     '''
     # Mock away the things that would actually prepare the isolation directory.
     mocker.patch('os.makedirs', return_value=True)
-    copy_tree = mocker.patch('distutils.dir_util.copy_tree')
+    copy_tree = mocker.patch('shutil.copytree')
     mkdtemp = mocker.patch('tempfile.mkdtemp')
     mkdtemp.return_value = '/tmp/runner/runner_di_XYZ'
     mocker.patch('ansible_runner.config.runner.RunnerConfig.build_process_isolation_temp_dir')
@@ -245,7 +245,7 @@ def test_prepare_env_directory_isolation_from_settings(mocker, project_fixtures)
     mkdtemp.assert_called_once_with(prefix='runner_di_', dir='/tmp/runner')
 
     # The project files should be copied to the isolation path.
-    copy_tree.assert_called_once_with(rc.project_dir, rc.directory_isolation_path, preserve_symlinks=True)
+    copy_tree.assert_called_once_with(rc.project_dir, rc.directory_isolation_path, symlinks=True)
 
 
 def test_prepare_inventory(mocker):

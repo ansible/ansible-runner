@@ -1,8 +1,7 @@
 import os
 import json
 
-from distutils.spawn import find_executable
-
+import shutil
 import pytest
 
 from ansible_runner import defaults, run, run_async
@@ -10,7 +9,7 @@ from ansible_runner import defaults, run, run_async
 
 @pytest.mark.test_all_runtimes
 @pytest.mark.parametrize('containerized', [True, False])
-def test_basic_events(containerized, is_pre_ansible28, runtime, tmp_path, is_run_async=False, g_facts=False):
+def test_basic_events(containerized, runtime, tmp_path, is_run_async=False, g_facts=False):
 
     inventory = 'localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"'
 
@@ -56,11 +55,11 @@ def test_basic_events(containerized, is_pre_ansible28, runtime, tmp_path, is_run
 
 @pytest.mark.test_all_runtimes
 @pytest.mark.parametrize('containerized', [True, False])
-def test_async_events(containerized, is_pre_ansible28, runtime, tmp_path):
-    test_basic_events(containerized, is_pre_ansible28, runtime, tmp_path, is_run_async=True, g_facts=True)
+def test_async_events(containerized, runtime, tmp_path):
+    test_basic_events(containerized, runtime, tmp_path, is_run_async=True, g_facts=True)
 
 
-def test_basic_serializeable(is_pre_ansible28, tmp_path):
+def test_basic_serializeable(tmp_path):
     inv = 'localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"'
     r = run(private_data_dir=str(tmp_path),
             inventory=inv,
@@ -69,7 +68,7 @@ def test_basic_serializeable(is_pre_ansible28, tmp_path):
     json.dumps(events)
 
 
-def test_event_omission(is_pre_ansible28, tmp_path):
+def test_event_omission(tmp_path):
     inv = 'localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"'
     r = run(private_data_dir=str(tmp_path),
             inventory=inv,
@@ -86,7 +85,7 @@ def test_event_omission(is_pre_ansible28, tmp_path):
     assert not any([x['event_data'] for x in events])
 
 
-def test_event_omission_except_failed(is_pre_ansible28, tmp_path):
+def test_event_omission_except_failed(tmp_path):
     inv = 'localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"'
     r = run(private_data_dir=str(tmp_path),
             inventory=inv,
@@ -105,7 +104,7 @@ def test_event_omission_except_failed(is_pre_ansible28, tmp_path):
     assert len(all_event_datas) == 1
 
 
-def test_runner_on_start(rc, skipif_pre_ansible28, tmp_path):
+def test_runner_on_start(rc, tmp_path):
     r = run(private_data_dir=str(tmp_path),
             inventory='localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"',
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
@@ -114,9 +113,7 @@ def test_runner_on_start(rc, skipif_pre_ansible28, tmp_path):
     assert len(start_events) == 1
 
 
-def test_playbook_on_stats_summary_fields(project_fixtures, is_pre_ansible28):
-    if is_pre_ansible28:
-        pytest.skip('Test is for post 2.8 status types.')
+def test_playbook_on_stats_summary_fields(project_fixtures):
     private_data_dir = project_fixtures / 'host_status'
 
     res = run(
@@ -147,9 +144,9 @@ def test_include_role_events(project_fixtures):
             assert event_data['res']['msg'] == 'Hello world!'
 
 
-@pytest.mark.skipif(find_executable('cgexec') is None,
+@pytest.mark.skipif(shutil.which('cgexec') is None,
                     reason="cgexec not available")
-def test_profile_data(skipif_pre_ansible28, tmp_path):
+def test_profile_data(tmp_path):
     try:
         r = run(private_data_dir=str(tmp_path),
                 inventory='localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"',

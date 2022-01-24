@@ -13,7 +13,7 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.fixture()
-def executor(tmp_path, request, is_pre_ansible28):
+def executor(tmp_path, request):
     private_data_dir = tmp_path / 'foo'
     private_data_dir.mkdir()
 
@@ -176,7 +176,7 @@ def test_callback_plugin_no_log_filters(executor, playbook):
     - uri: url=https://example.org url_username="PUBLIC" url_password="PRIVATE"
 '''},  # noqa
 ])
-def test_callback_plugin_task_args_leak(executor, playbook, skipif_pre_ansible28):
+def test_callback_plugin_task_args_leak(executor, playbook):
     executor.run()
     events = list(executor.events)
     assert events[0]['event'] == 'playbook_on_start'
@@ -213,7 +213,7 @@ def test_callback_plugin_task_args_leak(executor, playbook, skipif_pre_ansible28
     - debug: msg="{{ command_register.results|map(attribute='stdout')|list }}"
 '''},  # noqa
 ])
-def test_callback_plugin_censoring_does_not_overwrite(executor, playbook, skipif_pre_ansible28):
+def test_callback_plugin_censoring_does_not_overwrite(executor, playbook):
     executor.run()
     events = list(executor.events)
     assert events[0]['event'] == 'playbook_on_start'
@@ -258,7 +258,7 @@ def test_callback_plugin_strips_task_environ_variables(executor, playbook):
           foo: "bar"
 '''},  # noqa
 ])
-def test_callback_plugin_saves_custom_stats(executor, playbook, skipif_pre_ansible28):
+def test_callback_plugin_saves_custom_stats(executor, playbook):
     executor.run()
     for event in executor.events:
         event_data = event.get('event_data', {})
@@ -284,7 +284,7 @@ def test_callback_plugin_saves_custom_stats(executor, playbook, skipif_pre_ansib
         - my_handler
 '''},  # noqa
 ])
-def test_callback_plugin_records_notify_events(executor, playbook, skipif_pre_ansible28):
+def test_callback_plugin_records_notify_events(executor, playbook):
     executor.run()
     assert len(list(executor.events))
     notify_events = [x for x in executor.events if x['event'] == 'playbook_on_notify']
@@ -308,7 +308,7 @@ def test_callback_plugin_records_notify_events(executor, playbook, skipif_pre_an
         url_password: "{{ pw }}"
 '''},  # noqa
 ])
-def test_module_level_no_log(executor, playbook, skipif_pre_ansible28):
+def test_module_level_no_log(executor, playbook):
     # It's possible for `no_log=True` to be defined at the _module_ level,
     # e.g., for the URI module password parameter
     # This test ensures that we properly redact those
@@ -398,7 +398,7 @@ def test_output_when_given_non_playbook_script(tmp_path):
         msg: "{{ ('F' * 150) | list }}"
 '''},  # noqa
 ])
-def test_large_stdout_parsing_when_using_json_output(executor, playbook, skipif_pre_ansible28):
+def test_large_stdout_parsing_when_using_json_output(executor, playbook):
     # When the json flag is used, it is possible to output more data than
     # pexpect's maxread default of 2000 characters.  As a result, if not
     # handled properly, the stdout can end up being corrupted with partial

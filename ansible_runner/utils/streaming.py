@@ -69,6 +69,7 @@ def unstream_dir(stream, length, target_directory):
 
         with zipfile.ZipFile(tmp.name, "r") as archive:
             # Fancy extraction in order to preserve permissions
+            # AWX relies on the execution bit, in particular, for inventory
             # https://www.burgundywall.com/post/preserving-file-perms-with-python-zipfile-module
             for info in archive.infolist():
                 out_path = os.path.join(target_directory, info.filename)
@@ -87,6 +88,7 @@ def unstream_dir(stream, length, target_directory):
                 archive.extract(info.filename, path=target_directory)
 
                 # Fancy logic to preserve modification times
+                # AWX uses modification times to determine if new facts were written for a host
                 # https://stackoverflow.com/questions/9813243/extract-files-from-zip-file-and-retain-mod-date
                 date_time = time.mktime(info.date_time + (0, 0, -1))
                 os.utime(out_path, times=(date_time, date_time))

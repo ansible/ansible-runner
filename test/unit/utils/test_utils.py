@@ -153,8 +153,10 @@ def test_transmit_modtimes(tmp_path):
     source_dir = tmp_path / 'source'
     source_dir.mkdir()
 
+    # python ZipFile uses an old standard that stores seconds in 2 second increments
+    # https://stackoverflow.com/questions/64048499/zipfile-lib-weird-behaviour-with-seconds-in-modified-time
     (source_dir / 'b.txt').touch()
-    time.sleep(2.0)  # flaky for anything less because of integer math
+    time.sleep(2.0)  # flaky for anything less
     (source_dir / 'a.txt').touch()
 
     very_old_file = source_dir / 'very_old.txt'
@@ -182,12 +184,13 @@ def test_transmit_modtimes(tmp_path):
     mod_delta = os.path.getmtime(dest_dir / 'a.txt') - os.path.getmtime(dest_dir / 'b.txt')
     assert mod_delta >= 1.0
 
-    # Assure modification times are same as original
-    for filename in ('a.txt', 'b.txt'):
-        assert os.path.getmtime(dest_dir / filename) == os.path.getmtime(dest_dir / filename)
+    # Assure modification times are same as original (to the rounded second)
+    for filename in ('a.txt', 'b.txt', 'very_old.txt'):
+        difference = abs(os.path.getmtime(dest_dir / filename) - os.path.getmtime(source_dir / filename))
+        assert difference < 2.0
 
     # Assure the very old timestamp is preserved
-    old_delta = os.path.getmtime(dest_dir / 'a.txt') - os.path.getmtime(dest_dir / 'very_old.txt')
+    old_delta = os.path.getmtime(dest_dir / 'a.txt') - os.path.getmtime(source_dir / 'very_old.txt')
     assert old_delta >= datetime.timedelta(days=1).total_seconds() - 2.
 
 

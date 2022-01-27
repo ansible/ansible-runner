@@ -27,7 +27,6 @@ rpm-build/
 .python-version
 .tox/
 .venv
-env/
 venv/
 
 # Demo files

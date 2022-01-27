@@ -245,10 +245,10 @@ def test_prepare_env_directory_isolation_from_settings(mocker, project_fixtures)
 
     # `directory_isolation_path` should be used to create a new temp path underneath
     assert rc.directory_isolation_path == '/tmp/runner/runner_di_XYZ'
-    mkdtemp.assert_called_with(prefix='runner_di_', dir='/tmp/runner')
+    mkdtemp.assert_called_once_with(prefix='runner_di_', dir='/tmp/runner')
 
     # The project files should be copied to the isolation path.
-    copy_tree.assert_called_with(rc.project_dir, rc.directory_isolation_path, preserve_symlinks=True)
+    copy_tree.assert_called_once_with(rc.project_dir, rc.directory_isolation_path, preserve_symlinks=True)
 
 
 def test_prepare_inventory(mocker):

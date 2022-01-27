@@ -11,6 +11,8 @@ import tempfile
 import subprocess
 import base64
 import threading
+from pathlib import Path
+import pwd
 import pipes
 import uuid
 import codecs
@@ -54,16 +56,27 @@ def get_callback_dir():
     return os.path.join(get_plugin_dir(), 'callback')
 
 
-def callback_mount():
+def callback_mount(copy_if_needed=False):
     '''
     Return a tuple that gives mount points for the standard out callback
     in the form of (<host location>, <location in container>)
+    if copy_if_needed is set, and the install is owned by another user,
+    it will copy the plugin to a tmpdir for the mount in anticipation of SELinux problems
     '''
     container_dot_ansible = '/home/runner/.ansible'
     rel_path = ('callback', '',)
-    callback_file = os.path.join(get_plugin_dir(), *rel_path)
+    host_path = os.path.join(get_plugin_dir(), *rel_path)
+    if copy_if_needed:
+        current_user = pwd.getpwuid(os.geteuid()).pw_name
+        callback_dir = get_callback_dir()
+        callback_owner = Path(callback_dir).owner()
+        if current_user != callback_owner:
+            tmp_path = tempfile.mkdtemp(prefix='ansible_runner_plugins_')
+            host_path = os.path.join(tmp_path, 'callback')
+            register_for_cleanup(host_path)
+            shutil.copytree(callback_dir, host_path)
     container_path = os.path.join(container_dot_ansible, 'plugins', *rel_path)
-    return (callback_file, container_path)
+    return (host_path, container_path)
 
 
 class Bunch(object):

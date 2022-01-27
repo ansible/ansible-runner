@@ -495,7 +495,8 @@ class BaseConfig(object):
         self._update_volume_mount_paths(new_args, "{}".format(self.private_data_dir), dst_mount_path="/runner", labels=":Z")
 
         # Mount the stdout callback plugin from the ansible-runner code base
-        self._update_volume_mount_paths(new_args, callback_mount()[0], dst_mount_path=callback_mount()[1], labels=":Z")
+        mount_paths = callback_mount(copy_if_needed=True)
+        self._update_volume_mount_paths(new_args, mount_paths[0], dst_mount_path=mount_paths[1], labels=":Z")
 
         if self.container_auth_data:
             # Pull in the necessary registry auth info, if there is a container cred

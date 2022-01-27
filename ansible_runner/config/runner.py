@@ -23,8 +23,8 @@ import shlex
 import stat
 import tempfile
 import six
+import distutils.dir_util
 
-from distutils.dir_util import copy_tree
 from six import string_types, text_type
 
 from ansible_runner import output
@@ -136,14 +136,18 @@ class RunnerConfig(BaseConfig):
             raise ConfigurationError("Only one of playbook and module options are allowed")
         if not os.path.exists(self.artifact_dir):
             os.makedirs(self.artifact_dir, mode=0o700)
+
+        # Since the `sandboxed` property references attributes that may come from `env/settings`,
+        # we must call prepare_env() before we can reference it.
+        self.prepare_env()
+
         if self.sandboxed and self.directory_isolation_path is not None:
             self.directory_isolation_path = tempfile.mkdtemp(prefix='runner_di_', dir=self.directory_isolation_path)
             if os.path.exists(self.project_dir):
                 output.debug("Copying directory tree from {} to {} for working directory isolation".format(self.project_dir,
                                                                                                            self.directory_isolation_path))
-                copy_tree(self.project_dir, self.directory_isolation_path, preserve_symlinks=True)
+                distutils.dir_util.copy_tree(self.project_dir, self.directory_isolation_path, preserve_symlinks=True)
 
-        self.prepare_env()
         self.prepare_inventory()
         self.prepare_command()
 
@@ -187,6 +191,7 @@ class RunnerConfig(BaseConfig):
         self.process_isolation_hide_paths = self.settings.get('process_isolation_hide_paths', self.process_isolation_hide_paths)
         self.process_isolation_show_paths = self.settings.get('process_isolation_show_paths', self.process_isolation_show_paths)
         self.process_isolation_ro_paths = self.settings.get('process_isolation_ro_paths', self.process_isolation_ro_paths)
+        self.directory_isolation_path = self.settings.get('directory_isolation_base_path', self.directory_isolation_path)
         self.directory_isolation_cleanup = bool(self.settings.get('directory_isolation_cleanup', True))
 
         self.resource_profiling = self.settings.get('resource_profiling', self.resource_profiling)

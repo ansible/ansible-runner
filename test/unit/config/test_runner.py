@@ -4,12 +4,9 @@ from functools import partial
 from io import StringIO
 import os
 import re
-import shutil
 import six
-import tempfile
 
 from pexpect import TIMEOUT, EOF
-from distutils.dir_util import copy_tree
 
 import pytest
 

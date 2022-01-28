@@ -76,6 +76,25 @@ def test_cancel_will_remove_container(project_fixtures, runtime, cli):
 
 
 @pytest.mark.test_all_runtimes
+def test_non_owner_install(mocker, project_fixtures, runtime):
+    """Simulates a run on a conputer where ansible-runner install is not owned by current user"""
+    mocker.patch('ansible_runner.utils.is_dir_owner', return_value=False)
+
+    private_data_dir = project_fixtures / 'debug'
+    res = run(
+        private_data_dir=private_data_dir,
+        playbook='debug.yml',
+        settings={
+            'process_isolation_executable': runtime,
+            'process_isolation': True
+        }
+    )
+    stdout = res.stdout.read()
+    assert res.rc == 0, stdout
+    assert res.status == 'successful'
+
+
+@pytest.mark.test_all_runtimes
 def test_invalid_registry_host(tmp_path, runtime):
     pdd_path = tmp_path / 'private_data_dir'
     pdd_path.mkdir()

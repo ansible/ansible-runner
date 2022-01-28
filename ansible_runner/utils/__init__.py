@@ -56,6 +56,13 @@ def get_callback_dir():
     return os.path.join(get_plugin_dir(), 'callback')
 
 
+def is_dir_owner(directory):
+    '''Returns True if current user is the owner of directory'''
+    current_user = pwd.getpwuid(os.geteuid()).pw_name
+    callback_owner = Path(directory).owner()
+    return bool(current_user == callback_owner)
+
+
 def callback_mount(copy_if_needed=False):
     '''
     Return a tuple that gives mount points for the standard out callback
@@ -67,13 +74,11 @@ def callback_mount(copy_if_needed=False):
     rel_path = ('callback', '',)
     host_path = os.path.join(get_plugin_dir(), *rel_path)
     if copy_if_needed:
-        current_user = pwd.getpwuid(os.geteuid()).pw_name
         callback_dir = get_callback_dir()
-        callback_owner = Path(callback_dir).owner()
-        if current_user != callback_owner:
+        if not is_dir_owner(callback_dir):
             tmp_path = tempfile.mkdtemp(prefix='ansible_runner_plugins_')
+            register_for_cleanup(tmp_path)
             host_path = os.path.join(tmp_path, 'callback')
-            register_for_cleanup(host_path)
             shutil.copytree(callback_dir, host_path)
     container_path = os.path.join(container_dot_ansible, 'plugins', *rel_path)
     return (host_path, container_path)

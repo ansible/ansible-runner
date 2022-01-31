@@ -1,6 +1,5 @@
 import shutil
 
-from distutils.version import LooseVersion
 from pathlib import Path
 
 from ansible_runner import defaults
@@ -26,16 +25,6 @@ def change_save_path(tmp_path, mocker):
 
 
 @pytest.fixture(scope='session')
-def is_pre_ansible28():
-    try:
-        if LooseVersion(pkg_resources.get_distribution('ansible').version) < LooseVersion('2.8'):
-            return True
-    except pkg_resources.DistributionNotFound:
-        # ansible-base (e.g. ansible 2.10 and beyond) is not accessible in this way
-        pass
-
-
-@pytest.fixture(scope='session')
 def is_pre_ansible211():
     """
     Check if the version of Ansible is less than 2.11.
@@ -49,12 +38,6 @@ def is_pre_ansible211():
     except pkg_resources.DistributionNotFound:
         # Must be ansible-base or ansible
         return True
-
-
-@pytest.fixture(scope='session')
-def skipif_pre_ansible28(is_pre_ansible28):
-    if is_pre_ansible28:
-        pytest.skip("Valid only on Ansible 2.8+")
 
 
 @pytest.fixture(scope='session')

@@ -17,8 +17,6 @@ import codecs
 import atexit
 import signal
 
-from distutils.spawn import find_executable
-
 from ansible_runner.exceptions import ConfigurationError
 
 try:
@@ -474,7 +472,7 @@ def sanitize_json_response(data):
 
 
 def get_executable_path(name):
-    exec_path = find_executable(name)
+    exec_path = shutil.which(name)
     if exec_path is None:
         raise ConfigurationError(f"{name} command not found")
     return exec_path

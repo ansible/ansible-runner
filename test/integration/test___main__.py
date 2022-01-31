@@ -98,7 +98,7 @@ def test_cmdline_role_with_playbook_option():
         assert exc == 1
 
 
-def test_cmdline_playbook(is_pre_ansible28, tmp_path):
+def test_cmdline_playbook(tmp_path):
     private_data_dir = tmp_path
     play = [{'hosts': 'all', 'tasks': [{'debug': {'msg': random_string()}}]}]
 
@@ -142,7 +142,7 @@ def test_cmdline_includes_one_option():
         assert exc == 1
 
 
-def test_cmdline_cmdline_override(is_pre_ansible28, tmp_path):
+def test_cmdline_cmdline_override(tmp_path):
     private_data_dir = tmp_path
     play = [{'hosts': 'all', 'tasks': [{'debug': {'msg': random_string()}}]}]
 

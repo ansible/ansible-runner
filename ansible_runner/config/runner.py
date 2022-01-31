@@ -23,7 +23,7 @@ import shlex
 import stat
 import tempfile
 import six
-import distutils.dir_util
+import shutil
 
 from six import string_types, text_type
 
@@ -146,7 +146,7 @@ class RunnerConfig(BaseConfig):
             if os.path.exists(self.project_dir):
                 output.debug("Copying directory tree from {} to {} for working directory isolation".format(self.project_dir,
                                                                                                            self.directory_isolation_path))
-                distutils.dir_util.copy_tree(self.project_dir, self.directory_isolation_path, preserve_symlinks=True)
+                shutil.copytree(self.project_dir, self.directory_isolation_path, symlinks=True)
 
         self.prepare_inventory()
         self.prepare_command()

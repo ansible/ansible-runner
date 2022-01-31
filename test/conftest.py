@@ -1,6 +1,7 @@
 import shutil
 
 from distutils.version import LooseVersion
+from pathlib import Path
 
 from ansible_runner import defaults
 
@@ -64,3 +65,14 @@ def pytest_generate_tests(metafunc):
             )
             metafunc.parametrize('runtime', args)
             break
+
+
+@pytest.fixture
+def project_fixtures(tmp_path):
+    source = Path(__file__).parent / 'fixtures' / 'projects'
+    dest = tmp_path / 'projects'
+    shutil.copytree(source, dest)
+
+    yield dest
+
+    shutil.rmtree(dest, ignore_errors=True)

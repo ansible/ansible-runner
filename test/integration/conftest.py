@@ -1,11 +1,7 @@
 import json
 import os
-import shutil
 import subprocess
 import yaml
-
-from pathlib import Path
-
 import pytest
 import pexpect
 
@@ -80,14 +76,3 @@ def cli(request):
 
         return ret
     return run
-
-
-@pytest.fixture
-def project_fixtures(tmp_path):
-    source = Path(__file__).parent / 'fixtures' / 'projects'
-    dest = tmp_path / 'projects'
-    shutil.copytree(source, dest)
-
-    yield dest
-
-    shutil.rmtree(dest, ignore_errors=True)

@@ -1,0 +1,3 @@
+process_isolation: True
+process_isolation_executable: bwrap
+directory_isolation_base_path: /tmp/runner

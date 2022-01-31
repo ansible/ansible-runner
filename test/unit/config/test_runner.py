@@ -4,8 +4,8 @@ from functools import partial
 from io import StringIO
 import os
 import re
-
 import six
+
 from pexpect import TIMEOUT, EOF
 
 import pytest
@@ -215,6 +215,37 @@ def test_prepare_env_directory_isolation(mocker):
     rc.directory_isolation_path = '/tmp/foo'
     rc.prepare_env()
     assert rc.cwd == '/tmp/foo'
+
+
+def test_prepare_env_directory_isolation_from_settings(mocker, project_fixtures):
+    '''
+    Test that sandboxing with directory isolation works correctly with `env/settings` values.
+    '''
+    # Mock away the things that would actually prepare the isolation directory.
+    mocker.patch('os.makedirs', return_value=True)
+    copy_tree = mocker.patch('distutils.dir_util.copy_tree')
+    mkdtemp = mocker.patch('tempfile.mkdtemp')
+    mkdtemp.return_value = '/tmp/runner/runner_di_XYZ'
+    mocker.patch('ansible_runner.config.runner.RunnerConfig.build_process_isolation_temp_dir')
+
+    # The `directory_isolation` test data sets up an `env/settings` file for us.
+    private_data_dir = project_fixtures / 'directory_isolation'
+    rc = RunnerConfig(private_data_dir=str(private_data_dir), playbook='main.yaml')
+
+    # This is where all the magic happens
+    rc.prepare()
+
+    assert rc.sandboxed
+    assert rc.process_isolation_executable == 'bwrap'
+    assert rc.project_dir == str(private_data_dir / 'project')
+    assert os.path.exists(rc.project_dir)
+
+    # `directory_isolation_path` should be used to create a new temp path underneath
+    assert rc.directory_isolation_path == '/tmp/runner/runner_di_XYZ'
+    mkdtemp.assert_called_once_with(prefix='runner_di_', dir='/tmp/runner')
+
+    # The project files should be copied to the isolation path.
+    copy_tree.assert_called_once_with(rc.project_dir, rc.directory_isolation_path, preserve_symlinks=True)
 
 
 def test_prepare_inventory(mocker):

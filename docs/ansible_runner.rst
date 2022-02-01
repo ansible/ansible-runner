@@ -6,7 +6,6 @@ Subpackages
 
 .. toctree::
 
-    ansible_runner.callbacks
     ansible_runner.config
     ansible_runner.display_callback
 

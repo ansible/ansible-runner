@@ -4,33 +4,10 @@ ansible_runner.display_callback package
 Submodules
 ----------
 
-ansible_runner.display_callback.display module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ansible_runner.display_callback.callback.awx_display module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: ansible_runner.display_callback.display
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-ansible_runner.display_callback.events module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. automodule:: ansible_runner.display_callback.events
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-ansible_runner.display_callback.minimal module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. automodule:: ansible_runner.display_callback.minimal
-    :members:
-    :undoc-members:
-
-ansible_runner.display_callback.module module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. automodule:: ansible_runner.display_callback.module
+.. automodule:: ansible_runner.display_callback.callback.awx_display
     :members:
     :undoc-members:
 

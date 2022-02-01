@@ -188,7 +188,7 @@ def test_run_command_ansible(rc):
     assert exitcode == 0
     assert list(runner.events) != []
     assert runner.stats != {}
-    assert list(runner.host_events('localhost')) != []
+    assert list(runner.host_events('localhost')) != [], repr(list(runner.events))
     stdout = runner.stdout
     assert stdout.read() != ""
 

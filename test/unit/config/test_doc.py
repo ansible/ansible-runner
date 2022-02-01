@@ -6,7 +6,7 @@ import pytest
 from ansible_runner.config.doc import DocConfig
 from ansible_runner.config._base import BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
-from ansible_runner.utils import get_executable_path
+from ansible_runner.utils import get_executable_path, callback_mount
 
 
 def test_ansible_doc_defaults(tmp_path, patch_private_data_dir):
@@ -101,6 +101,7 @@ def test_prepare_plugin_docs_command_with_containerization(tmp_path, runtime, mo
     expected_command_start.extend([
         '-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir),
         '-v', '{}/:/runner/:Z'.format(rc.private_data_dir),
+        '-v', '{0}:{1}:Z'.format(*callback_mount()),
         '--env-file', '{}/env.list'.format(rc.artifact_dir),
     ])
 
@@ -169,6 +170,7 @@ def test_prepare_plugin_list_command_with_containerization(tmp_path, runtime, mo
     expected_command_start.extend([
         '-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir),
         '-v', '{}/:/runner/:Z'.format(rc.private_data_dir),
+        '-v', '{0}:{1}:Z'.format(*callback_mount()),
         '--env-file', '{}/env.list'.format(rc.artifact_dir),
     ])
 

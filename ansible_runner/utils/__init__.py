@@ -11,6 +11,8 @@ import tempfile
 import subprocess
 import base64
 import threading
+from pathlib import Path
+import pwd
 import pipes
 import uuid
 import codecs
@@ -42,6 +44,42 @@ def register_for_cleanup(folder):
     The folder need not exist at the time when this is called.
     '''
     atexit.register(cleanup_folder, folder)
+
+
+def get_plugin_dir():
+    return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "display_callback"))
+
+
+def get_callback_dir():
+    return os.path.join(get_plugin_dir(), 'callback')
+
+
+def is_dir_owner(directory):
+    '''Returns True if current user is the owner of directory'''
+    current_user = pwd.getpwuid(os.geteuid()).pw_name
+    callback_owner = Path(directory).owner()
+    return bool(current_user == callback_owner)
+
+
+def callback_mount(copy_if_needed=False):
+    '''
+    Return a tuple that gives mount points for the standard out callback
+    in the form of (<host location>, <location in container>)
+    if copy_if_needed is set, and the install is owned by another user,
+    it will copy the plugin to a tmpdir for the mount in anticipation of SELinux problems
+    '''
+    container_dot_ansible = '/home/runner/.ansible'
+    rel_path = ('callback', '',)
+    host_path = os.path.join(get_plugin_dir(), *rel_path)
+    if copy_if_needed:
+        callback_dir = get_callback_dir()
+        if not is_dir_owner(callback_dir):
+            tmp_path = tempfile.mkdtemp(prefix='ansible_runner_plugins_')
+            register_for_cleanup(tmp_path)
+            host_path = os.path.join(tmp_path, 'callback')
+            shutil.copytree(callback_dir, host_path)
+    container_path = os.path.join(container_dot_ansible, 'plugins', *rel_path)
+    return (host_path, container_path)
 
 
 class Bunch(object):

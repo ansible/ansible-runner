@@ -410,7 +410,7 @@ class OutputEventFilter(object):
                 event_data['uuid'] = str(uuid.uuid4())
             self._counter += 1
             event_data['counter'] = self._counter
-            event_data['stdout'] = stdout_chunk[:-2] if len(stdout_chunk) > 2 else ""
+            event_data['stdout'] = stdout_chunk.rstrip('\n\r')
             n_lines = stdout_chunk.count('\n')
             event_data['start_line'] = self._start_line
             event_data['end_line'] = self._start_line + n_lines

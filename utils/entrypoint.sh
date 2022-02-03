@@ -24,6 +24,15 @@ EOF
 
 fi
 
+if [[ -n "${LAUNCHED_BY_RUNNER}" ]]; then
+    # Special actions to be compatible with old ansible-runner versions, 2.1.x specifically
+    RUNNER_CALLBACKS=$(python3 -c "import from ansible_runner.display_callback.callback import awx_display; print(awx_display.__file__)")
+    export ANSIBLE_CALLBACK_PLUGINS="$(dirname $RUNNER_CALLBACKS)"
+
+    # old versions split the callback name between awx_display and minimal, but new version just uses awx_display
+    export ANSIBLE_STDOUT_CALLBACK=awx_display
+fi
+
 if [[ -d ${AWX_ISOLATED_DATA_DIR} ]]; then
     if output=$(ansible-galaxy collection list --format json 2> /dev/null); then
         echo $output > ${AWX_ISOLATED_DATA_DIR}/collections.json

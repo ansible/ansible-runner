@@ -9,7 +9,7 @@ GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
 ANSIBLE_BRANCH ?=
 ANSIBLE_VERSIONS ?= stable-2.9 stable-2.10 stable-2.11
 PIP_NAME = ansible_runner
-VERSION := $(shell python setup.py --version)
+VERSION := $(shell $(PYTHON) setup.py --version)
 ifeq ($(OFFICIAL),yes)
     RELEASE ?= 1
 else

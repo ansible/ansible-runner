@@ -7,7 +7,7 @@ services:
       context: .
     image: runner-rpm-builder:${MOCK_CONFIG}
     environment:
-      MOCK_BIN: "mock --old-chroot"
+      MOCK_BIN: "mock --isolation=simple"
       MOCK_CONFIG:
       RELEASE:
       OFFICIAL:

@@ -30,6 +30,7 @@ Requires:      python2-%{pypi_name} = %{version}-%{release}
 
 %if %{with python3}
 BuildRequires: python3-devel
+BuildRequires: python3-pbr
 BuildRequires: python3-setuptools
 Requires:      python3-%{pypi_name} = %{version}-%{release}
 %endif
@@ -125,6 +126,7 @@ ln -s %{_bindir}/ansible-runner-%{python2_version} %{buildroot}/%{_bindir}/ansib
 %{_bindir}/ansible-runner
 %{_bindir}/ansible-runner-3
 %{_bindir}/ansible-runner-%{python3_version}
+%{_datadir}/ansible-runner/*
 %endif
 
 %changelog

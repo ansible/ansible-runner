@@ -197,8 +197,32 @@ def test_callback_plugin_task_args_leak(executor, playbook):
     # make sure playbook was successful, so all tasks were hit
     assert not events[-1]['event_data']['failures'], 'Unexpected playbook execution failure'
 
+@pytest.mark.parametrize(
+    "playbook",
+    [
+        {
+            "simple.yml": """
+- name: simpletask
+  connection: local
+  hosts: all
+  gather_facts: no
+  tasks:
+    - shell: echo "resolved actions test!"
+"""
+        },  # noqa
+    ],
+)
+def test_resolved_actions(executor, playbook, skipif_pre_ansible212):
+    executor.run()
+    events = list(executor.events)
 
-@pytest.mark.parametrize('playbook', [
+    # task 1
+    assert events[2]["event"] == "playbook_on_task_start"
+    assert "resolved_action" in events[2]["event_data"]
+    assert events[2]["event_data"]["resolved_action"] == "ansible.builtin.shell"
+
+
+@pytest.mark.parametrize("playbook", [
 {'loop_with_no_log.yml': '''
 - name: playbook variable should not be overwritten when using no log
   connection: local

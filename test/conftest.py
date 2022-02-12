@@ -1,7 +1,7 @@
 import shutil
 
 from pathlib import Path
-from distutils.version import LooseVersion
+from packaging.version import Version
 import subprocess
 
 from ansible_runner import defaults
@@ -60,7 +60,7 @@ def is_pre_ansible212():
             .stdout.strip()
             .decode()
         )
-        if LooseVersion(base_version) < LooseVersion("2.12"):
+        if Version(base_version) < Version("2.12"):
             return True
     except pkg_resources.DistributionNotFound:
         pass

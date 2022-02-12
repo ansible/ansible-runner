@@ -197,6 +197,7 @@ def test_callback_plugin_task_args_leak(executor, playbook):
     # make sure playbook was successful, so all tasks were hit
     assert not events[-1]['event_data']['failures'], 'Unexpected playbook execution failure'
 
+
 @pytest.mark.parametrize(
     "playbook",
     [

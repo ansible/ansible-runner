@@ -1,7 +1,4 @@
-import os
 import json
-
-import shutil
 import pytest
 
 from ansible_runner import defaults, run, run_async

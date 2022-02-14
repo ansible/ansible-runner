@@ -320,54 +320,6 @@ DEFAULT_CLI_ARGS = {
                      "to prevent multiple simultaneous executions from conflicting "
                      "(default=None)"
             )
-        ),
-        (
-            ("--resource-profiling",),
-            dict(
-                dest='resource_profiling',
-                action="store_true",
-                help="Records resource utilization during playbook execution"
-            )
-        ),
-        (
-            ("--resource-profiling-base-cgroup",),
-            dict(
-                dest='resource_profiling_base_cgroup',
-                default="ansible-runner",
-                help="Top-level cgroup used to collect information on resource utilization. Defaults to ansible-runner"
-            )
-        ),
-        (
-            ("--resource-profiling-cpu-poll-interval",),
-            dict(
-                dest='resource_profiling_cpu_poll_interval',
-                default=0.25,
-                help="Interval (in seconds) between CPU polling for determining CPU usage. Defaults to 0.25"
-            )
-        ),
-        (
-            ("--resource-profiling-memory-poll-interval",),
-            dict(
-                dest='resource_profiling_memory_poll_interval',
-                default=0.25,
-                help="Interval (in seconds) between memory polling for determining memory usage. Defaults to 0.25"
-            )
-        ),
-        (
-            ("--resource-profiling-pid-poll-interval",),
-            dict(
-                dest='resource_profiling_pid_poll_interval',
-                default=0.25,
-                help="Interval (in seconds) between polling PID count for determining number of processes used. Defaults to 0.25"
-            )
-        ),
-        (
-            ("--resource-profiling-results-dir",),
-            dict(
-                dest='resource_profiling_results_dir',
-                help="Directory where profiling data files should be saved. "
-                     "Defaults to None (profiling_data folder under private data dir is used in this case)."
-            )
         )
     ),
     "modules_group": (
@@ -895,12 +847,6 @@ def main(sys_args=None):
                                    container_volume_mounts=vargs.get('container_volume_mounts'),
                                    container_options=vargs.get('container_options'),
                                    directory_isolation_base_path=vargs.get('directory_isolation_base_path'),
-                                   resource_profiling=vargs.get('resource_profiling'),
-                                   resource_profiling_base_cgroup=vargs.get('resource_profiling_base_cgroup'),
-                                   resource_profiling_cpu_poll_interval=vargs.get('resource_profiling_cpu_poll_interval'),
-                                   resource_profiling_memory_poll_interval=vargs.get('resource_profiling_memory_poll_interval'),
-                                   resource_profiling_pid_poll_interval=vargs.get('resource_profiling_pid_poll_interval'),
-                                   resource_profiling_results_dir=vargs.get('resource_profiling_results_dir'),
                                    cmdline=vargs.get('cmdline'),
                                    limit=vargs.get('limit'),
                                    streamer=streamer

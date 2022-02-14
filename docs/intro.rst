@@ -175,29 +175,6 @@ To run Ansible Runner with your custom container:
 
 See ``ansible-runner -h`` for other container-related options.
 
-Performance Data Collection Settings for Runner
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-**Runner** is capable of collecting performance data (namely cpu usage, memory usage, and pid count) during the execution of a playbook run.
-
-Resource profiling is made possible by the use of control groups (often referred to simply as cgroups). When a process runs inside of a cgroup, the resources used by that specific process can be measured.
-
-Before enabling Runner's resource profiling feature, users must create a cgroup that **Runner** can use. It is worth noting that only privileged users can create cgroups. The new cgroup should be associated with the same user (and related group) that will be invoking **Runner**. The following command accomplishes this on a RHEL system::
-
-    sudo yum install libcgroup-tools
-    sudo cgcreate -a `whoami` -t `whoami` -g cpuacct,memory,pids:ansible-runner
-
-In the above command, ``cpuacct``, ``memory``, and ``pids`` refer to kernel resource controllers, while ``ansible-runner`` refers to the name of the cgroup being created. More detailed information on the structure of cgroups can be found in the RHEL guide on `Managing, monitoring, and updating the kernel  <https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/managing_monitoring_and_updating_the_kernel/setting-limits-for-applications_managing-monitoring-and-updating-the-kernel>`_
-
-After a cgroup has been created, the following settings can be used to configure resource profiling. Note that ``resource_profiling_base_cgroup`` must match the name of the cgroup you create.
-
-* ``resource_profiling``: ``False`` Enable performance data collection.
-* ``resource_profiling_base_cgroup``: ``ansible-runner`` Top-level cgroup used to measure playbook resource utilization.
-* ``resource_profiling_cpu_poll_interval``: ``0.25`` Polling interval in seconds for collecting cpu usage.
-* ``resource_profiling_memory_poll_interval``: ``0.25`` Polling interval in seconds for collecting memory usage.
-* ``resource_profiling_pid_poll_interval``: ``0.25`` Polling interval in seconds for measuring PID count.
-* ``resource_profiling_results_dir``: ``None`` Directory where resource utilization data will be written (if not specified, will be placed in the ``profiling_data`` folder under the private data directory).
-
 Inventory
 ---------
 

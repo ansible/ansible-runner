@@ -67,10 +67,7 @@ class RunnerConfig(BaseConfig):
                  module=None, module_args=None, verbosity=None, host_pattern=None, binary=None,
                  extravars=None, suppress_output_file=False, suppress_ansible_output=False, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None,
-                 process_isolation_ro_paths=None, resource_profiling=False,
-                 resource_profiling_base_cgroup='ansible-runner', resource_profiling_cpu_poll_interval=0.25,
-                 resource_profiling_memory_poll_interval=0.25, resource_profiling_pid_poll_interval=0.25,
-                 resource_profiling_results_dir=None, tags=None, skip_tags=None,
+                 process_isolation_ro_paths=None, tags=None, skip_tags=None,
                  directory_isolation_base_path=None, forks=None, cmdline=None, omit_event_data=False,
                  only_failed_event_data=False, **kwargs):
 
@@ -92,13 +89,6 @@ class RunnerConfig(BaseConfig):
         self.process_isolation_hide_paths = process_isolation_hide_paths
         self.process_isolation_show_paths = process_isolation_show_paths
         self.process_isolation_ro_paths = process_isolation_ro_paths
-        self.resource_profiling = resource_profiling
-        self.resource_profiling_base_cgroup = resource_profiling_base_cgroup
-        self.resource_profiling_cpu_poll_interval = resource_profiling_cpu_poll_interval
-        self.resource_profiling_memory_poll_interval = resource_profiling_memory_poll_interval
-        self.resource_profiling_pid_poll_interval = resource_profiling_pid_poll_interval
-        self.resource_profiling_results_dir = resource_profiling_results_dir
-
         self.directory_isolation_path = directory_isolation_base_path
         self.verbosity = verbosity
         self.suppress_output_file = suppress_output_file
@@ -194,14 +184,6 @@ class RunnerConfig(BaseConfig):
         self.directory_isolation_path = self.settings.get('directory_isolation_base_path', self.directory_isolation_path)
         self.directory_isolation_cleanup = bool(self.settings.get('directory_isolation_cleanup', True))
 
-        self.resource_profiling = self.settings.get('resource_profiling', self.resource_profiling)
-        self.resource_profiling_base_cgroup = self.settings.get('resource_profiling_base_cgroup', self.resource_profiling_base_cgroup)
-        self.resource_profiling_cpu_poll_interval = self.settings.get('resource_profiling_cpu_poll_interval', self.resource_profiling_cpu_poll_interval)
-        self.resource_profiling_memory_poll_interval = self.settings.get('resource_profiling_memory_poll_interval',
-                                                                         self.resource_profiling_memory_poll_interval)
-        self.resource_profiling_pid_poll_interval = self.settings.get('resource_profiling_pid_poll_interval', self.resource_profiling_pid_poll_interval)
-        self.resource_profiling_results_dir = self.settings.get('resource_profiling_results_dir', self.resource_profiling_results_dir)
-
         if 'AD_HOC_COMMAND_ID' in self.env or not os.path.exists(self.project_dir):
             self.cwd = self.private_data_dir
         else:
@@ -216,28 +198,6 @@ class RunnerConfig(BaseConfig):
                     self.fact_cache = os.path.join(self.artifact_dir, self.settings['fact_cache'])
             else:
                 self.fact_cache = os.path.join(self.artifact_dir, self.settings['fact_cache'])
-
-        if self.resource_profiling:
-            callback_whitelist = os.environ.get('ANSIBLE_CALLBACK_WHITELIST', '').strip()
-            self.env['ANSIBLE_CALLBACK_WHITELIST'] = ','.join(filter(None, [callback_whitelist, 'cgroup_perf_recap']))
-            self.env['CGROUP_CONTROL_GROUP'] = '{}/{}'.format(self.resource_profiling_base_cgroup, self.ident)
-            if self.resource_profiling_results_dir:
-                cgroup_output_dir = self.resource_profiling_results_dir
-            else:
-                cgroup_output_dir = os.path.normpath(os.path.join(self.private_data_dir, 'profiling_data'))
-
-            # Create results directory if it does not exist
-            if not os.path.isdir(cgroup_output_dir):
-                os.mkdir(cgroup_output_dir, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)
-
-            self.env['CGROUP_OUTPUT_DIR'] = cgroup_output_dir
-            self.env['CGROUP_OUTPUT_FORMAT'] = 'json'
-            self.env['CGROUP_CPU_POLL_INTERVAL'] = str(self.resource_profiling_cpu_poll_interval)
-            self.env['CGROUP_MEMORY_POLL_INTERVAL'] = str(self.resource_profiling_memory_poll_interval)
-            self.env['CGROUP_PID_POLL_INTERVAL'] = str(self.resource_profiling_pid_poll_interval)
-            self.env['CGROUP_FILE_PER_TASK'] = 'True'
-            self.env['CGROUP_WRITE_FILES'] = 'True'
-            self.env['CGROUP_DISPLAY_RECAP'] = 'False'
 
         if self.roles_path:
             if isinstance(self.roles_path, list):
@@ -367,14 +327,6 @@ class RunnerConfig(BaseConfig):
 
         return path
 
-    def wrap_args_with_cgexec(self, args):
-        '''
-        Wrap existing command line with cgexec in order to profile resource usage
-        '''
-        new_args = ['cgexec', '--sticky', '-g', 'cpuacct,memory,pids:{}/{}'.format(self.resource_profiling_base_cgroup, self.ident)]
-        new_args.extend(args)
-        return new_args
-
     def wrap_args_for_sandbox(self, args):
         '''
         Wrap existing command line with bwrap to restrict access to:
@@ -442,9 +394,6 @@ class RunnerConfig(BaseConfig):
             self.command = self.wrap_args_for_sandbox(self.command)
         else:
             debug('sandbox disabled')
-
-        if self.resource_profiling and self.execution_mode == ExecutionMode.ANSIBLE_PLAYBOOK:
-            self.command = self.wrap_args_with_cgexec(self.command)
 
         if self.containerized:
             debug('containerization enabled')

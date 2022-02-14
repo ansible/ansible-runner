@@ -192,13 +192,6 @@ def run(**kwargs):
     :param str container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
     :param list container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir. (default: None)
     :param list container_options: List of container options to pass to execution engine.
-    :param bool resource_profiling: Enable collection of resource utilization data during playbook execution.
-    :param str resource_profiling_base_cgroup: Name of existing cgroup which will be sub-grouped in order to measure
-                    resource utilization (default: ansible-runner)
-    :param float resource_profiling_cpu_poll_interval: Interval (in seconds) between CPU polling for determining CPU usage (default: 0.25)
-    :param float resource_profiling_memory_poll_interval: Interval (in seconds) between memory polling for determining memory usage (default: 0.25)
-    :param float resource_profiling_pid_poll_interval: Interval (in seconds) between polling PID count for determining number of processes used (default: 0.25)
-    :param str resource_profiling_results_dir: Directory where profiling data files should be saved (defaults to profiling_data folder inside private data dir)
     :param str directory_isolation_base_path: An optional path will be used as the base path to create a temp directory, the project contents will be
                                           copied to this location which will then be used as the working directory during playbook execution.
     :param str fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.

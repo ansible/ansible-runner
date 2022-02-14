@@ -43,7 +43,6 @@ class Runner(object):
         # default runner mode to pexpect
         self.runner_mode = self.config.runner_mode if hasattr(self.config, 'runner_mode') else 'pexpect'
 
-        self.resource_profiling = self.config.resource_profiling if hasattr(self.config, 'resource_profiling') else False
         self.directory_isolation_path = self.config.directory_isolation_path if hasattr(self.config, 'directory_isolation_path') else None
         self.directory_isolation_cleanup = self.config.directory_isolation_cleanup if hasattr(self.config, 'directory_isolation_cleanup') else None
         self.process_isolation = self.config.process_isolation if hasattr(self.config, 'process_isolation') else None
@@ -199,29 +198,6 @@ class Runner(object):
             ensure_str(k): ensure_str(v) if k != 'PATH' and isinstance(v, six.text_type) else v
             for k, v in pexpect_env.items()
         }
-
-        # Prepare to collect performance data
-        if self.resource_profiling:
-            cgroup_path = '{0}/{1}'.format(self.config.resource_profiling_base_cgroup, self.config.ident)
-
-            import getpass
-            import grp
-            user = getpass.getuser()
-            group = grp.getgrgid(os.getgid()).gr_name
-
-            cmd = ['cgcreate',
-                   '-a', f'{user}:{group}',
-                   '-t', f'{user}:{group}',
-                   '-g', f'cpuacct,memory,pids:{cgroup_path}',
-                   ]
-            proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
-            _, stderr = proc.communicate()
-            if proc.returncode:
-                # Unable to create cgroup
-                logger.error('Unable to create cgroup: {}'.format(stderr))
-                raise RuntimeError('Unable to create cgroup: {}'.format(stderr))
-            else:
-                logger.info("Created cgroup '{}'".format(cgroup_path))
 
         self.status_callback('running')
         self.last_stdout_update = time.time()
@@ -398,13 +374,6 @@ class Runner(object):
                         raise
                 return True
             _delete()
-        if self.resource_profiling:
-            cmd = ['cgdelete', '-g', f'cpuacct,memory,pids:{cgroup_path}']
-            proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
-            _, stderr = proc.communicate()
-            if proc.returncode:
-                logger.error('Failed to delete cgroup: {}'.format(stderr))
-                raise RuntimeError('Failed to delete cgroup: {}'.format(stderr))
 
         if self.artifacts_handler is not None:
             try:

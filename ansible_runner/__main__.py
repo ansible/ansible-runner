@@ -218,6 +218,14 @@ DEFAULT_CLI_ARGS = {
             ),
         ),
         (
+            ("--no-store-env",),
+            dict(
+                action="store_false",
+                dest='store_env',
+                help="Set to false to prevent the writing of the env directory"
+            ),
+        ),
+        (
             ("-q", "--quiet",),
             dict(
                 action="store_true",
@@ -849,7 +857,8 @@ def main(sys_args=None):
                                    directory_isolation_base_path=vargs.get('directory_isolation_base_path'),
                                    cmdline=vargs.get('cmdline'),
                                    limit=vargs.get('limit'),
-                                   streamer=streamer
+                                   streamer=streamer,
+                                   store_env=vargs.get("store_env"),
                                    )
                 try:
                     res = run(**run_options)

@@ -146,6 +146,7 @@ def test_dump_artifacts_inventory_object(mocker):
 
     assert mock_dump_artifact.called_once_with(inv_string, '/tmp/inventory', 'hosts.json')
 
+
 def test_dump_artifacts_passwords(mocker):
     mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact')
 
@@ -163,6 +164,7 @@ def test_dump_artifacts_passwords(mocker):
     mock_dump_artifact.assert_any_call('{"abc": "def"}', '/tmp/env', 'envvars')
     mock_dump_artifact.assert_called_with('asdfg1234', '/tmp/env', 'ssh_key')
 
+
 def test_dont_dump_artifacts_passwords(mocker):
     mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact')
 
@@ -177,6 +179,7 @@ def test_dont_dump_artifacts_passwords(mocker):
     dump_artifacts(kwargs)
 
     assert mock_dump_artifact.call_count == 0
+
 
 @pytest.mark.parametrize(
     ('key', 'value', 'value_str'), (

@@ -428,8 +428,14 @@ def test_process_isolation_defaults():
         'bwrap',
         '--die-with-parent',
         '--unshare-pid',
-        '--dev-bind', '/', '/',
+        '--dev', '/dev',
         '--proc', '/proc',
+        '--dir', '/tmp',
+        '--ro-bind', '/bin', '/bin',
+        '--ro-bind', '/etc', '/etc',
+        '--ro-bind', '/usr', '/usr',
+        '--ro-bind', '/opt', '/opt',
+        '--symlink', 'usr/lib64', '/lib64',
         '--bind', '/', '/',
         '--chdir', '/project',
         'ansible-playbook', '-i', '/inventory', 'main.yaml',
@@ -460,8 +466,14 @@ def test_process_isolation_and_directory_isolation(mock_makedirs, mock_copytree,
         'bwrap',
         '--die-with-parent',
         '--unshare-pid',
-        '--dev-bind', '/', '/',
+        '--dev', '/dev',
         '--proc', '/proc',
+        '--dir', '/tmp',
+        '--ro-bind', '/bin', '/bin',
+        '--ro-bind', '/etc', '/etc',
+        '--ro-bind', '/usr', '/usr',
+        '--ro-bind', '/opt', '/opt',
+        '--symlink', 'usr/lib64', '/lib64',
         '--bind', '/', '/',
         '--chdir', os.path.realpath(rc.directory_isolation_path),
         'ansible-playbook', '-i', '/inventory', 'main.yaml',
@@ -484,35 +496,43 @@ def test_process_isolation_settings():
         path_exists.return_value=True
         rc.prepare()
 
-    assert rc.command[0:8] == [
+    expected = [
         'not_bwrap',
         '--die-with-parent',
         '--unshare-pid',
-        '--dev-bind', '/', '/',
+        '--dev', '/dev',
         '--proc', '/proc',
+        '--dir', '/tmp',
+        '--ro-bind', '/bin', '/bin',
+        '--ro-bind', '/etc', '/etc',
+        '--ro-bind', '/usr', '/usr',
+        '--ro-bind', '/opt', '/opt',
+        '--symlink', 'usr/lib64', '/lib64',
     ]
+    index = len(expected)
+    assert rc.command[0:index] == expected
 
     # hide /home
-    assert rc.command[8] == '--bind'
-    assert 'ansible_runner_pi' in rc.command[9]
-    assert rc.command[10] == '/home'
+    assert rc.command[index] == '--bind'
+    assert 'ansible_runner_pi' in rc.command[index + 1]
+    assert rc.command[index + 2] == os.path.realpath('/home')  # needed for Mac
 
     # hide /var
-    assert rc.command[11] == '--bind'
-    assert 'ansible_runner_pi' in rc.command[12]
-    assert rc.command[13] == '/var' or rc.command[13] == '/private/var'
+    assert rc.command[index + 3] == '--bind'
+    assert 'ansible_runner_pi' in rc.command[index + 4]
+    assert rc.command[index + 5] in ('/var', '/private/var')
 
     # read-only bind
-    assert rc.command[14:17] == ['--ro-bind', '/venv', '/venv']
+    assert rc.command[index + 6:index + 9] == ['--ro-bind', '/venv', '/venv']
 
     # root bind
-    assert rc.command[17:20] == ['--bind', '/', '/']
+    assert rc.command[index + 9:index + 12] == ['--bind', '/', '/']
 
     # show /usr
-    assert rc.command[20:23] == ['--bind', '/usr', '/usr']
+    assert rc.command[index + 12:index + 15] == ['--bind', '/usr', '/usr']
 
     # chdir and ansible-playbook command
-    assert rc.command[23:] == ['--chdir', '/project', 'ansible-playbook', '-i', '/inventory', 'main.yaml']
+    assert rc.command[index + 15:] == ['--chdir', '/project', 'ansible-playbook', '-i', '/inventory', 'main.yaml']
 
 
 @patch('os.mkdir', return_value=True)

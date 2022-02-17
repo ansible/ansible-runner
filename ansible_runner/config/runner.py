@@ -377,7 +377,20 @@ class RunnerConfig(BaseConfig):
         '''
         cwd = os.path.realpath(self.cwd)
         self.process_isolation_path_actual = self.build_process_isolation_temp_dir()
-        new_args = [self.process_isolation_executable or 'bwrap', '--die-with-parent', '--unshare-pid', '--dev-bind', '/', '/', '--proc', '/proc']
+        new_args = [self.process_isolation_executable or 'bwrap']
+
+        new_args.extend([
+            '--die-with-parent',
+            '--unshare-pid',
+            '--dev', '/dev',
+            '--proc', '/proc',
+            '--dir', '/tmp',
+            '--ro-bind', '/bin', '/bin',
+            '--ro-bind', '/etc', '/etc',
+            '--ro-bind', '/usr', '/usr',
+            '--ro-bind', '/opt', '/opt',
+            '--symlink', 'usr/lib64', '/lib64',
+        ])
 
         for path in sorted(set(self.process_isolation_hide_paths or [])):
             if not os.path.exists(path):

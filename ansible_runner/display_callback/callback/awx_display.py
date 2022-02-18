@@ -708,6 +708,7 @@ class CallbackModule(DefaultCallbackModule):
         # NOTE: Not used by Ansible 2.x.
         event_data = dict(
             task=task,
+            name=task.get_name(),
         )
         with self.capture_event_data('runner_on_no_hosts', **event_data):
             super(CallbackModule, self).v2_runner_on_no_hosts(task)
@@ -804,7 +805,8 @@ class CallbackModule(DefaultCallbackModule):
     def v2_runner_on_start(self, host, task):
         event_data = dict(
             host=host.get_name(),
-            task=task
+            task=task,
+            name=task.get_name(),
         )
         self._host_start[host.get_name()] = current_time()
         with self.capture_event_data('runner_on_start', **event_data):

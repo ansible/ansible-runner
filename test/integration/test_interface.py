@@ -101,7 +101,7 @@ def test_no_env_files(request, project_fixtures):
         playbook='get_environment.yml',
         inventory=None,
         envvars={'FROM_TEST': 'FOOBAR'},
-        store_env=False,
+        suppress_env_files=True,
     )
     assert res.rc == 0, res.stdout.read()
     # Assert that the env file was not created

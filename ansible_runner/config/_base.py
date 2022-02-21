@@ -67,7 +67,7 @@ class BaseConfig(object):
                  process_isolation=False, process_isolation_executable=None,
                  container_image=None, container_volume_mounts=None, container_options=None, container_workdir=None, container_auth_data=None,
                  ident=None, rotate_artifacts=0, timeout=None, ssh_key=None, quiet=False, json_mode=False,
-                 check_job_event_data=False, store_env=True):
+                 check_job_event_data=False, suppress_env_files=False):
         # common params
         self.host_cwd = host_cwd
         self.envvars = envvars
@@ -94,7 +94,7 @@ class BaseConfig(object):
         self.settings = settings
         self.timeout = timeout
         self.check_job_event_data = check_job_event_data
-        self.store_env = store_env
+        self.suppress_env_files = suppress_env_files
 
         # setup initial environment
         if private_data_dir:

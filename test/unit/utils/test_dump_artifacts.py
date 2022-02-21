@@ -173,7 +173,7 @@ def test_dont_dump_artifacts_passwords(mocker):
         'passwords': {"a": "b"},
         'envvars': {"abd": "def"},
         'ssh_key': 'asdfg1234',
-        'store_env': False
+        'suppress_env_files': True
     }
 
     dump_artifacts(kwargs)

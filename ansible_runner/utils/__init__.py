@@ -258,7 +258,7 @@ def dump_artifacts(kwargs):
             if not os.path.exists(obj):
                 kwargs['inventory'] = dump_artifact(obj, path, 'hosts')
 
-    if kwargs.get('store_env', True):
+    if not kwargs.get('suppress_env_files', False):
         for key in ('envvars', 'extravars', 'passwords', 'settings'):
             obj = kwargs.get(key)
             if obj and not os.path.exists(os.path.join(private_data_dir, 'env', key)):

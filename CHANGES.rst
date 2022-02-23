@@ -3,6 +3,13 @@
 Changelog
 ---------
 
+1.4.8 (2022-02-23)
+++++++++++++++++++
+- (CVE-2021-4112) Fixed an issue with the invocation of bubblewrap,
+  the tool used for ansible-runner's "process isolation" feature.
+  A playbook could create files that get unexpectedly left behind on the host.
+  If you want to mount directories from the host, use `--process-isolation-show-paths`.
+
 1.4.7 (2021-02-11)
 ++++++++++++++++++
 - Fixed an issue where byte sequences in the output that are not

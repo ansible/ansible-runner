@@ -554,6 +554,7 @@ class CallbackModule(DefaultCallbackModule):
             name=task.get_name(),
             is_conditional=is_conditional,
             uuid=task_uuid,
+            resolved_action=getattr(task, 'resolved_action', '')
         )
         with self.capture_event_data('playbook_on_task_start', **event_data):
             super(CallbackModule, self).v2_playbook_on_task_start(task, is_conditional)

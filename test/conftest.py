@@ -1,6 +1,8 @@
 import shutil
 
 from pathlib import Path
+from packaging.version import Version
+import subprocess
 
 from ansible_runner import defaults
 
@@ -44,6 +46,30 @@ def is_pre_ansible211():
 def skipif_pre_ansible211(is_pre_ansible211):
     if is_pre_ansible211:
         pytest.skip("Valid only on Ansible 2.11+")
+
+
+@pytest.fixture(scope="session")
+def is_pre_ansible212():
+    try:
+        base_version = (
+            subprocess.run(
+                "python -c 'import ansible; print(ansible.__version__)'",
+                capture_output=True,
+                shell=True,
+            )
+            .stdout.strip()
+            .decode()
+        )
+        if Version(base_version) < Version("2.12"):
+            return True
+    except pkg_resources.DistributionNotFound:
+        pass
+
+
+@pytest.fixture(scope="session")
+def skipif_pre_ansible212(is_pre_ansible212):
+    if is_pre_ansible212:
+        pytest.skip("Valid only on Ansible 2.12+")
 
 
 # TODO: determine if we want to add docker / podman

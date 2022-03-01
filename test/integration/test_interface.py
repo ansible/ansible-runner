@@ -47,6 +47,12 @@ def test_env_accuracy(request, project_fixtures):
     printenv_example = project_fixtures / 'printenv'
     os.environ['SET_BEFORE_TEST'] = 'MADE_UP_VALUE'
 
+    # Remove the envvars file if it exists
+    try:
+        os.remove(printenv_example / "env/envvars")
+    except FileNotFoundError:
+        pass
+
     def remove_test_env_var():
         if 'SET_BEFORE_TEST' in os.environ:
             del os.environ['SET_BEFORE_TEST']
@@ -64,6 +70,31 @@ def test_env_accuracy(request, project_fixtures):
     actual_env = get_env_data(res)['environment']
 
     assert actual_env == res.config.env
+
+    # Assert that the env file was properly created
+    assert os.path.exists(printenv_example / "env/envvars") == 1
+
+
+def test_no_env_files(request, project_fixtures):
+    printenv_example = project_fixtures / 'printenv'
+    os.environ['SET_BEFORE_TEST'] = 'MADE_UP_VALUE'
+
+    # Remove the envvars file if it exists
+    try:
+        os.remove(printenv_example / "env/envvars")
+    except FileNotFoundError:
+        pass
+
+    res = run(
+        private_data_dir=printenv_example,
+        playbook='get_environment.yml',
+        inventory=None,
+        envvars={'FROM_TEST': 'FOOBAR'},
+        suppress_env_files=True,
+    )
+    assert res.rc == 0, res.stdout.read()
+    # Assert that the env file was not created
+    assert os.path.exists(printenv_example / "env/envvars") == 0
 
 
 @pytest.mark.test_all_runtimes

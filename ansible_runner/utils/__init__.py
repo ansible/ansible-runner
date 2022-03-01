@@ -258,19 +258,20 @@ def dump_artifacts(kwargs):
             if not os.path.exists(obj):
                 kwargs['inventory'] = dump_artifact(obj, path, 'hosts')
 
-    for key in ('envvars', 'extravars', 'passwords', 'settings'):
-        obj = kwargs.get(key)
-        if obj and not os.path.exists(os.path.join(private_data_dir, 'env', key)):
-            path = os.path.join(private_data_dir, 'env')
-            dump_artifact(json.dumps(obj), path, key)
-            kwargs.pop(key)
+    if not kwargs.get('suppress_env_files', False):
+        for key in ('envvars', 'extravars', 'passwords', 'settings'):
+            obj = kwargs.get(key)
+            if obj and not os.path.exists(os.path.join(private_data_dir, 'env', key)):
+                path = os.path.join(private_data_dir, 'env')
+                dump_artifact(json.dumps(obj), path, key)
+                kwargs.pop(key)
 
-    for key in ('ssh_key', 'cmdline'):
-        obj = kwargs.get(key)
-        if obj and not os.path.exists(os.path.join(private_data_dir, 'env', key)):
-            path = os.path.join(private_data_dir, 'env')
-            dump_artifact(str(kwargs[key]), path, key)
-            kwargs.pop(key)
+        for key in ('ssh_key', 'cmdline'):
+            obj = kwargs.get(key)
+            if obj and not os.path.exists(os.path.join(private_data_dir, 'env', key)):
+                path = os.path.join(private_data_dir, 'env')
+                dump_artifact(str(kwargs[key]), path, key)
+                kwargs.pop(key)
 
 
 def collect_new_events(event_path, old_events):
@@ -430,6 +431,9 @@ def open_fifo_write(path, data):
     reads data from the pipe.
     '''
     os.mkfifo(path, stat.S_IRUSR | stat.S_IWUSR)
+    # If the data is a string instead of bytes, convert it before writing the fifo
+    if type(data) == str:
+        data = data.encode()
     threading.Thread(target=lambda p, d: open(p, 'wb').write(d),
                      args=(path, data)).start()
 

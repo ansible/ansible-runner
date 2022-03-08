@@ -3,6 +3,10 @@
 Changelog
 ---------
 
+1.4.9 (2022-03-08)
+++++++++++++++++++
+- Fix broken password-based SSH.
+
 1.4.8 (2022-02-23)
 ++++++++++++++++++
 - (CVE-2021-4112) Fixed an issue with the invocation of bubblewrap,

@@ -339,7 +339,7 @@ class RunnerConfig(BaseConfig):
         new_args.extend([
             '--die-with-parent',
             '--unshare-pid',
-            '--dev', '/dev',
+            '--dev-bind', '/dev', 'dev',
             '--proc', '/proc',
             '--dir', '/tmp',
             '--ro-bind', '/bin', '/bin',

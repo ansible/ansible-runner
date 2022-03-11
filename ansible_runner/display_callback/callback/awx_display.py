@@ -422,7 +422,10 @@ class CallbackModule(DefaultCallbackModule):
                 task_args = ', '.join(('%s=%s' % a for a in task.args.items()))
                 task_ctx['task_args'] = task_args
         if getattr(task, '_role', None):
-            task_role = task._role._role_name
+            if hasattr(task._role, 'get_name'):
+                task_role = task._role.get_name()
+            else:
+                task_role = task._role._role_name
         else:
             task_role = getattr(task, 'role_name', '')
         if task_role:

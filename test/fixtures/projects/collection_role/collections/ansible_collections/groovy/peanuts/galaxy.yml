@@ -1,0 +1,14 @@
+---
+authors:
+  - The pytest tmp_path
+dependencies: {}
+description: A collection for ansible-runner test test_include_role_from_collection_events.
+license:
+  - GPL-3.0-only
+name: peanuts
+namespace: groovy
+readme: README.md
+repository: https://peanuts.invalid
+tags:
+  - legume
+version: 1.0.0

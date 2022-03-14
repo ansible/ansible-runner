@@ -3,6 +3,8 @@ branch = True
 data_file = test/coverage/data/coverage
 source =
     ansible_runner
+omit =
+    ansible_runner/display_callback/callback/awx_display.py
 
 [report]
 skip_covered = True

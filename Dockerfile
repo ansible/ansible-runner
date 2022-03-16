@@ -35,7 +35,8 @@ RUN /output/install-from-bindep \
 
 # In OpenShift, container will run as a random uid number and gid 0. Make sure things
 # are writeable by the root group.
-RUN for dir in \
+RUN sed -i 's/:root:\/root:/:root:\/home\/runner:/g' /etc/passwd \
+ && for dir in \
       /home/runner \
       /home/runner/.ansible \
       /home/runner/.ansible/tmp \
@@ -53,8 +54,6 @@ RUN for dir in \
     do touch $file ; chmod g+rw $file ; chgrp root $file ; done
 
 WORKDIR /runner
-
-ENV HOME=/home/runner
 
 ADD utils/entrypoint.sh /bin/entrypoint
 RUN chmod +x /bin/entrypoint

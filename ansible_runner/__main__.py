@@ -218,6 +218,14 @@ DEFAULT_CLI_ARGS = {
             ),
         ),
         (
+            ("--omit-env-files",),
+            dict(
+                action="store_true",
+                dest='suppress_env_files',
+                help="Add flag to prevent the writing of the env directory"
+            ),
+        ),
+        (
             ("-q", "--quiet",),
             dict(
                 action="store_true",
@@ -895,7 +903,8 @@ def main(sys_args=None):
                                    resource_profiling_results_dir=vargs.get('resource_profiling_results_dir'),
                                    cmdline=vargs.get('cmdline'),
                                    limit=vargs.get('limit'),
-                                   streamer=streamer
+                                   streamer=streamer,
+                                   suppress_env_files=vargs.get("suppress_env_files"),
                                    )
                 try:
                     res = run(**run_options)

@@ -42,11 +42,11 @@ def test_run_async(tmp_path):
 def get_env_data(res):
     for event in res.events:
         found = bool(
-            event['event'] == 'runner_on_ok' and event.get(
+            event['event'] in ('runner_on_ok', 'runner_on_start', 'playbook_on_task_start') and event.get(
                 'event_data', {}
             ).get('task_action', None) == 'look_at_environment'
         )
-        if found:
+        if found and 'res' in event['event_data']:
             return event['event_data']['res']
     else:
         print('output:')

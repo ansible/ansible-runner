@@ -1,4 +1,4 @@
-# Copyright (c) 2016 Ansible by Red Hat, Inc.
+# Copyright (c) 2016-2022 Ansible by Red Hat, Inc.
 #
 # This file is part of Ansible Tower, but depends on code imported from Ansible.
 #

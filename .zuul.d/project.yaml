@@ -1,16 +1,13 @@
 ---
 - project:
     check:
-      jobs: &id001
-        - ansible-buildset-registry
-        - ansible-runner-build-container-image-stable-2.9
-        - ansible-runner-build-container-image-stable-2.10
-        - ansible-runner-build-container-image-stable-2.11
-        - ansible-runner-build-container-image-stable-2.12
+      jobs: []
     gate:
-      jobs: *id001
+      jobs: []
     post:
-      jobs: &id002
+      jobs: []
+    periodic:
+      jobs:
         - ansible-buildset-registry
         - ansible-runner-upload-container-image-stable-2.9:
             vars:
@@ -24,5 +21,3 @@
         - ansible-runner-upload-container-image-stable-2.12:
             vars:
               upload_container_image_promote: false
-    periodic:
-      jobs: *id002

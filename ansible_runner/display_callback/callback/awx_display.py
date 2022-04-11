@@ -438,7 +438,10 @@ class CallbackModule(DefaultCallbackModule):
             event_context.add_global(**task_ctx)
 
     def clear_task(self, local=False):
-        task_ctx = dict(task=None, task_path=None, task_uuid=None, task_action=None, task_args=None, role=None)
+        task_ctx = dict(
+            task=None, task_path=None, task_uuid=None, task_action=None, task_args=None, resolved_action=None,
+            role=None, resolved_role=None
+        )
         if local:
             event_context.remove_local(**task_ctx)
         else:

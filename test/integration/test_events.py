@@ -137,5 +137,28 @@ def test_include_role_events(project_fixtures):
     for event in role_events:
         event_data = event['event_data']
         assert not event_data.get('warning', False)  # role use should not contain warnings
+        assert 'resolved_role' not in event_data  # should not specify FQCN name if not from collection
         if event['event'] == 'runner_on_ok':
             assert event_data['res']['msg'] == 'Hello world!'
+        if event['event'] == 'playbook_on_task_start':
+            assert event_data['resolved_action'] == 'ansible.builtin.debug'
+
+
+def test_include_role_from_collection_events(project_fixtures):
+    r = run(
+        private_data_dir=str(project_fixtures / 'collection_role'),
+        playbook='use_role.yml'
+    )
+    for event in r.events:
+        event_data = event['event_data']
+        assert not event_data.get('warning', False)  # role use should not contain warnings
+        if event['event'] in ('runner_on_ok', 'playbook_on_task_start', 'runner_on_start'):
+            assert event_data['role'] == 'hello'
+            assert event_data['resolved_role'] == 'groovy.peanuts.hello'
+        if event['event'] == 'runner_on_ok':
+            assert event_data['res']['msg'] == 'Hello peanuts!'
+        if event['event'] == 'playbook_on_task_start':
+            assert event_data['resolved_action'] == 'ansible.builtin.debug'
+        if event['event'] == 'playbook_on_stats':
+            assert 'resolved_role' not in event_data
+            assert 'resolved_action' not in event_data

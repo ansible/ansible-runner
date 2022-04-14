@@ -409,6 +409,7 @@ class CallbackModule(DefaultCallbackModule):
             task=(task.name or task.action),
             task_uuid=str(task._uuid),
             task_action=task.action,
+            resolved_action=getattr(task, 'resolved_action', task.action),
             task_args='',
         )
         try:
@@ -423,6 +424,10 @@ class CallbackModule(DefaultCallbackModule):
                 task_ctx['task_args'] = task_args
         if getattr(task, '_role', None):
             task_role = task._role._role_name
+            if hasattr(task._role, 'get_name'):
+                resolved_role = task._role.get_name()
+                if resolved_role != task_role:
+                    task_ctx['resolved_role'] = resolved_role
         else:
             task_role = getattr(task, 'role_name', '')
         if task_role:
@@ -433,7 +438,10 @@ class CallbackModule(DefaultCallbackModule):
             event_context.add_global(**task_ctx)
 
     def clear_task(self, local=False):
-        task_ctx = dict(task=None, task_path=None, task_uuid=None, task_action=None, task_args=None, role=None)
+        task_ctx = dict(
+            task=None, task_path=None, task_uuid=None, task_action=None, task_args=None, resolved_action=None,
+            role=None, resolved_role=None
+        )
         if local:
             event_context.remove_local(**task_ctx)
         else:
@@ -554,7 +562,6 @@ class CallbackModule(DefaultCallbackModule):
             name=task.get_name(),
             is_conditional=is_conditional,
             uuid=task_uuid,
-            resolved_action=getattr(task, 'resolved_action', '')
         )
         with self.capture_event_data('playbook_on_task_start', **event_data):
             super(CallbackModule, self).v2_playbook_on_task_start(task, is_conditional)

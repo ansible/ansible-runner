@@ -717,7 +717,7 @@ def main(sys_args=None):
     # container group
     container_group_options = (
         "Ansible Container Options",
-        "configuation options for executing Ansible playbooks",
+        "configuration options for executing Ansible playbooks",
     )
     run_container_group = run_subparser.add_argument_group(*container_group_options)
     start_container_group = start_subparser.add_argument_group(*container_group_options)

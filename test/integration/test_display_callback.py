@@ -430,7 +430,7 @@ def test_large_stdout_parsing_when_using_json_output(executor, playbook):
     # non-event matches with raw "non-json" lines being intermixed with json
     # ones.
     #
-    # This tests to confirm we don't polute the stdout output with non-json
+    # This tests to confirm we don't pollute the stdout output with non-json
     # lines when a single event has a lot of output.
     if six.PY2:
         pytest.skip('Ansible in python2 uses different syntax.')

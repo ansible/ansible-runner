@@ -95,7 +95,7 @@ def test_check_not_safe_to_mount_file(not_safe, mocker):
 def test_duplicate_detection_dst(path, mocker):
     mocker.patch("os.path.exists", return_value=True)
     mocker.patch("os.path.isdir", return_value=True)
-    """Ensure no duplicate volumne mount entries are created"""
+    """Ensure no duplicate volume mount entries are created"""
     base_config = BaseConfig()
 
     def generate(args_list):
@@ -167,7 +167,7 @@ def test_src_dst_all_dirs(src, dst, labels, mocker):
 @pytest.mark.parametrize("labels", labels, ids=id_for_label)
 @pytest.mark.parametrize("path", dir_variations, ids=id_for_src)
 def test_src_dst_all_files(path, labels, mocker):
-    """Ensure file paths are tranformed correctly into dir paths"""
+    """Ensure file paths are transformed correctly into dir paths"""
     src_str = os.path.join(resolve_path(path.path), "")
     dst_str = src_str
     expected = generate_volmount_args(src_str=src_str, dst_str=dst_str, labels=labels)

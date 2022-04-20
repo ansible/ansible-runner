@@ -610,7 +610,7 @@ class CallbackModule(DefaultCallbackModule):
             super(CallbackModule, self).v2_playbook_on_notify(handler, host)
 
     '''
-    ansible_stats is, retoractively, added in 2.2
+    ansible_stats is, retroactively, added in 2.2
     '''
     def v2_playbook_on_stats(self, stats):
         self.clear_play()

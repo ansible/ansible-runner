@@ -410,7 +410,7 @@ class RunnerConfig(BaseConfig):
 
         if self.containerized:
             debug('containerization enabled')
-            # conatiner volume mount is handled explicitly for run API's
+            # container volume mount is handled explicitly for run API's
             # using 'container_volume_mounts' arguments
             base_execution_mode = BaseExecutionMode.NONE
             self.command = self.wrap_args_for_containerization(self.command, base_execution_mode, self.cmdline_args)

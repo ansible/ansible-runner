@@ -110,7 +110,7 @@ by providing a yaml or json formatted file with a regular expression and a value
 
 .. warning::
 
-    Current **Ansible Runner** does not validate the command line arguments passed using this method so it is up to the playbook writer to provide a valid set of options
+    Current **Ansible Runner** does not validate the command line arguments passed using this method so it is up to the playbook writer to provide a valid set of options.
     The command line options provided by this method are lower priority than the ones set by **Ansible Runner**.  For instance, this will not override ``inventory`` or ``limit`` values.
 
 **Ansible Runner** gathers command line options provided here as a string and supplies them to the **Ansible Process** itself. This file should contain the arguments to be added, for example::

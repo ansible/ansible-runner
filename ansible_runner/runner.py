@@ -262,7 +262,7 @@ class Runner(object):
                 stderr_response = traceback.format_exc()
                 self.rc = 254
                 self.errored = True
-                logger.debug("received execption: {exc}".format(exc=str(exc)))
+                logger.debug("received exception: {exc}".format(exc=str(exc)))
 
             if self.timed_out or self.errored:
                 self.kill_container()

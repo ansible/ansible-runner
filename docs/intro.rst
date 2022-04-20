@@ -156,10 +156,10 @@ The process isolation settings are meant to control the process isolation featur
 * ``process_isolation_show_paths``: ``None`` Path or list of paths on the system that should be exposed to the playbook run.
 * ``process_isolation_ro_paths``: ``None`` Path or list of paths on the system that should be exposed to the playbook run as read-only.
 
-These settings instructs **Ansible Runner** to execute **Ansible** tasks inside a container environment.
+These settings instruct **Runner** to execute **Ansible** tasks inside a container environment.
 A default execution environment is provided on Quay.io at `ansible/ansible-runner <https://quay.io/repository/ansible/ansible-runner>`_.
 
-To run Ansible Runner with execution environment:
+To execute **Runner** with an execution environment:
 
 ``ansible-runner run --container-image quay.io/ansible/ansible-runner:devel --process-isolation -p playbook.yml .``
 

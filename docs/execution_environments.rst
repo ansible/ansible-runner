@@ -18,10 +18,8 @@ More specifically, the term **Execution Environments** within the context of
 Container Image <https://github.com/opencontainers/image-spec/>`_ that
 appropriately bundles `Ansible Base <https://github.com/ansible/ansible>`_,
 `Ansible Collection Content <https://github.com/ansible-collections/overview>`_,
-and the runtime dependencies required to support these contents. The base
-image is the `Red Hat Enterprise Linux Universal Base Image
-<https://developers.redhat.com/products/rhel/ubi>`_ and the build tooling
-provided by `Ansible Builder <https://github.com/ansible/ansible-builder>`_
+and the runtime dependencies required to support these contents.
+The build tooling provided by `Ansible Builder <https://github.com/ansible/ansible-builder>`_
 aids in the creation of these images.
 
 All aspects of running **Ansible Runner** in standalone mode (see: :ref:`standalone`)

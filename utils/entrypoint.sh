@@ -1,19 +1,30 @@
 #!/usr/bin/env bash
 
-# We need to fix a number of problems here that manifest under different container runtimes. If we're running
-# as a legit default user that has an entry in /etc/passwd and a valid homedir that's not `/`, we're all good.
-# If the username/uid we're running under is not represented in /etc/passwd and/or doesn't have a homedir that's not
-# `/` (eg, the container was run with --user and some dynamic unmapped UID from the host with primary GID 0), we need to
-# correct that. Some things (eg podman/cri-o today) already create an /etc/passwd entry on the fly in this case, but
-# they set the homedir to `/`, which causes potential collisions with mounted/mapped volumes. For consistency, we'll
-# just always set every dynamically-created user's homedir to `/home/runner`, which we've already configured in a way
-# that should always work (eg, ug+rwx and all dirs owned by the root group).
+# We need to fix a number of problems here that manifest under different container runtimes, as well as paper over some
+# things to simplify runner's containerized launch behavior. Since runner currently always expects to bind-mount its
+# callback plugins under ~/.ansible, it must have prior knowledge of the user's homedir before the container is launched
+# in order to know where to mount in the callback dir. In all cases, we must get a consistent answer from $HOME
+# and anything that queries /etc/passwd for a homedir (eg, `~root`), or lots of things (including parts of Ansible
+# core itself) will be broken.
 
-# if current user is not listed in /etc/passwd, add an entry with username==uid, primary gid 0, and homedir /home/runner
+# If we're running as a legit default user that has an entry in /etc/passwd and a valid homedir, we're all good.
 
-# if current user is in /etc/passwd but $HOME == `/`, rewrite that user's homedir in /etc/passwd to /home/runner and
-# export HOME=/home/runner for this session only- all new sessions, eg created by exec, should set HOME to match the
-# current value in /etc/passwd going forward.
+# If the username/uid we're running under is not represented in /etc/passwd or the current user's homedir is something
+# other than /home/runner (eg, the container was run with --user and some dynamic unmapped UID from the host with
+# primary GID 0), we need to correct that in order for ansible-runner's callbacks to function properly. Some things
+# (eg podman/cri-o today) already create an /etc/passwd entry on the fly in this case, but they set the homedir to
+# WORKDIR, which causes potential collisions with mounted/mapped volumes. For consistency, we'll
+# just always set the current user's homedir to `/home/runner`, which we've already configured in a way
+# that should always work with known container runtimes (eg, ug+rwx and all dirs owned by the root group).
+
+# If current user is not listed in /etc/passwd, add an entry with username==uid, primary gid 0, and homedir /home/runner
+
+# If current user is in /etc/passwd but $HOME != `/home/runner`, rewrite that user's homedir in /etc/passwd to
+# /home/runner and export HOME=/home/runner for this session only. All new sessions (eg podman exec) should
+# automatically set HOME to the value in /etc/passwd going forward.
+
+# Ideally in the future, we can come up with a better way for the outer runner to dynamically inject its callbacks, or
+# rely on the inner runner's copy. This would allow us to restore the typical POSIX user homedir conventions.
 
 # if any of this business fails, we probably want to fail fast
 if [ -n "$EP_DEBUG" ]; then
@@ -23,20 +34,18 @@ else
   set -e
 fi
 
-# FIXME junk output
-if ! getent passwd $(whoami || id -u) ; then
+# current user might not exist in /etc/passwd at all
+if ! $(whoami &> /dev/null) || ! getent passwd $(whoami || id -u) &> /dev/null ; then
   if [ -n "$EP_DEBUG" ]; then
-    echo "hacking missing uid $(id -u) into /etc/passwd"
+    echo "adding missing uid $(id -u) into /etc/passwd"
   fi
   echo "$(id -u):x:$(id -u):0:container user $(id -u):/home/runner:/bin/bash" >> /etc/passwd
   export HOME=/home/runner
 fi
 
-# FIXME junk output
 MYHOME=`getent passwd $(whoami) | cut -d: -f6`
 
-# FIXME: we also want to check the case of a generated user who podman set their homedir to WORKDIR; maybe anything with a high UID, or ?
-if [ "$MYHOME" != "$HOME" ] || [ $(id -u) -ge 500 ] && [ "$MYHOME" != "/home/runner" ]; then
+if [ "$MYHOME" != "$HOME" ] || [ "$MYHOME" != "/home/runner" ]; then
   if [ -n "$EP_DEBUG" ]; then
     echo "replacing homedir for user $(whoami)"
   fi
@@ -47,8 +56,6 @@ if [ "$MYHOME" != "$HOME" ] || [ $(id -u) -ge 500 ] && [ "$MYHOME" != "/home/run
   # ensure the envvar matches what we just set in /etc/passwd for this session; future sessions set automatically
   export HOME=/home/runner
 fi
-
-# FIXME: validate group entries?
 
 if [[ -n "${LAUNCHED_BY_RUNNER}" ]]; then
     # Special actions to be compatible with old ansible-runner versions, 2.1.x specifically

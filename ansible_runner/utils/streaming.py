@@ -13,7 +13,7 @@ from pathlib import Path
 def stream_dir(source_directory, stream):
     with tempfile.NamedTemporaryFile() as tmp:
         with zipfile.ZipFile(
-            tmp.name, "w", compression=zipfile.ZIP_DEFLATED, allowZip64=True
+            tmp.name, "w", compression=zipfile.ZIP_DEFLATED, allowZip64=True, strict_timestamps=False
         ) as archive:
             if source_directory:
                 for dirpath, dirs, files in os.walk(source_directory):

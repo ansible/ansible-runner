@@ -7,17 +7,4 @@
     post:
       jobs: []
     periodic:
-      jobs:
-        - ansible-buildset-registry
-        - ansible-runner-upload-container-image-stable-2.9:
-            vars:
-              upload_container_image_promote: false
-        - ansible-runner-upload-container-image-stable-2.10:
-            vars:
-              upload_container_image_promote: false
-        - ansible-runner-upload-container-image-stable-2.11:
-            vars:
-              upload_container_image_promote: false
-        - ansible-runner-upload-container-image-stable-2.12:
-            vars:
-              upload_container_image_promote: false
+      jobs: []

@@ -54,6 +54,12 @@ RUN for dir in \
 
 WORKDIR /runner
 
+# NB: this appears to be necessary for container builds based on this container, since we can't rely on the entrypoint
+# script to run during a build to fix up /etc/passwd. This envvar value, and the fact that all user homedirs are
+# set to /home/runner is an implementation detail that may change with future versions of runner and should not be
+# assumed by other code or tools.
+ENV HOME=/home/runner
+
 ADD utils/entrypoint.sh /bin/entrypoint
 RUN chmod +x /bin/entrypoint
 

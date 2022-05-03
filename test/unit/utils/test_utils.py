@@ -194,6 +194,29 @@ def test_transmit_modtimes(tmp_path):
     assert old_delta >= datetime.timedelta(days=1).total_seconds() - 2.
 
 
+def test_transmit_file_from_before_1980s(tmp_path):
+    source_dir = tmp_path / 'source'
+    source_dir.mkdir()
+
+    old_file = source_dir / 'cassette_tape.txt'
+    old_file.touch()
+
+    old_timestamp = datetime.datetime(year=1978, month=7, day=28).timestamp()
+    os.utime(old_file, (old_timestamp, old_timestamp))
+
+    outgoing_buffer = io.BytesIO()
+    outgoing_buffer.name = 'not_stdout'
+    stream_dir(source_dir, outgoing_buffer)
+
+    dest_dir = tmp_path / 'dest'
+    dest_dir.mkdir()
+
+    outgoing_buffer.seek(0)
+    first_line = outgoing_buffer.readline()
+    size_data = json.loads(first_line.strip())
+    unstream_dir(outgoing_buffer, size_data['zipfile'], dest_dir)
+
+
 def test_signal_handler(mocker):
     """Test the default handler is set to handle the correct signals"""
 

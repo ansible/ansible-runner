@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# We need to fix a number of problems here that manifest under different container runtimes, as well as paper over some
+# We need to fix a number of problems here that manifest under different container runtimes, as well as tweak some
 # things to simplify runner's containerized launch behavior. Since runner currently always expects to bind-mount its
 # callback plugins under ~/.ansible, it must have prior knowledge of the user's homedir before the container is launched
 # in order to know where to mount in the callback dir. In all cases, we must get a consistent answer from $HOME

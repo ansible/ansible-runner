@@ -234,7 +234,7 @@ class BaseConfig(object):
         try:
             envvars = self.loader.load_file('env/envvars', Mapping)
             if envvars:
-                self.env.update({str(k): str(v) for k, v in envvars.items()})
+                self.env.update(envvars)
         except ConfigurationError:
             debug("Not loading environment vars")
             # Still need to pass default environment to pexpect
@@ -285,6 +285,9 @@ class BaseConfig(object):
             self.env['ANSIBLE_CACHE_PLUGIN'] = 'jsonfile'
             if not self.containerized:
                 self.env['ANSIBLE_CACHE_PLUGIN_CONNECTION'] = self.fact_cache
+
+        # Pexpect will error with non-string envvars types, so we ensure string types
+        self.env = {str(k): str(v) for k, v in self.env.items()}
 
         debug('env:')
         for k, v in sorted(self.env.items()):

@@ -5,3 +5,4 @@ pytest-timeout
 pytest-xdist
 flake8==4.0.1
 yamllint
+cryptography

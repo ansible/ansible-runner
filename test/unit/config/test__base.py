@@ -72,7 +72,7 @@ def test_base_config_project_dir(tmp_path):
     assert rc.project_dir == tmp_path.joinpath('project').as_posix()
 
 
-def test_prepare_environment_vars_only_strings(mocker):
+def test_prepare_environment_vars_only_strings_from_file(mocker):
     rc = BaseConfig(envvars=dict(D='D'))
 
     value = dict(A=1, B=True, C="foo")
@@ -81,6 +81,20 @@ def test_prepare_environment_vars_only_strings(mocker):
     mocker.patch.object(rc.loader, 'load_file', side_effect=envvar_side_effect)
 
     rc._prepare_env()
+    assert 'A' in rc.env
+    assert isinstance(rc.env['A'], six.string_types)
+    assert 'B' in rc.env
+    assert isinstance(rc.env['B'], six.string_types)
+    assert 'C' in rc.env
+    assert isinstance(rc.env['C'], six.string_types)
+    assert 'D' in rc.env
+    assert rc.env['D'] == 'D'
+
+
+def test_prepare_environment_vars_only_strings_from_interface():
+    rc = BaseConfig(envvars=dict(D='D', A=1, B=True, C="foo"))
+    rc._prepare_env()
+
     assert 'A' in rc.env
     assert isinstance(rc.env['A'], six.string_types)
     assert 'B' in rc.env

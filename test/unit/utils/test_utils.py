@@ -1,7 +1,9 @@
+import datetime
 import io
 import json
 import os
 import signal
+import time
 
 from pathlib import Path
 
@@ -145,6 +147,51 @@ def test_transmit_permissions(tmp_path, fperm):
     # Assure the new file is the same permissions
     new_file_path = dest_dir / 'ordinary_file.txt'
     assert oct(new_file_path.stat().st_mode) == oct(old_file_path.stat().st_mode)
+
+
+def test_transmit_modtimes(tmp_path):
+    source_dir = tmp_path / 'source'
+    source_dir.mkdir()
+
+    # python ZipFile uses an old standard that stores seconds in 2 second increments
+    # https://stackoverflow.com/questions/64048499/zipfile-lib-weird-behaviour-with-seconds-in-modified-time
+    (source_dir / 'b.txt').touch()
+    time.sleep(2.0)  # flaky for anything less
+    (source_dir / 'a.txt').touch()
+
+    very_old_file = source_dir / 'very_old.txt'
+    very_old_file.touch()
+    old_datetime = os.path.getmtime(source_dir / 'a.txt') - datetime.timedelta(days=1).total_seconds()
+    os.utime(very_old_file, (old_datetime, old_datetime))
+
+    # sanity, verify assertions pass for source dir
+    mod_delta = os.path.getmtime(source_dir / 'a.txt') - os.path.getmtime(source_dir / 'b.txt')
+    assert mod_delta >= 1.0
+
+    outgoing_buffer = io.BytesIO()
+    outgoing_buffer.name = 'not_stdout'
+    stream_dir(source_dir, outgoing_buffer)
+
+    dest_dir = tmp_path / 'dest'
+    dest_dir.mkdir()
+
+    outgoing_buffer.seek(0)
+    first_line = outgoing_buffer.readline()
+    size_data = json.loads(first_line.strip())
+    unstream_dir(outgoing_buffer, size_data['zipfile'], dest_dir)
+
+    # Assure modification times are internally consistent
+    mod_delta = os.path.getmtime(dest_dir / 'a.txt') - os.path.getmtime(dest_dir / 'b.txt')
+    assert mod_delta >= 1.0
+
+    # Assure modification times are same as original (to the rounded second)
+    for filename in ('a.txt', 'b.txt', 'very_old.txt'):
+        difference = abs(os.path.getmtime(dest_dir / filename) - os.path.getmtime(source_dir / filename))
+        assert difference < 2.0
+
+    # Assure the very old timestamp is preserved
+    old_delta = os.path.getmtime(dest_dir / 'a.txt') - os.path.getmtime(source_dir / 'very_old.txt')
+    assert old_delta >= datetime.timedelta(days=1).total_seconds() - 2.
 
 
 def test_signal_handler(mocker):

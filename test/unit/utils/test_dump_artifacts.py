@@ -147,6 +147,26 @@ def test_dump_artifacts_inventory_object(mocker):
     assert mock_dump_artifact.called_once_with(inv_string, '/tmp/inventory', 'hosts.json')
 
 
+def test_dump_artifacts_inventory_string_path(mocker):
+    mocker.patch('ansible_runner.utils.os.path.exists', return_value=True)
+
+    inv_string = 'site1'
+    kwargs = {'private_data_dir': '/tmp', 'inventory': inv_string}
+    dump_artifacts(kwargs)
+
+    assert kwargs['inventory'] == '/tmp/inventory/site1'
+
+
+def test_dump_artifacts_inventory_string_abs_path(mocker):
+    mocker.patch('ansible_runner.utils.os.path.exists', return_value=True)
+
+    inv_string = '/tmp/site1'
+    kwargs = {'private_data_dir': '/tmp', 'inventory': inv_string}
+    dump_artifacts(kwargs)
+
+    assert kwargs['inventory'] == '/tmp/site1'
+
+
 def test_dump_artifacts_passwords(mocker):
     mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact')
 

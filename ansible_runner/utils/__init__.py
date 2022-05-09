@@ -432,7 +432,7 @@ def open_fifo_write(path, data):
     '''
     os.mkfifo(path, stat.S_IRUSR | stat.S_IWUSR)
     # If the data is a string instead of bytes, convert it before writing the fifo
-    if type(data) == str:
+    if isinstance(data, string_types):
         data = data.encode()
     threading.Thread(target=lambda p, d: open(p, 'wb').write(d),
                      args=(path, data)).start()

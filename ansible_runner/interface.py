@@ -83,12 +83,6 @@ def init_runner(**kwargs):
         if logfile:
             output.set_logfile(logfile)
 
-    if kwargs.get("process_isolation", False):
-        pi_executable = kwargs.get("process_isolation_executable", "podman")
-        if not check_isolation_executable_installed(pi_executable):
-            print(f'Unable to find process isolation executable: {pi_executable}')
-            sys.exit(1)
-
     event_callback_handler = kwargs.pop('event_handler', None)
     status_callback_handler = kwargs.pop('status_handler', None)
     artifacts_handler = kwargs.pop('artifacts_handler', None)
@@ -117,6 +111,12 @@ def init_runner(**kwargs):
                                          finished_callback=finished_callback,
                                          **kwargs)
             return stream_processor
+
+    if kwargs.get("process_isolation", False):
+        pi_executable = kwargs.get("process_isolation_executable", "podman")
+        if not check_isolation_executable_installed(pi_executable):
+            print(f'Unable to find process isolation executable: {pi_executable}')
+            sys.exit(1)
 
     kwargs.pop('_input', None)
     kwargs.pop('_output', None)

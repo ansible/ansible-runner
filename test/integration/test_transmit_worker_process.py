@@ -168,6 +168,66 @@ class TestStreamingUsage:
 
         self.check_artifacts(str(process_dir), job_type)
 
+    def test_process_isolation_executable_not_exist(self, tmp_path, mocker):
+        """Case transmit should not fail if process isolation executable does not exist and
+        worker should fail if process isolation executable does not exist
+        """
+        mocker.patch.object(ansible_runner.interface, 'check_isolation_executable_installed', return_value=False)
+
+        job_kwargs = self.get_job_kwargs('run')
+        job_kwargs['process_isolation'] = True
+        job_kwargs['process_isolation_executable'] = 'does_not_exist'
+
+        outgoing_buffer_file = tmp_path / 'buffer_out'
+        outgoing_buffer_file.touch()
+        outgoing_buffer = outgoing_buffer_file.open('b+r')
+
+        transmitter = ansible_runner.interface.run(
+            streamer='transmit',
+            _output=outgoing_buffer,
+            **job_kwargs,
+        )
+
+        # valide process_isolation kwargs are passed to transmitter
+        assert transmitter.kwargs['process_isolation'] == job_kwargs['process_isolation']
+        assert transmitter.kwargs['process_isolation_executable'] == job_kwargs['process_isolation_executable']
+
+        # validate that transmit did not fail due to missing process isolation executable
+        assert transmitter.rc in (None, 0)
+
+        # validate that transmit buffer is not empty
+        outgoing_buffer.seek(0)
+        sent = outgoing_buffer.read()
+        assert sent  # should not be blank at least
+
+        # validate buffer contains kwargs
+        assert b'kwargs' in sent
+
+        # validate kwargs in buffer contain correct process_isolation and process_isolation_executable
+        for line in sent.decode('utf-8').split('\n'):
+            if "kwargs" in line:
+                kwargs = json.loads(line).get("kwargs", {})
+                assert kwargs['process_isolation'] == job_kwargs['process_isolation']
+                assert kwargs['process_isolation_executable'] == job_kwargs['process_isolation_executable']
+                break
+
+        worker_dir = tmp_path / 'for_worker'
+        incoming_buffer_file = tmp_path / 'buffer_in'
+        incoming_buffer_file.touch()
+        incoming_buffer = incoming_buffer_file.open('b+r')
+
+        outgoing_buffer.seek(0)
+
+        # validate that worker fails raise sys.exit(1) when process isolation executable does not exist
+        with pytest.raises(SystemExit) as exc:
+            ansible_runner.interface.run(
+                streamer='worker',
+                _input=outgoing_buffer,
+                _output=incoming_buffer,
+                private_data_dir=worker_dir,
+            )
+            assert exc.value.code == 1
+
 
 @pytest.fixture
 def transmit_stream(project_fixtures, tmp_path):

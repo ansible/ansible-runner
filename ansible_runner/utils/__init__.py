@@ -61,22 +61,26 @@ def is_dir_owner(directory):
     return bool(current_user == callback_owner)
 
 
-def callback_mount(copy_if_needed=False):
+def callback_mount(copy_if_needed=False, copy_dir=None):
     '''
     Return a tuple that gives mount points for the standard out callback
     in the form of (<host location>, <location in container>)
-    if copy_if_needed is set, and the install is owned by another user,
-    it will copy the plugin to a tmpdir for the mount in anticipation of SELinux problems
+    if copy_if_needed is set, and the install is owned by another user
+    or in location that is not mountable such as /usr,
+    it will copy the plugin to a tmpdir or copy_dir for the mount in anticipation of SELinux problems
     '''
     container_dot_ansible = '/home/runner/.ansible'
     rel_path = ('callback', '',)
     host_path = os.path.join(get_plugin_dir(), *rel_path)
     if copy_if_needed:
         callback_dir = get_callback_dir()
-        if not is_dir_owner(callback_dir):
-            tmp_path = tempfile.mkdtemp(prefix='ansible_runner_plugins_')
-            register_for_cleanup(tmp_path)
-            host_path = os.path.join(tmp_path, 'callback')
+        if callback_dir.startswith('/usr') or not is_dir_owner(callback_dir):
+            if copy_dir is None:
+                tmp_path = tempfile.mkdtemp(prefix='ansible_runner_plugins_')
+                register_for_cleanup(tmp_path)
+                host_path = os.path.join(tmp_path, 'callback')
+            else:
+                host_path = os.path.join(copy_dir, 'callback')
             shutil.copytree(callback_dir, host_path)
     container_path = os.path.join(container_dot_ansible, 'plugins', *rel_path)
     return (host_path, container_path)

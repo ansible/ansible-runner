@@ -505,7 +505,7 @@ class BaseConfig(object):
         self._update_volume_mount_paths(new_args, "{}".format(self.private_data_dir), dst_mount_path="/runner", labels=":Z")
 
         # Mount the stdout callback plugin from the ansible-runner code base
-        mount_paths = callback_mount(copy_if_needed=True)
+        mount_paths = callback_mount(copy_if_needed=True, copy_dir="{}/artifacts".format(self.private_data_dir))
         self._update_volume_mount_paths(new_args, mount_paths[0], dst_mount_path=mount_paths[1], labels=":Z")
 
         if self.container_auth_data:

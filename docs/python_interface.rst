@@ -189,6 +189,28 @@ Usage examples
   print("Final status:")
   print(r.stats)
 
+
+.. code-block:: python
+
+  import ansible_runner
+
+  def my_status_handler(data, runner_config):
+      # Do something here
+      print(data)
+
+  r = ansible_runner.run(private_data_dir='/tmp/demo', playbook='test.yml', status_handler=my_status_handler)
+
+
+.. code-block:: python
+
+  import ansible_runner
+
+  def my_event_handler(data):
+      # Do something here
+      print(data)
+
+  r = ansible_runner.run(private_data_dir='/tmp/demo', playbook='test.yml', event_handler=my_event_handler)
+
 .. code-block:: python
 
   import ansible_runner

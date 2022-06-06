@@ -546,9 +546,9 @@ class Runner(object):
             if filter_parameters:
                 cmd.append("-f")
                 cmd.append(filter_parameters)
-            filter_parameters.append(container_name)
+            cmd.append(container_name)
             image_info = os.path.join(self.config.private_data_dir, "image_info")
-            with open(image_info) as f:
+            with open(image_info, "w") as f:
                 proc = Popen(cmd, stdout=f, stderr=PIPE)
                 _, stderr = proc.communicate()
             if proc.returncode:

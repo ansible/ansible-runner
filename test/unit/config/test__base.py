@@ -13,7 +13,6 @@ from pexpect import TIMEOUT, EOF
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError
-from ansible_runner.utils import callback_mount
 
 try:
     Pattern = re._pattern_type
@@ -331,7 +330,6 @@ def test_containerization_settings(tmp_path, runtime, mocker):
     expected_command_start.extend([
         '-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir),
         '-v', '{}/:/runner/:Z'.format(rc.private_data_dir),
-        '-v', '{0}:{1}:Z'.format(*callback_mount()),
         '--env-file', '{}/env.list'.format(rc.artifact_dir),
     ])
 

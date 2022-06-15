@@ -14,7 +14,6 @@ from ansible_runner.config.runner import RunnerConfig, ExecutionMode
 from ansible_runner.interface import init_runner
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError
-from ansible_runner.utils import callback_mount
 
 try:
     Pattern = re._pattern_type
@@ -715,6 +714,11 @@ def test_containerization_settings(tmp_path, runtime, mocker):
     mock_containerized = mocker.patch('ansible_runner.runner_config.RunnerConfig.containerized', new_callable=mocker.PropertyMock)
     mock_containerized.return_value = True
 
+    # In this test get_callback_dir() will not return a callback plugin dir that exists
+    # mock shutil.copytree and shutil.rmtree to just return True instead of trying to copy
+    mocker.patch('shutil.copytree', return_value=True)
+    mocker.patch('shutil.rmtree', return_value=True)
+
     rc = RunnerConfig(tmp_path)
     rc.ident = 'foo'
     rc.playbook = 'main.yaml'
@@ -725,6 +729,14 @@ def test_containerization_settings(tmp_path, runtime, mocker):
     rc.container_volume_mounts = ['/host1:/container1', '/host2:/container2']
     rc.prepare()
 
+    # validate ANSIBLE_CALLBACK_PLUGINS env var is set
+    assert rc.env.get('ANSIBLE_CALLBACK_PLUGINS', None) is not None
+
+    # validate ANSIBLE_CALLBACK_PLUGINS contains callback plugin dir
+    callback_plugins = rc.env['ANSIBLE_CALLBACK_PLUGINS'].split(':')
+    callback_dir = os.path.join("/runner/artifacts", "{}".format(rc.ident), "callback")
+    assert callback_dir in callback_plugins
+
     extra_container_args = []
     if runtime == 'podman':
         extra_container_args = ['--quiet']
@@ -733,7 +745,6 @@ def test_containerization_settings(tmp_path, runtime, mocker):
 
     expected_command_start = [runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
         ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
-        ['-v', '{0}:{1}:Z'.format(*callback_mount())] + \
         ['-v', '/host1/:/container1/', '-v', '/host2/:/container2/'] + \
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
         extra_container_args + \

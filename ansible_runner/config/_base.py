@@ -23,6 +23,7 @@ import pexpect
 import re
 import stat
 import tempfile
+import shutil
 
 from base64 import b64encode
 from uuid import uuid4
@@ -39,7 +40,6 @@ from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.defaults import registry_auth_prefix
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.utils import (
-    callback_mount,
     get_callback_dir,
     open_fifo_write,
     args2cmdline,
@@ -224,6 +224,7 @@ class BaseConfig(object):
             self.env['AWX_ISOLATED_DATA_DIR'] = artifact_dir
             if self.fact_cache_type == 'jsonfile':
                 self.env['ANSIBLE_CACHE_PLUGIN_CONNECTION'] = os.path.join(artifact_dir, 'fact_cache')
+
         else:
             # seed env with existing shell env
             self.env = os.environ.copy()
@@ -262,7 +263,18 @@ class BaseConfig(object):
                 self.fact_cache = os.path.join(self.artifact_dir, self.settings['fact_cache'])
 
         # Use local callback directory
-        if not self.containerized:
+        if self.containerized:
+            # when containerized, copy the callback dir to $private_data_dir/artifacts/<job_id>/callback
+            # then append to env['ANSIBLE_CALLBACK_PLUGINS'] with the copied location.
+            callback_dir = os.path.join(self.artifact_dir, 'callback')
+            # if callback dir already exists (on repeat execution with the same ident), remove it first.
+            if os.path.exists(callback_dir):
+                shutil.rmtree(callback_dir)
+            shutil.copytree(get_callback_dir(), callback_dir)
+
+            container_callback_dir = os.path.join("/runner/artifacts", "{}".format(self.ident), "callback")
+            self.env['ANSIBLE_CALLBACK_PLUGINS'] = ':'.join(filter(None, (self.env.get('ANSIBLE_CALLBACK_PLUGINS'), container_callback_dir)))
+        else:
             callback_dir = self.env.get('AWX_LIB_DIRECTORY', os.getenv('AWX_LIB_DIRECTORY'))
             if callback_dir is None:
                 callback_dir = get_callback_dir()
@@ -503,10 +515,6 @@ class BaseConfig(object):
         # Mount the entire private_data_dir
         # custom show paths inside private_data_dir do not make sense
         self._update_volume_mount_paths(new_args, "{}".format(self.private_data_dir), dst_mount_path="/runner", labels=":Z")
-
-        # Mount the stdout callback plugin from the ansible-runner code base
-        mount_paths = callback_mount(copy_if_needed=True)
-        self._update_volume_mount_paths(new_args, mount_paths[0], dst_mount_path=mount_paths[1], labels=":Z")
 
         if self.container_auth_data:
             # Pull in the necessary registry auth info, if there is a container cred

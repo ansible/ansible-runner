@@ -6,7 +6,7 @@ import pytest
 from ansible_runner.config.ansible_cfg import AnsibleCfgConfig
 from ansible_runner.config._base import BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
-from ansible_runner.utils import get_executable_path, callback_mount
+from ansible_runner.utils import get_executable_path
 
 
 def test_ansible_cfg_init_defaults(tmp_path, patch_private_data_dir):
@@ -91,7 +91,6 @@ def test_prepare_config_command_with_containerization(tmp_path, runtime, mocker)
     expected_command_start.extend([
         '-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir),
         '-v', '{}/:/runner/:Z'.format(rc.private_data_dir),
-        '-v', '{0}:{1}:Z'.format(*callback_mount()),
         '--env-file', '{}/env.list'.format(rc.artifact_dir),
     ])
 

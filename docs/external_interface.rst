@@ -5,7 +5,12 @@ Sending Runner Status and Events to External Systems
 
 **Runner** can store event and status data locally for retrieval, it can also emit this information via callbacks provided to the module interface.
 
-Alternatively **Runner** can be configured to send events to an external system via installable plugins, there are currently two available
+Alternatively **Runner** can be configured to send events to an external system via installable plugins. Currently, there are two example plugins are available.
+
+* HTTP Status/Event Emitter Plugin - `ansible-runner-http GitHub repo <https://github.com/ansible/ansible-runner-http>`_
+* ZeroMQ Status/Event Emitter Plugin - `ansible-runner-zeromq GitHub repo <https://github.com/ansible/ansible-runner-zeromq>`_
+
+Please refer respective repos to configure these plugins.
 
 .. _plugineventstructure:
 
@@ -24,41 +29,8 @@ There are two types of events that are emitted via plugins:
 
   These are sent during playbook execution for every event received from **Ansible** (see :ref:`Playbook and Host Events<artifactevents>`) for example::
 
-    {"runner_ident": "XXXX", <rest of event structure }
+    {"runner_ident": "XXXX", <rest of event structure> }
 
-.. _httpemitterplugin:
-
-HTTP Status/Event Emitter Plugin
---------------------------------
-
-This sends status and event data to a URL in the form of json encoded POST requests.
-
-This plugin is available from the `ansible-runner-http github repo <https://github.com/ansible/ansible-runner-http>`_ and is also available to be installed from
-pip::
-
-  $ pip install ansible-runner-http
-
-In order to configure it, you can provide details in the Runner Settings file (see :ref:`runnersettings`):
-
-* ``runner_http_url``: The url to receive the ``POST``
-* ``runner_http_headers``: Headers to send along with the request.
-
-The plugin also supports unix file-based sockets with:
-
-* ``runner_http_url``: The path to the unix socket
-* ``runner_http_path``: The path that will be included as part of the request to the socket
-
-Some of these settings are also available as environment variables:
-
-* RUNNER_HTTP_URL
-* RUNNER_HTTP_PATH
-
-.. _zmqemitterplugin:
-
-ZeroMQ Status/Event Emitter Plugin
-----------------------------------
-
-TODO
 
 Writing your own Plugin
 -----------------------

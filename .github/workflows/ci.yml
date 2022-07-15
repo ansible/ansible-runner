@@ -4,7 +4,6 @@ on:
   pull_request:
   push:
 
-
 jobs:
   sanity:
     name: ${{ matrix.test.name }}
@@ -36,7 +35,6 @@ jobs:
       - name: Run tests
         run: tox
 
-
   integration:
     runs-on: ubuntu-20.04
     name: Integration - ${{ matrix.py_version.name }}
@@ -49,24 +47,27 @@ jobs:
       fail-fast: false
       matrix:
         py_version:
-          - name: '3.8'
+          - name: "3.8"
             tox_env: integration-py38
 
-          - name: '3.9'
+          - name: "3.9"
             tox_env: integration-py39
 
-          - name: '3.10'
+          - name: "3.10"
             tox_env: integration-py310
 
+          - name: "3.11"
+            python-version: "~3.11.0-0" # see https://github.com/actions/setup-python/issues/213#issuecomment-1146676713
+            tox_env: integration-py311
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
       - name: Install Python ${{ matrix.py_version.name }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.py_version.name }}
+          python-version: ${{ matrix.py_version.py-version || matrix.py_version.name }}
 
       - name: Install tox
         run: |
@@ -89,7 +90,6 @@ jobs:
           chmod +x codecov
           ./codecov --file test/coverage/reports/coverage.xml --flags {{ matrix.py_version.tox_env }}
 
-
   unit:
     name: Unit - ${{ matrix.py_version.name}}
     runs-on: ubuntu-20.04
@@ -104,14 +104,18 @@ jobs:
       fail-fast: false
       matrix:
         py_version:
-          - name: '3.8'
+          - name: "3.8"
             tox_env: unit-py38
 
-          - name: '3.9'
+          - name: "3.9"
             tox_env: unit-py39
 
-          - name: '3.10'
+          - name: "3.10"
             tox_env: unit-py310
+
+          - name: "3.11"
+            python-version: "~3.11.0-0" # see https://github.com/actions/setup-python/issues/213#issuecomment-1146676713
+            tox_env: unit-py311
 
     steps:
       - name: Checkout

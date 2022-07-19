@@ -417,7 +417,6 @@ def open_fifo_write(path, data):
     def worker(path, data):
         with open(path, 'wb') as fh:
             fh.write(data)
-        fh.close()
 
     threading.Thread(target=worker,
                      args=(path, data)).start()

@@ -4,3 +4,19 @@ repos:
     rev: v2.0.0
     hooks:
       - id: flake8
+  - repo: https://github.com/pycqa/pylint
+    rev: v2.14.4
+    hooks:
+      - id: pylint
+        # enforce version because 3.11 is not yet fully supported by pylint
+        language_version: "3.8"
+        args:
+          - --output-format=colorized
+        additional_dependencies:
+          - ansible-core
+          - daemon
+          - pexpect
+          - pytest
+          - pyyaml
+          - six
+          - python-daemon

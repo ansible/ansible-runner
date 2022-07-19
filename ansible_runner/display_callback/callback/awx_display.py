@@ -416,7 +416,7 @@ class CallbackModule(DefaultCallbackModule):
             task_ctx['task_path'] = task.get_path()
         except AttributeError:
             pass
-        if C.DISPLAY_ARGS_TO_STDOUT:
+        if getattr(C, 'DISPLAY_ARGS_TO_STDOUT', False):
             if task.no_log:
                 task_ctx['task_args'] = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"
             else:

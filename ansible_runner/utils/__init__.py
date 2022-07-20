@@ -13,7 +13,7 @@ import base64
 import threading
 from pathlib import Path
 import pwd
-import pipes
+from shlex import quote
 import uuid
 import codecs
 import atexit
@@ -413,12 +413,17 @@ def open_fifo_write(path, data):
     # If the data is a string instead of bytes, convert it before writing the fifo
     if isinstance(data, string_types):
         data = data.encode()
-    threading.Thread(target=lambda p, d: open(p, 'wb').write(d),
+
+    def worker(path, data):
+        with open(path, 'wb') as fh:
+            fh.write(data)
+
+    threading.Thread(target=worker,
                      args=(path, data)).start()
 
 
 def args2cmdline(*args):
-    return ' '.join([pipes.quote(a) for a in args])
+    return ' '.join([quote(a) for a in args])
 
 
 def ensure_str(s, encoding='utf-8', errors='strict'):

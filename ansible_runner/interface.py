@@ -52,10 +52,10 @@ def init_runner(**kwargs):
     '''
     # If running via the transmit-worker-process method, we must only extract things as read-only
     # inside of one of these commands. That could be either transmit or worker.
-    if kwargs.get('streamer') not in ('worker', 'process'):
+    if kwargs.get('process_isolation') or kwargs.get('streamer') not in ('worker', 'process'):
         dump_artifacts(kwargs)
 
-    if kwargs.get('streamer'):
+    if kwargs.get('streamer') or kwargs.get('process_isolation'):
         # undo any full paths that were dumped by dump_artifacts above in the streamer case
         private_data_dir = kwargs['private_data_dir']
         project_dir = os.path.join(private_data_dir, 'project')

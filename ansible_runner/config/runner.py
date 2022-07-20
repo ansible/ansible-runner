@@ -192,7 +192,7 @@ class RunnerConfig(BaseConfig):
             else:
                 self.cwd = self.project_dir
 
-        if 'fact_cache' in self.settings:
+        if self.settings.get('fact_cache'):
             if 'fact_cache_type' in self.settings:
                 if self.settings['fact_cache_type'] == 'jsonfile':
                     self.fact_cache = os.path.join(self.artifact_dir, self.settings['fact_cache'])

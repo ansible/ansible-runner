@@ -381,109 +381,6 @@ class AnsibleRunnerArgumentParser(argparse.ArgumentParser):
 
         super(AnsibleRunnerArgumentParser, self).error(message)
 
-
-@contextmanager
-def role_manager(vargs):
-    if vargs.get('role'):
-        role = {'name': vargs.get('role')}
-        if vargs.get('role_vars'):
-            role_vars = {}
-            for item in vargs['role_vars'].split():
-                key, value = item.split('=')
-                try:
-                    role_vars[key] = ast.literal_eval(value)
-                except Exception:
-                    role_vars[key] = value
-            role['vars'] = role_vars
-
-        kwargs = Bunch(**vargs)
-        kwargs.update(private_data_dir=vargs.get('private_data_dir'),
-                      json_mode=vargs.get('json'),
-                      ignore_logging=False,
-                      project_dir=vargs.get('project_dir'),
-                      rotate_artifacts=vargs.get('rotate_artifacts'))
-
-        if vargs.get('artifact_dir'):
-            kwargs.artifact_dir = vargs.get('artifact_dir')
-
-        if vargs.get('project_dir'):
-            project_path = kwargs.project_dir = vargs.get('project_dir')
-        else:
-            project_path = os.path.join(vargs.get('private_data_dir'), 'project')
-
-        project_exists = os.path.exists(project_path)
-
-        env_path = os.path.join(vargs.get('private_data_dir'), 'env')
-        env_exists = os.path.exists(env_path)
-
-        envvars_path = os.path.join(vargs.get('private_data_dir'), 'env/envvars')
-        envvars_exists = os.path.exists(envvars_path)
-
-        if vargs.get('cmdline'):
-            kwargs.cmdline = vargs.get('cmdline')
-
-        playbook = None
-        tmpvars = None
-
-        play = [{'hosts': vargs.get('hosts') if vargs.get('hosts') is not None else "all",
-                 'gather_facts': not vargs.get('role_skip_facts'),
-                 'roles': [role]}]
-
-        filename = str(uuid4().hex)
-
-        playbook = dump_artifact(json.dumps(play), project_path, filename)
-        kwargs.playbook = playbook
-        output.debug('using playbook file %s' % playbook)
-
-        if vargs.get('inventory'):
-            inventory_file = os.path.join(vargs.get('private_data_dir'), 'inventory', vargs.get('inventory'))
-            if not os.path.exists(inventory_file):
-                raise AnsibleRunnerException('location specified by --inventory does not exist')
-            kwargs.inventory = inventory_file
-            output.debug('using inventory file %s' % inventory_file)
-
-        roles_path = vargs.get('roles_path') or os.path.join(vargs.get('private_data_dir'), 'roles')
-        roles_path = os.path.abspath(roles_path)
-        output.debug('setting ANSIBLE_ROLES_PATH to %s' % roles_path)
-
-        envvars = {}
-        if envvars_exists:
-            with open(envvars_path, 'rb') as f:
-                tmpvars = f.read()
-                new_envvars = safe_load(tmpvars)
-                if new_envvars:
-                    envvars = new_envvars
-
-        envvars['ANSIBLE_ROLES_PATH'] = roles_path
-        kwargs.envvars = envvars
-    else:
-        kwargs = vargs
-
-    yield kwargs
-
-    if vargs.get('role'):
-        if not project_exists and os.path.exists(project_path):
-            logger.debug('removing dynamically generated project folder')
-            shutil.rmtree(project_path)
-        elif playbook and os.path.isfile(playbook):
-            logger.debug('removing dynamically generated playbook')
-            os.remove(playbook)
-
-        # if a previous envvars existed in the private_data_dir,
-        # restore the original file contents
-        if tmpvars:
-            with open(envvars_path, 'wb') as f:
-                f.write(tmpvars)
-        elif not envvars_exists and os.path.exists(envvars_path):
-            logger.debug('removing dynamically generated envvars folder')
-            os.remove(envvars_path)
-
-        # since ansible-runner created the env folder, remove it
-        if not env_exists and os.path.exists(env_path):
-            logger.debug('removing dynamically generated env folder')
-            shutil.rmtree(env_path)
-
-
 def print_common_usage():
     print(textwrap.dedent("""
         These are common Ansible Runner commands:
@@ -824,52 +721,82 @@ def main(sys_args=None):
         if vargs.get('command') in ('transmit', 'worker', 'process'):
             streamer = vargs.get('command')
 
+        # TODO: Remove / Refactor unused role context manager
         with context:
-            with role_manager(vargs) as vargs:
-                run_options = dict(private_data_dir=vargs.get('private_data_dir'),
-                                   ident=vargs.get('ident'),
-                                   binary=vargs.get('binary'),
-                                   playbook=vargs.get('playbook'),
-                                   module=vargs.get('module'),
-                                   module_args=vargs.get('module_args'),
-                                   host_pattern=vargs.get('hosts'),
-                                   verbosity=vargs.get('v'),
-                                   quiet=vargs.get('quiet'),
-                                   rotate_artifacts=vargs.get('rotate_artifacts'),
-                                   ignore_logging=False,
-                                   json_mode=vargs.get('json'),
-                                   omit_event_data=vargs.get('omit_event_data'),
-                                   only_failed_event_data=vargs.get('only_failed_event_data'),
-                                   inventory=vargs.get('inventory'),
-                                   forks=vargs.get('forks'),
-                                   project_dir=vargs.get('project_dir'),
-                                   artifact_dir=vargs.get('artifact_dir'),
-                                   roles_path=[vargs.get('roles_path')] if vargs.get('roles_path') else None,
-                                   process_isolation=vargs.get('process_isolation'),
-                                   process_isolation_executable=vargs.get('process_isolation_executable'),
-                                   process_isolation_path=vargs.get('process_isolation_path'),
-                                   process_isolation_hide_paths=vargs.get('process_isolation_hide_paths'),
-                                   process_isolation_show_paths=vargs.get('process_isolation_show_paths'),
-                                   process_isolation_ro_paths=vargs.get('process_isolation_ro_paths'),
-                                   container_image=vargs.get('container_image'),
-                                   container_volume_mounts=vargs.get('container_volume_mounts'),
-                                   container_options=vargs.get('container_options'),
-                                   directory_isolation_base_path=vargs.get('directory_isolation_base_path'),
-                                   cmdline=vargs.get('cmdline'),
-                                   limit=vargs.get('limit'),
-                                   streamer=streamer,
-                                   suppress_env_files=vargs.get("suppress_env_files"),
-                                   )
-                try:
-                    res = run(**run_options)
-                except Exception:
-                    exc = traceback.format_exc()
-                    if stderr_path:
-                        open(stderr_path, 'w+').write(exc)
-                    else:
-                        sys.stderr.write(exc)
-                    return 1
-            return(res.rc)
+            run_options = dict(private_data_dir=vargs.get('private_data_dir'),
+                                ident=vargs.get('ident'),
+                                binary=vargs.get('binary'),
+                                playbook=vargs.get('playbook'),
+                                module=vargs.get('module'),
+                                module_args=vargs.get('module_args'),
+                                host_pattern=vargs.get('hosts'),
+                                verbosity=vargs.get('v'),
+                                quiet=vargs.get('quiet'),
+                                rotate_artifacts=vargs.get('rotate_artifacts'),
+                                ignore_logging=False,
+                                json_mode=vargs.get('json'),
+                                omit_event_data=vargs.get('omit_event_data'),
+                                only_failed_event_data=vargs.get('only_failed_event_data'),
+                                inventory=vargs.get('inventory'),
+                                forks=vargs.get('forks'),
+                                project_dir=vargs.get('project_dir'),
+                                artifact_dir=vargs.get('artifact_dir'),
+                                role=vargs.get('role'),
+                                roles_path=[vargs.get('roles_path')] if vargs.get('roles_path') else None,
+                                process_isolation=vargs.get('process_isolation'),
+                                process_isolation_executable=vargs.get('process_isolation_executable'),
+                                process_isolation_path=vargs.get('process_isolation_path'),
+                                process_isolation_hide_paths=vargs.get('process_isolation_hide_paths'),
+                                process_isolation_show_paths=vargs.get('process_isolation_show_paths'),
+                                process_isolation_ro_paths=vargs.get('process_isolation_ro_paths'),
+                                container_image=vargs.get('container_image'),
+                                container_volume_mounts=vargs.get('container_volume_mounts'),
+                                container_options=vargs.get('container_options'),
+                                directory_isolation_base_path=vargs.get('directory_isolation_base_path'),
+                                cmdline=vargs.get('cmdline'),
+                                limit=vargs.get('limit'),
+                                streamer=streamer,
+                                suppress_env_files=vargs.get("suppress_env_files"),
+                                )
+            try:
+                output.display(run_options)
+                res = run(**run_options)
+                rc_actual = res.rc
+            except Exception:
+                exc = traceback.format_exc()
+                if stderr_path:
+                    open(stderr_path, 'w+').write(exc)
+                else:
+                    sys.stderr.write(exc)
+                rc_actual = 1
+
+            if vargs.get('project_dir'):
+                project_path = vargs.get('project_dir')
+            else:
+                project_path = os.path.join(vargs.get('private_data_dir'), 'project')
+
+            project_exists = os.path.exists(project_path)
+
+            env_path = os.path.join(vargs.get('private_data_dir'), 'env')
+            env_exists = os.path.exists(env_path)
+
+            envvars_path = os.path.join(vargs.get('private_data_dir'), 'env/envvars')
+            envvars_exists = os.path.exists(envvars_path)
+
+            if vargs.get('role'):
+                if not project_exists and os.path.exists(project_path):
+                    logger.debug('removing dynamically generated project folder')
+                    shutil.rmtree(project_path)
+                elif not envvars_exists and os.path.exists(envvars_path):
+                    logger.debug('removing dynamically generated envvars folder')
+                    os.remove(envvars_path)
+
+                # since ansible-runner created the env folder, remove it
+                if not env_exists and os.path.exists(env_path):
+                    logger.debug('removing dynamically generated env folder')
+                    shutil.rmtree(env_path)
+
+            return(rc_actual)
 
     try:
         with open(pidfile, 'r') as f:

@@ -222,6 +222,18 @@ Usage examples
 
   import ansible_runner
 
+  def my_artifacts_handler(artifacts_dir):
+      # Do something here
+      print(artifacts_dir)
+
+  # Do something with artifact directory after the run is complete
+  r = ansible_runner.run(private_data_dir='/tmp/demo', playbook='test.yml', artifacts_handler=my_artifacts_handler)
+
+
+.. code-block:: python
+
+  import ansible_runner
+
   def my_status_handler(data, runner_config):
       # Do something here
       print(data)

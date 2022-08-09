@@ -79,9 +79,9 @@ def is_alive(dir):
 
     try:
         os.kill(pid, signal.SIG_DFL)
-        return(0)
+        return 0
     except OSError:
-        return(1)
+        return 1
 
 
 def project_idents(dir):

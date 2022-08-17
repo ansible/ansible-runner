@@ -23,7 +23,7 @@ RUN if [ "$ANSIBLE_BRANCH" != "" ] ; then \
 # NOTE(pabelanger): For downstream builds, we compile everything from source
 # over using existing wheels. Do this upstream too so we can better catch
 # issues.
-ENV PIP_OPTS=--no-build-isolation
+# ENV PIP_OPTS=--no-build-isolation
 RUN assemble
 
 FROM $PYTHON_BASE_IMAGE

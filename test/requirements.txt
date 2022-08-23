@@ -2,5 +2,5 @@ pytest
 pytest-mock
 pytest-timeout
 pytest-xdist
-flake8
+flake8==4.0.1
 yamllint

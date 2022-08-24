@@ -41,11 +41,11 @@ it will extract the contents to a temporary directory which is deleted at the en
 If the ``--private-data-dir`` option is given, then the directory will persist after the run finishes
 unless the ``--delete`` flag is also set. In that case, the private data directory will be deleted before execution if it exists and also removed after execution.
 
-The following command offers out-of-band cleanup.
+The following command offers out-of-band cleanup ::
 
     $ ansible-runner worker cleanup --file-pattern=/tmp/foo_*
 
-This would assure that old directories that fit the file glob "/tmp/foo_*" are deleted,
+This would assure that old directories that fit the file glob ``/tmp/foo_*`` are deleted,
 which would could be used to assure cleanup of paths created by commands like
 ``ansible-runner worker --private_data_dir=/tmp/foo_3``, for example.
 NOTE: see the ``--grace-period`` option, which sets the time window.

@@ -14,6 +14,7 @@ from ansible_runner.config.runner import RunnerConfig, ExecutionMode
 from ansible_runner.interface import init_runner
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError
+from test.utils.common import RSAKey
 
 try:
     Pattern = re._pattern_type
@@ -184,13 +185,14 @@ def test_prepare_env_sshkey(mocker):
     mocker.patch('os.makedirs', return_value=True)
     rc = RunnerConfig('/')
 
-    value = '01234567890'
-    sshkey_side_effect = partial(load_file_side_effect, 'env/ssh_key', value)
+    rsa_key = RSAKey()
+    rsa_private_key_value = rsa_key.private
+    sshkey_side_effect = partial(load_file_side_effect, 'env/ssh_key', rsa_private_key_value)
 
     mocker.patch.object(rc.loader, 'load_file', side_effect=sshkey_side_effect)
 
     rc.prepare_env()
-    assert rc.ssh_key_data == value
+    assert rc.ssh_key_data == rsa_private_key_value
 
 
 def test_prepare_env_defaults(mocker):
@@ -478,7 +480,8 @@ def test_prepare_with_ssh_key(mocker):
     rc.env = {}
     rc.execution_mode = ExecutionMode.ANSIBLE_PLAYBOOK
     rc.playbook = 'main.yaml'
-    rc.ssh_key_data = '01234567890'
+    rsa_key = RSAKey()
+    rc.ssh_key_data = rsa_key.private
     rc.command = 'ansible-playbook'
 
     mocker.patch.dict('os.environ', {'AWX_LIB_DIRECTORY': '/'})

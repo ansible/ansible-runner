@@ -13,6 +13,7 @@ from pexpect import TIMEOUT, EOF
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError
+from test.utils.common import RSAKey
 
 try:
     Pattern = re._pattern_type
@@ -170,12 +171,13 @@ def test_prepare_env_sshkey_defaults():
 def test_prepare_env_sshkey(mocker):
     rc = BaseConfig()
 
-    value = '01234567890'
-    sshkey_side_effect = partial(load_file_side_effect, 'env/ssh_key', value)
+    rsa_key = RSAKey()
+    rsa_private_key_value = rsa_key.private
+    sshkey_side_effect = partial(load_file_side_effect, 'env/ssh_key', rsa_private_key_value)
 
     mocker.patch.object(rc.loader, 'load_file', side_effect=sshkey_side_effect)
     rc._prepare_env()
-    assert rc.ssh_key_data == value
+    assert rc.ssh_key_data == rsa_private_key_value
 
 
 def test_prepare_env_defaults():
@@ -218,7 +220,8 @@ def test_prepare_with_ssh_key(mocker, tmp_path):
     rc.artifact_dir = custom_artifacts.as_posix()
     rc.env = {}
     rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
-    rc.ssh_key_data = '01234567890'
+    rsa_key = RSAKey()
+    rc.ssh_key_data = rsa_key.private
     rc.command = 'ansible-playbook'
     rc.cmdline_args = []
     rc._prepare_env()

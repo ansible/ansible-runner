@@ -276,9 +276,7 @@ class Runner(object):
                     stderr_response = stderr_response.decode()
                 stderr_handle.write(stderr_response)
 
-            stdout_handle.flush()
             stdout_handle.close()
-            stderr_handle.flush()
             stderr_handle.close()
         else:
             try:
@@ -341,9 +339,7 @@ class Runner(object):
                     Runner.handle_termination(child.pid, is_cancel=False)
                     self.timed_out = True
 
-            stdout_handle.flush()
             stdout_handle.close()
-            stderr_handle.flush()
             stderr_handle.close()
             child.close()
             self.rc = child.exitstatus if not (self.timed_out or self.canceled) else 254

@@ -152,3 +152,19 @@ def test_status_callback_interface(rc, mocker):
     assert runner.status_handler.call_count == 1
     runner.status_handler.assert_called_with(dict(status='running', runner_ident=str(rc.ident)), runner_config=runner.config)
     assert runner.status == 'running'
+
+
+@pytest.mark.parametrize('runner_mode', ['subprocess'])
+@pytest.mark.filterwarnings("error")
+def test_no_ResourceWarning_error(rc, runner_mode):
+    """
+    Test that no ResourceWarning error is propogated up with warnings-as-errors enabled.
+
+    Not properly closing stdout/stderr in Runner.run() will cause a ResourceWarning
+    error that is only seen when we treat warnings as an error.
+    """
+    rc.command = ['echo', 'Hello World']
+    rc.runner_mode = runner_mode
+    runner = Runner(config=rc)
+    status, exitcode = runner.run()
+    assert status == 'successful'

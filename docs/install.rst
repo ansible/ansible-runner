@@ -47,10 +47,14 @@ Check out the source code from `github <https://github.com/ansible/ansible-runne
 
 Or download from the `releases page <https://github.com/ansible/ansible-runner/releases>`_
 
+Create a virtual environment using Python and activate it::
+
+  $ virtualenv env
+  $ source env/bin/activate
+
 Then install::
 
-  $ pip install virtualenvwrapper
-  $ mkvirtualenv ansible-runner
+  $ cd ansible-runner
   $ pip install -e .
 
 .. _builddist:
@@ -58,7 +62,7 @@ Then install::
 Build the distribution
 ----------------------
 
-To produce both wheel and sdist:
+To produce both wheel and sdist::
 
   make dist
 

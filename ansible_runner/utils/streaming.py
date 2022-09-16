@@ -22,6 +22,11 @@ def stream_dir(source_directory, stream):
                         relpath = ""
                     for fname in files + dirs:
                         full_path = os.path.join(dirpath, fname)
+                        if stat.S_ISFIFO(os.stat(full_path).st_mode):
+                            # skip any pipes, as python hangs when attempting
+                            # to read them.
+                            # i.e. ssh_key_data that was never cleaned up
+                            continue
                         # Magic to preserve symlinks
                         if os.path.islink(full_path):
                             archive_relative_path = os.path.relpath(dirpath, source_directory)
@@ -79,6 +84,11 @@ def unstream_dir(stream, length, target_directory):
 
                 is_symlink = mode[:1] == 'l'
                 if os.path.exists(out_path):
+                    if stat.S_ISFIFO(os.stat(out_path).st_mode):
+                        # must remove any pipes before reading
+                        # i.e. ssh_key_data that was never cleaned up
+                        os.remove(out_path)
+                        continue
                     if is_symlink:
                         os.remove(out_path)
                     elif os.path.isdir(out_path):

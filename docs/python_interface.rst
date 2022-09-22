@@ -264,6 +264,21 @@ Usage examples
 
 .. code-block:: python
 
+  from ansible_runner import Runner, RunnerConfig
+
+  # Using tag using RunnerConfig
+  rc = RunnerConfig(
+      private_data_dir="project",
+      playbook="main.yml",
+      tags='my_tag',
+  )
+
+  rc.prepare()
+  r = Runner(config=rc)
+  r.run()
+
+.. code-block:: python
+
   # run the role named 'myrole' contained in the '<private_data_dir>/project/roles' directory
   r = ansible_runner.run(private_data_dir='/tmp/demo', role='myrole')
   print("{}: {}".format(r.status, r.rc))

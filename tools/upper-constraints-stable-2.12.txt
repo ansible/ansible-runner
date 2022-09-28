@@ -1,1 +1,1 @@
-ansible-core
+ansible-core<2.13

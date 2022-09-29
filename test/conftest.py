@@ -94,6 +94,29 @@ def skipif_pre_ansible213(is_pre_ansible213):
     if is_pre_ansible213:
         pytest.skip("Valid only on Ansible 2.13+")
 
+@pytest.fixture(scope="session")
+def is_pre_ansible214():
+    try:
+        base_version = (
+            subprocess.run(
+                "python -c 'import ansible; print(ansible.__version__)'",
+                capture_output=True,
+                shell=True,
+            )
+            .stdout.strip()
+            .decode()
+        )
+        if Version(base_version) < Version("2.14"):
+            return True
+    except pkg_resources.DistributionNotFound:
+        pass
+
+
+@pytest.fixture(scope="session")
+def skipif_pre_ansible214(is_pre_ansible214):
+    if is_pre_ansible214:
+        pytest.skip("Valid only on Ansible 2.14+")
+
 
 # TODO: determine if we want to add docker / podman
 # to zuul instances in order to run these tests

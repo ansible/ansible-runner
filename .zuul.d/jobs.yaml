@@ -59,6 +59,53 @@
 # =============================================================================
 
 - job:
+    name: ansible-runner-build-container-image-stable-2.14
+    parent: ansible-build-container-image
+    provides:
+      - ansible-runner-stable-2.14-container-image
+    requires:
+      - python-base-container-image
+      - python-builder-container-image
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.14
+    vars: &ansible_runner_image_vars_stable_2_14
+      container_images: &container_images_stable_2_14
+        - context: .
+          build_args:
+            - ANSIBLE_BRANCH=stable-2.14
+          registry: quay.io
+          repository: quay.io/ansible/ansible-runner
+          siblings:
+            - github.com/ansible/ansible
+          tags:
+            - stable-2.14-devel
+      docker_images: *container_images_stable_2_14
+
+- job:
+    name: ansible-runner-build-container-image-stable-2.14
+    parent: ansible-runner-container-image-base
+
+- job:
+    name: ansible-runner-upload-container-image-stable-2.14
+    parent: ansible-upload-container-image
+    provides:
+      - ansible-runner-stable-2.14-container-image
+    requires:
+      - python-base-container-image
+      - python-builder-container-image
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.14
+    vars: *ansible_runner_image_vars_stable_2_14
+
+- job:
+    name: ansible-runner-upload-container-image-stable-2.14
+    parent: ansible-runner-container-image-base
+
+# =============================================================================
+
+- job:
     name: ansible-runner-build-container-image-stable-2.13
     parent: ansible-build-container-image
     provides:

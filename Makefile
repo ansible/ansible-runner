@@ -7,7 +7,8 @@ IMAGE_NAME ?= quay.io/ansible/ansible-runner
 IMAGE_NAME_STRIPPED := $(word 1,$(subst :, ,$(IMAGE_NAME)))
 GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
 ANSIBLE_BRANCH ?=
-ANSIBLE_VERSIONS ?= stable-2.9 stable-2.10 stable-2.11 stable-2.12 stable-2.13
+ANSIBLE_VERSIONS ?= stable-2.9 stable-2.10 stable-2.11 stable-2.12 stable-2.13 \
+    stable-2.14
 PIP_NAME = ansible_runner
 VERSION := $(shell $(PYTHON) setup.py --version)
 ifeq ($(OFFICIAL),yes)

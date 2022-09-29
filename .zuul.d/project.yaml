@@ -27,3 +27,6 @@
         - ansible-runner-upload-container-image-stable-2.13:
             vars:
               upload_container_image_promote: false
+        - ansible-runner-upload-container-image-stable-2.14:
+            vars:
+              upload_container_image_promote: false

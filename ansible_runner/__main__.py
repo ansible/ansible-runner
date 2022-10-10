@@ -181,7 +181,7 @@ DEFAULT_CLI_ARGS = {
             ("--project-dir",),
             dict(
                 help="optional path for the location of the playbook content directory "
-                     "(default=<private_data_dir/project)"
+                     "(default=<private_data_dir>/project)"
             ),
         ),
         (

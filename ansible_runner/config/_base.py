@@ -24,6 +24,8 @@ import re
 import stat
 import tempfile
 import shutil
+from sys import platform
+
 
 from base64 import b64encode
 from uuid import uuid4
@@ -456,6 +458,13 @@ class BaseConfig(object):
             self._update_volume_mount_paths(args_list, optional_arg_value)
 
     def wrap_args_for_containerization(self, args, execution_mode, cmdline_args):
+
+        if platform == "darwin":
+            # See https://github.com/ansible/ansible-runner/issues/1145
+            labels = None
+        else:
+            labels = ":Z"
+
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm'])
 
@@ -503,7 +512,8 @@ class BaseConfig(object):
             self._update_volume_mount_paths(new_args,
                                             "{}/artifacts".format(self.private_data_dir),
                                             dst_mount_path="/runner/artifacts",
-                                            labels=":Z")
+                                            labels=labels
+                                            )
 
         else:
             subdir_path = os.path.join(self.private_data_dir, 'artifacts')
@@ -512,7 +522,7 @@ class BaseConfig(object):
 
         # Mount the entire private_data_dir
         # custom show paths inside private_data_dir do not make sense
-        self._update_volume_mount_paths(new_args, "{}".format(self.private_data_dir), dst_mount_path="/runner", labels=":Z")
+        self._update_volume_mount_paths(new_args, "{}".format(self.private_data_dir), dst_mount_path="/runner", labels=labels)
 
         if self.container_auth_data:
             # Pull in the necessary registry auth info, if there is a container cred

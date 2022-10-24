@@ -22,11 +22,6 @@ def stream_dir(source_directory, stream):
                         relpath = ""
                     for fname in files + dirs:
                         full_path = os.path.join(dirpath, fname)
-                        if stat.S_ISFIFO(os.stat(full_path).st_mode):
-                            # skip any pipes, as python hangs when attempting
-                            # to read them.
-                            # i.e. ssh_key_data that was never cleaned up
-                            continue
                         # Magic to preserve symlinks
                         if os.path.islink(full_path):
                             archive_relative_path = os.path.relpath(dirpath, source_directory)
@@ -37,6 +32,11 @@ def stream_dir(source_directory, stream):
                             permissions |= 0xA000
                             zip_info.external_attr = permissions << 16
                             archive.writestr(zip_info, os.readlink(full_path))
+                        elif stat.S_ISFIFO(os.stat(full_path).st_mode):
+                            # skip any pipes, as python hangs when attempting
+                            # to open them.
+                            # i.e. ssh_key_data that was never cleaned up
+                            continue
                         else:
                             archive.write(
                                 os.path.join(dirpath, fname), arcname=os.path.join(relpath, fname)
@@ -84,13 +84,14 @@ def unstream_dir(stream, length, target_directory):
 
                 is_symlink = mode[:1] == 'l'
                 if os.path.exists(out_path):
-                    if stat.S_ISFIFO(os.stat(out_path).st_mode):
-                        # must remove any pipes before reading
+                    if is_symlink:
+                        os.remove(out_path)
+                    elif stat.S_ISFIFO(os.stat(out_path).st_mode):
+                        # remove any pipes, as python hangs when attempting
+                        # to open them.
                         # i.e. ssh_key_data that was never cleaned up
                         os.remove(out_path)
                         continue
-                    if is_symlink:
-                        os.remove(out_path)
                     elif os.path.isdir(out_path):
                         # Special case, the important dirs were pre-created so don't try to chmod them
                         continue

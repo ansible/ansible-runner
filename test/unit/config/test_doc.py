@@ -96,7 +96,7 @@ def test_prepare_plugin_docs_command_with_containerization(tmp_path, runtime, mo
     ]
 
     if runtime == 'podman':
-        expected_command_start.extend(['--group-add=root', '--ipc=host'])
+        expected_command_start.extend(['--group-add=root'])
 
     expected_command_start.extend([
         '-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir),
@@ -164,7 +164,7 @@ def test_prepare_plugin_list_command_with_containerization(tmp_path, runtime, mo
     ]
 
     if runtime == 'podman':
-        expected_command_start.extend(['--group-add=root', '--ipc=host'])
+        expected_command_start.extend(['--group-add=root'])
 
     expected_command_start.extend([
         '-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir),

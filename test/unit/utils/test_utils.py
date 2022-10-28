@@ -4,6 +4,7 @@ import json
 import os
 import signal
 import time
+import stat
 
 from pathlib import Path
 
@@ -111,6 +112,50 @@ def test_transmit_symlink(tmp_path, symlink_dest, check_content):
         assert abs_path.exists(), f'Expected "{fname}" in target dir to be a file with content.'
         with open(abs_path, 'r') as f:
             assert f.read() == 'hello world'
+
+
+@pytest.mark.timeout(timeout=3)
+def test_stream_dir_no_hang_on_pipe(tmp_path):
+    # prepare the input private_data_dir directory to zip
+    pdd = tmp_path / 'timeout_test'
+    pdd.mkdir()
+
+    with open(pdd / 'ordinary_file.txt', 'w') as f:
+        f.write('hello world')
+
+    # make pipe, similar to open_fifo_write
+    os.mkfifo(pdd / 'my_pipe', stat.S_IRUSR | stat.S_IWUSR)
+
+    # zip and stream the data into the in-memory buffer outgoing_buffer
+    outgoing_buffer = io.BytesIO()
+    outgoing_buffer.name = 'not_stdout'
+    stream_dir(pdd, outgoing_buffer)
+
+
+@pytest.mark.timeout(timeout=3)
+def test_unstream_dir_no_hang_on_pipe(tmp_path):
+    # prepare the input private_data_dir directory to zip
+    pdd = tmp_path / 'timeout_test_source_dir'
+    pdd.mkdir()
+
+    with open(pdd / 'ordinary_file.txt', 'w') as f:
+        f.write('hello world')
+
+    # zip and stream the data into the in-memory buffer outgoing_buffer
+    outgoing_buffer = io.BytesIO()
+    outgoing_buffer.name = 'not_stdout'
+    stream_dir(pdd, outgoing_buffer)
+
+    dest_dir = tmp_path / 'timeout_test_dest'
+    dest_dir.mkdir()
+
+    # We create the pipe in the same location as an archived file to trigger the bug
+    os.mkfifo(dest_dir / 'ordinary_file.txt', stat.S_IRUSR | stat.S_IWUSR)
+
+    outgoing_buffer.seek(0)
+    first_line = outgoing_buffer.readline()
+    size_data = json.loads(first_line.strip())
+    unstream_dir(outgoing_buffer, size_data['zipfile'], dest_dir)
 
 
 @pytest.mark.parametrize('fperm', [

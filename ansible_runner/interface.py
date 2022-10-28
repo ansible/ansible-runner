@@ -589,7 +589,7 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
     '''
     Run an ansible-inventory command to get inventory related details.
 
-    :param action: Valid values are one of ``graph``, ``host``, ``list``
+    :param action: Valid values are one of ``graph``, ``host``, ``list``.
                    ``graph`` create inventory graph, ``host`` returns specific host info and works as inventory script and
                    ``list`` output all hosts info and also works as inventory script.
     :param inventories: List of inventory host path.

@@ -40,7 +40,7 @@ the ``thread`` object and a :class:`Runner <ansible_runner.runner.Runner>` objec
 
 When called, this function will take the inputs (either provided as direct inputs to the function or from the :ref:`inputdir`), and execute the command passed either
 locally or within an container based on the parameters passed. It will run in the foreground and return a tuple of output and error response when finished. While running
-the within container image command the current local working diretory will be volume mounted within the container, in addition to this for any of ansible command line
+the within container image command the current local working directory will be volume mounted within the container, in addition to this for any of ansible command line
 utilities the inventory, vault-password-file, private-key file path will be volume mounted if provided in the ``cmdline_args`` parameters.
 
 ``run_command_async()`` helper function
@@ -59,7 +59,7 @@ the ``thread`` object and a :class:`Runner <ansible_runner.runner.Runner>` objec
 When called, this function will take the inputs, and execute the ansible-doc command to return the either the plugin-docs or playbook snippet for the passed
 list of plugin names. The plugin docs can be fetched either from locally installed plugins or from within an container image based on the parameters passed.
 It will run in the foreground and return a tuple of output and error response when finished. While running the command within the container the current local
-working diretory will be volume mounted within the container.
+working directory will be volume mounted within the container.
 
 ``get_plugin_docs_async()`` helper function
 -------------------------------------------
@@ -76,28 +76,28 @@ the ``thread`` object and a :class:`Runner <ansible_runner.runner.Runner>` objec
 
 When called, this function will take the inputs, and execute the ansible-doc command to return the list of installed plugins. The installed plugin can be fetched
 either from local environment or from within an container image based on the parameters passed. It will run in the foreground and return a tuple of output and error
-response when finished. While running the command within the container the current local working diretory will be volume mounted within the container.
+response when finished. While running the command within the container the current local working directory will be volume mounted within the container.
 
 ``get_inventory()`` helper function
 -----------------------------------
 
 :meth:`ansible_runner.interface.get_inventory`
 
-When called, this function will take the inputs, and execute the ansible-inventory command to return the inventory releated information based on the action.
+When called, this function will take the inputs, and execute the ansible-inventory command to return the inventory related information based on the action.
 If ``action`` is ``list`` it will return all the applicable configuration options for ansible, for ``host`` action it will return information
-of a single host andf for ``graph`` action it will return the inventory. The exectuin will be in the foreground and return a tuple of output and error
-response when finished. While running the command within the container the current local working diretory will be volume mounted within the container.
+of a single host and for ``graph`` action it will return the inventory. The execution will be in the foreground and return a tuple of output and error
+response when finished. While running the command within the container the current local working directory will be volume mounted within the container.
 
 ``get_ansible_config()`` helper function
 ----------------------------------------
 
 :meth:`ansible_runner.interface.get_ansible_config`
 
-When called, this function will take the inputs, and execute the ansible-config command to return the Ansible configuration releated information based on the action.
-If ``action`` is ``list`` it will return all the hosts related information including the host and group variables, for ``dump`` action it will return the enitre active configuration
-and it can be customized to return only the changed configuration value by settingg the ``only_changed`` boolean parameter to ``True``. For ``view`` action it will return the
-view of the active configuration file. The exectuin will be in the foreground and return a tuple of output and error response when finished.
-While running the command within the container the current local working diretory will be volume mounted within the container.
+When called, this function will take the inputs, and execute the ansible-config command to return the Ansible configuration related information based on the action.
+If ``action`` is ``list`` it will return all the hosts related information including the host and group variables, for ``dump`` action it will return the entire active configuration
+and it can be customized to return only the changed configuration value by setting the ``only_changed`` boolean parameter to ``True``. For ``view`` action it will return the
+view of the active configuration file. The execution will be in the foreground and return a tuple of output and error response when finished.
+While running the command within the container the current local working directory will be volume mounted within the container.
 
 ``get_role_list()`` helper function
 -----------------------------------

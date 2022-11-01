@@ -67,7 +67,9 @@ class BaseConfig(object):
                  process_isolation=False, process_isolation_executable=None,
                  container_image=None, container_volume_mounts=None, container_options=None, container_workdir=None, container_auth_data=None,
                  ident=None, rotate_artifacts=0, timeout=None, ssh_key=None, quiet=False, json_mode=False,
-                 check_job_event_data=False, suppress_env_files=False):
+                 check_job_event_data=False, suppress_env_files=False,
+                 skip_ipc_opt=False,
+                 ):
         # common params
         self.host_cwd = host_cwd
         self.envvars = envvars
@@ -136,6 +138,8 @@ class BaseConfig(object):
             self.cwd = os.getcwd()
 
         os.makedirs(self.artifact_dir, exist_ok=True, mode=0o700)
+
+        self.skip_ipc_opt = skip_ipc_opt
 
     _CONTAINER_ENGINES = ('docker', 'podman')
 
@@ -490,7 +494,14 @@ class BaseConfig(object):
             if 'podman' in self.process_isolation_executable:
                 # container namespace stuff
                 new_args.extend(["--group-add=root"])
-                new_args.extend(["--ipc=host"])
+
+                # Using '--ipc=host' to the podman run command can be problematic
+                # on platforms that do not have a /dev/mqueue device (see issue
+                # https://github.com/ansible/ansible-runner/issues/984). This option
+                # is used to sidestep issues getting access to the SSH auth socket
+                # on some systems with SELinux enabled.
+                if not self.skip_ipc_opt:
+                    new_args.extend(["--ipc=host"])
 
             self._ensure_path_safe_to_mount(self.private_data_dir)
             # Relative paths are mounted relative to /runner/project

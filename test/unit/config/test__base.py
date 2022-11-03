@@ -289,14 +289,15 @@ def test_container_volume_mounting_with_Z(tmp_path, mocker):
 
 
 @pytest.mark.test_all_runtimes
-def test_containerization_settings(tmp_path, runtime, mocker):
+@pytest.mark.parametrize("skip_ipc_opt", (False, True))
+def test_containerization_settings(tmp_path, runtime, mocker, skip_ipc_opt):
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()
 
     mock_containerized = mocker.patch('ansible_runner.config._base.BaseConfig.containerized', new_callable=mocker.PropertyMock)
     mock_containerized.return_value = True
 
-    rc = BaseConfig(private_data_dir=tmp_path)
+    rc = BaseConfig(private_data_dir=tmp_path, skip_ipc_opt=skip_ipc_opt)
     rc.ident = 'foo'
     rc.cmdline_args = ['main.yaml', '-i', '/tmp/inventory']
     rc.command = ['ansible-playbook'] + rc.cmdline_args
@@ -328,7 +329,9 @@ def test_containerization_settings(tmp_path, runtime, mocker):
     ]
 
     if runtime == 'podman':
-        expected_command_start.extend(['--group-add=root', '--ipc=host'])
+        expected_command_start.append('--group-add=root')
+        if not skip_ipc_opt:
+            expected_command_start.append('--ipc=host')
 
     expected_command_start.extend([
         '-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir),

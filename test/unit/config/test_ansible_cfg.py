@@ -53,7 +53,8 @@ def test_prepare_config_invalid_action():
 
 
 @pytest.mark.test_all_runtimes
-def test_prepare_config_command_with_containerization(tmp_path, runtime, mocker):
+@pytest.mark.parametrize("skip_ipc_opt", (False, True))
+def test_prepare_config_command_with_containerization(tmp_path, runtime, mocker, skip_ipc_opt):
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()
 
@@ -61,7 +62,8 @@ def test_prepare_config_command_with_containerization(tmp_path, runtime, mocker)
         'private_data_dir': tmp_path,
         'process_isolation': True,
         'container_image': 'my_container',
-        'process_isolation_executable': runtime
+        'process_isolation_executable': runtime,
+        'skip_ipc_opt': skip_ipc_opt,
     }
     rc = AnsibleCfgConfig(**kwargs)
     rc.ident = 'foo'
@@ -86,7 +88,9 @@ def test_prepare_config_command_with_containerization(tmp_path, runtime, mocker)
     ]
 
     if runtime == 'podman':
-        expected_command_start.extend(['--group-add=root', '--ipc=host'])
+        expected_command_start.append('--group-add=root')
+        if not skip_ipc_opt:
+            expected_command_start.append('--ipc=host')
 
     expected_command_start.extend([
         '-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir),

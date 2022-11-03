@@ -203,7 +203,7 @@ def run(**kwargs):
     :param bool check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
                                  value is set to 'True' it will raise 'AnsibleRunnerException' exception,
                                  if set to 'False' it log a debug message and continue execution. Default value is 'False'
-    :param bool skip_ipc_opt: Disables the --ipc=host option to podman run command.
+    :param bool skip_ipc_opt: Disables the --ipc=host option to podman run command. Default value is 'False'.
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object, or a simple object containing ``rc`` if run remotely
     '''

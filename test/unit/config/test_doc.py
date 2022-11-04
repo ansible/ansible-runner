@@ -58,7 +58,7 @@ def test_prepare_plugin_docs_command():
     assert rc.execution_mode == BaseExecutionMode.ANSIBLE_COMMANDS
 
 
-@pytest.mark.test_all_runtimes
+@pytest.mark.parametrize('runtime', ('docker', 'podman'))
 def test_prepare_plugin_docs_command_with_containerization(tmp_path, runtime, mocker):
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()
@@ -129,7 +129,7 @@ def test_prepare_plugin_list_command():
     assert rc.execution_mode == BaseExecutionMode.ANSIBLE_COMMANDS
 
 
-@pytest.mark.test_all_runtimes
+@pytest.mark.parametrize('runtime', ('docker', 'podman'))
 def test_prepare_plugin_list_command_with_containerization(tmp_path, runtime, mocker):
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()

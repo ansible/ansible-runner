@@ -47,7 +47,7 @@ def test_cleanup_command_grace_period(tmp_path):
     assert os.path.exists(new_dir)
 
 
-@pytest.mark.test_all_runtimes
+@pytest.mark.parametrize('runtime', ('docker', 'podman'))
 def test_registry_auth_cleanup(tmp_path, runtime):
     pdd_path = tmp_path / 'private_data_dir'
     pdd_path.mkdir()

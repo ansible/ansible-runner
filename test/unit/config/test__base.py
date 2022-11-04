@@ -285,7 +285,7 @@ def test_container_volume_mounting_with_Z(tmp_path, mocker):
         raise Exception('Could not find expected mount, args: {}'.format(new_args))
 
 
-@pytest.mark.test_all_runtimes
+@pytest.mark.parametrize('runtime', ('docker', 'podman'))
 def test_containerization_settings(tmp_path, runtime, mocker):
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()
@@ -343,7 +343,7 @@ def test_containerization_settings(tmp_path, runtime, mocker):
     assert expected_command_start == rc.command
 
 
-@pytest.mark.test_all_runtimes
+@pytest.mark.parametrize('runtime', ('docker', 'podman'))
 def test_containerization_unsafe_write_setting(tmp_path, runtime, mocker):
     mock_containerized = mocker.patch('ansible_runner.config._base.BaseConfig.containerized', new_callable=mocker.PropertyMock)
 

@@ -707,7 +707,7 @@ def test_container_volume_mounting_with_Z(mocker, tmp_path):
         raise Exception('Could not find expected mount, args: {}'.format(new_args))
 
 
-@pytest.mark.test_all_runtimes
+@pytest.mark.parametrize('runtime', ('docker', 'podman'))
 def test_containerization_settings(tmp_path, runtime, mocker):
     mocker.patch('os.path.isdir', return_value=True)
     mocker.patch('os.path.exists', return_value=True)

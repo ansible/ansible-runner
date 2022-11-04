@@ -30,6 +30,40 @@ The ``ansible-runner process`` command accepts the result stream from the worker
 and does job event processing.  In the command above, this results in printing the playbook output and saving
 artifacts to the data dir.  The ``process`` command takes a data dir as a parameter, to know where to save artifacts.
 
+Using Receptor as the remote executor
+-------------------------------------
+
+A full expansion on how Receptor works is out of scope for this document. We can set up a basic receptor node with a simple configuration file::
+
+  ---
+  - node:
+      id: primary
+
+  - log-level:
+      level: Debug
+
+  - tcp-listener:
+      port: 2225
+
+  - control-service:
+      service: control
+      filename: ./control.sock
+
+  - work-command:
+      worktype: ansible-runner
+      command: ansible-runner
+      params: worker
+      allowruntimeparams: true
+
+We can then start that local receptor node::
+
+  $ receptor --config ./receptor.yml
+
+Now we can repeat the ``transmit``/``worker``/``process`` example above, but instead of piping the output of ``transmit`` to ``worker``, we can use the ``receptorctl`` command to send it to the receptor node we just started::
+
+  $ ansible-runner transmit ./demo -p test.yml | receptorctl --socket ./control.sock work submit -f --node primary -p - ansible-runner | ansible-runner process ./demo
+
+
 Cleanup of Resources Used by Jobs
 ---------------------------------
 

@@ -52,7 +52,7 @@ def test_prepare_config_invalid_action():
     assert "Invalid action test, valid value is one of either list, dump, view" == exc.value.args[0]
 
 
-@pytest.mark.test_all_runtimes
+@pytest.mark.parametrize('runtime', ('docker', 'podman'))
 def test_prepare_config_command_with_containerization(tmp_path, runtime, mocker):
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()

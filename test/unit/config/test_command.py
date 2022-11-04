@@ -61,7 +61,7 @@ def test_prepare_run_command_generic():
     assert rc.execution_mode == BaseExecutionMode.GENERIC_COMMANDS
 
 
-@pytest.mark.test_all_runtimes
+@pytest.mark.parametrize('runtime', ('docker', 'podman'))
 def test_prepare_run_command_with_containerization(tmp_path, runtime, mocker):
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()

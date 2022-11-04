@@ -42,8 +42,7 @@ A full expansion on how Receptor works is out of scope for this document. We can
   - log-level:
       level: Debug
 
-  - tcp-listener:
-      port: 2225
+  - local-only:
 
   - control-service:
       service: control

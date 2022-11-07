@@ -33,7 +33,7 @@ artifacts to the data dir.  The ``process`` command takes a data dir as a parame
 Using Receptor as the remote executor
 -------------------------------------
 
-A full expansion on how Receptor works is out of scope for this document. We can set up a basic receptor node with a simple configuration file::
+A full expansion on how Receptor works is out of the scope of this document. We can set up a basic receptor node with a simple configuration file::
 
   ---
   - node:

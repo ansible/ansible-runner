@@ -51,6 +51,7 @@ def stream_dir(source_directory, stream):
             else:
                 target = stream
             target.write(json.dumps({"zipfile": zip_size}).encode("utf-8") + b"\n")
+            target.flush()
             with Base64IO(target) as encoded_target:
                 for line in source:
                     encoded_target.write(line)

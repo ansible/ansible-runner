@@ -221,7 +221,7 @@ class EventContext(object):
     def get_end_dict(self):
         return {}
 
-    def dump(self, fileobj, data, max_width=78, flush=False):
+    def dump(self, fileobj, data, max_width=78):
         b64data = base64.b64encode(json.dumps(data).encode('utf-8')).decode()
         with self.display_lock:
             # pattern corresponding to OutputEventFilter expectation
@@ -231,8 +231,6 @@ class EventContext(object):
                 escaped_chunk = u'{}\x1b[{}D'.format(chunk, len(chunk))
                 fileobj.write(escaped_chunk)
             fileobj.write(u'\x1b[K')
-            if flush:
-                fileobj.flush()
 
     def dump_begin(self, fileobj):
         begin_dict = self.get_begin_dict()
@@ -240,7 +238,7 @@ class EventContext(object):
         self.dump(fileobj, {'uuid': begin_dict['uuid']})
 
     def dump_end(self, fileobj):
-        self.dump(fileobj, self.get_end_dict(), flush=True)
+        self.dump(fileobj, self.get_end_dict())
 
 
 event_context = EventContext()

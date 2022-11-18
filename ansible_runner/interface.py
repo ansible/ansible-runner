@@ -64,9 +64,16 @@ def init_runner(**kwargs):
         if os.path.isabs(playbook_path) and playbook_path.startswith(project_dir):
             kwargs['playbook'] = os.path.relpath(playbook_path, project_dir)
 
-        inventory_path = kwargs.get('inventory') or ''
-        if os.path.isabs(inventory_path) and inventory_path.startswith(private_data_dir):
-            kwargs['inventory'] = os.path.relpath(inventory_path, private_data_dir)
+        inventory = kwargs.get('inventory') or ''
+        if isinstance(inventory, list):
+            new_inventory = []
+            for inventory_path in inventory:
+                if os.path.isabs(inventory_path) and inventory_path.startswith(private_data_dir):
+                    new_inventory.append(os.path.relpath(inventory_path, private_data_dir))
+            kwargs['inventory'] = new_inventory
+        else:
+            if os.path.isabs(inventory) and inventory.startswith(private_data_dir):
+                kwargs['inventory'] = os.path.relpath(inventory_path, private_data_dir)
 
         roles_path = kwargs.get('envvars', {}).get('ANSIBLE_ROLES_PATH') or ''
         if os.path.isabs(roles_path) and roles_path.startswith(private_data_dir):

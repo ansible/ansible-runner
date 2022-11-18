@@ -474,7 +474,7 @@ def get_relative_inventory_path(inventory, private_data_dir, new_base=''):
             else:
                 new_inventory.append(inventory_path)
         return new_inventory
-    else:
+    elif isinstance(inventory, string_types):
         if os.path.isabs(inventory) and inventory.startswith(private_data_dir):
             return os.path.join(new_base, os.path.relpath(inventory, private_data_dir))
     return inventory

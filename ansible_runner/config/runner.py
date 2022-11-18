@@ -31,7 +31,7 @@ from ansible_runner import output
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.output import debug
-from ansible_runner.utils import register_for_cleanup
+from ansible_runner.utils import register_for_cleanup, get_relative_inventory_path
 
 
 logger = logging.getLogger('ansible-runner')
@@ -160,13 +160,12 @@ class RunnerConfig(BaseConfig):
         """
         Prepares the inventory default under ``private_data_dir`` if it's not overridden by the constructor.
         """
-        if self.containerized:
-            self.inventory = '/runner/inventory/hosts'
-            return
-
         if self.inventory is None:
             if os.path.exists(os.path.join(self.private_data_dir, "inventory")):
                 self.inventory = os.path.join(self.private_data_dir, "inventory")
+
+        if self.containerized:
+            self.inventory = get_relative_inventory_path(self.inventory, self.private_data_dir, new_base='/runner')
 
     def prepare_env(self):
         """

@@ -88,7 +88,12 @@ class Worker(object):
                 roles_dir = os.path.join(self.private_data_dir, 'roles')
                 kwargs['envvars']['ANSIBLE_ROLES_PATH'] = os.path.join(roles_dir, roles_path)
         if kwargs.get('inventory'):
-            kwargs['inventory'] = os.path.join(self.private_data_dir, kwargs['inventory'])
+            if isinstance(kwargs['inventory'], list):
+                kwargs['inventory'] = [
+                    os.path.join(self.private_data_dir, inventory_path) for inventory_path in kwargs['inventory']
+                ]
+            else:
+                kwargs['inventory'] = os.path.join(self.private_data_dir, kwargs['inventory'])
 
         return kwargs
 

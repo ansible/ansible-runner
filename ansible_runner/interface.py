@@ -148,7 +148,8 @@ def run(**kwargs):
     :param str or dict or list inventory: Overrides the inventory directory/file (supplied at ``private_data_dir/inventory``) with
         a specific host or list of hosts. This can take the form of:
 
-            - Path to the inventory file in the ``private_data_dir``
+            - Path to the inventory file in the ``private_data_dir/inventory`` directory or
+              an absolute path to the inventory file
             - Native python dict supporting the YAML/json inventory structure
             - A text INI formatted string
             - A list of inventory sources, or an empty list to disable passing inventory

@@ -7,7 +7,7 @@ charset-normalizer==2.0.7
 cryptography==35.0.0
 docutils==0.17.1
 idna==3.3
-imagesize==1.2.0
+imagesize==1.3.0
 Jinja2==3.0.2
 MarkupSafe==2.0.1
 packaging==21.0
@@ -15,7 +15,7 @@ pbr==5.6.0
 pexpect==4.8.0
 ptyprocess==0.7.0
 pycparser==2.20
-Pygments==2.10.0
+Pygments==2.12.0
 pyparsing==3.0.1
 pytz==2021.3
 PyYAML==6.0
@@ -23,11 +23,12 @@ requests==2.26.0
 resolvelib==0.5.5
 six==1.16.0
 snowballstemmer==2.1.0
-Sphinx==4.2.0
+Sphinx==5.3.0
 sphinxcontrib-applehelp==1.0.2
 sphinxcontrib-devhelp==1.0.2
 sphinxcontrib-htmlhelp==2.0.0
 sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.5
+sphinx-ansible-theme == 0.10.1
 urllib3==1.26.7

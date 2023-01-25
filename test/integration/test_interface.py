@@ -1,4 +1,6 @@
 import os
+import shutil
+
 import pytest
 
 from ansible_runner import defaults
@@ -37,6 +39,32 @@ def test_run_async(tmp_path):
     thread, r = run_async(private_data_dir=str(tmp_path), module='debug', host_pattern='localhost')
     thread.join()
     assert r.status == 'successful'
+
+
+def test_repeat_run_with_new_inventory(project_fixtures):
+    '''Repeat runs with different inventories should not fail'''
+    private_data_dir = project_fixtures / 'debug'
+    shutil.rmtree(private_data_dir / 'inventory')
+    hosts_file = private_data_dir / 'inventory' / 'hosts'
+
+    res = run(
+        private_data_dir=private_data_dir,
+        playbook='debug.yml',
+        inventory='localhost',
+    )
+    stdout = res.stdout.read()
+    assert res.rc == 0, stdout
+    assert hosts_file.read_text() == 'localhost', 'hosts file content is incorrect'
+
+    # Run again with a different inventory
+    res = run(
+        private_data_dir=private_data_dir,
+        playbook='debug.yml',
+        inventory='127.0.0.1',
+    )
+    stdout = res.stdout.read()
+    assert res.rc == 0, stdout
+    assert hosts_file.read_text() == '127.0.0.1', 'hosts file content is incorrect'
 
 
 def get_env_data(res):

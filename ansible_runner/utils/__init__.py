@@ -162,7 +162,7 @@ def dump_artifact(obj, path, filename=None):
 
         try:
             with open(fn, 'w') as f:
-                os.chmod(fn, stat.S_IRUSR)
+                os.chmod(fn, stat.S_IRUSR | stat.S_IWUSR)
                 f.write(str(obj))
         finally:
             fcntl.lockf(lock_fd, fcntl.LOCK_UN)

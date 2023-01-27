@@ -367,11 +367,15 @@ def test_garbage_private_dir_worker(tmp_path):
         _output=outgoing_buffer,
         private_data_dir=worker_dir,
     )
-    sent = outgoing_buffer.getvalue()
-    assert b'"status": "error"' in sent
+    outgoing_buffer.seek(0)
+    sent = outgoing_buffer.readline()
+    data = json.loads(sent)
+    assert data['status'] == 'error'
+    assert data['job_explanation'] == 'Failed to extract private data directory on worker.'
+    assert data['result_traceback']
 
 
-def test_unparsable_private_dir_worker(tmp_path):
+def test_unparsable_line_worker(tmp_path):
     worker_dir = tmp_path / 'for_worker'
     worker_dir.mkdir()
     incoming_buffer = io.BytesIO(b'')
@@ -384,18 +388,27 @@ def test_unparsable_private_dir_worker(tmp_path):
         _output=outgoing_buffer,
         private_data_dir=worker_dir,
     )
-    sent = outgoing_buffer.getvalue()
-    assert b'"status": "error"' in sent
+    outgoing_buffer.seek(0)
+    sent = outgoing_buffer.readline()
+    data = json.loads(sent)
+    assert data['status'] == 'error'
+    assert data['job_explanation'] == 'Failed to JSON parse a line from transmit stream.'
 
 
-def test_unparsable_private_dir_processor(tmp_path):
+def test_unparsable_really_big_line_processor(tmp_path):
     process_dir = tmp_path / 'for_process'
     process_dir.mkdir()
-    incoming_buffer = io.BytesIO(b'')
+    incoming_buffer = io.BytesIO(bytes(f'not-json-data with extra garbage:{"f"*10000}', encoding='utf-8'))
 
-    processor = run(
+    def status_receiver(status_data, runner_config):
+        assert status_data['status'] == 'error'
+        assert 'Failed to JSON parse a line from worker stream.' in status_data['job_explanation']
+        assert 'not-json-data with extra garbage:ffffffffff' in status_data['job_explanation']
+        assert len(status_data['job_explanation']) < 2000
+
+    run(
         streamer='process',
         _input=incoming_buffer,
         private_data_dir=process_dir,
+        status_handler=status_receiver
     )
-    assert processor.status == 'error'

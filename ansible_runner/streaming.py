@@ -92,7 +92,7 @@ class Worker:
     def _begin_keepalive(self):
         """Starts a keepalive thread at most once"""
         if not self._keepalive_thread:
-            self._keepalive_thread = Thread(target=self._keepalive_loop)
+            self._keepalive_thread = Thread(target=self._keepalive_loop, daemon=True)
             self._keepalive_thread.start()
 
     def _end_keepalive(self):

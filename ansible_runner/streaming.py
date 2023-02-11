@@ -8,7 +8,6 @@ import sys
 import tempfile
 import uuid
 import traceback
-from builtins import ValueError
 
 import ansible_runner
 from ansible_runner.exceptions import ConfigurationError

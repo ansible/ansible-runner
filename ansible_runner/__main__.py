@@ -897,3 +897,7 @@ def main(sys_args=None):
             return 0
         except OSError:
             return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -224,6 +224,7 @@ class Worker:
 
     @_synchronize_output_reset_keepalive
     def finished_callback(self, runner_obj):
+        self._end_keepalive()  # ensure that we can't splat a keepalive event after the eof event
         self._output.write(json.dumps({'eof': True}).encode('utf-8'))
         self._output.write(b'\n')
         self._output.flush()

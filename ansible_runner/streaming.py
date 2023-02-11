@@ -8,7 +8,7 @@ import sys
 import tempfile
 import uuid
 import traceback
-
+from builtins import ValueError
 
 import ansible_runner
 from ansible_runner.exceptions import ConfigurationError
@@ -40,6 +40,9 @@ class Transmitter(object):
         self._output = _output
         self.private_data_dir = os.path.abspath(kwargs.pop('private_data_dir'))
         self.only_transmit_kwargs = kwargs.pop('only_transmit_kwargs', False)
+        if 'keepalive_seconds' in kwargs:
+            kwargs.pop('keepalive_seconds')  # don't confuse older runners with this Worker-only arg
+
         self.kwargs = kwargs
 
         self.status = "unstarted"
@@ -63,11 +66,15 @@ class Transmitter(object):
 
 
 class Worker:
-    def __init__(self, _input=None, _output=None, keepalive_seconds: int = 0, **kwargs):
+    def __init__(self, _input=None, _output=None, keepalive_seconds: int | None = None, **kwargs):
         if _input is None:
             _input = sys.stdin.buffer
         if _output is None:
             _output = sys.stdout.buffer
+
+        if keepalive_seconds is None:  # if we didn't get an explicit int value, fall back to envvar
+            # FIXME: emit/log a warning and silently continue if this value won't parse
+            keepalive_seconds = int(os.environ.get('ANSIBLE_RUNNER_KEEPALIVE_SECONDS', 0))
 
         self._keepalive_interval_sec = keepalive_seconds
         self._keepalive_thread: Thread | None = None

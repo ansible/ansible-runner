@@ -614,7 +614,7 @@ def main(sys_args=None):
     worker_subparser.add_argument(
         "--keepalive-seconds",
         dest="keepalive_seconds",
-        default=0,
+        default=None,
         type=int,
         help=(
             "Emit a synthetic keepalive event every N seconds of idle. (default=0, disabled)"

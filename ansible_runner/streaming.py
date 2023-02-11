@@ -293,10 +293,17 @@ class Processor(object):
 
     def event_callback(self, event_data):
         # FIXME: this needs to be more defensive to not blow up on "malformed" events or new values it doesn't recognize
+        counter = event_data.get('counter')
+        uuid = event_data.get('uuid')
+
+        if not counter or not uuid:
+            # FIXME: log a warning about a malformed event?
+            return
+
         full_filename = os.path.join(self.artifact_dir,
                                      'job_events',
-                                     '{}-{}.json'.format(event_data['counter'],
-                                                         event_data['uuid']))
+                                     f'{counter}-{uuid}.json')
+
         if not self.quiet and 'stdout' in event_data:
             print(event_data['stdout'])
 

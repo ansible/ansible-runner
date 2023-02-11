@@ -337,9 +337,9 @@ class Processor(object):
                 self.artifacts_callback(data)
             elif 'eof' in data:
                 break
-            # FIXME: add a short-circuit here to minimize the overhead of keepalives?
-            # elif data.get('event') == 'keepalive':
-            #     continue
+            elif data.get('event') == 'keepalive':
+                # just ignore keepalives
+                continue
             else:
                 self.event_callback(data)
 

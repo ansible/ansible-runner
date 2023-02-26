@@ -137,7 +137,7 @@ class BaseConfig(object):
 
         os.makedirs(self.artifact_dir, exist_ok=True, mode=0o700)
 
-    _CONTAINER_ENGINES = ('docker', 'podman')
+    _CONTAINER_ENGINES = ('docker', 'podman', 'podman-remote')
 
     @property
     def containerized(self):
@@ -207,7 +207,7 @@ class BaseConfig(object):
             self.container_name = "ansible_runner_{}".format(sanitize_container_name(self.ident))
             self.env = {}
 
-            if self.process_isolation_executable == 'podman':
+            if self.process_isolation_executable in ['podman', 'podman-remote']:
                 # A kernel bug in RHEL < 8.5 causes podman to use the fuse-overlayfs driver. This results in errors when
                 # trying to set extended file attributes. Setting this environment variable allows modules to take advantage
                 # of a fallback to work around this bug when failures are encountered.
@@ -487,7 +487,7 @@ class BaseConfig(object):
             # Handle automounts for .ssh config
             self._handle_automounts(new_args)
 
-            if 'podman' in self.process_isolation_executable:
+            if self.process_isolation_executable in ['podman', 'podman-remote']:
                 # container namespace stuff
                 new_args.extend(["--group-add=root"])
                 new_args.extend(["--ipc=host"])
@@ -517,7 +517,7 @@ class BaseConfig(object):
         if self.container_auth_data:
             # Pull in the necessary registry auth info, if there is a container cred
             self.registry_auth_path, registry_auth_conf_file = self._generate_container_auth_dir(self.container_auth_data)
-            if 'podman' in self.process_isolation_executable:
+            if self.process_isolation_executable in ['podman', 'podman-remote']:
                 new_args.extend(["--authfile={}".format(self.registry_auth_path)])
             else:
                 docker_idx = new_args.index(self.process_isolation_executable)
@@ -542,7 +542,7 @@ class BaseConfig(object):
         env_file_host = os.path.join(self.artifact_dir, 'env.list')
         new_args.extend(['--env-file', env_file_host])
 
-        if 'podman' in self.process_isolation_executable:
+        if self.process_isolation_executable in ['podman', 'podman-remote']:
             # docker doesnt support this option
             new_args.extend(['--quiet'])
 

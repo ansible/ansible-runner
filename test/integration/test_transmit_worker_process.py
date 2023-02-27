@@ -3,6 +3,7 @@ import os
 import socket
 import concurrent.futures
 import time
+import threading
 
 import pytest
 import json
@@ -127,17 +128,23 @@ class TestStreamingUsage:
         if keepalive_setting is None:  # pass the None through and set via envvar in this case
             os.environ['ANSIBLE_RUNNER_KEEPALIVE_SECONDS'] = '1'
 
+        worker_start_time = time.time()
+
         try:
-            worker_start_time = time.time()
-            Worker(
+            worker = Worker(
                 _input=outgoing_buffer, _output=incoming_buffer, private_data_dir=worker_dir,
                 keepalive_seconds=keepalive_setting
-            ).run()
+            )
+            worker.run()
         finally:
-            if keepalive_setting == None:
+            if keepalive_setting is None:
                 del os.environ['ANSIBLE_RUNNER_KEEPALIVE_SECONDS']
 
         assert time.time() - worker_start_time > 2.0  # task sleeps for 2 second
+        assert isinstance(worker._keepalive_thread, threading.Thread)  # we currently always create and start the thread
+        assert worker._keepalive_thread.daemon
+        worker._keepalive_thread.join(2)  # wait a couple of keepalive intervals to avoid exit race
+        assert not worker._keepalive_thread.is_alive()  # make sure it's dead
 
         incoming_buffer.seek(0)
         Processor(_input=incoming_buffer, private_data_dir=process_dir).run()

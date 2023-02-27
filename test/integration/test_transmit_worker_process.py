@@ -104,7 +104,7 @@ class TestStreamingUsage:
 
         self.check_artifacts(str(process_dir), job_type)
 
-    @pytest.mark.parametrize("keepalive_setting", [0, 1])
+    @pytest.mark.parametrize("keepalive_setting", [0, 1, None])
     def test_keepalive_setting(self, tmp_path, project_fixtures, keepalive_setting):
         worker_dir = tmp_path / 'for_worker'
         process_dir = tmp_path / 'for_process'
@@ -124,11 +124,19 @@ class TestStreamingUsage:
         assert status == 'unstarted'
         outgoing_buffer.seek(0)
 
-        worker_start_time = time.time()
-        Worker(
-            _input=outgoing_buffer, _output=incoming_buffer, private_data_dir=worker_dir,
-            keepalive_seconds=keepalive_setting
-        ).run()
+        if keepalive_setting is None:  # pass the None through and set via envvar in this case
+            os.environ['ANSIBLE_RUNNER_KEEPALIVE_SECONDS'] = '1'
+
+        try:
+            worker_start_time = time.time()
+            Worker(
+                _input=outgoing_buffer, _output=incoming_buffer, private_data_dir=worker_dir,
+                keepalive_seconds=keepalive_setting
+            ).run()
+        finally:
+            if keepalive_setting == None:
+                del os.environ['ANSIBLE_RUNNER_KEEPALIVE_SECONDS']
+
         assert time.time() - worker_start_time > 2.0  # task sleeps for 2 second
 
         incoming_buffer.seek(0)

@@ -32,10 +32,8 @@ class TestStreamingUsage:
         job_kwargs['envvars'] = dict(MY_ENV_VAR='bogus')
         return job_kwargs
 
-    def check_artifacts(self, process_dir, job_type):
-
-        assert set(os.listdir(process_dir)) == {'artifacts', }
-
+    @staticmethod
+    def get_stdout(process_dir):
         events_dir = os.path.join(process_dir, 'artifacts', 'job_events')
         events = []
         for file in os.listdir(events_dir):
@@ -44,7 +42,14 @@ class TestStreamingUsage:
                     continue
                 content = f.read()
                 events.append(json.loads(content))
-        stdout = '\n'.join(event['stdout'] for event in events)
+        return '\n'.join(event['stdout'] for event in events)
+
+    @staticmethod
+    def check_artifacts(process_dir, job_type):
+
+        assert set(os.listdir(process_dir)) == {'artifacts', }
+
+        stdout = TestStreamingUsage.get_stdout(process_dir)
 
         if job_type == 'run':
             assert 'Hello world!' in stdout
@@ -98,6 +103,47 @@ class TestStreamingUsage:
         processor.run()
 
         self.check_artifacts(str(process_dir), job_type)
+
+    @pytest.mark.parametrize("keepalive_setting", [0, 1])
+    def test_keepalive_setting(self, tmp_path, project_fixtures, keepalive_setting):
+        worker_dir = tmp_path / 'for_worker'
+        process_dir = tmp_path / 'for_process'
+        for dir in (worker_dir, process_dir):
+            dir.mkdir()
+
+        outgoing_buffer = io.BytesIO()
+        incoming_buffer = io.BytesIO()
+        for buffer in (outgoing_buffer, incoming_buffer):
+            buffer.name = 'foo'
+
+        status, rc = Transmitter(
+            _output=outgoing_buffer, private_data_dir=project_fixtures / 'sleep',
+            playbook='sleep.yml', extravars=dict(sleep_interval=2)
+        ).run()
+        assert rc in (None, 0)
+        assert status == 'unstarted'
+        outgoing_buffer.seek(0)
+
+        worker_start_time = time.time()
+        Worker(
+            _input=outgoing_buffer, _output=incoming_buffer, private_data_dir=worker_dir,
+            keepalive_seconds=keepalive_setting
+        ).run()
+        assert time.time() - worker_start_time > 2.0  # task sleeps for 2 second
+
+        incoming_buffer.seek(0)
+        Processor(_input=incoming_buffer, private_data_dir=process_dir).run()
+
+        stdout = self.get_stdout(process_dir)
+        assert 'Sleep for a specified interval' in stdout
+        assert 'keepalive' not in stdout
+
+        incoming_buffer.seek(0)  # again, be kind, rewind
+        incoming_data = str(incoming_buffer.read())
+        if keepalive_setting == 0:
+            assert incoming_data.count('"event": "keepalive"') == 0
+        else:
+            assert incoming_data.count('"event": "keepalive"') in (1, 2)
 
     @pytest.mark.parametrize("job_type", ['run', 'adhoc'])
     def test_remote_job_by_sockets(self, tmp_path, project_fixtures, job_type):

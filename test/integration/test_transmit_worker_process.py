@@ -158,7 +158,8 @@ class TestStreamingUsage:
         if keepalive_setting == 0:
             assert incoming_data.count('"event": "keepalive"') == 0
         else:
-            assert incoming_data.count('"event": "keepalive"') in (1, 2)
+            # account for some wobble in the number of keepalives for artifact gather, etc
+            assert 1 <= incoming_data.count('"event": "keepalive"') < 5
 
     @pytest.mark.parametrize("job_type", ['run', 'adhoc'])
     def test_remote_job_by_sockets(self, tmp_path, project_fixtures, job_type):

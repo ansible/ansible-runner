@@ -107,10 +107,10 @@ class TestStreamingUsage:
         self.check_artifacts(str(process_dir), job_type)
 
     @pytest.mark.parametrize("keepalive_setting", [
-        0, # keepalive explicitly disabled, default
-        1, # emit keepalives every 1s
-        0.000000001, # emit keepalives on a ridiculously small interval to test for output corruption
-        None, # default disable, test sets envvar for keepalives
+        0,  # keepalive explicitly disabled, default
+        1,  # emit keepalives every 1s
+        0.000000001,  # emit keepalives on a ridiculously small interval to test for output corruption
+        None,  # default disable, test sets envvar for keepalives
     ])
     def test_keepalive_setting(self, tmp_path, project_fixtures, keepalive_setting):
         verbosity = None

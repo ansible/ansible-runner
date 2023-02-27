@@ -65,7 +65,7 @@ class Transmitter(object):
 
 
 class Worker:
-    def __init__(self, _input=None, _output=None, keepalive_seconds: int | None = None, **kwargs):
+    def __init__(self, _input=None, _output=None, keepalive_seconds: float | None = None, **kwargs):
         if _input is None:
             _input = sys.stdin.buffer
         if _output is None:
@@ -73,7 +73,7 @@ class Worker:
 
         if keepalive_seconds is None:  # if we didn't get an explicit int value, fall back to envvar
             # FIXME: emit/log a warning and silently continue if this value won't parse
-            keepalive_seconds = int(os.environ.get('ANSIBLE_RUNNER_KEEPALIVE_SECONDS', 0))
+            keepalive_seconds = float(os.environ.get('ANSIBLE_RUNNER_KEEPALIVE_SECONDS', 0))
 
         self._keepalive_interval_sec = keepalive_seconds
         self._keepalive_thread: Thread | None = None

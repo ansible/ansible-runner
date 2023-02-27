@@ -1,3 +1,4 @@
+import base64
 import io
 import os
 import socket
@@ -105,8 +106,27 @@ class TestStreamingUsage:
 
         self.check_artifacts(str(process_dir), job_type)
 
-    @pytest.mark.parametrize("keepalive_setting", [0, 1, None])
+    @pytest.mark.parametrize("keepalive_setting", [
+        0, # keepalive explicitly disabled, default
+        1, # emit keepalives every 1s
+        0.000000001, # emit keepalives on a ridiculously small interval to test for output corruption
+        None, # default disable, test sets envvar for keepalives
+    ])
     def test_keepalive_setting(self, tmp_path, project_fixtures, keepalive_setting):
+        verbosity = None
+        output_corruption_test_mode = 0 < (keepalive_setting or 0) < 1
+
+        if output_corruption_test_mode:
+            verbosity = 5
+            # FIXME: turn on debug output too just to really spam the thing
+
+        if keepalive_setting is None:
+            # test the envvar fallback
+            os.environ['ANSIBLE_RUNNER_KEEPALIVE_SECONDS'] = '1'
+        elif 'ANSIBLE_RUNNER_KEEPALIVE_SECONDS' in os.environ:
+            # don't allow this envvar to affect the test behavior
+            del os.environ['ANSIBLE_RUNNER_KEEPALIVE_SECONDS']
+
         worker_dir = tmp_path / 'for_worker'
         process_dir = tmp_path / 'for_process'
         for dir in (worker_dir, process_dir):
@@ -119,26 +139,19 @@ class TestStreamingUsage:
 
         status, rc = Transmitter(
             _output=outgoing_buffer, private_data_dir=project_fixtures / 'sleep',
-            playbook='sleep.yml', extravars=dict(sleep_interval=2)
+            playbook='sleep.yml', extravars=dict(sleep_interval=2), verbosity=verbosity
         ).run()
         assert rc in (None, 0)
         assert status == 'unstarted'
         outgoing_buffer.seek(0)
 
-        if keepalive_setting is None:  # pass the None through and set via envvar in this case
-            os.environ['ANSIBLE_RUNNER_KEEPALIVE_SECONDS'] = '1'
-
         worker_start_time = time.time()
 
-        try:
-            worker = Worker(
-                _input=outgoing_buffer, _output=incoming_buffer, private_data_dir=worker_dir,
-                keepalive_seconds=keepalive_setting
-            )
-            worker.run()
-        finally:
-            if keepalive_setting is None:
-                del os.environ['ANSIBLE_RUNNER_KEEPALIVE_SECONDS']
+        worker = Worker(
+            _input=outgoing_buffer, _output=incoming_buffer, private_data_dir=worker_dir,
+            keepalive_seconds=keepalive_setting
+        )
+        worker.run()
 
         assert time.time() - worker_start_time > 2.0  # task sleeps for 2 second
         assert isinstance(worker._keepalive_thread, threading.Thread)  # we currently always create and start the thread
@@ -151,12 +164,27 @@ class TestStreamingUsage:
 
         stdout = self.get_stdout(process_dir)
         assert 'Sleep for a specified interval' in stdout
-        assert 'keepalive' not in stdout
+        assert '"event": "keepalive"' not in stdout
 
-        incoming_buffer.seek(0)  # again, be kind, rewind
-        incoming_data = str(incoming_buffer.read())
+        incoming_data = incoming_buffer.getvalue().decode('utf-8')
         if keepalive_setting == 0:
             assert incoming_data.count('"event": "keepalive"') == 0
+        elif 0 < (keepalive_setting or 0) < 1:
+            # JSON-load every line to ensure no interleaved keepalive output corruption
+            line = None
+            try:
+                pending_payload_length = 0
+                for line in incoming_data.splitlines():
+                    if pending_payload_length:
+                        # decode and check length to validate that we didn't trash the payload
+                        assert pending_payload_length == len(base64.b64decode(line))
+                        pending_payload_length = 0  # back to normal
+                        continue
+
+                    data = json.loads(line)
+                    pending_payload_length = data.get('zipfile', 0)
+            except json.JSONDecodeError:
+                pytest.fail(f'unparseable JSON in output (likely corrupted by keepalive): {line}')
         else:
             # account for some wobble in the number of keepalives for artifact gather, etc
             assert 1 <= incoming_data.count('"event": "keepalive"') < 5

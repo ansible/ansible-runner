@@ -177,6 +177,8 @@ class TestStreamingUsage:
                 for line in incoming_data.splitlines():
                     if pending_payload_length:
                         # decode and check length to validate that we didn't trash the payload
+                        # zap the mashed eof message from the end if present
+                        line = line.removesuffix('{"eof": true}')
                         assert pending_payload_length == len(base64.b64decode(line))
                         pending_payload_length = 0  # back to normal
                         continue

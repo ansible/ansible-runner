@@ -611,6 +611,15 @@ def main(sys_args=None):
             "Using this will also assure that the directory is deleted when the job finishes."
         )
     )
+    worker_subparser.add_argument(
+        "--keepalive-seconds",
+        dest="keepalive_seconds",
+        default=None,
+        type=int,
+        help=(
+            "Emit a synthetic keepalive event every N seconds of idle. (default=0, disabled)"
+        )
+    )
     process_subparser = subparser.add_parser(
         'process',
         help="Receive the output of remote ansible-runner work and distribute the results"
@@ -859,6 +868,7 @@ def main(sys_args=None):
                                    limit=vargs.get('limit'),
                                    streamer=streamer,
                                    suppress_env_files=vargs.get("suppress_env_files"),
+                                   keepalive_seconds=vargs.get("keepalive_seconds"),
                                    )
                 try:
                     res = run(**run_options)
@@ -887,3 +897,7 @@ def main(sys_args=None):
             return 0
         except OSError:
             return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())

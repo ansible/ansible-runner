@@ -1,8 +1,10 @@
+import base64
 import io
 import os
 import socket
 import concurrent.futures
 import time
+import threading
 
 import pytest
 import json
@@ -32,10 +34,8 @@ class TestStreamingUsage:
         job_kwargs['envvars'] = dict(MY_ENV_VAR='bogus')
         return job_kwargs
 
-    def check_artifacts(self, process_dir, job_type):
-
-        assert set(os.listdir(process_dir)) == {'artifacts', }
-
+    @staticmethod
+    def get_stdout(process_dir):
         events_dir = os.path.join(process_dir, 'artifacts', 'job_events')
         events = []
         for file in os.listdir(events_dir):
@@ -44,7 +44,14 @@ class TestStreamingUsage:
                     continue
                 content = f.read()
                 events.append(json.loads(content))
-        stdout = '\n'.join(event['stdout'] for event in events)
+        return '\n'.join(event['stdout'] for event in events)
+
+    @staticmethod
+    def check_artifacts(process_dir, job_type):
+
+        assert set(os.listdir(process_dir)) == {'artifacts', }
+
+        stdout = TestStreamingUsage.get_stdout(process_dir)
 
         if job_type == 'run':
             assert 'Hello world!' in stdout
@@ -98,6 +105,91 @@ class TestStreamingUsage:
         processor.run()
 
         self.check_artifacts(str(process_dir), job_type)
+
+    @pytest.mark.parametrize("keepalive_setting", [
+        0,  # keepalive explicitly disabled, default
+        1,  # emit keepalives every 1s
+        0.000000001,  # emit keepalives on a ridiculously small interval to test for output corruption
+        None,  # default disable, test sets envvar for keepalives
+    ])
+    def test_keepalive_setting(self, tmp_path, project_fixtures, keepalive_setting):
+        verbosity = None
+        output_corruption_test_mode = 0 < (keepalive_setting or 0) < 1
+
+        if output_corruption_test_mode:
+            verbosity = 5
+            # FIXME: turn on debug output too just to really spam the thing
+
+        if keepalive_setting is None:
+            # test the envvar fallback
+            os.environ['ANSIBLE_RUNNER_KEEPALIVE_SECONDS'] = '1'
+        elif 'ANSIBLE_RUNNER_KEEPALIVE_SECONDS' in os.environ:
+            # don't allow this envvar to affect the test behavior
+            del os.environ['ANSIBLE_RUNNER_KEEPALIVE_SECONDS']
+
+        worker_dir = tmp_path / 'for_worker'
+        process_dir = tmp_path / 'for_process'
+        for dir in (worker_dir, process_dir):
+            dir.mkdir()
+
+        outgoing_buffer = io.BytesIO()
+        incoming_buffer = io.BytesIO()
+        for buffer in (outgoing_buffer, incoming_buffer):
+            buffer.name = 'foo'
+
+        status, rc = Transmitter(
+            _output=outgoing_buffer, private_data_dir=project_fixtures / 'sleep',
+            playbook='sleep.yml', extravars=dict(sleep_interval=2), verbosity=verbosity
+        ).run()
+        assert rc in (None, 0)
+        assert status == 'unstarted'
+        outgoing_buffer.seek(0)
+
+        worker_start_time = time.time()
+
+        worker = Worker(
+            _input=outgoing_buffer, _output=incoming_buffer, private_data_dir=worker_dir,
+            keepalive_seconds=keepalive_setting
+        )
+        worker.run()
+
+        assert time.time() - worker_start_time > 2.0  # task sleeps for 2 second
+        assert isinstance(worker._keepalive_thread, threading.Thread)  # we currently always create and start the thread
+        assert worker._keepalive_thread.daemon
+        worker._keepalive_thread.join(2)  # wait a couple of keepalive intervals to avoid exit race
+        assert not worker._keepalive_thread.is_alive()  # make sure it's dead
+
+        incoming_buffer.seek(0)
+        Processor(_input=incoming_buffer, private_data_dir=process_dir).run()
+
+        stdout = self.get_stdout(process_dir)
+        assert 'Sleep for a specified interval' in stdout
+        assert '"event": "keepalive"' not in stdout
+
+        incoming_data = incoming_buffer.getvalue().decode('utf-8')
+        if keepalive_setting == 0:
+            assert incoming_data.count('"event": "keepalive"') == 0
+        elif 0 < (keepalive_setting or 0) < 1:
+            # JSON-load every line to ensure no interleaved keepalive output corruption
+            line = None
+            try:
+                pending_payload_length = 0
+                for line in incoming_data.splitlines():
+                    if pending_payload_length:
+                        # decode and check length to validate that we didn't trash the payload
+                        # zap the mashed eof message from the end if present
+                        line = line.rsplit('{"eof": true}', 1)[0]  # FUTURE: change this to removesuffix for 3.9+
+                        assert pending_payload_length == len(base64.b64decode(line))
+                        pending_payload_length = 0  # back to normal
+                        continue
+
+                    data = json.loads(line)
+                    pending_payload_length = data.get('zipfile', 0)
+            except json.JSONDecodeError:
+                pytest.fail(f'unparseable JSON in output (likely corrupted by keepalive): {line}')
+        else:
+            # account for some wobble in the number of keepalives for artifact gather, etc
+            assert 1 <= incoming_data.count('"event": "keepalive"') < 5
 
     @pytest.mark.parametrize("job_type", ['run', 'adhoc'])
     def test_remote_job_by_sockets(self, tmp_path, project_fixtures, job_type):

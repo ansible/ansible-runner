@@ -333,8 +333,13 @@ class Processor(object):
             try:
                 line = self._input.readline()
                 data = json.loads(line)
-            except (json.decoder.JSONDecodeError, IOError):
-                self.status_callback({'status': 'error', 'job_explanation': 'Failed to JSON parse a line from worker stream.'})
+            except (json.decoder.JSONDecodeError, IOError) as exc:
+                self.status_callback({
+                    'status': 'error',
+                    'job_explanation': (
+                        f'Failed to JSON parse a line from worker stream. Error: {exc} Line with invalid JSON data: {line[:1000]}'
+                    )
+                })
                 break
 
             if 'status' in data:

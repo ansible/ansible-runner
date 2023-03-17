@@ -1,0 +1,6 @@
+- hosts: all
+  gather_facts: no
+
+  tasks:
+    - debug:
+        msg: "In my_project"

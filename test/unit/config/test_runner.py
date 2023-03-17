@@ -746,7 +746,9 @@ def test_containerization_settings(tmp_path, runtime, mocker):
     else:
         extra_container_args = [f'--user={os.getuid()}']
 
-    expected_command_start = [runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
+    expected_command_start = [runtime, 'run', '--rm', '--tty', '--interactive'] + \
+        ['-v', '{}/project/:/runner/project/'.format(rc.private_data_dir)] + \
+        ['--workdir', '/runner/project'] + \
         ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
         ['-v', '/host1/:/container1/', '-v', '/host2/:/container2/'] + \
         ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \

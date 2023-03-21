@@ -5,8 +5,8 @@ from packaging.version import Version
 import subprocess
 
 from ansible_runner import defaults
+from ansible_runner.utils.importlib_compat import importlib_metadata
 
-import pkg_resources
 import pytest
 
 
@@ -35,9 +35,9 @@ def is_pre_ansible211():
     """
 
     try:
-        if pkg_resources.get_distribution('ansible-core').version:
+        if importlib_metadata.version("ansible_runner"):
             return False
-    except pkg_resources.DistributionNotFound:
+    except importlib_metadata.PackageNotFoundError:
         # Must be ansible-base or ansible
         return True
 
@@ -62,7 +62,7 @@ def is_pre_ansible212():
         )
         if Version(base_version) < Version("2.12"):
             return True
-    except pkg_resources.DistributionNotFound:
+    except importlib_metadata.PackageNotFoundError:
         pass
 
 

@@ -67,7 +67,8 @@ def test_cancel_will_remove_container(project_fixtures, runtime, cli):
         cancel_callback=cancel_standin.cancel,
         ident=ident
     )
-    assert res.rc == 254, res.stdout.read()
+    with res.stdout as f:
+        assert res.rc == 254, f.read()
     assert res.status == 'canceled'
 
     assert not is_running(
@@ -89,7 +90,8 @@ def test_non_owner_install(mocker, project_fixtures, runtime):
             'process_isolation': True
         }
     )
-    stdout = res.stdout.read()
+    with res.stdout as f:
+        stdout = f.read()
     assert res.rc == 0, stdout
     assert res.status == 'successful'
 
@@ -118,7 +120,8 @@ def test_invalid_registry_host(tmp_path, runtime):
     assert res.rc > 0
     assert os.path.exists(res.config.registry_auth_path)
 
-    result_stdout = res.stdout.read()
+    with res.stdout as f:
+        result_stdout = f.read()
     auth_file_path = os.path.join(res.config.registry_auth_path, 'config.json')
     registry_conf = os.path.join(res.config.registry_auth_path, 'registries.conf')
     error_msg = 'access to the requested resource is not authorized'

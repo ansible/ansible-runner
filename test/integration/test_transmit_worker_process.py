@@ -104,6 +104,8 @@ class TestStreamingUsage:
         processor = Processor(_input=incoming_buffer, private_data_dir=process_dir)
         processor.run()
 
+        outgoing_buffer.close()
+        incoming_buffer.close()
         self.check_artifacts(str(process_dir), job_type)
 
     @pytest.mark.parametrize("keepalive_setting", [
@@ -319,6 +321,8 @@ class TestStreamingUsage:
                 private_data_dir=worker_dir,
             )
             assert exc.value.code == 1
+        outgoing_buffer.close()
+        incoming_buffer.close()
 
 
 @pytest.fixture
@@ -331,9 +335,9 @@ def transmit_stream(project_fixtures, tmp_path):
         transmitter = Transmitter(_output=f, private_data_dir=transmit_dir, playbook='debug.yml')
         status, rc = transmitter.run()
 
-    assert rc in (None, 0)
-    assert status == 'unstarted'
-    return outgoing_buffer
+        assert rc in (None, 0)
+        assert status == 'unstarted'
+        return outgoing_buffer
 
 
 @pytest.fixture

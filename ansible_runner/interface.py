@@ -310,8 +310,9 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
     '''
     r = init_command_config(executable_cmd, cmdline_args=cmdline_args, **kwargs)
     r.run()
-    response = r.stdout.read()
-    error = r.stderr.read()
+    with r.stdout as stdout, r.stderr as stderr:
+        response = stdout.read()
+        error = stderr.read()
     return response, error, r.rc
 
 
@@ -449,8 +450,9 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format=None, snippe
     r = init_plugin_docs_config(plugin_names, plugin_type=plugin_type, response_format=response_format,
                                 snippet=snippet, playbook_dir=playbook_dir, module_path=module_path, **kwargs)
     r.run()
-    response = r.stdout.read()
-    error = r.stderr.read()
+    with r.stdout as stdout, r.stderr as stderr:
+        response = stdout.read()
+        error = stderr.read()
     if response and response_format == 'json':
         response = json.loads(sanitize_json_response(response))
     return response, error
@@ -578,8 +580,9 @@ def get_plugin_list(list_files=None, response_format=None, plugin_type=None, pla
                cancel_callback=cancel_callback,
                finished_callback=finished_callback)
     r.run()
-    response = r.stdout.read()
-    error = r.stderr.read()
+    with r.stdout as stdout, r.stderr as stderr:
+        response = stdout.read()
+        error = stderr.read()
     if response and response_format == 'json':
         response = json.loads(sanitize_json_response(response))
     return response, error
@@ -702,8 +705,9 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
                cancel_callback=cancel_callback,
                finished_callback=finished_callback)
     r.run()
-    response = r.stdout.read()
-    error = r.stderr.read()
+    with r.stdout as stdout, r.stderr as stderr:
+        response = stdout.read()
+        error = stderr.read()
     if response and response_format == 'json':
         response = json.loads(sanitize_json_response(response))
     return response, error
@@ -807,8 +811,9 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
                cancel_callback=cancel_callback,
                finished_callback=finished_callback)
     r.run()
-    response = r.stdout.read()
-    error = r.stderr.read()
+    with r.stdout as stdout, r.stderr as stderr:
+        response = stdout.read()
+        error = stderr.read()
     return response, error
 
 
@@ -882,8 +887,9 @@ def get_role_list(collection=None, playbook_dir=None, **kwargs):
                cancel_callback=cancel_callback,
                finished_callback=finished_callback)
     r.run()
-    response = r.stdout.read()
-    error = r.stderr.read()
+    with r.stdout as stdout, r.stderr as stderr:
+        response = stdout.read()
+        error = stderr.read()
     if response:
         response = json.loads(sanitize_json_response(response))
     return response, error
@@ -959,8 +965,9 @@ def get_role_argspec(role, collection=None, playbook_dir=None, **kwargs):
                cancel_callback=cancel_callback,
                finished_callback=finished_callback)
     r.run()
-    response = r.stdout.read()
-    error = r.stderr.read()
+    with r.stdout as stdout, r.stderr as stderr:
+        response = stdout.read()
+        error = stderr.read()
     if response:
         response = json.loads(sanitize_json_response(response))
     return response, error

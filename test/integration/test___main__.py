@@ -34,7 +34,8 @@ def cmdline(command, *args):
 
 def test_main_bad_private_data_dir():
     tmpfile = os.path.join('/tmp', str(uuid.uuid4().hex))
-    open(tmpfile, 'w').write(random_string())
+    with open(tmpfile, 'w') as f:
+        f.write(random_string())
 
     cmdline('run', tmpfile, '-p', 'fake')
 

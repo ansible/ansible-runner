@@ -106,7 +106,8 @@ def unstream_dir(stream, length, target_directory):
                 os.utime(out_path, times=(date_time, date_time))
 
                 if is_symlink:
-                    link = open(out_path).read()
+                    with open(out_path) as fd:
+                        link = fd.read()
                     os.remove(out_path)
                     os.symlink(link, out_path)
                 else:

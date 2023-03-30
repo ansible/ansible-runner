@@ -363,7 +363,8 @@ def test_output_when_given_invalid_playbook(tmp_path):
     )
 
     executor.run()
-    stdout = executor.stdout.read()
+    with executor.stdout as f:
+        stdout = f.read()
     assert "ERROR! the playbook:" in stdout
     assert "could not be found" in stdout
 
@@ -398,7 +399,9 @@ def test_output_when_given_non_playbook_script(tmp_path):
     )
 
     executor.run()
-    stdout = executor.stdout.readlines()
+
+    with executor.stdout as f:
+        stdout = f.readlines()
     assert stdout[0].strip() == "hi world"
     assert stdout[1].strip() == "goodbye world"
 
@@ -436,5 +439,6 @@ def test_large_stdout_parsing_when_using_json_output(executor, playbook):
         pytest.skip('Ansible in python2 uses different syntax.')
     executor.config.env['ANSIBLE_NOCOLOR'] = str(True)
     executor.run()
-    text = executor.stdout.read()
+    with executor.stdout as f:
+        text = f.read()
     assert text.count('"F"') == 150

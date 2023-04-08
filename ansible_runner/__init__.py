@@ -1,5 +1,4 @@
-import pkg_resources
-
+from .utils.importlib_compat import importlib_metadata
 from .interface import run, run_async, \
                         run_command, run_command_async, \
                         get_plugin_docs, get_plugin_docs_async, get_plugin_list, \
@@ -13,5 +12,5 @@ from .runner import Runner # noqa
 plugins = {
     entry_point.name: entry_point.load()
     for entry_point
-    in pkg_resources.iter_entry_points('ansible_runner.plugins')
+    in importlib_metadata.entry_points(group='ansible_runner.plugins')
 }

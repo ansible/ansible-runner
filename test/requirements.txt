@@ -6,4 +6,3 @@ pytest-xdist
 flake8==4.0.1
 yamllint
 cryptography
-importlib-metadata >= 4.6, < 4.7; python_version < '3.10'

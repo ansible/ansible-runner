@@ -1,8 +1,8 @@
-pytest
+pytest==7.1.2
 pytest-cov
 pytest-mock
 pytest-timeout
-pytest-xdist
+pytest-xdist==2.5.0
 flake8==4.0.1
 yamllint
 cryptography

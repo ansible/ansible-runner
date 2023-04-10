@@ -104,6 +104,8 @@ class TestStreamingUsage:
         processor = Processor(_input=incoming_buffer, private_data_dir=process_dir)
         processor.run()
 
+        outgoing_buffer.close()
+        incoming_buffer.close()
         self.check_artifacts(str(process_dir), job_type)
 
     @pytest.mark.parametrize("keepalive_setting", [
@@ -226,11 +228,15 @@ class TestStreamingUsage:
 
         transmit_socket_write, transmit_socket_read = socket.socketpair()
         results_socket_write, results_socket_read = socket.socketpair()
+        transmit_socket_read_file = transmit_socket_read.makefile('rb')
+        transmit_socket_write_file = transmit_socket_write.makefile('wb')
+        results_socket_read_file = results_socket_read.makefile('rb')
+        results_socket_write_file = results_socket_write.makefile('wb')
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-            transmit_future = executor.submit(transmit_method, transmit_socket_write.makefile('wb'))
+            transmit_future = executor.submit(transmit_method, transmit_socket_write_file)
             # In real AWX implementation, worker is done via receptorctl
-            executor.submit(worker_method, transmit_socket_read.makefile('rb'), results_socket_write.makefile('wb'))
+            executor.submit(worker_method, transmit_socket_read_file, results_socket_write_file)
 
             while True:
                 if transmit_future.done():
@@ -241,14 +247,17 @@ class TestStreamingUsage:
             assert res.rc in (None, 0)
             assert res.status == 'unstarted'
 
-            process_future = executor.submit(process_method, results_socket_read.makefile('rb'))
+            process_future = executor.submit(process_method, results_socket_read_file)
 
             while True:
                 if process_future.done():
                     break
                 time.sleep(0.05)  # additionally, AWX calls cancel_callback()
 
-        for s in (transmit_socket_write, transmit_socket_read, results_socket_write, results_socket_read):
+        for s in (
+            transmit_socket_write, transmit_socket_read, results_socket_write, results_socket_read,
+            transmit_socket_write_file, transmit_socket_read_file, results_socket_write_file, results_socket_read_file,
+        ):
             s.close()
 
         assert self.status_data is not None
@@ -319,6 +328,8 @@ class TestStreamingUsage:
                 private_data_dir=worker_dir,
             )
             assert exc.value.code == 1
+        outgoing_buffer.close()
+        incoming_buffer.close()
 
 
 @pytest.fixture
@@ -331,9 +342,9 @@ def transmit_stream(project_fixtures, tmp_path):
         transmitter = Transmitter(_output=f, private_data_dir=transmit_dir, playbook='debug.yml')
         status, rc = transmitter.run()
 
-    assert rc in (None, 0)
-    assert status == 'unstarted'
-    return outgoing_buffer
+        assert rc in (None, 0)
+        assert status == 'unstarted'
+        return outgoing_buffer
 
 
 @pytest.fixture

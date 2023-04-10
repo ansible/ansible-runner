@@ -323,6 +323,8 @@ class Runner(object):
                     try:
                         self.canceled = self.cancel_callback()
                     except Exception as e:
+                        stdout_handle.close()
+                        stderr_handle.close()
                         # TODO: logger.exception('Could not check cancel callback - cancelling immediately')
                         # if isinstance(extra_update_fields, dict):
                         #     extra_update_fields['job_explanation'] = "System error during job execution, check system logs"

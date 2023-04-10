@@ -52,7 +52,8 @@ def test_repeat_run_with_new_inventory(project_fixtures):
         playbook='debug.yml',
         inventory='localhost',
     )
-    stdout = res.stdout.read()
+    with res.stdout as f:
+        stdout = f.read()
     assert res.rc == 0, stdout
     assert hosts_file.read_text() == 'localhost', 'hosts file content is incorrect'
 
@@ -62,7 +63,8 @@ def test_repeat_run_with_new_inventory(project_fixtures):
         playbook='debug.yml',
         inventory='127.0.0.1',
     )
-    stdout = res.stdout.read()
+    with res.stdout as f:
+        stdout = f.read()
     assert res.rc == 0, stdout
     assert hosts_file.read_text() == '127.0.0.1', 'hosts file content is incorrect'
 
@@ -78,7 +80,8 @@ def get_env_data(res):
             return event['event_data']['res']
     else:
         print('output:')
-        print(res.stdout.read())
+        with res.stdout as f:
+            print(f.read())
         raise RuntimeError('Count not find look_at_environment task from playbook')
 
 
@@ -104,7 +107,8 @@ def test_env_accuracy(request, project_fixtures):
         inventory=None,
         envvars={'FROM_TEST': 'FOOBAR'},
     )
-    assert res.rc == 0, res.stdout.read()
+    with res.stdout as f:
+        assert res.rc == 0, f.read()
 
     actual_env = get_env_data(res)['environment']
 
@@ -131,7 +135,8 @@ def test_no_env_files(request, project_fixtures):
         envvars={'FROM_TEST': 'FOOBAR'},
         suppress_env_files=True,
     )
-    assert res.rc == 0, res.stdout.read()
+    with res.stdout as f:
+        assert res.rc == 0, f.read()
     # Assert that the env file was not created
     assert os.path.exists(printenv_example / "env/envvars") == 0
 
@@ -181,7 +186,8 @@ def test_multiple_inventories(project_fixtures):
         private_data_dir=private_data_dir,
         playbook='debug.yml',
     )
-    stdout = res.stdout.read()
+    with res.stdout as f:
+        stdout = f.read()
     assert res.rc == 0, stdout
 
     # providing no inventory should cause <private_data_dir>/inventory
@@ -200,7 +206,8 @@ def test_inventory_absolute_path(project_fixtures):
             str(private_data_dir / 'inventory' / 'inv_1'),
         ],
     )
-    stdout = res.stdout.read()
+    with res.stdout as f:
+        stdout = f.read()
     assert res.rc == 0, stdout
 
     # hosts can be down-selected to one inventory out of those available
@@ -299,7 +306,8 @@ def test_run_command_async(project_fixtures):
         cmdline_args=[str(playbook), '-i', str(inventory)]
     )
     thread.join()
-    out = r.stdout.read()
+    with r.stdout as f:
+        out = f.read()
     assert "Hello world!" in out
     assert r.status == 'successful'
 
@@ -321,7 +329,8 @@ def test_get_plugin_docs_async():
         quiet=True
     )
     thread.join()
-    out = r.stdout.read()
+    with r.stdout as f:
+        out = f.read()
     assert 'copy' in out
     assert 'file' in out
     assert r.status == 'successful'
@@ -422,7 +431,8 @@ def test_run_role(project_fixtures):
         private_data_dir=private_data_dir,
         role='hello_world',
     )
-    stdout = res.stdout.read()
+    with res.stdout as f:
+        stdout = f.read()
     assert res.rc == 0, stdout
     assert 'Hello World!' in stdout
 

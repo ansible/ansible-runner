@@ -189,8 +189,9 @@ def test_run_command_ansible(rc):
     assert list(runner.events) != []
     assert runner.stats != {}
     assert list(runner.host_events('localhost')) != [], repr(list(runner.events))
-    stdout = runner.stdout
-    assert stdout.read() != ""
+    with runner.stdout as f:
+        stdout = f.read()
+    assert stdout != ""
 
 
 def test_run_command_ansible_event_handler(rc, mocker):

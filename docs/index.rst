@@ -41,6 +41,7 @@ Examples of this could include:
    standalone
    python_interface
    execution_environments
+   container
    remote_jobs
    modules
 

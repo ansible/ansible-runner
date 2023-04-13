@@ -79,8 +79,6 @@ jobs:
 
       - name: Run integration tests
         run: |
-          docker build --rm=true -t quay.io/ansible/ansible-runner:devel -t quay.io/ansible/ansible-runner:latest .
-          podman build --rm=true -t quay.io/ansible/ansible-runner:devel -t quay.io/ansible/ansible-runner:latest .
           tox
 
       - name: Upload coverage report

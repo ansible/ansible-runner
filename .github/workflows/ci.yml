@@ -125,9 +125,6 @@ jobs:
           - name: '3.10'
             tox_env: unit-py310
 
-          # - name: '3.11'
-          #   tox_env: unit-py311
-
     steps:
       - name: Checkout
         uses: actions/checkout@v3

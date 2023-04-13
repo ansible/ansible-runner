@@ -74,7 +74,18 @@ jobs:
       - name: Install tox
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install "tox<4.0.0"
+          python3 -m pip install "tox<4.0.0" build
+
+      - name: Prepare runner test container
+        run: |
+          TMPDIR=$(mktemp -d)
+          cp test/integration/Dockerfile $TMPDIR
+          pyproject-build -w -o $TMPDIR
+          pushd $TMPDIR
+          docker build --build-arg WHEEL=$(ls -1 ansible_runner*.whl) --rm=true -t ansible-runner-gha${{ github.run_id }}-event-test .
+          podman build --build-arg WHEEL=$(ls -1 ansible_runner*.whl) --rm=true -t ansible-runner-gha${{ github.run_id }}-event-test .
+          popd
+          rm -r $TMPDIR
 
       - name: Create tox environment
         run: |
@@ -82,7 +93,7 @@ jobs:
 
       - name: Run integration tests
         run: |
-          tox
+          RUNNER_TEST_IMAGE_NAME=ansible-runner-gha${{ github.run_id }}-event-test tox
 
       - name: Upload coverage report
         run: |

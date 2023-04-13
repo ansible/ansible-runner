@@ -63,7 +63,7 @@ pipe providing a bit of an extra layer of security. The formatting and expectati
 
    For an example see `the demo envvars <https://github.com/ansible/ansible-runner/blob/devel/demo/env/envvars>`_.
 
-**Ansible Runner** will inherit the environment of the launching shell (or container, or system itself). This file (which can be in json or yaml format) represents
+**Ansible Runner** will inherit the environment of the launching shell. This file (which can be in json or yaml format) represents
 the environment variables that will be added to the environment at run-time::
 
   ---
@@ -157,11 +157,11 @@ The process isolation settings are meant to control the process isolation featur
 * ``process_isolation_ro_paths``: ``None`` Path or list of paths on the system that should be exposed to the playbook run as read-only.
 
 These settings instruct **Runner** to execute **Ansible** tasks inside a container environment.
-A default execution environment is provided on Quay.io at `ansible/ansible-runner <https://quay.io/repository/ansible/ansible-runner>`_.
+For information about building execution environments, see `ansible-builder <https://ansible-builder.readthedocs.io/>`_.
 
 To execute **Runner** with an execution environment:
 
-``ansible-runner run --container-image quay.io/ansible/ansible-runner:devel --process-isolation -p playbook.yml .``
+``ansible-runner run --container-image my-execution-environment:latest --process-isolation -p playbook.yml .``
 
 See ``ansible-runner -h`` for other container-related options.
 

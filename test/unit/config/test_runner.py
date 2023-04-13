@@ -698,6 +698,7 @@ def test_container_volume_mounting_with_Z(mocker, tmp_path):
     rc = RunnerConfig(str(tmp_path))
     rc.container_volume_mounts = ['/tmp/project_path:/tmp/project_path:Z']
     rc.container_name = 'foo'
+    rc.container_image = 'bar'
     rc.env = {}
     new_args = rc.wrap_args_for_containerization(['ansible-playbook', 'foo.yml'], 0, None)
     assert new_args[0] == 'podman'

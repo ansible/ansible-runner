@@ -11,10 +11,11 @@ from test.utils.common import iterate_timeout
 
 
 @pytest.mark.test_all_runtimes
-def test_module_run(cli, project_fixtures, runtime):
+def test_module_run(cli, project_fixtures, runtime, container_image):
     r = cli([
         'run',
         '--process-isolation-executable', runtime,
+        '--container-image', container_image,
         '-m', 'ping',
         '--hosts', 'testhost',
         project_fixtures.joinpath('containerized').as_posix(),
@@ -24,7 +25,7 @@ def test_module_run(cli, project_fixtures, runtime):
 
 
 @pytest.mark.test_all_runtimes
-def test_playbook_run(cli, project_fixtures, runtime):
+def test_playbook_run(cli, project_fixtures, runtime, container_image):
     # Ensure the container environment variable is set so that Ansible fact gathering
     # is able to detect it is running inside a container.
     envvars_path = project_fixtures / 'containerized' / 'env' / 'envvars'
@@ -34,6 +35,7 @@ def test_playbook_run(cli, project_fixtures, runtime):
     r = cli([
         'run',
         '--process-isolation-executable', runtime,
+        '--container-image', container_image,
         '-p', 'test-container.yml',
         project_fixtures.joinpath('containerized').as_posix(),
     ])
@@ -42,10 +44,11 @@ def test_playbook_run(cli, project_fixtures, runtime):
 
 
 @pytest.mark.test_all_runtimes
-def test_provide_env_var(cli, project_fixtures, runtime):
+def test_provide_env_var(cli, project_fixtures, runtime, container_image):
     r = cli([
         'run',
         '--process-isolation-executable', runtime,
+        '--container-image', container_image,
         '-p', 'printenv.yml',
         project_fixtures.joinpath('job_env').as_posix(),
     ])
@@ -54,7 +57,7 @@ def test_provide_env_var(cli, project_fixtures, runtime):
 
 @pytest.mark.test_all_runtimes
 @pytest.mark.skipif(sys.platform == 'darwin', reason='ansible-runner start does not work reliably on macOS')
-def test_cli_kill_cleanup(cli, runtime, project_fixtures):
+def test_cli_kill_cleanup(cli, runtime, project_fixtures, container_image):
     unique_string = str(uuid4()).replace('-', '')
     ident = f'kill_test_{unique_string}'
     pdd = os.path.join(project_fixtures, 'sleep')
@@ -64,6 +67,7 @@ def test_cli_kill_cleanup(cli, runtime, project_fixtures):
         '--ident', ident,
         '--process-isolation',
         '--process-isolation-executable', runtime,
+        '--container-image', container_image,
     ]
     cli(cli_args)
 

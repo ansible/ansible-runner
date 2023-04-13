@@ -76,7 +76,7 @@ class BaseConfig(object):
         # container params
         self.process_isolation = process_isolation
         self.process_isolation_executable = process_isolation_executable or defaults.default_process_isolation_executable
-        self.container_image = container_image or defaults.default_container_image
+        self.container_image = container_image
         self.container_volume_mounts = container_volume_mounts
         self.container_workdir = container_workdir
         self.container_auth_data = container_auth_data
@@ -204,6 +204,10 @@ class BaseConfig(object):
         self.container_auth_data = self.settings.get('container_auth_data', self.container_auth_data)
 
         if self.containerized:
+            if not self.container_image:
+                raise ConfigurationError(
+                    f'container_image required when specifying process_isolation_executable={self.process_isolation_executable}'
+                )
             self.container_name = "ansible_runner_{}".format(sanitize_container_name(self.ident))
             self.env = {}
 

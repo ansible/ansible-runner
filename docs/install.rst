@@ -16,27 +16,9 @@ To install the latest version from the Python Package Index::
 Fedora
 ------
 
-To install from the latest Fedora sources::
+To install from the Fedora repositories::
 
-  $ dnf install python-ansible-runner
-
-Debian
-------
-
-Add an ansible-runner repository::
-
-  $ apt-get update
-  $ echo 'deb https://releases.ansible.com/ansible-runner/deb/ <trusty|xenial|stretch> main' > /etc/apt/sources.list.d/ansible.list
-
-Add a key::
-
-  $ apt-key adv --keyserver keyserver.ubuntu.com --recv 3DD29021
-
-Install the package::
-
-  $ apt-get update
-  $ apt-get install ansible-runner
-
+  $ dnf install python3-ansible-runner
 
 From source
 -----------
@@ -64,30 +46,13 @@ Build the distribution
 
 To produce both wheel and sdist::
 
-  make dist
+  $ python3 -m pip install build
+  $ python3 -m build
 
-To produce an installable ``wheel``::
+To only produce an installable ``wheel``::
 
-  make wheel
+  $ python3 -m build --wheel
 
 To produce a distribution tarball::
 
-  make sdist
-
-.. _buildcontimg:
-
-Building the base container image
----------------------------------
-
-Make sure the ``wheel`` distribution is built (see :ref:`builddist`) and run::
-
-  make image
-
-Building the RPM
-----------------
-
-The RPM build uses a container image to bootstrap the environment in order to produce the RPM. Make sure you have docker
-installed and proceed with::
-
-  make rpm
-
+  $ python3 -m build --sdist

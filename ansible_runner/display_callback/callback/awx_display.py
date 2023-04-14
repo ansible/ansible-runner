@@ -409,6 +409,7 @@ class CallbackModule(DefaultCallbackModule):
             task=(task.name or task.action),
             task_uuid=str(task._uuid),
             task_action=task.action,
+            task_check_mode=task.check_mode,
             resolved_action=getattr(task, 'resolved_action', task.action),
             task_args='',
         )

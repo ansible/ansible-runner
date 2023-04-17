@@ -2,10 +2,15 @@ import json
 import os
 import subprocess
 import yaml
+import pathlib
 import pytest
 import pexpect
+import random
+from string import ascii_lowercase
 
 from ansible_runner.config.runner import RunnerConfig
+
+here = pathlib.Path(__file__).parent
 
 
 @pytest.fixture(scope='function')
@@ -76,3 +81,45 @@ def cli(request):
 
         return ret
     return run
+
+
+@pytest.fixture
+def container_image(request, cli, tmp_path):
+    try:
+        containerized = request.getfixturevalue('containerized')
+        if not containerized:
+            yield None
+            return
+    except Exception:
+        # Test func doesn't use containerized
+        pass
+
+    if (env_image_name := os.getenv('RUNNER_TEST_IMAGE_NAME')):
+        yield env_image_name
+        return
+
+    cli(
+        ['pyproject-build', '-w', '-o', str(tmp_path)],
+        cwd=here.parent.parent,
+        bare=True,
+    )
+
+    wheel = next(tmp_path.glob('*.whl'))
+
+    runtime = request.getfixturevalue('runtime')
+    dockerfile_path = tmp_path / 'Dockerfile'
+    dockerfile_path.write_text(
+        (here / 'Dockerfile').read_text()
+    )
+    random_string = ''.join(random.choice(ascii_lowercase) for i in range(10))
+    image_name = f'ansible-runner-{random_string}-event-test'
+
+    cli(
+        [runtime, 'build', '--build-arg', f'WHEEL={wheel.name}', '--rm=true', '-t', image_name, '-f', str(dockerfile_path), str(tmp_path)],
+        bare=True,
+    )
+    yield image_name
+    cli(
+        [runtime, 'rmi', '-f', image_name],
+        bare=True,
+    )

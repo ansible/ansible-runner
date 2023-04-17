@@ -1,12 +1,12 @@
 import json
 import pytest
 
-from ansible_runner import defaults, run, run_async
+from ansible_runner import run, run_async
 
 
 @pytest.mark.test_all_runtimes
 @pytest.mark.parametrize('containerized', [True, False])
-def test_basic_events(containerized, runtime, tmp_path, is_run_async=False, g_facts=False):
+def test_basic_events(containerized, runtime, tmp_path, container_image, is_run_async=False, g_facts=False):
 
     inventory = 'localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"'
 
@@ -18,7 +18,7 @@ def test_basic_events(containerized, runtime, tmp_path, is_run_async=False, g_fa
     if containerized:
         run_args.update({'process_isolation': True,
                          'process_isolation_executable': runtime,
-                         'container_image': defaults.default_container_image,
+                         'container_image': container_image,
                          'container_volume_mounts': [f'{tmp_path}:{tmp_path}']})
 
     if not is_run_async:
@@ -52,8 +52,8 @@ def test_basic_events(containerized, runtime, tmp_path, is_run_async=False, g_fa
 
 @pytest.mark.test_all_runtimes
 @pytest.mark.parametrize('containerized', [True, False])
-def test_async_events(containerized, runtime, tmp_path):
-    test_basic_events(containerized, runtime, tmp_path, is_run_async=True, g_facts=True)
+def test_async_events(containerized, runtime, tmp_path, container_image):
+    test_basic_events(containerized, runtime, tmp_path, container_image, is_run_async=True, g_facts=True)
 
 
 def test_basic_serializeable(tmp_path):

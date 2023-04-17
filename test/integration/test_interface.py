@@ -3,7 +3,6 @@ import shutil
 
 import pytest
 
-from ansible_runner import defaults
 from ansible_runner.interface import (
     get_ansible_config,
     get_inventory,
@@ -142,7 +141,7 @@ def test_no_env_files(request, project_fixtures):
 
 
 @pytest.mark.test_all_runtimes
-def test_env_accuracy_inside_container(request, project_fixtures, runtime):
+def test_env_accuracy_inside_container(request, project_fixtures, runtime, container_image):
     printenv_example = project_fixtures / 'printenv'
     os.environ['SET_BEFORE_TEST'] = 'MADE_UP_VALUE'
 
@@ -160,7 +159,8 @@ def test_env_accuracy_inside_container(request, project_fixtures, runtime):
         envvars={'FROM_TEST': 'FOOBAR'},
         settings={
             'process_isolation_executable': runtime,
-            'process_isolation': True
+            'process_isolation': True,
+            'container_image': container_image,
         }
     )
     assert res.rc == 0, res.stdout.read()
@@ -240,28 +240,28 @@ def test_run_command_injection_error():
 
 
 @pytest.mark.test_all_runtimes
-def test_run_command_injection_error_within_container(runtime):
+def test_run_command_injection_error_within_container(runtime, container_image):
     out, err, rc = run_command(
         executable_cmd='whoami',
         cmdline_args=[';hostname'],
         runner_mode='subprocess',
         process_isolation_executable=runtime,
         process_isolation=True,
-        container_image=defaults.default_container_image,
+        container_image=container_image,
     )
     assert rc == 1
     assert "whoami: extra operand ';hostname'" in err
 
 
 @pytest.mark.test_all_runtimes
-def test_run_ansible_command_within_container(project_fixtures, runtime):
+def test_run_ansible_command_within_container(project_fixtures, runtime, container_image):
     private_data_dir = project_fixtures / 'debug'
     inventory = private_data_dir / 'inventory' / 'inv_1'
     playbook = private_data_dir / 'project' / 'debug.yml'
     container_kwargs = {
         'process_isolation_executable': runtime,
         'process_isolation': True,
-        'container_image': defaults.default_container_image
+        'container_image': container_image,
     }
     out, err, rc = run_command(
         private_data_dir=private_data_dir,
@@ -275,14 +275,14 @@ def test_run_ansible_command_within_container(project_fixtures, runtime):
 
 
 @pytest.mark.test_all_runtimes
-def test_run_script_within_container(project_fixtures, runtime):
+def test_run_script_within_container(project_fixtures, runtime, container_image):
     private_data_dir = project_fixtures / 'debug'
     script_path = project_fixtures / 'files'
     container_volume_mounts = ["{}:{}:Z".format(script_path, script_path)]
     container_kwargs = {
         'process_isolation_executable': runtime,
         'process_isolation': True,
-        'container_image': defaults.default_container_image,
+        'container_image': container_image,
         'container_volume_mounts': container_volume_mounts
     }
     out, _, rc = run_command(
@@ -337,11 +337,11 @@ def test_get_plugin_docs_async():
 
 
 @pytest.mark.test_all_runtimes
-def test_get_plugin_docs_within_container(runtime):
+def test_get_plugin_docs_within_container(runtime, container_image):
     container_kwargs = {
         'process_isolation_executable': runtime,
         'process_isolation': True,
-        'container_image': defaults.default_container_image
+        'container_image': container_image,
     }
     out, _ = get_plugin_docs(
         plugin_names=['file', 'copy'],
@@ -363,11 +363,11 @@ def test_get_plugin_docs_list():
 
 
 @pytest.mark.test_all_runtimes
-def test_get_plugin_docs_list_within_container(runtime):
+def test_get_plugin_docs_list_within_container(runtime, container_image):
     container_kwargs = {
         'process_isolation_executable': runtime,
         'process_isolation': True,
-        'container_image': defaults.default_container_image
+        'container_image': container_image,
     }
     out, _ = get_plugin_list(
         list_files=True,
@@ -402,11 +402,11 @@ def test_get_inventory(project_fixtures):
 
 
 @pytest.mark.test_all_runtimes
-def test_get_inventory_within_container(project_fixtures, runtime):
+def test_get_inventory_within_container(project_fixtures, runtime, container_image):
     container_kwargs = {
         'process_isolation_executable': runtime,
         'process_isolation': True,
-        'container_image': defaults.default_container_image
+        'container_image': container_image,
     }
     private_data_dir = project_fixtures / 'debug'
     inventory1 = private_data_dir / 'inventory' / 'inv_1'
@@ -460,7 +460,7 @@ def test_get_role_list(project_fixtures, skipif_pre_ansible211):
 
 
 @pytest.mark.test_all_runtimes
-def test_get_role_list_within_container(project_fixtures, runtime, skipif_pre_ansible211):
+def test_get_role_list_within_container(project_fixtures, runtime, skipif_pre_ansible211, container_image):
     """
     Test get_role_list() running in a container.
     """
@@ -476,7 +476,7 @@ def test_get_role_list_within_container(project_fixtures, runtime, skipif_pre_an
     container_kwargs = {
         'process_isolation_executable': runtime,
         'process_isolation': True,
-        'container_image': defaults.default_container_image
+        'container_image': container_image,
     }
     resp, err = get_role_list(private_data_dir=pdir, playbook_dir="/runner/project", **container_kwargs)
     assert isinstance(resp, dict)
@@ -519,7 +519,7 @@ def test_get_role_argspec(project_fixtures, skipif_pre_ansible211):
 
 
 @pytest.mark.test_all_runtimes
-def test_get_role_argspec_within_container(project_fixtures, runtime, skipif_pre_ansible211):
+def test_get_role_argspec_within_container(project_fixtures, runtime, skipif_pre_ansible211, container_image):
     """
     Test get_role_argspec() running inside a container. Since the test container
     does not currently contain any collections or roles, specify playbook_dir
@@ -552,7 +552,7 @@ def test_get_role_argspec_within_container(project_fixtures, runtime, skipif_pre
     container_kwargs = {
         'process_isolation_executable': runtime,
         'process_isolation': True,
-        'container_image': defaults.default_container_image
+        'container_image': container_image,
     }
     resp, err = get_role_argspec('Into_The_Mystic', private_data_dir=pdir, playbook_dir="/runner/project", **container_kwargs)
     assert isinstance(resp, dict)

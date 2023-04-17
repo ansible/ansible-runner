@@ -4,12 +4,11 @@ Using Runner as a container interface to Ansible
 ================================================
 
 The design of **Ansible Runner** makes it especially suitable for controlling the execution of **Ansible** from within a container for single-purpose
-automation workflows. A reference container image definition is `provided <https://github.com/ansible/ansible-runner/blob/master/Dockerfile>`_ and
-is also published to `Quay.io <https://quay.io/repository/ansible/ansible-runner>`_.
+automation workflows. Container images including ansible-runner can be built using `ansible-builder <https://ansible-builder.readthedocs.io/>`_.
 
 .. code-block:: console
 
-  $ podman run --rm -e RUNNER_PLAYBOOK=test.yml -v $PWD/demo:/runner quay.io/ansible/ansible-runner:latest
+  $ podman run --rm -e RUNNER_PLAYBOOK=test.yml -v $PWD/demo:/runner my-execution-environment:latest
     PLAY [all] *********************************************************************
 
     TASK [Gathering Facts] *********************************************************

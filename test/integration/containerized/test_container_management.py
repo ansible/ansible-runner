@@ -50,7 +50,7 @@ class CancelStandIn:
 
 
 @pytest.mark.test_all_runtimes
-def test_cancel_will_remove_container(project_fixtures, runtime, cli):
+def test_cancel_will_remove_container(project_fixtures, runtime, cli, container_image):
     private_data_dir = project_fixtures / 'sleep'
     ident = uuid4().hex[:12]
     container_name = f'ansible_runner_{ident}'
@@ -62,7 +62,8 @@ def test_cancel_will_remove_container(project_fixtures, runtime, cli):
         playbook='sleep.yml',
         settings={
             'process_isolation_executable': runtime,
-            'process_isolation': True
+            'process_isolation': True,
+            'container_image': container_image,
         },
         cancel_callback=cancel_standin.cancel,
         ident=ident
@@ -77,7 +78,7 @@ def test_cancel_will_remove_container(project_fixtures, runtime, cli):
 
 
 @pytest.mark.test_all_runtimes
-def test_non_owner_install(mocker, project_fixtures, runtime):
+def test_non_owner_install(mocker, project_fixtures, runtime, container_image):
     """Simulates a run on a conputer where ansible-runner install is not owned by current user"""
     mocker.patch('ansible_runner.utils.is_dir_owner', return_value=False)
 
@@ -87,7 +88,8 @@ def test_non_owner_install(mocker, project_fixtures, runtime):
         playbook='debug.yml',
         settings={
             'process_isolation_executable': runtime,
-            'process_isolation': True
+            'process_isolation': True,
+            'container_image': container_image,
         }
     )
     with res.stdout as f:

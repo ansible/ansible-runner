@@ -191,7 +191,7 @@ def run(**kwargs):
     :param str or list process_isolation_hide_paths: A path or list of paths on the system that should be hidden from the playbook run.
     :param str or list process_isolation_show_paths: A path or list of paths on the system that should be exposed to the playbook run.
     :param str or list process_isolation_ro_paths: A path or list of paths on the system that should be exposed to the playbook run as read-only.
-    :param str container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
+    :param str container_image: Container image to use when running an ansible task
     :param list container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir. (default: None)
     :param list container_options: List of container options to pass to execution engine.
     :param str directory_isolation_base_path: An optional path will be used as the base path to create a temp directory, the project contents will be
@@ -284,7 +284,7 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
                     execution.
     :param bool process_isolation: Enable process isolation, using a container engine (e.g. podman).
     :param str process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
-    :param str container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
+    :param str container_image: Container image to use when running an ansible task
     :param list container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
     :param list container_options: List of container options to pass to execution engine.
     :param str container_workdir: The working directory within the container.
@@ -388,7 +388,7 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format=None, snippe
                     execution.
     :param process_isolation: Enable process isolation, using a container engine (e.g. podman).
     :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
-    :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
+    :param container_image: Container image to use when running an ansible task
     :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
     :param container_options: List of container options to pass to execution engine.
     :param container_workdir: The working directory within the container.
@@ -506,7 +506,7 @@ def get_plugin_list(list_files=None, response_format=None, plugin_type=None, pla
                     execution.
     :param process_isolation: Enable process isolation, using a container engine (e.g. podman).
     :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
-    :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
+    :param container_image: Container image to use when running an ansible task
     :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
     :param container_options: List of container options to pass to execution engine.
     :param container_workdir: The working directory within the container.
@@ -627,7 +627,7 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
                     execution.
     :param process_isolation: Enable process isolation, using a container engine (e.g. podman).
     :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
-    :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
+    :param container_image: Container image to use when running an ansible task
     :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
     :param container_options: List of container options to pass to execution engine.
     :param container_workdir: The working directory within the container.
@@ -742,7 +742,7 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
                     execution.
     :param process_isolation: Enable process isolation, using a container engine (e.g. podman).
     :param process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
-    :param container_image: Container image to use when running an ansible task (default: quay.io/ansible/ansible-runner:devel)
+    :param container_image: Container image to use when running an ansible task
     :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
     :param container_options: List of container options to pass to execution engine.
     :param container_workdir: The working directory within the container.
@@ -847,7 +847,7 @@ def get_role_list(collection=None, playbook_dir=None, **kwargs):
         (based on ``runner_mode`` selected) while executing command. If the timeout is triggered, it will force cancel the execution.
     :param bool process_isolation: Enable process isolation using a container engine, such as podman.
     :param str process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
-    :param str container_image: Container image to use when running an Ansible task (default: quay.io/ansible/ansible-runner:devel)
+    :param str container_image: Container image to use when running an Ansible task
     :param list container_volume_mounts: List of bind mounts in the form ``host_dir:/container_dir:labels``. (default: None)
     :param list container_options: List of container options to pass to execution engine.
     :param str container_workdir: The working directory within the container.
@@ -925,7 +925,7 @@ def get_role_argspec(role, collection=None, playbook_dir=None, **kwargs):
         (based on ``runner_mode`` selected) while executing command. If the timeout is triggered, it will force cancel the execution.
     :param bool process_isolation: Enable process isolation using a container engine, such as podman.
     :param str process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
-    :param str container_image: Container image to use when running an Ansible task (default: quay.io/ansible/ansible-runner:devel)
+    :param str container_image: Container image to use when running an Ansible task
     :param list container_volume_mounts: List of bind mounts in the form ``host_dir:/container_dir:labels``. (default: None)
     :param list container_options: List of container options to pass to execution engine.
     :param str container_workdir: The working directory within the container.

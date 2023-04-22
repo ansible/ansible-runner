@@ -324,10 +324,6 @@ class OutputEventFilter(object):
             except ValueError:
                 event_data = {}
             event_data = self._emit_event(value[:match.start()], event_data)
-            if not self.output_json:
-                stdout_actual = event_data['stdout'] if 'stdout' in event_data else None
-            else:
-                stdout_actual = json.dumps(event_data)
             remainder = value[match.end():]
             self._buffer = StringIO()
             self._buffer.write(remainder)
@@ -400,6 +396,19 @@ class OutputEventFilter(object):
             event_data['end_line'] = self._start_line + n_lines
             self._start_line += n_lines
             if self._event_callback:
+                if event_data.get('stdout'):
+                    if self.output_json:
+                        stdout_actual = json.dumps(event_data)
+                    else:
+                        stdout_actual = event_data['stdout']
+                    if PY2:
+                        stdout_actual = stdout_actual.encode('utf-8')
+                    if not self.suppress_ansible_output:
+                        sys.stdout.write(stdout_actual)
+                        sys.stdout.write('\n')
+                    self._handle.write(stdout_actual)
+                    self._handle.write('\n')
+                    self._handle.flush()
                 self._event_callback(event_data)
         if next_event_data.get('uuid', None):
             self._current_event_data = next_event_data

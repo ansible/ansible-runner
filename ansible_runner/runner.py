@@ -264,6 +264,7 @@ class Runner(object):
                 self.errored = True
                 logger.debug("received exception: {exc}".format(exc=str(exc)))
 
+            self.populate_container_info()
             if self.timed_out or self.errored:
                 self.kill_container()
 
@@ -478,6 +479,23 @@ class Runner(object):
             yield event
 
     @property
+    def image_info(self):
+        '''
+        Returns the containerized image hash
+
+        Example:
+            sha256:1a12542b7621f221f3b7189cbddb6689f1f18f677366e66abf9c4719d3bc91be
+        '''
+        image_info_path = os.path.join(self.config.artifact_dir, "image_info")
+        if not self.config.containerized:
+            logger.info("Runner runtime is not containerized")
+        elif not os.path.exists(image_info_path):
+            logger.warn("Container Image runtime information is not available")
+            return None
+        with open(image_info_path) as f:
+            return f.read()
+
+    @property
     def stats(self):
         '''
         Returns the final high level stats from the Ansible run
@@ -518,9 +536,28 @@ class Runner(object):
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
             _, stderr = proc.communicate()
             if proc.returncode:
-                logger.info('Error from {} kill {} command:\n{}'.format(container_cli, container_name, stderr))
+                logger.warn('Error from {} kill {} command:\n{}'.format(container_cli, container_name, stderr))
             else:
                 logger.info("Killed container {}".format(container_name))
+
+    def populate_container_info(self, filter_parameters="{{Image}}"):
+        '''
+        Gather the Execution Environment image id for storing alongside the runtime artifacts
+        '''
+        container_name = self.config.container_name
+        if container_name:
+            container_cli = self.config.process_isolation_executable
+            cmd = [container_cli, 'inspect']
+            if filter_parameters:
+                cmd.append("-f")
+                cmd.append(filter_parameters)
+            cmd.append(container_name)
+            image_info = os.path.join(self.config.private_data_dir, "image_info")
+            with open(image_info, "w") as f:
+                proc = Popen(cmd, stdout=f, stderr=PIPE)
+                _, stderr = proc.communicate()
+            if proc.returncode:
+                logger.warn('Error from {} inspect {} command:\n{}'.format(container_cli, container_name, stderr))
 
     @classmethod
     def handle_termination(cls, pid, pidfile=None, is_cancel=True):

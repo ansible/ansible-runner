@@ -467,6 +467,23 @@ def sanitize_container_name(original_name):
     return re.sub('[^a-zA-Z0-9_-]', '_', text_type(original_name))
 
 
+def get_relative_inventory_path(inventory, private_data_dir, new_base=''):
+    if isinstance(inventory, list):
+        new_inventory = []
+        for inventory_path in inventory:
+            if os.path.isabs(inventory_path) and inventory_path.startswith(private_data_dir):
+                new_inventory.append(
+                    os.path.join(new_base, os.path.relpath(inventory_path, private_data_dir))
+                )
+            else:
+                new_inventory.append(inventory_path)
+        return new_inventory
+    elif isinstance(inventory, string_types):
+        if os.path.isabs(inventory) and inventory.startswith(private_data_dir):
+            return os.path.join(new_base, os.path.relpath(inventory, private_data_dir))
+    return inventory
+
+
 def cli_mounts():
     return [
         {

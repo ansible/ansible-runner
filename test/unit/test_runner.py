@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import codecs
+import datetime
 import os
 
 import json
@@ -80,6 +81,7 @@ def test_verbose_event_created_time(rc):
     assert exitcode == 0
     for event in runner.events:
         assert 'created' in event, event
+        assert datetime.datetime.fromisoformat(event['created']).tzinfo == datetime.timezone.utc
 
 
 @pytest.mark.parametrize('value', ['abc123', six.u('Iñtërnâtiônàlizætiøn')])

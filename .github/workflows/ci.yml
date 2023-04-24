@@ -8,20 +8,17 @@ on:
 jobs:
   sanity:
     name: ${{ matrix.test.name }}
-    runs-on: ubuntu-20.04
-    container:
-      image: quay.io/ansible/ansible-runner-test-container:2.0.0
-      env:
-        PIP_CACHE_DIR: ${{ runner.temp }}/.cache/pip
-        PY_COLORS: 1
-        TOXENV: ${{ matrix.test.tox_env }}
+    runs-on: ubuntu-22.04
+    env:
+      TOXENV: ${{ matrix.test.tox_env }}
+      PY_COLORS: 1
 
     strategy:
       fail-fast: false
       matrix:
         test:
           - name: Lint
-            tox_env: linters
+            tox_env: linters-py310
 
           - name: Docs
             tox_env: docs
@@ -29,6 +26,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Install tox
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install "tox==4.5.0"
 
       - name: Create tox environment
         run: tox --notest
@@ -38,7 +40,7 @@ jobs:
 
 
   integration:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Integration - ${{ matrix.py_version.name }}
 
     env:
@@ -61,7 +63,6 @@ jobs:
           - name: '3.11'
             tox_env: integration-py311
 
-
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -74,7 +75,7 @@ jobs:
       - name: Install tox
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install "tox<4.0.0" build
+          python3 -m pip install "tox==4.5.0" build
 
       - name: Prepare runner test container
         run: |
@@ -96,21 +97,18 @@ jobs:
           RUNNER_TEST_IMAGE_NAME=ansible-runner-gha${{ github.run_id }}-event-test tox
 
       - name: Upload coverage report
-        run: |
-          curl --silent --show-error --output codecov https://ansible-ci-files.s3.us-east-1.amazonaws.com/codecov/linux/codecov
-          chmod +x codecov
-          ./codecov --file test/coverage/reports/coverage.xml --flags {{ matrix.py_version.tox_env }}
+        uses: codecov/codecov-action@v3
+        with:
+          files: test/coverage/reports/coverage.xml
+          flags: ${{ matrix.py_version.tox_env }}
 
 
   unit:
     name: Unit - ${{ matrix.py_version.name}}
-    runs-on: ubuntu-20.04
-    container:
-      image: quay.io/ansible/ansible-runner-test-container:2.0.0
-      env:
-        PIP_CACHE_DIR: ${{ runner.temp }}/.cache/pip
-        TOXENV: ${{ matrix.py_version.tox_env }}
-        PY_COLORS: 1
+    runs-on: ubuntu-22.04
+    env:
+      TOXENV: ${{ matrix.py_version.tox_env }}
+      PY_COLORS: 1
 
     strategy:
       fail-fast: false
@@ -125,9 +123,22 @@ jobs:
           - name: '3.10'
             tox_env: unit-py310
 
+          - name: '3.11'
+            tox_env: unit-py311
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Install Python ${{ matrix.py_version.name }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.py_version.name }}
+
+      - name: Install tox
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install "tox==4.5.0"
 
       - name: Create tox environment
         run: tox --notest
@@ -136,4 +147,7 @@ jobs:
         run: tox
 
       - name: Upload coverage report
-        run: codecov --file test/coverage/reports/coverage.xml --flags {{ matrix.py_version.tox_env }}
+        uses: codecov/codecov-action@v3
+        with:
+          files: test/coverage/reports/coverage.xml
+          flags: ${{ matrix.py_version.tox_env }}

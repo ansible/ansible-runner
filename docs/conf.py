@@ -48,7 +48,6 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
     "sphinx_ansible_theme",
-    'pbr.sphinxext',
 ]
 
 # Add any paths that contain templates here, relative to this directory.

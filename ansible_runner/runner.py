@@ -80,7 +80,7 @@ class Runner(object):
 
                 # prefer 'created' from partial data, but verbose events set time here
                 if 'created' not in event_data:
-                    event_data['created'] = datetime.datetime.utcnow().isoformat()
+                    event_data['created'] = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
 
                 if self.event_handler is not None:
                     should_write = self.event_handler(event_data)

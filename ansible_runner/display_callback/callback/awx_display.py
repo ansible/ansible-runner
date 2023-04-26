@@ -67,7 +67,7 @@ CENSORED = "the output has been hidden due to the fact that 'no_log: true' was s
 
 
 def current_time():
-    return datetime.datetime.utcnow()
+    return datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
 
 
 # use a custom JSON serializer so we can properly handle !unsafe and !vault
@@ -198,7 +198,7 @@ class EventContext(object):
             event_dict['project_update_id'] = int(os.getenv('PROJECT_UPDATE_ID', '0'))
         event_dict['pid'] = event_data.get('pid', os.getpid())
         event_dict['uuid'] = event_data.get('uuid', str(uuid.uuid4()))
-        event_dict['created'] = event_data.get('created', datetime.datetime.utcnow().isoformat())
+        event_dict['created'] = event_data.get('created', current_time().isoformat())
         if not event_data.get('parent_uuid', None):
             for key in ('task_uuid', 'play_uuid', 'playbook_uuid'):
                 parent_uuid = event_data.get(key, None)

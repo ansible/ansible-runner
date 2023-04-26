@@ -1,5 +1,5 @@
 ansible-core
-pbr
 pexpect
 six
 sphinx
+sphinx-ansible-theme

@@ -1,0 +1,5 @@
+[build-system]
+requires = ["setuptools>=45, <=67.7.2", "setuptools-scm[toml]>=6.2, <=7.1.0"]  # pin max versions of build deps and update as needed
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]

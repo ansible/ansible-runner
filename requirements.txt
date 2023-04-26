@@ -1,6 +1,0 @@
-pexpect>=4.5
-packaging
-python-daemon
-pyyaml
-six
-importlib-metadata >= 4.6, < 6.3; python_version < '3.10' # enable `groups` arg to entry_points missing in 3.9 stdlib importlib.metadata

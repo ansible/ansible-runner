@@ -26,6 +26,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # this is not ideal, but we need tags available to generate versions in tests
 
       - name: Install tox
         run: |

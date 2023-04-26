@@ -61,7 +61,7 @@ elif IS_ADHOC:
 else:
     default_stdout_callback = 'default'
 
-DefaultCallbackModule = callback_loader.get(default_stdout_callback).__class__
+DefaultCallbackModule = callback_loader.get(default_stdout_callback, class_only=True)
 
 CENSORED = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"
 
@@ -347,6 +347,12 @@ class CallbackModule(DefaultCallbackModule):
 
         self.play_uuids = set()
         self.duplicate_play_counts = collections.defaultdict(lambda: 1)
+
+    def set_options(self, task_keys=None, var_options=None, direct=None):
+        base_config = C.config.get_configuration_definition(DefaultCallbackModule._load_name, plugin_type='callback')
+        my_config = C.config.get_configuration_definition(self._load_name, plugin_type='callback')
+        C.config.initialize_plugin_configuration_definitions('callback', self._load_name, base_config | my_config)
+        return super().set_options(task_keys=task_keys, var_options=var_options, direct=direct)
 
     @contextlib.contextmanager
     def capture_event_data(self, event, **event_data):

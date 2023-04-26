@@ -110,7 +110,7 @@ def test_run_command_idle_timeout(rc):
     rc.idle_timeout = 0.0000001
     runner = Runner(config=rc)
     status, exitcode = runner.run()
-    assert status == 'timeout'
+    assert status == 'idle_timeout'
     assert exitcode == 254
 
 

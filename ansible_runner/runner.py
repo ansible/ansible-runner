@@ -35,6 +35,7 @@ class Runner(object):
         self.status_handler = status_handler
         self.canceled = False
         self.timed_out = False
+        self.idle_timed_out = False
         self.errored = False
         self.status = "unstarted"
         self.rc = None
@@ -339,7 +340,7 @@ class Runner(object):
                 if self.config.idle_timeout and (time.time() - self.last_stdout_update) > self.config.idle_timeout:
                     self.kill_container()
                     Runner.handle_termination(child.pid, is_cancel=False)
-                    self.timed_out = True
+                    self.idle_timed_out = True
 
             stdout_handle.close()
             stderr_handle.close()
@@ -352,6 +353,8 @@ class Runner(object):
             self.status_callback('successful')
         elif self.timed_out:
             self.status_callback('timeout')
+        elif self.idle_timed_out:
+            self.status_callback('idle_timeout')
         else:
             self.status_callback('failed')
 

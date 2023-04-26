@@ -50,6 +50,8 @@ from copy import copy
 from ansible import constants as C
 from ansible.plugins.loader import callback_loader
 from ansible.utils.display import Display
+from ansible.module_utils.common._collections_compat import Mapping
+
 
 IS_ADHOC = os.getenv('AD_HOC_COMMAND_ID', False)
 
@@ -91,6 +93,9 @@ class AnsibleJSONEncoderLocal(json.JSONEncoder):
             return {'__ansible_vault': encrypted_form}
         elif isinstance(o, (datetime.date, datetime.datetime)):
             return o.isoformat()
+        elif isinstance(o, Mapping):
+            # hostvars and other objects
+            return dict(o)
         return super(AnsibleJSONEncoderLocal, self).default(o)
 
 

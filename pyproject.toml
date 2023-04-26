@@ -8,7 +8,7 @@ authors = [
     {name = "Ansible, Inc.", email = "info@ansible.com"},
 ]
 description = "Consistent Ansible Python API and CLI with container and process isolation runtime capabilities"
-dynamic = ["version", "dependencies"]
+dynamic = ["version"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",

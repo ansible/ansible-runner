@@ -2,47 +2,4 @@
 requires = ["setuptools>=45, <=67.7.2", "setuptools-scm[toml]>=6.2, <=7.1.0"]  # pin max versions of build deps and update as needed
 build-backend = "setuptools.build_meta"
 
-[project]
-name = "ansible-runner"
-authors = [
-    {name = "Ansible, Inc.", email = "info@ansible.com"},
-]
-description = "Consistent Ansible Python API and CLI with container and process isolation runtime capabilities"
-dynamic = ["version", "dependencies"]
-classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Environment :: Console",
-    "Intended Audience :: Developers",
-    "Intended Audience :: Information Technology",
-    "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: Apache Software License",
-    "Natural Language :: English",
-    "Operating System :: POSIX",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3 :: Only",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: System :: Systems Administration",
-    "Topic :: Utilities"
-]
-requires-python = ">=3.8"
-
-[project.readme]
-file = "README.md"
-content-type = "text/markdown"
-
-[project.license]
-text = "Apache Software License, Version 2.0"
-
-[project.urls]
-homepage = "https://ansible-runner.readthedocs.io"
-repository = "https://github.com/ansible/ansible-runner"
-
-[project.scripts]
-ansible-runner = "ansible_runner.__main__:main"
-
 [tool.setuptools_scm]
-
-[tool.flake8]

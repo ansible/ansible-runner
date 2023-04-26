@@ -196,6 +196,68 @@ def test_multiple_inventories(project_fixtures):
     assert 'host_2' in stdout
 
 
+def test_default_project_dir(project_fixtures):
+    private_data_dir = project_fixtures / 'project_dir_test'
+
+    res = run(
+        private_data_dir=private_data_dir,
+        playbook='debug.yml',
+    )
+    stdout = res.stdout.read()
+
+    assert res.rc == 0, stdout
+    assert 'In project' in stdout
+
+
+def test_project_dir(project_fixtures):
+    private_data_dir = project_fixtures / 'project_dir_test'
+
+    res = run(
+        private_data_dir=private_data_dir,
+        project_dir='my_project',
+        playbook='debug.yml',
+    )
+    stdout = res.stdout.read()
+
+    assert res.rc == 0, stdout
+    assert 'In my_project' in stdout
+
+
+@pytest.mark.test_all_runtimes
+def test_default_project_dir_inside_container(project_fixtures, runtime):
+    private_data_dir = project_fixtures / 'project_dir_test'
+
+    res = run(
+        private_data_dir=private_data_dir,
+        playbook='debug.yml',
+        process_isolation_executable=runtime,
+        process_isolation=True,
+        container_image=defaults.default_container_image,
+    )
+    stdout = res.stdout.read()
+
+    assert res.rc == 0, stdout
+    assert 'In project' in stdout
+
+
+@pytest.mark.test_all_runtimes
+def test_project_dir_inside_container(project_fixtures, runtime):
+    private_data_dir = project_fixtures / 'project_dir_test'
+
+    res = run(
+        private_data_dir=private_data_dir,
+        project_dir='my_project',
+        playbook='debug.yml',
+        process_isolation_executable=runtime,
+        process_isolation=True,
+        container_image=defaults.default_container_image,
+    )
+    stdout = res.stdout.read()
+
+    assert res.rc == 0, stdout
+    assert 'In my_project' in stdout
+
+
 def test_inventory_absolute_path(project_fixtures):
     private_data_dir = project_fixtures / 'debug'
 

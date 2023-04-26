@@ -120,16 +120,16 @@ class BaseConfig(object):
 
         self.artifact_dir = os.path.join(artifact_dir, "{}".format(self.ident))
 
+        self.loader = ArtifactLoader(self.private_data_dir)
+
         if not project_dir:
             self.project_dir = os.path.join(self.private_data_dir, 'project')
         else:
-            self.project_dir = project_dir
+            self.project_dir = self.loader.abspath(project_dir)
 
         self.rotate_artifacts = rotate_artifacts
         self.fact_cache_type = fact_cache_type
         self.fact_cache = os.path.join(self.artifact_dir, fact_cache or 'fact_cache') if self.fact_cache_type == 'jsonfile' else None
-
-        self.loader = ArtifactLoader(self.private_data_dir)
 
         if self.host_cwd:
             self.host_cwd = os.path.abspath(self.host_cwd)
@@ -473,10 +473,13 @@ class BaseConfig(object):
         if self.container_workdir:
             workdir = self.container_workdir
         elif self.host_cwd is not None and os.path.exists(self.host_cwd):
-            # mount current host working diretory if passed and exist
+            # mount current host working directory if passed and exist
             self._ensure_path_safe_to_mount(self.host_cwd)
             self._update_volume_mount_paths(new_args, self.host_cwd)
             workdir = self.host_cwd
+        elif self.project_dir:
+            workdir = "/runner/project"
+            self._update_volume_mount_paths(new_args, self.project_dir, workdir)
         else:
             workdir = "/runner/project"
 

@@ -103,6 +103,8 @@ jobs:
         with:
           files: test/coverage/reports/coverage.xml
           flags: ${{ matrix.py_version.tox_env }}
+          fail_ci_if_error: true
+          verbose: true
 
 
   unit:
@@ -153,3 +155,5 @@ jobs:
         with:
           files: test/coverage/reports/coverage.xml
           flags: ${{ matrix.py_version.tox_env }}
+          fail_ci_if_error: true
+          verbose: true

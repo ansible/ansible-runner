@@ -53,9 +53,6 @@ jobs:
       fail-fast: false
       matrix:
         py_version:
-          - name: '3.8'
-            tox_env: integration-py38
-
           - name: '3.9'
             tox_env: integration-py39
 
@@ -118,9 +115,6 @@ jobs:
       fail-fast: false
       matrix:
         py_version:
-          - name: '3.8'
-            tox_env: unit-py38
-
           - name: '3.9'
             tox_env: unit-py39
 

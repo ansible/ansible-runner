@@ -3,7 +3,7 @@
 Installing Ansible Runner
 =========================
 
-Ansible Runner requires Python >= 3.8 and is provided from several different locations depending on how you want to use it.
+Ansible Runner requires Python >= 3.9 and is provided from several different locations depending on how you want to use it.
 
 Using pip
 ---------

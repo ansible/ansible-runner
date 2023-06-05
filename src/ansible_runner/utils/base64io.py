@@ -26,8 +26,6 @@ try:  # Python 3.5.0 and 3.5.1 have incompatible typing modules
     from typing import (
         IO,
         AnyStr,
-        Iterable,
-        List,
         Literal,
         Optional,
         Type,
@@ -196,15 +194,6 @@ class Base64IO(io.IOBase):
         self.__write_buffer = _bytes_to_write[trailing_byte_pos:]
         return self.__wrapped.write(base64.b64encode(_bytes_to_write[:trailing_byte_pos]))
 
-    def writelines(self, lines):
-        # type: (Iterable[bytes]) -> None
-        """Write a list of lines.
-
-        :param list lines: Lines to write
-        """
-        for line in lines:
-            self.write(line)
-
     def _read_additional_data_removing_whitespace(self, data, total_bytes_to_read):
         # type: (bytes, int) -> bytes
         """Read additional data from wrapped stream until we reach the desired number of bytes.
@@ -287,58 +276,3 @@ class Base64IO(io.IOBase):
         self.__read_buffer = results.read()
 
         return output_data
-
-    def __iter__(self):
-        # Until https://github.com/python/typing/issues/11
-        # there's no good way to tell mypy about custom
-        # iterators that subclass io.IOBase.
-        """Let this class act as an iterator."""
-        return self
-
-    def readline(self, limit=-1):
-        # type: (int) -> bytes
-        """Read and return one line from the stream.
-
-        If limit is specified, at most limit bytes will be read.
-
-        .. note::
-
-            Because the source that this reads from may not contain any OEL characters, we
-            read "lines" in chunks of length ``io.DEFAULT_BUFFER_SIZE``.
-
-        :param int limit: Maximum number of bytes to read
-        :rtype: bytes
-        """
-        return self.read(limit if limit > 0 else io.DEFAULT_BUFFER_SIZE)
-
-    def readlines(self, hint=-1):
-        # type: (int) -> List[bytes]
-        """Read and return a list of lines from the stream.
-
-        ``hint`` can be specified to control the number of lines read: no more lines will
-        be read if the total size (in bytes/characters) of all lines so far exceeds hint.
-
-        :param int hint: Number of lines to read
-        :returns: Lines of data
-        :rtype: list of bytes
-        """
-        lines = []
-        total_len = 0
-        hint_defined = hint > 0
-
-        for line in self:  # type: ignore
-            lines.append(line)
-            total_len += len(line)
-
-            hint_satisfied = total_len > hint
-            if hint_defined and hint_satisfied:
-                break
-        return lines
-
-    def __next__(self):
-        # type: () -> bytes
-        """Python 3 iterator hook."""
-        line = self.readline()
-        if line:
-            return line
-        raise StopIteration()

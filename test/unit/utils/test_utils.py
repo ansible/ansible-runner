@@ -17,6 +17,7 @@ from ansible_runner.utils import (
     sanitize_container_name,
     signal_handler,
 )
+from ansible_runner.utils.base64io import _to_bytes, Base64IO
 from ansible_runner.utils.streaming import stream_dir, unstream_dir
 
 
@@ -316,3 +317,29 @@ def test_signal_handler_set(mocker):
 
     with pytest.raises(AttributeError, match='Raised intentionally'):
         mock_signal.call_args[0][1]('number', 'frame')
+
+
+class TestBase64IO:
+    def test_init_fails(self):
+        with pytest.raises(TypeError, match='Base64IO wrapped object must have attributes'):
+            Base64IO(None)
+
+    def test__passthrough_interactive_check_bad_method(self):
+        obj = Base64IO(io.StringIO('test'))
+        assert not obj._passthrough_interactive_check('invalid_method')
+
+    def test_write(self, tmp_path):
+        tmpfile = tmp_path / "TestBase64IO_test_write.txt"
+        tmpfile.touch()
+        with tmpfile.open(mode='br') as t:
+            obj = Base64IO(t)
+            with pytest.raises(IOError, match='Stream is not writable'):
+                obj.write(b'')
+            obj.close()
+            with pytest.raises(ValueError, match='I/O operation on closed file.'):
+                obj.write(b'')
+
+    def test__read_additional_data_removing_whitespace(self):
+        obj = Base64IO(io.StringIO(''))
+        data = _to_bytes('te s t')
+        assert obj._read_additional_data_removing_whitespace(data, 4) == b'test'

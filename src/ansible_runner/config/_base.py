@@ -27,10 +27,7 @@ import shutil
 
 from base64 import b64encode
 from uuid import uuid4
-try:
-    from collections.abc import Mapping
-except ImportError:
-    from collections import Mapping
+from collections.abc import Mapping
 
 from six import iteritems, string_types
 

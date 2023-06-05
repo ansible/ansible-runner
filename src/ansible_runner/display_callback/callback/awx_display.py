@@ -48,6 +48,7 @@ from copy import copy
 
 # Ansible
 from ansible import constants as C
+from ansible.plugins.callback import CallbackBase
 from ansible.plugins.loader import callback_loader
 from ansible.utils.display import Display
 
@@ -61,7 +62,7 @@ elif IS_ADHOC:
 else:
     default_stdout_callback = 'default'
 
-DefaultCallbackModule = callback_loader.get(default_stdout_callback).__class__
+DefaultCallbackModule: CallbackBase = callback_loader.get(default_stdout_callback).__class__
 
 CENSORED = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"
 

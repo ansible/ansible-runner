@@ -138,6 +138,9 @@ class Worker:
                 # always release the output lock (
                 self._output_lock.release()
 
+    # NOTE: This should be decorated with staticmethod, but until our minimum supported
+    # Python is 3.10 (which allows static methods to be called as regular functions), we
+    # cannot decorate it as such, and must ignore typing errors at call locations.
     def _synchronize_output_reset_keepalive(wrapped_method):
         """
         Utility decorator to synchronize event writes and flushes to avoid keepalives splatting in the middle of
@@ -210,25 +213,25 @@ class Worker:
 
         return self.status, self.rc
 
-    @_synchronize_output_reset_keepalive
+    @_synchronize_output_reset_keepalive  # type: ignore
     def status_handler(self, status_data, runner_config):
         self.status = status_data['status']
         self._output.write(json.dumps(status_data).encode('utf-8'))
         self._output.write(b'\n')
         self._output.flush()
 
-    @_synchronize_output_reset_keepalive
+    @_synchronize_output_reset_keepalive  # type: ignore
     def event_handler(self, event_data):
         self._output.write(json.dumps(event_data).encode('utf-8'))
         self._output.write(b'\n')
         self._output.flush()
 
-    @_synchronize_output_reset_keepalive
+    @_synchronize_output_reset_keepalive  # type: ignore
     def artifacts_handler(self, artifact_dir):
         stream_dir(artifact_dir, self._output)
         self._output.flush()
 
-    @_synchronize_output_reset_keepalive
+    @_synchronize_output_reset_keepalive  # type: ignore
     def finished_callback(self, runner_obj):
         self._end_keepalive()  # ensure that we can't splat a keepalive event after the eof event
         self._output.write(json.dumps({'eof': True}).encode('utf-8'))

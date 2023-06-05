@@ -21,10 +21,7 @@ import signal
 
 from ansible_runner.exceptions import ConfigurationError
 
-try:
-    from collections.abc import Iterable, MutableMapping
-except ImportError:
-    from collections import Iterable, MutableMapping
+from collections.abc import Iterable, MutableMapping
 from io import StringIO
 from six import string_types, PY2, PY3, text_type, binary_type
 

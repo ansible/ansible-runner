@@ -872,11 +872,11 @@ def main(sys_args=None):
                 try:
                     res = run(**run_options)
                 except Exception:
-                    exc = traceback.format_exc()
+                    e = traceback.format_exc()
                     if stderr_path:
-                        open(stderr_path, 'w+').write(exc)
+                        open(stderr_path, 'w+').write(e)
                     else:
-                        sys.stderr.write(exc)
+                        sys.stderr.write(e)
                     return 1
             return res.rc
 

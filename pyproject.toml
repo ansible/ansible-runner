@@ -3,3 +3,11 @@ requires = ["setuptools>=45, <=67.7.2", "setuptools-scm[toml]>=6.2, <=7.1.0"]  #
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
+
+[[tool.mypy.overrides]]
+module = [
+    "ansible.*",
+    "daemon.*",
+    "pexpect",
+]
+ignore_missing_imports = true

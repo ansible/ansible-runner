@@ -26,7 +26,6 @@ try:  # Python 3.5.0 and 3.5.1 have incompatible typing modules
     from typing import (
         IO,
         AnyStr,
-        Literal,
         Optional,
         Type,
     )
@@ -97,10 +96,9 @@ class Base64IO(io.IOBase):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        # type: (Optional[Type[BaseException]], Optional[BaseException], Optional[TracebackType]) -> Literal[False]
+        # type: (Optional[Type[BaseException]], Optional[BaseException], Optional[TracebackType]) -> None
         """Properly close self on exit."""
         self.close()
-        return False
 
     def close(self):
         # type: () -> None
@@ -116,7 +114,7 @@ class Base64IO(io.IOBase):
         self.closed = True
 
     def _passthrough_interactive_check(self, method_name):
-        # type: (str, str) -> bool
+        # type: (str) -> bool
         """Attempt to call the specified method on the wrapped stream and return the result.
 
         If the method is not found on the wrapped stream, return False.

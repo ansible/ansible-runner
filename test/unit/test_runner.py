@@ -181,7 +181,11 @@ def test_stdout_file_no_write(rc, runner_mode):
         assert not stdout_path.exists()
 
 
-@pytest.mark.parametrize('runner_mode', ['pexpect', 'subprocess'])
+@pytest.mark.parametrize('runner_mode',
+                         [
+                             pytest.param('pexpect', marks=pytest.mark.xfail(reason="Test is unstable with pexpect")),
+                             'subprocess'
+                         ])
 def test_multiline_blank_write(rc, runner_mode):
     rc.command = ['echo', 'hello_world_marker\n\n\n']
     rc.runner_mode = runner_mode

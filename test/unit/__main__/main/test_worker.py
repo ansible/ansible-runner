@@ -1,5 +1,6 @@
 import ansible_runner.__main__ as ansible_runner__main__
 import pytest
+from yaml import safe_load
 
 
 def test_worker_delete(mocker):
@@ -43,3 +44,14 @@ def test_worker_delete_private_data_dir(mocker, tmp_path):
     mock_rmtree.assert_called_once_with(str(tmp_path), ignore_errors=True)
     mock_register_for_cleanup.assert_called_once_with(str(tmp_path))
     mock_mkdtemp.assert_not_called()
+
+
+def test_worker_info(mocker, capsys):
+    sys_args = ['worker', '--worker-info']
+    ansible_runner__main__.main(sys_args)
+
+    captured = capsys.readouterr()
+    data = safe_load(captured.out)
+    assert 'cpu_count' in data and isinstance(data['cpu_count'], int)
+    assert 'mem_in_bytes' in data and isinstance(data['mem_in_bytes'], int)
+    assert 'runner_version' in data and data['runner_version'] == ansible_runner__main__.VERSION

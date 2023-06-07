@@ -1,27 +1,6 @@
-import multiprocessing
-import re
 import uuid
 
 from pathlib import Path
-
-
-def get_cpu_count():
-    # `multiprocessing` info: https://docs.python.org/3/library/multiprocessing.html
-    cpu_count = multiprocessing.cpu_count()
-    return cpu_count
-
-
-def get_mem_in_bytes():
-    try:
-        with open('/proc/meminfo') as f:
-            mem = f.read()
-        matched = re.search(r'^MemTotal:\s+(\d+)', mem)
-        if matched:
-            mem_capacity = int(matched.groups()[0])
-        return mem_capacity * 1024
-    except FileNotFoundError:
-        error = "The /proc/meminfo file could not found, memory capacity undiscoverable."
-        return error
 
 
 def ensure_uuid(uuid_file_path=None, mode=0o0600):

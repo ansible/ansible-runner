@@ -1,6 +1,6 @@
 import pytest
 
-from ansible_runner.utils.capacity import (
+from ansible_runner.utils.ensure_uuid import (
     _set_uuid,
     ensure_uuid,
 )
@@ -9,14 +9,14 @@ from ansible_runner.utils.capacity import (
 @pytest.fixture
 def mock_uuid(mocker):
     uuid = 'f6bf3d15-7a6b-480a-b29c-eb4d0acf38ce'
-    mocker.patch('ansible_runner.utils.capacity.uuid.uuid4', return_value=uuid)
+    mocker.patch('ansible_runner.utils.ensure_uuid.uuid.uuid4', return_value=uuid)
 
     return uuid
 
 
 @pytest.fixture
 def mock_home_path(mocker, tmp_path):
-    mocker.patch('ansible_runner.utils.capacity.Path.home', return_value=tmp_path)
+    mocker.patch('ansible_runner.utils.ensure_uuid.Path.home', return_value=tmp_path)
 
 
 def test_set_uuid(mock_uuid, mock_home_path, tmp_path):
@@ -68,7 +68,7 @@ def test_set_uuid_bad_path(mock_uuid, tmp_path):
 
 
 def test_ensure_uuid(mocker, mock_uuid, mock_home_path, tmp_path):
-    mock_set_uuid = mocker.patch('ansible_runner.utils.capacity._set_uuid', return_value=mock_uuid)
+    mock_set_uuid = mocker.patch('ansible_runner.utils.ensure_uuid._set_uuid', return_value=mock_uuid)
 
     uuid = ensure_uuid()
 
@@ -77,7 +77,7 @@ def test_ensure_uuid(mocker, mock_uuid, mock_home_path, tmp_path):
 
 
 def test_ensure_uuid_does_not_exist(mocker, mock_uuid, tmp_path):
-    mock_set_uuid = mocker.patch('ansible_runner.utils.capacity._set_uuid', return_value=mock_uuid)
+    mock_set_uuid = mocker.patch('ansible_runner.utils.ensure_uuid._set_uuid', return_value=mock_uuid)
 
     uuid_path = tmp_path / 'uuid'
     uuid = ensure_uuid(uuid_path)
@@ -87,7 +87,7 @@ def test_ensure_uuid_does_not_exist(mocker, mock_uuid, tmp_path):
 
 
 def test_ensure_uuid_exists(mocker, mock_uuid, tmp_path):
-    mock_set_uuid = mocker.patch('ansible_runner.utils.capacity._set_uuid', return_value=mock_uuid)
+    mock_set_uuid = mocker.patch('ansible_runner.utils.ensure_uuid._set_uuid', return_value=mock_uuid)
     uuid_path = tmp_path / 'uuid'
     uuid_path.write_text(mock_uuid + '\n')
 
@@ -98,7 +98,7 @@ def test_ensure_uuid_exists(mocker, mock_uuid, tmp_path):
 
 
 def test_ensure_uuid_exists_mode(mocker, mock_uuid, tmp_path):
-    mock_set_uuid = mocker.patch('ansible_runner.utils.capacity._set_uuid', return_value=mock_uuid)
+    mock_set_uuid = mocker.patch('ansible_runner.utils.ensure_uuid._set_uuid', return_value=mock_uuid)
     uuid_path = tmp_path / 'uuid'
     uuid_path.touch(0o775)
 

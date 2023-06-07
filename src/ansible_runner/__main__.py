@@ -27,6 +27,7 @@ import errno
 import json
 import stat
 import os
+import psutil
 import shutil
 import textwrap
 import tempfile
@@ -40,7 +41,7 @@ from ansible_runner import run
 from ansible_runner import output
 from ansible_runner import cleanup
 from ansible_runner.utils import dump_artifact, Bunch, register_for_cleanup
-from ansible_runner.utils.capacity import get_cpu_count, get_mem_in_bytes, ensure_uuid
+from ansible_runner.utils.ensure_uuid import ensure_uuid
 from ansible_runner.utils.importlib_compat import importlib_metadata
 from ansible_runner.runner import Runner
 from ansible_runner.exceptions import AnsibleRunnerException
@@ -745,15 +746,12 @@ def main(sys_args=None):
     if vargs.get('command') == 'worker':
         if vargs.get('worker_subcommand') == 'cleanup':
             cleanup.run_cleanup(vargs)
-            parser.exit(0)
+            return 0
         if vargs.get('worker_info'):
-            cpu = get_cpu_count()
-            mem = get_mem_in_bytes()
+            cpu = psutil.cpu_count()
+            mem = psutil.virtual_memory().total
             errors = []
             uuid = ensure_uuid()
-            if not isinstance(mem, int):
-                errors.append(mem)
-                mem = None
             if "Could not find" in uuid:
                 errors.append(uuid)
                 uuid = None
@@ -764,7 +762,7 @@ def main(sys_args=None):
                     'uuid': uuid,
                     }
             print(safe_dump(info, default_flow_style=True))
-            parser.exit(0)
+            return 0
 
         private_data_dir = vargs.get('private_data_dir')
         delete_directory = vargs.get('delete_directory', False)

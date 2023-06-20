@@ -26,13 +26,13 @@ _display_logger = logging.getLogger('ansible-runner.display')
 _debug_logger = logging.getLogger('ansible-runner.debug')
 
 
-def display(msg, log_only=False):
+def display(msg: str, log_only: bool = False) -> None:
     if not log_only:
         _display_logger.log(70, msg)
     _debug_logger.log(10, msg)
 
 
-def debug(msg):
+def debug(msg: str) -> None:
     if DEBUG_ENABLED:
         if isinstance(msg, Exception):
             if TRACEBACK_ENABLED:
@@ -40,7 +40,7 @@ def debug(msg):
         display(msg)
 
 
-def set_logfile(filename):
+def set_logfile(filename: str) -> None:
     handlers = [h.get_name() for h in _debug_logger.handlers]
     if 'logfile' not in handlers:
         logfile_handler = logging.FileHandler(filename)
@@ -50,21 +50,21 @@ def set_logfile(filename):
         _debug_logger.addHandler(logfile_handler)
 
 
-def set_debug(value):
+def set_debug(value: str) -> None:
     global DEBUG_ENABLED
     if value.lower() not in ('enable', 'disable'):
         raise ValueError('value must be one of `enable` or `disable`, got %s' % value)
     DEBUG_ENABLED = value.lower() == 'enable'
 
 
-def set_traceback(value):
+def set_traceback(value: str) -> None:
     global TRACEBACK_ENABLED
     if value.lower() not in ('enable', 'disable'):
         raise ValueError('value must be one of `enable` or `disable`, got %s' % value)
     TRACEBACK_ENABLED = value.lower() == 'enable'
 
 
-def configure():
+def configure() -> None:
     '''
     Configures the logging facility
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import multiprocessing
 import re
 import uuid
@@ -5,13 +7,13 @@ import uuid
 from pathlib import Path
 
 
-def get_cpu_count():
+def get_cpu_count() -> int:
     # `multiprocessing` info: https://docs.python.org/3/library/multiprocessing.html
     cpu_count = multiprocessing.cpu_count()
     return cpu_count
 
 
-def get_mem_in_bytes():
+def get_mem_in_bytes() -> int | str:
     try:
         with open('/proc/meminfo') as f:
             mem = f.read()
@@ -24,7 +26,7 @@ def get_mem_in_bytes():
         return error
 
 
-def ensure_uuid(uuid_file_path=None, mode=0o0600):
+def ensure_uuid(uuid_file_path: Path | None = None, mode: int = 0o0600):
     if uuid_file_path is None:
         uuid_file_path = Path.home().joinpath('.ansible_runner_uuid')
 
@@ -39,7 +41,7 @@ def ensure_uuid(uuid_file_path=None, mode=0o0600):
         return newly_generated_uuid
 
 
-def _set_uuid(uuid_file_path=None, mode=0o0600):
+def _set_uuid(uuid_file_path: Path | None = None, mode: int = 0o0600):
     if uuid_file_path is None:
         uuid_file_path = Path.home().joinpath('.ansible_runner_uuid')
 

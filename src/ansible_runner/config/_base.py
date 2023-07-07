@@ -19,6 +19,8 @@
 
 # pylint: disable=W0201
 
+from __future__ import annotations
+
 import json
 import logging
 import os
@@ -27,8 +29,10 @@ import stat
 import tempfile
 import shutil
 from base64 import b64encode
+from enum import Enum
 from uuid import uuid4
 from collections.abc import Mapping
+from typing import Any
 
 import pexpect
 
@@ -49,7 +53,7 @@ from ansible_runner.utils import (
 logger = logging.getLogger('ansible-runner')
 
 
-class BaseExecutionMode:
+class BaseExecutionMode(Enum):
     NONE = 0
     # run ansible commands either locally or within EE
     ANSIBLE_COMMANDS = 1
@@ -60,18 +64,39 @@ class BaseExecutionMode:
 class BaseConfig:
 
     def __init__(self,
-                 private_data_dir=None, host_cwd=None, envvars=None, passwords=None, settings=None,
-                 project_dir=None, artifact_dir=None, fact_cache_type='jsonfile', fact_cache=None,
-                 process_isolation=False, process_isolation_executable=None,
-                 container_image=None, container_volume_mounts=None, container_options=None, container_workdir=None, container_auth_data=None,
-                 ident=None, rotate_artifacts=0, timeout=None, ssh_key=None, quiet=False, json_mode=False,
-                 check_job_event_data=False, suppress_env_files=False, keepalive_seconds=None):
+                 private_data_dir: str | None = None,
+                 host_cwd: str | None = None,
+                 envvars: dict[str, Any] | None = None,
+                 passwords=None,
+                 settings=None,
+                 project_dir: str | None = None,
+                 artifact_dir: str | None = None,
+                 fact_cache_type: str = 'jsonfile',
+                 fact_cache=None,
+                 process_isolation: bool = False,
+                 process_isolation_executable: str | None = None,
+                 container_image: str = "",
+                 container_volume_mounts=None,
+                 container_options=None,
+                 container_workdir: str | None = None,
+                 container_auth_data=None,
+                 ident: str | None = None,
+                 rotate_artifacts: int = 0,
+                 timeout: int | None = None,
+                 ssh_key: str | None = None,
+                 quiet: bool = False,
+                 json_mode: bool = False,
+                 check_job_event_data: bool = False,
+                 suppress_env_files: bool = False,
+                 keepalive_seconds: int | None = None
+                 ):
         # pylint: disable=W0613
 
         # common params
         self.host_cwd = host_cwd
         self.envvars = envvars
         self.ssh_key_data = ssh_key
+        self.command: list[str] = []
 
         # container params
         self.process_isolation = process_isolation
@@ -80,13 +105,11 @@ class BaseConfig:
         self.container_volume_mounts = container_volume_mounts
         self.container_workdir = container_workdir
         self.container_auth_data = container_auth_data
-        self.registry_auth_path = None
-        self.container_name = None  # like other properties, not accurate until prepare is called
+        self.registry_auth_path: str
+        self.container_name: str = ""  # like other properties, not accurate until prepare is called
         self.container_options = container_options
-        self._volume_mount_paths = []
 
         # runner params
-        self.private_data_dir = private_data_dir
         self.rotate_artifacts = rotate_artifacts
         self.quiet = quiet
         self.json_mode = json_mode
@@ -145,7 +168,7 @@ class BaseConfig:
     def containerized(self):
         return self.process_isolation and self.process_isolation_executable in self._CONTAINER_ENGINES
 
-    def prepare_env(self, runner_mode='pexpect'):
+    def prepare_env(self, runner_mode: str = 'pexpect') -> None:
         """
         Manages reading environment metadata files under ``private_data_dir`` and merging/updating
         with existing values so the :py:class:`ansible_runner.runner.Runner` object can read and use them easily
@@ -211,7 +234,7 @@ class BaseConfig:
                     f'container_image required when specifying process_isolation_executable={self.process_isolation_executable}'
                 )
             self.container_name = f"ansible_runner_{sanitize_container_name(self.ident)}"
-            self.env = {}
+            self.env: dict[str, Any] = {}
 
             if self.process_isolation_executable == 'podman':
                 # A kernel bug in RHEL < 8.5 causes podman to use the fuse-overlayfs driver. This results in errors when
@@ -279,8 +302,8 @@ class BaseConfig:
             container_callback_dir = os.path.join("/runner/artifacts", self.ident, "callback")
             self.env['ANSIBLE_CALLBACK_PLUGINS'] = ':'.join(filter(None, (self.env.get('ANSIBLE_CALLBACK_PLUGINS'), container_callback_dir)))
         else:
-            callback_dir = self.env.get('AWX_LIB_DIRECTORY', os.getenv('AWX_LIB_DIRECTORY'))
-            if callback_dir is None:
+            callback_dir = self.env.get('AWX_LIB_DIRECTORY', os.getenv('AWX_LIB_DIRECTORY', ''))
+            if not callback_dir:
                 callback_dir = get_callback_dir()
             self.env['ANSIBLE_CALLBACK_PLUGINS'] = ':'.join(filter(None, (self.env.get('ANSIBLE_CALLBACK_PLUGINS'), callback_dir)))
 
@@ -316,7 +339,7 @@ class BaseConfig:
         for k, v in sorted(self.env.items()):
             debug(f' {k}: {v}')
 
-    def handle_command_wrap(self, execution_mode, cmdline_args):
+    def handle_command_wrap(self, execution_mode: BaseExecutionMode, cmdline_args: list[str]) -> None:
         if self.ssh_key_data:
             logger.debug('ssh key data added')
             self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path)
@@ -330,13 +353,13 @@ class BaseConfig:
         if hasattr(self, 'command') and isinstance(self.command, list):
             logger.debug("command: %s", ' '.join(self.command))
 
-    def _ensure_path_safe_to_mount(self, path):
+    def _ensure_path_safe_to_mount(self, path: str) -> None:
         if os.path.isfile(path):
             path = os.path.dirname(path)
         if os.path.join(path, "") in ('/', '/home/', '/usr/'):
             raise ConfigurationError("When using containerized execution, cannot mount '/' or '/home' or '/usr'")
 
-    def _get_playbook_path(self, cmdline_args):
+    def _get_playbook_path(self, cmdline_args: list[str]) -> str | None:
         _playbook = ""
         _book_keeping_copy = cmdline_args.copy()
         for arg in cmdline_args:
@@ -368,9 +391,12 @@ class BaseConfig:
 
         return _playbook
 
-    def _update_volume_mount_paths(
-        self, args_list, src_mount_path, dst_mount_path=None, labels=None
-    ):
+    def _update_volume_mount_paths(self,
+                                   args_list: list[str],
+                                   src_mount_path: str | None,
+                                   dst_mount_path: str | None = None,
+                                   labels: str | None = None
+                                   ) -> None:
 
         if src_mount_path is None or not os.path.exists(src_mount_path):
             logger.debug("Source volume mount path does not exist: %s", src_mount_path)
@@ -418,7 +444,7 @@ class BaseConfig:
         if volume_mount_path not in args_list:
             args_list.extend(["-v", volume_mount_path])
 
-    def _handle_ansible_cmd_options_bind_mounts(self, args_list, cmdline_args):
+    def _handle_ansible_cmd_options_bind_mounts(self, args_list: list[str], cmdline_args: list[str]) -> None:
         inventory_file_options = ['-i', '--inventory', '--inventory-file']
         vault_file_options = ['--vault-password-file', '--vault-pass-file']
         private_key_file_options = ['--private-key', '--key-file']
@@ -461,7 +487,11 @@ class BaseConfig:
 
             self._update_volume_mount_paths(args_list, optional_arg_value)
 
-    def wrap_args_for_containerization(self, args, execution_mode, cmdline_args):
+    def wrap_args_for_containerization(self,
+                                       args: list[str],
+                                       execution_mode: BaseExecutionMode,
+                                       cmdline_args: list[str]
+                                       ) -> list[str]:
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm'])
 
@@ -565,7 +595,7 @@ class BaseConfig:
         logger.debug("container engine invocation: %s", ' '.join(new_args))
         return new_args
 
-    def _generate_container_auth_dir(self, auth_data):
+    def _generate_container_auth_dir(self, auth_data: dict[str, str]) -> tuple[str, str | None]:
         host = auth_data.get('host')
         token = f"{auth_data.get('username')}:{auth_data.get('password')}"
         encoded_container_auth_data = {'auths': {host: {'auth': b64encode(token.encode('UTF-8')).decode('UTF-8')}}}
@@ -602,7 +632,12 @@ class BaseConfig:
             auth_path = path  # docker expects to be passed directory
         return (auth_path, registries_conf_path)
 
-    def wrap_args_with_ssh_agent(self, args, ssh_key_path, ssh_auth_sock=None, silence_ssh_add=False):
+    def wrap_args_with_ssh_agent(self,
+                                 args: list[str],
+                                 ssh_key_path: str | None,
+                                 ssh_auth_sock: str | None = None,
+                                 silence_ssh_add: bool = False
+                                 ) -> list[str]:
         """
         Given an existing command line and parameterization this will return the same command line wrapped with the
         necessary calls to ``ssh-agent``
@@ -629,7 +664,7 @@ class BaseConfig:
             args.extend(['sh', '-c', cmd])
         return args
 
-    def _handle_automounts(self, new_args):
+    def _handle_automounts(self, new_args: list[str]) -> None:
         for cli_automount in cli_mounts():
             for env in cli_automount['ENVS']:
                 if env in os.environ:

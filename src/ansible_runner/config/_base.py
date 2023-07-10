@@ -59,7 +59,7 @@ class BaseExecutionMode():
 class BaseConfig(object):
 
     def __init__(self,
-                 private_data_dir=None, host_cwd=None, envvars=None, passwords=None, settings={},
+                 private_data_dir=None, host_cwd=None, envvars=None, passwords=None, settings=None,
                  project_dir=None, artifact_dir=None, fact_cache_type='jsonfile', fact_cache=None,
                  process_isolation=False, process_isolation_executable=None,
                  container_image=None, container_volume_mounts=None, container_options=None, container_workdir=None, container_auth_data=None,
@@ -80,6 +80,7 @@ class BaseConfig(object):
         self.registry_auth_path = None
         self.container_name = None  # like other properties, not accurate until prepare is called
         self.container_options = container_options
+        self._volume_mount_paths = []
 
         # runner params
         self.private_data_dir = private_data_dir
@@ -148,7 +149,10 @@ class BaseConfig(object):
         """
         self.runner_mode = runner_mode
         try:
-            self.settings.update(self.loader.load_file('env/settings', Mapping))
+            if self.settings and isinstance(self.settings, dict):
+                self.settings.update(self.loader.load_file('env/settings', Mapping))
+            else:
+                self.settings = self.loader.load_file('env/settings', Mapping)
         except ConfigurationError:
             debug("Not loading settings")
             self.settings = dict()

@@ -59,7 +59,7 @@ class BaseExecutionMode():
 class BaseConfig(object):
 
     def __init__(self,
-                 private_data_dir=None, host_cwd=None, envvars=None, passwords=None, settings={},
+                 private_data_dir=None, host_cwd=None, envvars=None, passwords={}, settings={},
                  project_dir=None, artifact_dir=None, fact_cache_type='jsonfile', fact_cache=None,
                  process_isolation=False, process_isolation_executable=None,
                  container_image=None, container_volume_mounts=None, container_options=None, container_workdir=None, container_auth_data=None,
@@ -155,10 +155,7 @@ class BaseConfig(object):
 
         if self.runner_mode == 'pexpect':
             try:
-                if self.passwords and isinstance(self.passwords, dict):
-                    self.passwords.update(self.loader.load_file('env/passwords', Mapping))
-                else:
-                    self.passwords = self.passwords or self.loader.load_file('env/passwords', Mapping)
+                self.passwords.update(self.loader.load_file('env/passwords', Mapping))
             except ConfigurationError:
                 debug('Not loading passwords')
 

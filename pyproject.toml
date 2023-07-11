@@ -11,3 +11,20 @@ module = [
     "pexpect",
 ]
 ignore_missing_imports = true
+
+[tool.pylint.main]
+output-format = "colorized"
+disable = [
+  "all",
+
+  # Some codes we will leave disabled
+  "C0103",  # invalid-name
+  "C0114",  # missing-module-docstring
+  "C0116",  # missing-function-docstring
+  "C0301",  # line-too-long
+  "R0902",  # too-many-instance-attributes
+]
+
+enable = [
+  "W0102",  # dangerous-default-value
+]

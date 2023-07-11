@@ -134,8 +134,7 @@ class RunnerConfig(BaseConfig):
         if self.sandboxed and self.directory_isolation_path is not None:
             self.directory_isolation_path = tempfile.mkdtemp(prefix='runner_di_', dir=self.directory_isolation_path)
             if os.path.exists(self.project_dir):
-                output.debug("Copying directory tree from {} to {} for working directory isolation".format(self.project_dir,
-                                                                                                           self.directory_isolation_path))
+                output.debug(f"Copying directory tree from {self.project_dir} to {self.directory_isolation_path} for working directory isolation")
                 shutil.copytree(self.project_dir, self.directory_isolation_path, symlinks=True)
 
         self.prepare_inventory()
@@ -270,35 +269,35 @@ class RunnerConfig(BaseConfig):
                 extravars_path = '/runner/env/extravars'
             else:
                 extravars_path = self.loader.abspath('env/extravars')
-            exec_list.extend(['-e', '@{}'.format(extravars_path)])
+            exec_list.extend(['-e', f'@{extravars_path}'])
 
         if self.extra_vars:
             if isinstance(self.extra_vars, dict) and self.extra_vars:
                 extra_vars_list = []
                 for k in self.extra_vars:
-                    extra_vars_list.append("\"{}\":{}".format(k, json.dumps(self.extra_vars[k])))
+                    extra_vars_list.append(f"\"{k}\":{json.dumps(self.extra_vars[k])}")
 
                 exec_list.extend(
                     [
                         '-e',
-                        '{%s}' % ','.join(extra_vars_list)
+                        f'{{{",".join(extra_vars_list)}}}'
                     ]
                 )
             elif self.loader.isfile(self.extra_vars):
-                exec_list.extend(['-e', '@{}'.format(self.loader.abspath(self.extra_vars))])
+                exec_list.extend(['-e', f'@{self.loader.abspath(self.extra_vars)}'])
 
         if self.verbosity:
             v = 'v' * self.verbosity
-            exec_list.append('-{}'.format(v))
+            exec_list.append(f'-{v}')
 
         if self.tags:
-            exec_list.extend(['--tags', '{}'.format(self.tags)])
+            exec_list.extend(['--tags', self.tags])
 
         if self.skip_tags:
-            exec_list.extend(['--skip-tags', '{}'.format(self.skip_tags)])
+            exec_list.extend(['--skip-tags', self.skip_tags])
 
         if self.forks:
-            exec_list.extend(['--forks', '{}'.format(self.forks)])
+            exec_list.extend(['--forks', str(self.forks)])
 
         # Other parameters
         if self.execution_mode == ExecutionMode.ANSIBLE_PLAYBOOK:
@@ -351,7 +350,7 @@ class RunnerConfig(BaseConfig):
 
         for path in sorted(set(self.process_isolation_hide_paths or [])):
             if not os.path.exists(path):
-                logger.debug('hide path not found: {0}'.format(path))
+                logger.debug(f'hide path not found: {path}')
                 continue
             path = os.path.realpath(path)
             if os.path.isdir(path):
@@ -361,7 +360,7 @@ class RunnerConfig(BaseConfig):
                 handle, new_path = tempfile.mkstemp(dir=self.process_isolation_path_actual)
                 os.close(handle)
                 os.chmod(new_path, stat.S_IRUSR | stat.S_IWUSR)
-            new_args.extend(['--bind', '{0}'.format(new_path), '{0}'.format(path)])
+            new_args.extend(['--bind', new_path, path])
 
         if self.private_data_dir:
             show_paths = [self.private_data_dir]
@@ -370,18 +369,18 @@ class RunnerConfig(BaseConfig):
 
         for path in sorted(set(self.process_isolation_ro_paths or [])):
             if not os.path.exists(path):
-                logger.debug('read-only path not found: {0}'.format(path))
+                logger.debug(f'read-only path not found: {path}')
                 continue
             path = os.path.realpath(path)
-            new_args.extend(['--ro-bind', '{0}'.format(path), '{0}'.format(path)])
+            new_args.extend(['--ro-bind', path, path])
 
         show_paths.extend(self.process_isolation_show_paths or [])
         for path in sorted(set(show_paths)):
             if not os.path.exists(path):
-                logger.debug('show path not found: {0}'.format(path))
+                logger.debug(f'show path not found: {path}')
                 continue
             path = os.path.realpath(path)
-            new_args.extend(['--bind', '{0}'.format(path), '{0}'.format(path)])
+            new_args.extend(['--bind', path, path])
 
         if self.execution_mode == ExecutionMode.ANSIBLE_PLAYBOOK:
             # playbook runs should cwd to the SCM checkout dir

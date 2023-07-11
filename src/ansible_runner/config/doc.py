@@ -47,7 +47,7 @@ class DocConfig(BaseConfig):
         # runner params
         self.runner_mode = runner_mode if runner_mode else 'subprocess'
         if self.runner_mode not in ['pexpect', 'subprocess']:
-            raise ConfigurationError("Invalid runner mode {0}, valid value is either 'pexpect' or 'subprocess'".format(self.runner_mode))
+            raise ConfigurationError(f"Invalid runner mode {self.runner_mode}, valid value is either 'pexpect' or 'subprocess'")
 
         if kwargs.get("process_isolation"):
             self._ansible_doc_exec_path = "ansible-doc"
@@ -63,11 +63,11 @@ class DocConfig(BaseConfig):
                                     snippet=False, playbook_dir=None, module_path=None):
 
         if response_format and response_format not in DocConfig._supported_response_formats:
-            raise ConfigurationError("Invalid response_format {0}, valid value is one of either {1}".format(response_format,
-                                                                                                            ", ".join(DocConfig._supported_response_formats)))
+            raise ConfigurationError(f'Invalid response_format {response_format}, '
+                                     f'valid value is one of either {", ".join(DocConfig._supported_response_formats)}')
 
         if not isinstance(plugin_names, list):
-            raise ConfigurationError("plugin_names should be of type list, instead received {0} of type {1}".format(plugin_names, type(plugin_names)))
+            raise ConfigurationError(f"plugin_names should be of type list, instead received {plugin_names} of type {type(plugin_names)}")
 
         self._prepare_env(runner_mode=self.runner_mode)
         self.cmdline_args = []
@@ -96,8 +96,8 @@ class DocConfig(BaseConfig):
                                     playbook_dir=None, module_path=None):
 
         if response_format and response_format not in DocConfig._supported_response_formats:
-            raise ConfigurationError("Invalid response_format {0}, valid value is one of either {1}".format(response_format,
-                                                                                                            ", ".join(DocConfig._supported_response_formats)))
+            raise ConfigurationError(f"Invalid response_format {response_format}, "
+                                     f'valid value is one of either {", ".join(DocConfig._supported_response_formats)}')
 
         self._prepare_env(runner_mode=self.runner_mode)
         self.cmdline_args = []

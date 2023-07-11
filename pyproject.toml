@@ -26,5 +26,6 @@ disable = [
 ]
 
 enable = [
+  "C0209",  # consider-using-f-string
   "W0102",  # dangerous-default-value
 ]

@@ -83,7 +83,7 @@ class Base64IO(io.IOBase):
         required_attrs = ("read", "write", "close", "closed", "flush")
         if not all(hasattr(wrapped, attr) for attr in required_attrs):
             raise TypeError(
-                "Base64IO wrapped object must have attributes: %s" % (repr(sorted(required_attrs)),)
+                f"Base64IO wrapped object must have attributes: {repr(sorted(required_attrs))}"
             )
         super(Base64IO, self).__init__()
         self.__wrapped = wrapped

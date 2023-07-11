@@ -47,7 +47,7 @@ class AnsibleCfgConfig(BaseConfig):
         # runner params
         self.runner_mode = runner_mode if runner_mode else 'subprocess'
         if self.runner_mode not in ['pexpect', 'subprocess']:
-            raise ConfigurationError("Invalid runner mode {0}, valid value is either 'pexpect' or 'subprocess'".format(self.runner_mode))
+            raise ConfigurationError(f"Invalid runner mode {self.runner_mode}, valid value is either 'pexpect' or 'subprocess'")
 
         if kwargs.get("process_isolation"):
             self._ansible_config_exec_path = "ansible-config"
@@ -62,7 +62,7 @@ class AnsibleCfgConfig(BaseConfig):
     def prepare_ansible_config_command(self, action, config_file=None, only_changed=None):
 
         if action not in AnsibleCfgConfig._supported_actions:
-            raise ConfigurationError("Invalid action {0}, valid value is one of either {1}".format(action, ", ".join(AnsibleCfgConfig._supported_actions)))
+            raise ConfigurationError(f'Invalid action {action}, valid value is one of either {", ".join(AnsibleCfgConfig._supported_actions)}')
 
         if action != 'dump' and only_changed:
             raise ConfigurationError("only_changed is applicable for action 'dump'")

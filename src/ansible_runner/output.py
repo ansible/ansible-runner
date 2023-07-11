@@ -53,14 +53,14 @@ def set_logfile(filename: str) -> None:
 def set_debug(value: str) -> None:
     global DEBUG_ENABLED
     if value.lower() not in ('enable', 'disable'):
-        raise ValueError('value must be one of `enable` or `disable`, got %s' % value)
+        raise ValueError(f"value must be one of `enable` or `disable`, got {value}")
     DEBUG_ENABLED = value.lower() == 'enable'
 
 
 def set_traceback(value: str) -> None:
     global TRACEBACK_ENABLED
     if value.lower() not in ('enable', 'disable'):
-        raise ValueError('value must be one of `enable` or `disable`, got %s' % value)
+        raise ValueError(f"value must be one of `enable` or `disable`, got {value}")
     TRACEBACK_ENABLED = value.lower() == 'enable'
 
 

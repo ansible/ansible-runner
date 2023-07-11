@@ -51,7 +51,7 @@ class CommandConfig(BaseConfig):
             raise ConfigurationError("input_fd is applicable only with 'subprocess' runner mode")
 
         if runner_mode and runner_mode not in ['pexpect', 'subprocess']:
-            raise ConfigurationError("Invalid runner mode {0}, valid value is either 'pexpect' or 'subprocess'".format(runner_mode))
+            raise ConfigurationError(f"Invalid runner mode {runner_mode}, valid value is either 'pexpect' or 'subprocess'")
 
         # runner params
         self.runner_mode = runner_mode

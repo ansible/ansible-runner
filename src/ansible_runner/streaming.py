@@ -266,8 +266,8 @@ class Processor(object):
             self.artifact_dir = os.path.abspath(kwargs.get('artifact_dir'))
         else:
             project_artifacts = os.path.abspath(os.path.join(self.private_data_dir, 'artifacts'))
-            if kwargs.get('ident'):
-                self.artifact_dir = os.path.join(project_artifacts, "{}".format(kwargs.get('ident')))
+            if ident := kwargs.get('ident'):
+                self.artifact_dir = os.path.join(project_artifacts, ident)
             else:
                 self.artifact_dir = project_artifacts
 

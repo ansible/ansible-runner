@@ -55,14 +55,14 @@ class Runner(object):
         '''
         self.last_stdout_update = time.time()
         if 'uuid' in event_data:
-            filename = '{}-partial.json'.format(event_data['uuid'])
+            filename = f"{event_data['uuid']}-partial.json"
             partial_filename = os.path.join(self.config.artifact_dir,
                                             'job_events',
                                             filename)
             full_filename = os.path.join(self.config.artifact_dir,
                                          'job_events',
-                                         '{}-{}.json'.format(event_data['counter'],
-                                                             event_data['uuid']))
+                                         f"{event_data['counter']}-{event_data['uuid']}.json"
+                                         )
             try:
                 event_data.update(dict(runner_ident=str(self.config.ident)))
                 try:
@@ -73,7 +73,7 @@ class Runner(object):
                         os.remove(partial_filename)
                 except IOError as e:
                     msg = "Failed to open ansible stdout callback plugin partial data" \
-                          " file {} with error {}".format(partial_filename, str(e))
+                          f" file {partial_filename} with error {str(e)}"
                     debug(msg)
                     if self.config.check_job_event_data:
                         raise AnsibleRunnerException(msg)
@@ -95,7 +95,7 @@ class Runner(object):
                         json.dump(event_data, write_file)
                     os.rename(temporary_filename, full_filename)
             except IOError as e:
-                debug("Failed writing event data: {}".format(e))
+                debug(f"Failed writing event data: {e}")
 
     def status_callback(self, status):
         self.status = status
@@ -188,7 +188,7 @@ class Runner(object):
             with open(env_file_host, 'w') as f:
                 f.write(
                     '\n'.join(
-                        ["{}={}".format(key, value) for key, value in self.config.env.items()]
+                        [f"{key}={value}" for key, value in self.config.env.items()]
                     )
                 )
         else:
@@ -244,15 +244,13 @@ class Runner(object):
                 stderr_response = proc_out.stderr
                 self.rc = proc_out.returncode
             except CalledProcessError as exc:
-                logger.debug("{cmd} execution failed, returncode: {rc}, output: {output}, stdout: {stdout}, stderr: {stderr}".format(
-                    cmd=exc.cmd, rc=exc.returncode, output=exc.output, stdout=exc.stdout, stderr=exc.stderr))
+                logger.debug(f"{exc.cmd} execution failed, returncode: {exc.returncode}, output: {exc.output}, stdout: {exc.stdout}, stderr: {exc.stderr}")
                 self.rc = exc.returncode
                 self.errored = True
                 stdout_response = exc.stdout
                 stderr_response = exc.stderr
             except TimeoutExpired as exc:
-                logger.debug("{cmd} execution timedout, timeout: {timeout}, output: {output}, stdout: {stdout}, stderr: {stderr}".format(
-                    cmd=exc.cmd, timeout=exc.timeout, output=exc.output, stdout=exc.stdout, stderr=exc.stderr))
+                logger.debug(f"{exc.cmd} execution timedout, timeout: {exc.timeout}, output: {exc.output}, stdout: {exc.stdout}, stderr: {exc.stderr}")
                 self.rc = 254
                 stdout_response = exc.stdout
                 stderr_response = exc.stderr
@@ -262,7 +260,7 @@ class Runner(object):
                 stderr_response = traceback.format_exc()
                 self.rc = 254
                 self.errored = True
-                logger.debug("received exception: {exc}".format(exc=str(exc)))
+                logger.debug(f"received exception: {exc}")
 
             if self.timed_out or self.errored:
                 self.kill_container()
@@ -328,7 +326,7 @@ class Runner(object):
                         # TODO: logger.exception('Could not check cancel callback - cancelling immediately')
                         # if isinstance(extra_update_fields, dict):
                         #     extra_update_fields['job_explanation'] = "System error during job execution, check system logs"
-                        raise CallbackError("Exception in Cancel Callback: {}".format(e))
+                        raise CallbackError(f"Exception in Cancel Callback: {e}")
                 if self.config.job_timeout and not self.canceled and (time.time() - job_start) > self.config.job_timeout:
                     self.timed_out = True
                     # if isinstance(extra_update_fields, dict):
@@ -384,13 +382,13 @@ class Runner(object):
             try:
                 self.artifacts_handler(self.config.artifact_dir)
             except Exception as e:
-                raise CallbackError("Exception in Artifact Callback: {}".format(e))
+                raise CallbackError(f"Exception in Artifact Callback: {e}")
 
         if self.finished_callback is not None:
             try:
                 self.finished_callback(self)
             except Exception as e:
-                raise CallbackError("Exception in Finished Callback: {}".format(e))
+                raise CallbackError(f"Exception in Finished Callback: {e}")
         return self.status, self.rc
 
     @property
@@ -465,7 +463,7 @@ class Runner(object):
             time.sleep(0.05)
             wait_time = datetime.datetime.now() - now
             if wait_time.total_seconds() > 60:
-                raise AnsibleRunnerException("events directory is missing: %s" % event_path)
+                raise AnsibleRunnerException(f"events directory is missing: {event_path}")
 
         while self.status == "running":
             for event, old_evnts in collect_new_events(event_path, old_events):
@@ -518,9 +516,9 @@ class Runner(object):
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
             _, stderr = proc.communicate()
             if proc.returncode:
-                logger.info('Error from {} kill {} command:\n{}'.format(container_cli, container_name, stderr))
+                logger.info(f"Error from {container_cli} kill {container_name} command:\n{stderr}")
             else:
-                logger.info("Killed container {}".format(container_name))
+                logger.info(f"Killed container {container_name}")
 
     @classmethod
     def handle_termination(cls, pid, pidfile=None, is_cancel=True):

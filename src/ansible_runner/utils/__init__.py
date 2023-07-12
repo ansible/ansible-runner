@@ -211,7 +211,7 @@ def dump_artifacts(kwargs):
         if not roles_path:
             roles_path = os.path.join(private_data_dir, 'roles')
         else:
-            roles_path += ':{}'.format(os.path.join(private_data_dir, 'roles'))
+            roles_path += f":{os.path.join(private_data_dir, 'roles')}"
 
         kwargs['envvars']['ANSIBLE_ROLES_PATH'] = roles_path
 
@@ -444,7 +444,7 @@ def ensure_str(s, encoding='utf-8', errors='strict'):
       - ``bytes`` -> decoded to ``str``
     """
     if not isinstance(s, (text_type, binary_type)):
-        raise TypeError("not expecting type '%s'" % type(s))
+        raise TypeError(f"not expecting type '{type(s)}'")
     if PY2 and isinstance(s, text_type):
         s = s.encode(encoding, errors)
     elif PY3 and isinstance(s, binary_type):
@@ -470,11 +470,11 @@ def cli_mounts():
             'ENVS': ['SSH_AUTH_SOCK'],
             'PATHS': [
                 {
-                    'src': '{}/.ssh/'.format(os.environ['HOME']),
+                    'src': f"{os.environ['HOME']}/.ssh/",
                     'dest': '/home/runner/.ssh/'
                 },
                 {
-                    'src': '{}/.ssh/'.format(os.environ['HOME']),
+                    'src': f"{os.environ['HOME']}/.ssh/",
                     'dest': '/root/.ssh/'
                 },
                 {

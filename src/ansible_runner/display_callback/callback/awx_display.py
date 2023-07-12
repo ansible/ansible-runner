@@ -107,7 +107,7 @@ class IsolatedFileWrite:
         # Strip off the leading key identifying characters :1:ev-
         event_uuid = key[len(':1:ev-'):]
         # Write data in a staging area and then atomic move to pickup directory
-        filename = '{}-partial.json'.format(event_uuid)
+        filename = f"{event_uuid}-partial.json"
         if not os.path.exists(os.path.join(self.private_data_dir, 'job_events')):
             os.mkdir(os.path.join(self.private_data_dir, 'job_events'), 0o700)
         dropoff_location = os.path.join(self.private_data_dir, 'job_events', filename)
@@ -226,18 +226,18 @@ class EventContext(object):
         b64data = base64.b64encode(json.dumps(data).encode('utf-8')).decode()
         with self.display_lock:
             # pattern corresponding to OutputEventFilter expectation
-            fileobj.write(u'\x1b[K')
+            fileobj.write('\x1b[K')
             for offset in range(0, len(b64data), max_width):
                 chunk = b64data[offset:offset + max_width]
-                escaped_chunk = u'{}\x1b[{}D'.format(chunk, len(chunk))
+                escaped_chunk = f'{chunk}\x1b[{len(chunk)}D'
                 fileobj.write(escaped_chunk)
-            fileobj.write(u'\x1b[K')
+            fileobj.write('\x1b[K')
             if flush:
                 fileobj.flush()
 
     def dump_begin(self, fileobj):
         begin_dict = self.get_begin_dict()
-        self.cache.set(":1:ev-{}".format(begin_dict['uuid']), begin_dict)
+        self.cache.set(f":1:ev-{begin_dict['uuid']}", begin_dict)
         self.dump(fileobj, {'uuid': begin_dict['uuid']})
 
     def dump_end(self, fileobj):
@@ -421,7 +421,7 @@ class CallbackModule(DefaultCallbackModule):
             if task.no_log:
                 task_ctx['task_args'] = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"
             else:
-                task_args = ', '.join(('%s=%s' % a for a in task.args.items()))
+                task_args = ', '.join((f'{k}={v}' for k, v in task.args.items()))
                 task_ctx['task_args'] = task_args
         if getattr(task, '_role', None):
             task_role = task._role._role_name

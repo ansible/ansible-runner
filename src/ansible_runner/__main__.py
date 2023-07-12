@@ -149,7 +149,7 @@ DEFAULT_CLI_ARGS = {
             dict(
                 default=DEFAULT_RUNNER_BINARY,
                 help="specifies the full path pointing to the Ansible binaries "
-                     "(default={})".format(DEFAULT_RUNNER_BINARY)
+                     f"(default={DEFAULT_RUNNER_BINARY})"
             ),
         ),
         (
@@ -158,7 +158,7 @@ DEFAULT_CLI_ARGS = {
                 default=DEFAULT_UUID,
                 help="an identifier that will be used when generating the artifacts "
                      "directory and can be used to uniquely identify a playbook run "
-                     "(default={})".format(DEFAULT_UUID)
+                     f"(default={DEFAULT_UUID})"
             ),
         ),
         (
@@ -432,18 +432,18 @@ def role_manager(vargs):
 
         playbook = dump_artifact(json.dumps(play), project_path, filename)
         kwargs.playbook = playbook
-        output.debug('using playbook file %s' % playbook)
+        output.debug(f"using playbook file {playbook}")
 
         if vargs.get('inventory'):
             inventory_file = os.path.join(vargs.get('private_data_dir'), 'inventory', vargs.get('inventory'))
             if not os.path.exists(inventory_file):
                 raise AnsibleRunnerException('location specified by --inventory does not exist')
             kwargs.inventory = inventory_file
-            output.debug('using inventory file %s' % inventory_file)
+            output.debug(f"using inventory file {inventory_file}")
 
         roles_path = vargs.get('roles_path') or os.path.join(vargs.get('private_data_dir'), 'roles')
         roles_path = os.path.abspath(roles_path)
-        output.debug('setting ANSIBLE_ROLES_PATH to %s' % roles_path)
+        output.debug(f"setting ANSIBLE_ROLES_PATH to {roles_path}")
 
         envvars = {}
         if envvars_exists:

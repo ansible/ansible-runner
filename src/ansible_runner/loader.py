@@ -95,14 +95,14 @@ class ArtifactLoader(object):
         '''
         try:
             if not os.path.exists(path):
-                raise ConfigurationError('specified path does not exist %s' % path)
+                raise ConfigurationError(f"specified path does not exist {path}")
             with codecs.open(path, encoding='utf-8') as f:
                 data = f.read()
 
             return data
 
         except (IOError, OSError) as exc:
-            raise ConfigurationError('error trying to load file contents: %s' % exc)
+            raise ConfigurationError(f"error trying to load file contents: {exc}")
 
     def abspath(self, path):
         '''
@@ -154,13 +154,13 @@ class ArtifactLoader(object):
             ConfigurationError:
         '''
         path = self.abspath(path)
-        debug('file path is %s' % path)
+        debug(f"file path is {path}")
 
         if path in self._cache:
             return self._cache[path]
 
         try:
-            debug('cache miss, attempting to load file from disk: %s' % path)
+            debug(f"cache miss, attempting to load file from disk: {path}")
             contents = parsed_data = self.get_contents(path)
             if encoding:
                 parsed_data = contents.encode(encoding)
@@ -177,7 +177,7 @@ class ArtifactLoader(object):
                     break
 
             if objtype and not isinstance(parsed_data, objtype):
-                debug('specified file %s is not of type %s' % (path, objtype))
+                debug(f"specified file {path} is not of type {objtype}")
                 raise ConfigurationError('invalid file serialization type for contents')
 
         self._cache[path] = parsed_data

@@ -10,20 +10,20 @@ import codecs
 import collections
 import datetime
 import logging
-
 import six
 import pexpect
 
 import ansible_runner.plugins
+from ansible_runner.output import debug
 
 from .utils import OutputEventFilter, cleanup_artifact_dir, ensure_str, collect_new_events
 from .exceptions import CallbackError, AnsibleRunnerException
-from ansible_runner.output import debug
+
 
 logger = logging.getLogger('ansible-runner')
 
 
-class Runner(object):
+class Runner:
 
     def __init__(self, config, cancel_callback=None, remove_partials=True, event_handler=None,
                  artifacts_handler=None, finished_callback=None, status_handler=None):

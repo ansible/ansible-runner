@@ -19,16 +19,15 @@
 import json
 import logging
 import os
-import pexpect
 import re
 import stat
 import tempfile
 import shutil
-
 from base64 import b64encode
 from uuid import uuid4
 from collections.abc import Mapping
 
+import pexpect
 from six import iteritems, string_types
 
 from ansible_runner import defaults
@@ -48,7 +47,7 @@ from ansible_runner.utils import (
 logger = logging.getLogger('ansible-runner')
 
 
-class BaseExecutionMode():
+class BaseExecutionMode:
     NONE = 0
     # run ansible commands either locally or within EE
     ANSIBLE_COMMANDS = 1
@@ -56,7 +55,7 @@ class BaseExecutionMode():
     GENERIC_COMMANDS = 2
 
 
-class BaseConfig(object):
+class BaseConfig:
 
     def __init__(self,
                  private_data_dir=None, host_cwd=None, envvars=None, passwords=None, settings=None,
@@ -462,7 +461,7 @@ class BaseConfig(object):
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm'])
 
-        if self.runner_mode == 'pexpect' or hasattr(self, 'input_fd') and self.input_fd is not None:
+        if self.runner_mode == 'pexpect' or getattr(self, 'input_fd', False):
             new_args.extend(['--tty'])
 
         new_args.append('--interactive')

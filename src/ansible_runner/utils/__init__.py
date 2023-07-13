@@ -19,11 +19,11 @@ import codecs
 import atexit
 import signal
 
-from ansible_runner.exceptions import ConfigurationError
-
 from collections.abc import Iterable, MutableMapping
 from io import StringIO
 from six import string_types, PY2, PY3, text_type, binary_type
+
+from ansible_runner.exceptions import ConfigurationError
 
 
 def cleanup_folder(folder):
@@ -58,7 +58,7 @@ def is_dir_owner(directory):
     return bool(current_user == callback_owner)
 
 
-class Bunch(object):
+class Bunch:
 
     '''
     Collect a bunch of variables together in an object.
@@ -276,7 +276,7 @@ def collect_new_events(event_path, old_events):
         yield event, old_events
 
 
-class OutputEventFilter(object):
+class OutputEventFilter:
     '''
     File-like object that looks for encoded job events in stdout data.
     '''

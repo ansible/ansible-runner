@@ -27,6 +27,9 @@ disable = [
 
 enable = [
   "C0209",  # consider-using-f-string
+  "C0411",  # wrong-import-order
+  "E1101",  # no-member
+  "R0205",  # useless-object-inheritance
   "W0102",  # dangerous-default-value
   "W1202",  # logging-format-interpolation
   "W1203",  # logging-fstring-interpolation

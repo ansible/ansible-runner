@@ -6,9 +6,9 @@ import os
 import json
 import sys
 import stat
+from pathlib import Path
 
 from .base64io import Base64IO
-from pathlib import Path
 
 
 def stream_dir(source_directory: str, stream: io.FileIO) -> None:

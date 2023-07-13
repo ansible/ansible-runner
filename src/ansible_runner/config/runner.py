@@ -22,9 +22,9 @@ import os
 import shlex
 import stat
 import tempfile
-import six
 import shutil
 
+import six
 from six import string_types, text_type
 
 from ansible_runner import output

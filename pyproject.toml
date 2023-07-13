@@ -28,4 +28,6 @@ disable = [
 enable = [
   "C0209",  # consider-using-f-string
   "W0102",  # dangerous-default-value
+  "W1202",  # logging-format-interpolation
+  "W1203",  # logging-fstring-interpolation
 ]

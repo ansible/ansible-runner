@@ -325,7 +325,7 @@ class BaseConfig(object):
             logger.debug('containerization disabled')
 
         if hasattr(self, 'command') and isinstance(self.command, list):
-            logger.debug(f"command: {' '.join(self.command)}")
+            logger.debug("command: %s", ' '.join(self.command))
 
     def _ensure_path_safe_to_mount(self, path):
         if os.path.isfile(path):
@@ -370,7 +370,7 @@ class BaseConfig(object):
     ):
 
         if src_mount_path is None or not os.path.exists(src_mount_path):
-            logger.debug(f"Source volume mount path does not exist: {src_mount_path}")
+            logger.debug("Source volume mount path does not exist: %s", src_mount_path)
             return
 
         # ensure source is abs
@@ -559,7 +559,7 @@ class BaseConfig(object):
 
         new_args.extend([self.container_image])
         new_args.extend(args)
-        logger.debug(f"container engine invocation: {' '.join(new_args)}")
+        logger.debug("container engine invocation: %s", ' '.join(new_args))
         return new_args
 
     def _generate_container_auth_dir(self, auth_data):

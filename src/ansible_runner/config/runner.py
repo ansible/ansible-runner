@@ -350,7 +350,7 @@ class RunnerConfig(BaseConfig):
 
         for path in sorted(set(self.process_isolation_hide_paths or [])):
             if not os.path.exists(path):
-                logger.debug(f'hide path not found: {path}')
+                logger.debug('hide path not found: %s', path)
                 continue
             path = os.path.realpath(path)
             if os.path.isdir(path):
@@ -369,7 +369,7 @@ class RunnerConfig(BaseConfig):
 
         for path in sorted(set(self.process_isolation_ro_paths or [])):
             if not os.path.exists(path):
-                logger.debug(f'read-only path not found: {path}')
+                logger.debug('read-only path not found: %s', path)
                 continue
             path = os.path.realpath(path)
             new_args.extend(['--ro-bind', path, path])
@@ -377,7 +377,7 @@ class RunnerConfig(BaseConfig):
         show_paths.extend(self.process_isolation_show_paths or [])
         for path in sorted(set(show_paths)):
             if not os.path.exists(path):
-                logger.debug(f'show path not found: {path}')
+                logger.debug('show path not found: %s', path)
                 continue
             path = os.path.realpath(path)
             new_args.extend(['--bind', path, path])

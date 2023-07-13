@@ -244,13 +244,15 @@ class Runner(object):
                 stderr_response = proc_out.stderr
                 self.rc = proc_out.returncode
             except CalledProcessError as exc:
-                logger.debug(f"{exc.cmd} execution failed, returncode: {exc.returncode}, output: {exc.output}, stdout: {exc.stdout}, stderr: {exc.stderr}")
+                logger.debug("%s execution failed, returncode: %s, output: %s, stdout: %s, stderr: %s",
+                             exc.cmd, exc.returncode, exc.output, exc.stdout, exc.stderr)
                 self.rc = exc.returncode
                 self.errored = True
                 stdout_response = exc.stdout
                 stderr_response = exc.stderr
             except TimeoutExpired as exc:
-                logger.debug(f"{exc.cmd} execution timedout, timeout: {exc.timeout}, output: {exc.output}, stdout: {exc.stdout}, stderr: {exc.stderr}")
+                logger.debug("%s execution timedout, timeout: %s, output: %s, stdout: %s, stderr: %s",
+                             exc.cmd, exc.timeout, exc.output, exc.stdout, exc.stderr)
                 self.rc = 254
                 stdout_response = exc.stdout
                 stderr_response = exc.stderr
@@ -260,7 +262,7 @@ class Runner(object):
                 stderr_response = traceback.format_exc()
                 self.rc = 254
                 self.errored = True
-                logger.debug(f"received exception: {exc}")
+                logger.debug("received exception: %s", exc)
 
             if self.timed_out or self.errored:
                 self.kill_container()
@@ -516,9 +518,10 @@ class Runner(object):
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
             _, stderr = proc.communicate()
             if proc.returncode:
-                logger.info(f"Error from {container_cli} kill {container_name} command:\n{stderr}")
+                logger.info("Error from %s kill %s command:\n%s",
+                            container_cli, container_name, stderr)
             else:
-                logger.info(f"Killed container {container_name}")
+                logger.info("Killed container %s", container_name)
 
     @classmethod
     def handle_termination(cls, pid, pidfile=None, is_cancel=True):

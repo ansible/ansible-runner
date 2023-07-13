@@ -118,7 +118,7 @@ class IsolatedFileWrite:
         os.rename(write_location, dropoff_location)
 
 
-class EventContext(object):
+class EventContext:
     '''
     Store global and local (per thread/process) data associated with callback
     events and other display output methods.
@@ -417,7 +417,7 @@ class CallbackModule(DefaultCallbackModule):
             task_ctx['task_path'] = task.get_path()
         except AttributeError:
             pass
-        if C.DISPLAY_ARGS_TO_STDOUT:
+        if C.DISPLAY_ARGS_TO_STDOUT:  # pylint: disable=E1101
             if task.no_log:
                 task_ctx['task_args'] = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"
             else:

@@ -27,7 +27,7 @@ from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.output import debug
 
 
-class ArtifactLoader(object):
+class ArtifactLoader:
     '''
     Handles loading and caching file contents from disk
 

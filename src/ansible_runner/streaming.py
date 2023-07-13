@@ -9,15 +9,16 @@ import tempfile
 import uuid
 import traceback
 
+from collections.abc import Mapping
+from functools import wraps
+from threading import Event, RLock, Thread
+
 import ansible_runner
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.loader import ArtifactLoader
 import ansible_runner.plugins
 from ansible_runner.utils import register_for_cleanup
 from ansible_runner.utils.streaming import stream_dir, unstream_dir
-from collections.abc import Mapping
-from functools import wraps
-from threading import Event, RLock, Thread
 
 
 class UUIDEncoder(json.JSONEncoder):
@@ -27,12 +28,12 @@ class UUIDEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-class MockConfig(object):
+class MockConfig:
     def __init__(self, settings):
         self.settings = settings
 
 
-class Transmitter(object):
+class Transmitter:
     def __init__(self, _output=None, **kwargs):
         if _output is None:
             _output = sys.stdout.buffer
@@ -239,7 +240,7 @@ class Worker:
         self._output.flush()
 
 
-class Processor(object):
+class Processor:
     def __init__(self, _input=None, status_handler=None, event_handler=None,
                  artifacts_handler=None, cancel_callback=None, finished_callback=None, **kwargs):
         if _input is None:

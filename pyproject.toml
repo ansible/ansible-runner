@@ -30,6 +30,7 @@ enable = [
   "C0411",  # wrong-import-order
   "E1101",  # no-member
   "R0205",  # useless-object-inheritance
+  "R1735",  # use-dict-literal
   "W0102",  # dangerous-default-value
   "W1202",  # logging-format-interpolation
   "W1203",  # logging-fstring-interpolation

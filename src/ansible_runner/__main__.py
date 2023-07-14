@@ -58,313 +58,313 @@ DEFAULT_CLI_ARGS = {
     "positional_args": (
         (
             ('private_data_dir',),
-            dict(
-                help="base directory containing the ansible-runner metadata "
-                     "(project, inventory, env, etc)"
-            ),
+            {
+                "help": "base directory containing the ansible-runner metadata "
+                        "(project, inventory, env, etc)"
+            },
         ),
     ),
     "generic_args": (
         (
             ('--version',),
-            dict(
-                action='version',
-                version=VERSION
-            ),
+            {
+                "action": "version",
+                "version": VERSION
+            },
         ),
         (
             ("--debug",),
-            dict(
-                action="store_true",
-                help="enable ansible-runner debug output logging (default=False)"
-            ),
+            {
+                "action": "store_true",
+                "help": "enable ansible-runner debug output logging (default=False)"
+            },
         ),
         (
             ("--logfile",),
-            dict(
-                help="log output messages to a file (default=None)"
-            ),
+            {
+                "help": "log output messages to a file (default=None)"
+            },
         ),
     ),
     "mutually_exclusive_group": (
         (
             ("-p", "--playbook",),
-            dict(
-                default=DEFAULT_RUNNER_PLAYBOOK,
-                help="invoke an Ansible playbook from the ansible-runner project "
-                     "(See Ansible Playbook Options below)"
-            ),
+            {
+                "default": DEFAULT_RUNNER_PLAYBOOK,
+                "help": "invoke an Ansible playbook from the ansible-runner project "
+                        "(See Ansible Playbook Options below)"
+            },
         ),
         (
             ("-m", "--module",),
-            dict(
-                default=DEFAULT_RUNNER_MODULE,
-                help="invoke an Ansible module directly without a playbook "
-                     "(See Ansible Module Options below)"
-            ),
+            {
+                "default": DEFAULT_RUNNER_MODULE,
+                "help": "invoke an Ansible module directly without a playbook "
+                        "(See Ansible Module Options below)"
+            },
         ),
         (
             ("-r", "--role",),
-            dict(
-                default=DEFAULT_RUNNER_ROLE,
-                help="invoke an Ansible role directly without a playbook "
-                     "(See Ansible Role Options below)"
-            ),
+            {
+                "default": DEFAULT_RUNNER_ROLE,
+                "help": "invoke an Ansible role directly without a playbook "
+                        "(See Ansible Role Options below)"
+            },
         ),
     ),
     "ansible_group": (
         (
             ("--limit",),
-            dict(
-                help="matches Ansible's ```--limit``` parameter to further constrain "
-                     "the inventory to be used (default=None)"
-            ),
+            {
+                "help": "matches Ansible's ```--limit``` parameter to further constrain "
+                        "the inventory to be used (default=None)"
+            },
         ),
         (
             ("--cmdline",),
-            dict(
-                help="command line options to pass to ansible-playbook at "
-                     "execution time (default=None)"
-            ),
+            {
+                "help": "command line options to pass to ansible-playbook at "
+                        "execution time (default=None)"
+            },
         ),
         (
             ("--hosts",),
-            dict(
-                help="define the set of hosts to execute against (default=None) "
-                     "Note: this parameter only works with -m or -r"
-            ),
+            {
+                "help": "define the set of hosts to execute against (default=None) "
+                        "Note: this parameter only works with -m or -r"
+            },
         ),
         (
             ("--forks",),
-            dict(
-                help="matches Ansible's ```--forks``` parameter to set the number "
-                     "of concurrent processes (default=None)"
-            ),
+            {
+                "help": "matches Ansible's ```--forks``` parameter to set the number "
+                        "of concurrent processes (default=None)"
+            },
         ),
     ),
     "runner_group": (
         # ansible-runner options
         (
             ("-b", "--binary",),
-            dict(
-                default=DEFAULT_RUNNER_BINARY,
-                help="specifies the full path pointing to the Ansible binaries "
-                     f"(default={DEFAULT_RUNNER_BINARY})"
-            ),
+            {
+                "default": DEFAULT_RUNNER_BINARY,
+                "help": "specifies the full path pointing to the Ansible binaries "
+                        f"(default={DEFAULT_RUNNER_BINARY})"
+            },
         ),
         (
             ("-i", "--ident",),
-            dict(
-                default=DEFAULT_UUID,
-                help="an identifier that will be used when generating the artifacts "
-                     "directory and can be used to uniquely identify a playbook run "
-                     f"(default={DEFAULT_UUID})"
-            ),
+            {
+                "default": DEFAULT_UUID,
+                "help": "an identifier that will be used when generating the artifacts "
+                        "directory and can be used to uniquely identify a playbook run "
+                        f"(default={DEFAULT_UUID})"
+            },
         ),
         (
             ("--rotate-artifacts",),
-            dict(
-                default=0,
-                type=int,
-                help="automatically clean up old artifact directories after a given "
-                     "number have been created (default=0, disabled)"
-            ),
+            {
+                "default": 0,
+                "type": int,
+                "help": "automatically clean up old artifact directories after a given "
+                        "number have been created (default=0, disabled)"
+            },
         ),
         (
             ("--artifact-dir",),
-            dict(
-                help="optional path for the artifact root directory "
-                     "(default=<private_data_dir>/artifacts)"
-            ),
+            {
+                "help": "optional path for the artifact root directory "
+                        "(default=<private_data_dir>/artifacts)"
+            },
         ),
         (
             ("--project-dir",),
-            dict(
-                help="optional path for the location of the playbook content directory "
-                     "(default=<private_data_dir>/project)"
-            ),
+            {
+                "help": "optional path for the location of the playbook content directory "
+                        "(default=<private_data_dir>/project)"
+            },
         ),
         (
             ("--inventory",),
-            dict(
-                help="optional path for the location of the inventory content directory "
-                     "(default=<private_data_dir>/inventory)"
-            ),
+            {
+                "help": "optional path for the location of the inventory content directory "
+                        "(default=<private_data_dir>/inventory)"
+            },
         ),
         (
             ("-j", "--json",),
-            dict(
-                action="store_true",
-                help="output the JSON event structure to stdout instead of "
-                     "Ansible output (default=False)"
-            ),
+            {
+                "action": "store_true",
+                "help": "output the JSON event structure to stdout instead of "
+                        "Ansible output (default=False)"
+            },
         ),
         (
             ("--omit-event-data",),
-            dict(
-                action="store_true",
-                help="Omits including extra event data in the callback payloads "
-                     "or the Runner payload data files "
-                     "(status and stdout still included)"
-            ),
+            {
+                "action": "store_true",
+                "help": "Omits including extra event data in the callback payloads "
+                        "or the Runner payload data files "
+                        "(status and stdout still included)"
+            },
         ),
         (
             ("--only-failed-event-data",),
-            dict(
-                action="store_true",
-                help="Only adds extra event data for failed tasks in the callback "
-                     "payloads or the Runner payload data files "
-                     "(status and stdout still included for other events)"
-            ),
+            {
+                "action": "store_true",
+                "help": "Only adds extra event data for failed tasks in the callback "
+                        "payloads or the Runner payload data files "
+                        "(status and stdout still included for other events)"
+            },
         ),
         (
             ("--omit-env-files",),
-            dict(
-                action="store_true",
-                dest='suppress_env_files',
-                help="Add flag to prevent the writing of the env directory"
-            ),
+            {
+                "action": "store_true",
+                "dest": "suppress_env_files",
+                "help": "Add flag to prevent the writing of the env directory"
+            },
         ),
         (
             ("-q", "--quiet",),
-            dict(
-                action="store_true",
-                help="disable all messages sent to stdout/stderr (default=False)"
-            ),
+            {
+                "action": "store_true",
+                "help": "disable all messages sent to stdout/stderr (default=False)"
+            },
         ),
         (
             ("-v",),
-            dict(
-                action="count",
-                help="increase the verbosity with multiple v's (up to 5) of the "
-                     "ansible-playbook output (default=None)"
-            ),
+            {
+                "action": "count",
+                "help": "increase the verbosity with multiple v's (up to 5) of the "
+                        "ansible-playbook output (default=None)"
+            },
         ),
     ),
     "roles_group": (
         (
             ("--roles-path",),
-            dict(
-                default=DEFAULT_ROLES_PATH,
-                help="path used to locate the role to be executed (default=None)"
-            ),
+            {
+                "default": DEFAULT_ROLES_PATH,
+                "help": "path used to locate the role to be executed (default=None)"
+            },
         ),
         (
             ("--role-vars",),
-            dict(
-                help="set of variables to be passed to the role at run time in the "
-                     "form of 'key1=value1 key2=value2 keyN=valueN'(default=None)"
-            ),
+            {
+                "help": "set of variables to be passed to the role at run time in the "
+                        "form of 'key1=value1 key2=value2 keyN=valueN'(default=None)"
+            },
         ),
         (
             ("--role-skip-facts",),
-            dict(
-                action="store_true",
-                default=False,
-                help="disable fact collection when the role is executed (default=False)"
-            ),
+            {
+                "action": "store_true",
+                "default": False,
+                "help": "disable fact collection when the role is executed (default=False)"
+            },
         )
     ),
     "playbook_group": (
         (
             ("--process-isolation",),
-            dict(
-                dest="process_isolation",
-                action="store_true",
-                help="Isolate execution. Two methods are supported: (1) using a container engine (e.g. podman or docker) "
-                     "to execute **Ansible**. (2) using a sandbox (e.g. bwrap) which will by default restrict access to /tmp "
-                     "(default=False)"
-            ),
+            {
+                "dest": "process_isolation",
+                "action": "store_true",
+                "help": "Isolate execution. Two methods are supported: (1) using a container engine (e.g. podman or docker) "
+                        "to execute **Ansible**. (2) using a sandbox (e.g. bwrap) which will by default restrict access to /tmp "
+                        "(default=False)"
+            },
         ),
         (
             ("--process-isolation-executable",),
-            dict(
-                dest="process_isolation_executable",
-                default="podman",
-                help="Process isolation executable or container engine used to isolate execution. (default=podman)"
-            )
+            {
+                "dest": "process_isolation_executable",
+                "default": "podman",
+                "help": "Process isolation executable or container engine used to isolate execution. (default=podman)"
+            }
         ),
         (
             ("--process-isolation-path",),
-            dict(
-                dest="process_isolation_path",
-                default="/tmp",
-                help="path that an isolated playbook run will use for staging. "
-                     "(default=/tmp)"
-            )
+            {
+                "dest": "process_isolation_path",
+                "default": "/tmp",
+                "help": "path that an isolated playbook run will use for staging. "
+                        "(default=/tmp)"
+            }
         ),
         (
             ("--process-isolation-hide-paths",),
-            dict(
-                dest="process_isolation_hide_paths",
-                nargs='*',
-                help="list of paths on the system that should be hidden from the "
-                     "playbook run (default=None)"
-            )
+            {
+                "dest": "process_isolation_hide_paths",
+                "nargs": "*",
+                "help": "list of paths on the system that should be hidden from the "
+                        "playbook run (default=None)"
+            }
         ),
         (
             ("--process-isolation-show-paths",),
-            dict(
-                dest="process_isolation_show_paths",
-                nargs='*',
-                help="list of paths on the system that should be exposed to the "
-                     "playbook run (default=None)"
-            )
+            {
+                "dest": "process_isolation_show_paths",
+                "nargs": "*",
+                "help": "list of paths on the system that should be exposed to the "
+                        "playbook run (default=None)"
+            }
         ),
         (
             ("--process-isolation-ro-paths",),
-            dict(
-                dest="process_isolation_ro_paths",
-                nargs='*',
-                help="list of paths on the system that should be exposed to the "
-                     "playbook run as read-only (default=None)"
-            )
+            {
+                "dest": "process_isolation_ro_paths",
+                "nargs": "*",
+                "help": "list of paths on the system that should be exposed to the "
+                        "playbook run as read-only (default=None)"
+            }
         ),
         (
             ("--directory-isolation-base-path",),
-            dict(
-                dest="directory_isolation_base_path",
-                help="copies the project directory to a location in this directory "
-                     "to prevent multiple simultaneous executions from conflicting "
-                     "(default=None)"
-            )
+            {
+                "dest": "directory_isolation_base_path",
+                "help": "copies the project directory to a location in this directory "
+                        "to prevent multiple simultaneous executions from conflicting "
+                        "(default=None)"
+            }
         )
     ),
     "modules_group": (
         (
             ("-a", "--args",),
-            dict(
-                dest='module_args',
-                help="set of arguments to be passed to the module at run time in the "
-                     "form of 'key1=value1 key2=value2 keyN=valueN'(default=None)"
-            )
+            {
+                "dest": "module_args",
+                "help": "set of arguments to be passed to the module at run time in the "
+                        "form of 'key1=value1 key2=value2 keyN=valueN'(default=None)"
+            }
         ),
     ),
     "container_group": (
         (
             ("--container-image",),
-            dict(
-                dest="container_image",
-                help="Container image to use when running an ansible task"
-            )
+            {
+                "dest": "container_image",
+                "help": "Container image to use when running an ansible task"
+            }
         ),
         (
             ("--container-volume-mount",),
-            dict(
-                dest="container_volume_mounts",
-                action='append',
-                help="Bind mounts (in the form 'host_dir:/container_dir)'. "
-                     "Can be used more than once to create multiple bind mounts."
-            )
+            {
+                "dest": "container_volume_mounts",
+                "action": "append",
+                "help": "Bind mounts (in the form 'host_dir:/container_dir)'. "
+                        "Can be used more than once to create multiple bind mounts."
+            }
         ),
         (
             ("--container-option",),
-            dict(
-                dest="container_options",
-                action='append',
-                help="Container options to pass to execution engine. "
-                     "Can be used more than once to send multiple options."
-            )
+            {
+                "dest": "container_options",
+                "action": "append",
+                "help": "Container options to pass to execution engine. "
+                        "Can be used more than once to send multiple options."
+            }
         ),
     ),
 }
@@ -834,41 +834,42 @@ def main(sys_args=None):
 
         with context:
             with role_manager(vargs) as vargs:
-                run_options = dict(private_data_dir=vargs.get('private_data_dir'),
-                                   ident=vargs.get('ident'),
-                                   binary=vargs.get('binary'),
-                                   playbook=vargs.get('playbook'),
-                                   module=vargs.get('module'),
-                                   module_args=vargs.get('module_args'),
-                                   host_pattern=vargs.get('hosts'),
-                                   verbosity=vargs.get('v'),
-                                   quiet=vargs.get('quiet'),
-                                   rotate_artifacts=vargs.get('rotate_artifacts'),
-                                   ignore_logging=False,
-                                   json_mode=vargs.get('json'),
-                                   omit_event_data=vargs.get('omit_event_data'),
-                                   only_failed_event_data=vargs.get('only_failed_event_data'),
-                                   inventory=vargs.get('inventory'),
-                                   forks=vargs.get('forks'),
-                                   project_dir=vargs.get('project_dir'),
-                                   artifact_dir=vargs.get('artifact_dir'),
-                                   roles_path=[vargs.get('roles_path')] if vargs.get('roles_path') else None,
-                                   process_isolation=vargs.get('process_isolation'),
-                                   process_isolation_executable=vargs.get('process_isolation_executable'),
-                                   process_isolation_path=vargs.get('process_isolation_path'),
-                                   process_isolation_hide_paths=vargs.get('process_isolation_hide_paths'),
-                                   process_isolation_show_paths=vargs.get('process_isolation_show_paths'),
-                                   process_isolation_ro_paths=vargs.get('process_isolation_ro_paths'),
-                                   container_image=vargs.get('container_image'),
-                                   container_volume_mounts=vargs.get('container_volume_mounts'),
-                                   container_options=vargs.get('container_options'),
-                                   directory_isolation_base_path=vargs.get('directory_isolation_base_path'),
-                                   cmdline=vargs.get('cmdline'),
-                                   limit=vargs.get('limit'),
-                                   streamer=streamer,
-                                   suppress_env_files=vargs.get("suppress_env_files"),
-                                   keepalive_seconds=vargs.get("keepalive_seconds"),
-                                   )
+                run_options = {
+                    "private_data_dir": vargs.get('private_data_dir'),
+                    "ident": vargs.get('ident'),
+                    "binary": vargs.get('binary'),
+                    "playbook": vargs.get('playbook'),
+                    "module": vargs.get('module'),
+                    "module_args": vargs.get('module_args'),
+                    "host_pattern": vargs.get('hosts'),
+                    "verbosity": vargs.get('v'),
+                    "quiet": vargs.get('quiet'),
+                    "rotate_artifacts": vargs.get('rotate_artifacts'),
+                    "ignore_logging": False,
+                    "json_mode": vargs.get('json'),
+                    "omit_event_data": vargs.get('omit_event_data'),
+                    "only_failed_event_data": vargs.get('only_failed_event_data'),
+                    "inventory": vargs.get('inventory'),
+                    "forks": vargs.get('forks'),
+                    "project_dir": vargs.get('project_dir'),
+                    "artifact_dir": vargs.get('artifact_dir'),
+                    "roles_path": [vargs.get('roles_path')] if vargs.get('roles_path') else None,
+                    "process_isolation": vargs.get('process_isolation'),
+                    "process_isolation_executable": vargs.get('process_isolation_executable'),
+                    "process_isolation_path": vargs.get('process_isolation_path'),
+                    "process_isolation_hide_paths": vargs.get('process_isolation_hide_paths'),
+                    "process_isolation_show_paths": vargs.get('process_isolation_show_paths'),
+                    "process_isolation_ro_paths": vargs.get('process_isolation_ro_paths'),
+                    "container_image": vargs.get('container_image'),
+                    "container_volume_mounts": vargs.get('container_volume_mounts'),
+                    "container_options": vargs.get('container_options'),
+                    "directory_isolation_base_path": vargs.get('directory_isolation_base_path'),
+                    "cmdline": vargs.get('cmdline'),
+                    "limit": vargs.get('limit'),
+                    "streamer": streamer,
+                    "suppress_env_files": vargs.get("suppress_env_files"),
+                    "keepalive_seconds": vargs.get("keepalive_seconds"),
+                }
                 try:
                     res = run(**run_options)
                 except Exception:

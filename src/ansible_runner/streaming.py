@@ -134,7 +134,7 @@ class Worker:
                 # FIXME: this could be a lot smaller (even just `{}`) if a short-circuit discard was guaranteed in
                 #  Processor or if other layers were more defensive about missing event keys and/or unknown dictionary
                 #  values...
-                self.event_handler(dict(event='keepalive', counter=0, uuid=0))
+                self.event_handler({'event': 'keepalive', 'counter': 0, 'uuid': 0})
             finally:
                 # always release the output lock (
                 self._output_lock.release()

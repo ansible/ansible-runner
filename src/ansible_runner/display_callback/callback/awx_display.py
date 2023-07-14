@@ -188,7 +188,7 @@ class EventContext:
                 if event_data.get(key, False):
                     event = key
                     break
-        event_dict = dict(event=event)
+        event_dict = {'event': event}
         should_process_event_data = (include_only_failed_event_data and event in ('runner_on_failed', 'runner_on_async_failed', 'runner_on_item_failed')) \
             or not include_only_failed_event_data
         if os.getenv('JOB_ID', ''):
@@ -215,7 +215,7 @@ class EventContext:
             if event not in ('playbook_on_stats',) and "res" in event_data and len(str(event_data['res'])) > max_res:
                 event_data['res'] = {}
         else:
-            event_data = dict()
+            event_data = {}
         event_dict['event_data'] = event_data
         return event_dict
 
@@ -276,7 +276,7 @@ def with_verbosity(f):
     def wrapper(*args, **kwargs):
         host = args[2] if len(args) >= 3 else kwargs.get('host', None)
         caplevel = args[3] if len(args) >= 4 else kwargs.get('caplevel', 2)
-        context = dict(verbose=True, verbosity=(caplevel + 1))
+        context = {'verbose': True, 'verbosity': (caplevel + 1)}
         if host is not None:
             context['remote_addr'] = host
         with event_context.set_local(**context):
@@ -406,13 +406,13 @@ class CallbackModule(DefaultCallbackModule):
     def set_task(self, task, local=False):
         self.clear_task(local)
         # FIXME: Task is "global" unless using free strategy!
-        task_ctx = dict(
-            task=(task.name or task.action),
-            task_uuid=str(task._uuid),
-            task_action=task.action,
-            resolved_action=getattr(task, 'resolved_action', task.action),
-            task_args='',
-        )
+        task_ctx = {
+            'task': (task.name or task.action),
+            'task_uuid': str(task._uuid),
+            'task_action': task.action,
+            'resolved_action': getattr(task, 'resolved_action', task.action),
+            'task_args': '',
+        }
         try:
             task_ctx['task_path'] = task.get_path()
         except AttributeError:
@@ -439,10 +439,10 @@ class CallbackModule(DefaultCallbackModule):
             event_context.add_global(**task_ctx)
 
     def clear_task(self, local=False):
-        task_ctx = dict(
-            task=None, task_path=None, task_uuid=None, task_action=None, task_args=None, resolved_action=None,
-            role=None, resolved_role=None
-        )
+        task_ctx = {
+            'task': None, 'task_path': None, 'task_uuid': None, 'task_action': None, 'task_args': None, 'resolved_action': None,
+            'role': None, 'resolved_role': None
+        }
         if local:
             event_context.remove_local(**task_ctx)
         else:
@@ -450,26 +450,26 @@ class CallbackModule(DefaultCallbackModule):
 
     def v2_playbook_on_start(self, playbook):
         self.set_playbook(playbook)
-        event_data = dict(
-            uuid=self.playbook_uuid,
-        )
+        event_data = {
+            'uuid': self.playbook_uuid,
+        }
         with self.capture_event_data('playbook_on_start', **event_data):
             super(CallbackModule, self).v2_playbook_on_start(playbook)
 
     def v2_playbook_on_vars_prompt(self, varname, private=True, prompt=None,
                                    encrypt=None, confirm=False, salt_size=None,
                                    salt=None, default=None, unsafe=None):
-        event_data = dict(
-            varname=varname,
-            private=private,
-            prompt=prompt,
-            encrypt=encrypt,
-            confirm=confirm,
-            salt_size=salt_size,
-            salt=salt,
-            default=default,
-            unsafe=unsafe,
-        )
+        event_data = {
+            'varname': varname,
+            'private': private,
+            'prompt': prompt,
+            'encrypt': encrypt,
+            'confirm': confirm,
+            'salt_size': salt_size,
+            'salt': salt,
+            'default': default,
+            'unsafe': unsafe,
+        }
         with self.capture_event_data('playbook_on_vars_prompt', **event_data):
             super(CallbackModule, self).v2_playbook_on_vars_prompt(
                 varname, private, prompt, encrypt, confirm, salt_size, salt,
@@ -477,9 +477,9 @@ class CallbackModule(DefaultCallbackModule):
             )
 
     def v2_playbook_on_include(self, included_file):
-        event_data = dict(
-            included_file=included_file._filename if included_file is not None else None,
-        )
+        event_data = {
+            'included_file': included_file._filename if included_file is not None else None,
+        }
         with self.capture_event_data('playbook_on_include', **event_data):
             super(CallbackModule, self).v2_playbook_on_include(included_file)
 
@@ -513,11 +513,11 @@ class CallbackModule(DefaultCallbackModule):
         else:
             pattern = ''
         name = play.get_name().strip() or pattern
-        event_data = dict(
-            name=name,
-            pattern=pattern,
-            uuid=str(play._uuid),
-        )
+        event_data = {
+            'name': name,
+            'pattern': pattern,
+            'uuid': str(play._uuid),
+        }
         with self.capture_event_data('playbook_on_play_start', **event_data):
             super(CallbackModule, self).v2_playbook_on_play_start(play)
 
@@ -558,24 +558,24 @@ class CallbackModule(DefaultCallbackModule):
             ])
         self.task_uuids.add(task_uuid)
         self.set_task(task)
-        event_data = dict(
-            task=task,
-            name=task.get_name(),
-            is_conditional=is_conditional,
-            uuid=task_uuid,
-        )
+        event_data = {
+            'task': task,
+            'name': task.get_name(),
+            'is_conditional': is_conditional,
+            'uuid': task_uuid,
+        }
         with self.capture_event_data('playbook_on_task_start', **event_data):
             super(CallbackModule, self).v2_playbook_on_task_start(task, is_conditional)
 
     def v2_playbook_on_cleanup_task_start(self, task):
         # NOTE: Not used by Ansible 2.x.
         self.set_task(task)
-        event_data = dict(
-            task=task,
-            name=task.get_name(),
-            uuid=str(task._uuid),
-            is_conditional=True,
-        )
+        event_data = {
+            'task': task,
+            'name': task.get_name(),
+            'uuid': str(task._uuid),
+            'is_conditional': True,
+        }
         with self.capture_event_data('playbook_on_task_start', **event_data):
             super(CallbackModule, self).v2_playbook_on_cleanup_task_start(task)
 
@@ -584,12 +584,12 @@ class CallbackModule(DefaultCallbackModule):
         # event, but setting is_conditional=True, which is how v1 identified a
         # task run as a handler.
         self.set_task(task)
-        event_data = dict(
-            task=task,
-            name=task.get_name(),
-            uuid=str(task._uuid),
-            is_conditional=True,
-        )
+        event_data = {
+            'task': task,
+            'name': task.get_name(),
+            'uuid': str(task._uuid),
+            'is_conditional': True,
+        }
         with self.capture_event_data('playbook_on_task_start', **event_data):
             super(CallbackModule, self).v2_playbook_on_handler_task_start(task)
 
@@ -603,10 +603,10 @@ class CallbackModule(DefaultCallbackModule):
 
     def v2_playbook_on_notify(self, handler, host):
         # NOTE: Not used by Ansible < 2.5.
-        event_data = dict(
-            host=host.get_name(),
-            handler=handler.get_name(),
-        )
+        event_data = {
+            'host': host.get_name(),
+            'handler': handler.get_name(),
+        }
         with self.capture_event_data('playbook_on_notify', **event_data):
             super(CallbackModule, self).v2_playbook_on_notify(handler, host)
 
@@ -616,17 +616,17 @@ class CallbackModule(DefaultCallbackModule):
     def v2_playbook_on_stats(self, stats):
         self.clear_play()
         # FIXME: Add count of plays/tasks.
-        event_data = dict(
-            changed=stats.changed,
-            dark=stats.dark,
-            failures=stats.failures,
-            ignored=getattr(stats, 'ignored', 0),
-            ok=stats.ok,
-            processed=stats.processed,
-            rescued=getattr(stats, 'rescued', 0),
-            skipped=stats.skipped,
-            artifact_data=stats.custom.get('_run', {}) if hasattr(stats, 'custom') else {}
-        )
+        event_data = {
+            'changed': stats.changed,
+            'dark': stats.dark,
+            'failures': stats.failures,
+            'ignored': getattr(stats, 'ignored', 0),
+            'ok': stats.ok,
+            'processed': stats.processed,
+            'rescued': getattr(stats, 'rescued', 0),
+            'skipped': stats.skipped,
+            'artifact_data': stats.custom.get('_run', {}) if hasattr(stats, 'custom') else {}
+        }
 
         with self.capture_event_data('playbook_on_stats', **event_data):
             super(CallbackModule, self).v2_playbook_on_stats(stats)
@@ -655,166 +655,166 @@ class CallbackModule(DefaultCallbackModule):
             result._result.get('ansible_facts', {}).pop('ansible_env', None)
 
         host_start, end_time, duration = self._get_result_timing_data(result)
-        event_data = dict(
-            host=result._host.get_name(),
-            remote_addr=result._host.address,
-            task=result._task,
-            res=result._result,
-            start=host_start,
-            end=end_time,
-            duration=duration,
-            event_loop=self._get_event_loop(result._task),
-        )
+        event_data = {
+            'host': result._host.get_name(),
+            'remote_addr': result._host.address,
+            'task': result._task,
+            'res': result._result,
+            'start': host_start,
+            'end': end_time,
+            'duration': duration,
+            'event_loop': self._get_event_loop(result._task),
+        }
         with self.capture_event_data('runner_on_ok', **event_data):
             super(CallbackModule, self).v2_runner_on_ok(result)
 
     def v2_runner_on_failed(self, result, ignore_errors=False):
         # FIXME: Add verbosity for exception/results output.
         host_start, end_time, duration = self._get_result_timing_data(result)
-        event_data = dict(
-            host=result._host.get_name(),
-            remote_addr=result._host.address,
-            res=result._result,
-            task=result._task,
-            start=host_start,
-            end=end_time,
-            duration=duration,
-            ignore_errors=ignore_errors,
-            event_loop=self._get_event_loop(result._task),
-        )
+        event_data = {
+            'host': result._host.get_name(),
+            'remote_addr': result._host.address,
+            'res': result._result,
+            'task': result._task,
+            'start': host_start,
+            'end': end_time,
+            'duration': duration,
+            'ignore_errors': ignore_errors,
+            'event_loop': self._get_event_loop(result._task),
+        }
         with self.capture_event_data('runner_on_failed', **event_data):
             super(CallbackModule, self).v2_runner_on_failed(result, ignore_errors)
 
     def v2_runner_on_skipped(self, result):
         host_start, end_time, duration = self._get_result_timing_data(result)
-        event_data = dict(
-            host=result._host.get_name(),
-            remote_addr=result._host.address,
-            task=result._task,
-            start=host_start,
-            end=end_time,
-            duration=duration,
-            event_loop=self._get_event_loop(result._task),
-        )
+        event_data = {
+            'host': result._host.get_name(),
+            'remote_addr': result._host.address,
+            'task': result._task,
+            'start': host_start,
+            'end': end_time,
+            'duration': duration,
+            'event_loop': self._get_event_loop(result._task),
+        }
         with self.capture_event_data('runner_on_skipped', **event_data):
             super(CallbackModule, self).v2_runner_on_skipped(result)
 
     def v2_runner_on_unreachable(self, result):
         host_start, end_time, duration = self._get_result_timing_data(result)
-        event_data = dict(
-            host=result._host.get_name(),
-            remote_addr=result._host.address,
-            task=result._task,
-            start=host_start,
-            end=end_time,
-            duration=duration,
-            res=result._result,
-        )
+        event_data = {
+            'host': result._host.get_name(),
+            'remote_addr': result._host.address,
+            'task': result._task,
+            'start': host_start,
+            'end': end_time,
+            'duration': duration,
+            'res': result._result,
+        }
         with self.capture_event_data('runner_on_unreachable', **event_data):
             super(CallbackModule, self).v2_runner_on_unreachable(result)
 
     def v2_runner_on_no_hosts(self, task):
         # NOTE: Not used by Ansible 2.x.
-        event_data = dict(
-            task=task,
-        )
+        event_data = {
+            'task': task,
+        }
         with self.capture_event_data('runner_on_no_hosts', **event_data):
             super(CallbackModule, self).v2_runner_on_no_hosts(task)
 
     def v2_runner_on_async_poll(self, result):
         # NOTE: Not used by Ansible 2.x.
-        event_data = dict(
-            host=result._host.get_name(),
-            task=result._task,
-            res=result._result,
-            jid=result._result.get('ansible_job_id'),
-        )
+        event_data = {
+            'host': result._host.get_name(),
+            'task': result._task,
+            'res': result._result,
+            'jid': result._result.get('ansible_job_id'),
+        }
         with self.capture_event_data('runner_on_async_poll', **event_data):
             super(CallbackModule, self).v2_runner_on_async_poll(result)
 
     def v2_runner_on_async_ok(self, result):
         # NOTE: Not used by Ansible 2.x.
-        event_data = dict(
-            host=result._host.get_name(),
-            task=result._task,
-            res=result._result,
-            jid=result._result.get('ansible_job_id'),
-        )
+        event_data = {
+            'host': result._host.get_name(),
+            'task': result._task,
+            'res': result._result,
+            'jid': result._result.get('ansible_job_id'),
+        }
         with self.capture_event_data('runner_on_async_ok', **event_data):
             super(CallbackModule, self).v2_runner_on_async_ok(result)
 
     def v2_runner_on_async_failed(self, result):
         # NOTE: Not used by Ansible 2.x.
-        event_data = dict(
-            host=result._host.get_name(),
-            task=result._task,
-            res=result._result,
-            jid=result._result.get('ansible_job_id'),
-        )
+        event_data = {
+            'host': result._host.get_name(),
+            'task': result._task,
+            'res': result._result,
+            'jid': result._result.get('ansible_job_id'),
+        }
         with self.capture_event_data('runner_on_async_failed', **event_data):
             super(CallbackModule, self).v2_runner_on_async_failed(result)
 
     def v2_runner_on_file_diff(self, result, diff):
         # NOTE: Not used by Ansible 2.x.
-        event_data = dict(
-            host=result._host.get_name(),
-            task=result._task,
-            diff=diff,
-        )
+        event_data = {
+            'host': result._host.get_name(),
+            'task': result._task,
+            'diff': diff,
+        }
         with self.capture_event_data('runner_on_file_diff', **event_data):
             super(CallbackModule, self).v2_runner_on_file_diff(result, diff)
 
     def v2_on_file_diff(self, result):
         # NOTE: Logged as runner_on_file_diff.
-        event_data = dict(
-            host=result._host.get_name(),
-            task=result._task,
-            diff=result._result.get('diff'),
-        )
+        event_data = {
+            'host': result._host.get_name(),
+            'task': result._task,
+            'diff': result._result.get('diff'),
+        }
         with self.capture_event_data('runner_on_file_diff', **event_data):
             super(CallbackModule, self).v2_on_file_diff(result)
 
     def v2_runner_item_on_ok(self, result):
-        event_data = dict(
-            host=result._host.get_name(),
-            task=result._task,
-            res=result._result,
-        )
+        event_data = {
+            'host': result._host.get_name(),
+            'task': result._task,
+            'res': result._result,
+        }
         with self.capture_event_data('runner_item_on_ok', **event_data):
             super(CallbackModule, self).v2_runner_item_on_ok(result)
 
     def v2_runner_item_on_failed(self, result):
-        event_data = dict(
-            host=result._host.get_name(),
-            task=result._task,
-            res=result._result,
-        )
+        event_data = {
+            'host': result._host.get_name(),
+            'task': result._task,
+            'res': result._result,
+        }
         with self.capture_event_data('runner_item_on_failed', **event_data):
             super(CallbackModule, self).v2_runner_item_on_failed(result)
 
     def v2_runner_item_on_skipped(self, result):
-        event_data = dict(
-            host=result._host.get_name(),
-            task=result._task,
-            res=result._result,
-        )
+        event_data = {
+            'host': result._host.get_name(),
+            'task': result._task,
+            'res': result._result,
+        }
         with self.capture_event_data('runner_item_on_skipped', **event_data):
             super(CallbackModule, self).v2_runner_item_on_skipped(result)
 
     def v2_runner_retry(self, result):
-        event_data = dict(
-            host=result._host.get_name(),
-            task=result._task,
-            res=result._result,
-        )
+        event_data = {
+            'host': result._host.get_name(),
+            'task': result._task,
+            'res': result._result,
+        }
         with self.capture_event_data('runner_retry', **event_data):
             super(CallbackModule, self).v2_runner_retry(result)
 
     def v2_runner_on_start(self, host, task):
-        event_data = dict(
-            host=host.get_name(),
-            task=task
-        )
+        event_data = {
+            'host': host.get_name(),
+            'task': task
+        }
         self._host_start[host.get_name()] = current_time()
         with self.capture_event_data('runner_on_start', **event_data):
             super(CallbackModule, self).v2_runner_on_start(host, task)

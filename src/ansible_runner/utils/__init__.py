@@ -370,7 +370,7 @@ class OutputEventFilter:
         if value:
             self._emit_event(value)
             self._buffer = StringIO()
-        self._event_callback(dict(event='EOF'))
+        self._event_callback({'event': 'EOF'})
         if self._handle:
             self._handle.close()
 
@@ -380,10 +380,10 @@ class OutputEventFilter:
             event_data = self._current_event_data
             stdout_chunks = [buffered_stdout]
         elif buffered_stdout:
-            event_data = dict(event='verbose')
+            event_data = dict({'event': 'verbose'})
             stdout_chunks = buffered_stdout.splitlines(True)
         else:
-            event_data = dict()
+            event_data = {}
             stdout_chunks = []
 
         for stdout_chunk in stdout_chunks:

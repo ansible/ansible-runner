@@ -64,7 +64,7 @@ class Runner:
                                          f"{event_data['counter']}-{event_data['uuid']}.json"
                                          )
             try:
-                event_data.update(dict(runner_ident=str(self.config.ident)))
+                event_data.update({'runner_ident': str(self.config.ident)})
                 try:
                     with codecs.open(partial_filename, 'r', encoding='utf-8') as read_file:
                         partial_event_data = json.load(read_file)
@@ -490,14 +490,15 @@ class Runner:
         if not last_event:
             return None
         last_event = last_event[0]['event_data']
-        return dict(skipped=last_event.get('skipped', {}),
-                    ok=last_event.get('ok', {}),
-                    dark=last_event.get('dark', {}),
-                    failures=last_event.get('failures', {}),
-                    ignored=last_event.get('ignored', {}),
-                    rescued=last_event.get('rescued', {}),
-                    processed=last_event.get('processed', {}),
-                    changed=last_event.get('changed', {}))
+        return {'skipped': last_event.get('skipped', {}),
+                'ok': last_event.get('ok', {}),
+                'dark': last_event.get('dark', {}),
+                'failures': last_event.get('failures', {}),
+                'ignored': last_event.get('ignored', {}),
+                'rescued': last_event.get('rescued', {}),
+                'processed': last_event.get('processed', {}),
+                'changed': last_event.get('changed', {})
+                }
 
     def host_events(self, host):
         '''

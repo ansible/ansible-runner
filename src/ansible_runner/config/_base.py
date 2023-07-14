@@ -154,7 +154,7 @@ class BaseConfig:
                 self.settings = self.loader.load_file('env/settings', Mapping)
         except ConfigurationError:
             debug("Not loading settings")
-            self.settings = dict()
+            self.settings = {}
 
         if self.runner_mode == 'pexpect':
             try:
@@ -165,7 +165,7 @@ class BaseConfig:
             except ConfigurationError:
                 debug('Not loading passwords')
 
-            self.expect_passwords = dict()
+            self.expect_passwords = {}
             try:
                 if self.passwords:
                     self.expect_passwords = {

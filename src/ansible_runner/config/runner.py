@@ -24,9 +24,6 @@ import stat
 import tempfile
 import shutil
 
-import six
-from six import string_types, text_type
-
 from ansible_runner import output
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
@@ -209,10 +206,7 @@ class RunnerConfig(BaseConfig):
 
     def prepare_command(self):
         try:
-            cmdline_args = self.loader.load_file('args', string_types, encoding=None)
-
-            if six.PY2 and isinstance(cmdline_args, text_type):
-                cmdline_args = cmdline_args.encode('utf-8')
+            cmdline_args = self.loader.load_file('args', str, encoding=None)
             self.command = shlex.split(cmdline_args)
             self.execution_mode = ExecutionMode.RAW
         except ConfigurationError:
@@ -240,10 +234,7 @@ class RunnerConfig(BaseConfig):
             if self.cmdline_args:
                 cmdline_args = self.cmdline_args
             else:
-                cmdline_args = self.loader.load_file('env/cmdline', string_types, encoding=None)
-
-            if six.PY2 and isinstance(cmdline_args, text_type):
-                cmdline_args = cmdline_args.encode('utf-8')
+                cmdline_args = self.loader.load_file('env/cmdline', str, encoding=None)
 
             args = shlex.split(cmdline_args)
             exec_list.extend(args)

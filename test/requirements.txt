@@ -6,7 +6,6 @@ pytest-mock
 pytest-timeout
 pytest-xdist==2.5.0
 types-pyyaml
-types-six
 flake8==4.0.1
 yamllint
 cryptography

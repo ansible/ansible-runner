@@ -9,7 +9,6 @@ from test.utils.common import RSAKey
 
 from pexpect import TIMEOUT, EOF
 import pytest
-import six
 
 from ansible_runner.config.runner import RunnerConfig, ExecutionMode
 from ansible_runner.interface import init_runner
@@ -82,11 +81,11 @@ def test_prepare_environment_vars_only_strings(mocker):
 
     rc.prepare_env()
     assert 'A' in rc.env
-    assert isinstance(rc.env['A'], six.string_types)
+    assert isinstance(rc.env['A'], str)
     assert 'B' in rc.env
-    assert isinstance(rc.env['B'], six.string_types)
+    assert isinstance(rc.env['B'], str)
     assert 'C' in rc.env
-    assert isinstance(rc.env['C'], six.string_types)
+    assert isinstance(rc.env['C'], str)
     assert 'D' in rc.env
     assert rc.env['D'] == 'D'
 

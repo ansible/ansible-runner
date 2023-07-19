@@ -28,7 +28,6 @@ from uuid import uuid4
 from collections.abc import Mapping
 
 import pexpect
-from six import iteritems, string_types
 
 from ansible_runner import defaults
 from ansible_runner.output import debug
@@ -170,7 +169,7 @@ class BaseConfig:
                 if self.passwords:
                     self.expect_passwords = {
                         re.compile(pattern, re.M): password
-                        for pattern, password in iteritems(self.passwords)
+                        for pattern, password in self.passwords.items()
                     }
             except Exception as e:
                 debug(f'Failed to compile RE from passwords: {e}')
@@ -242,7 +241,7 @@ class BaseConfig:
 
         try:
             if self.ssh_key_data is None:
-                self.ssh_key_data = self.loader.load_file('env/ssh_key', string_types)
+                self.ssh_key_data = self.loader.load_file('env/ssh_key', str)
         except ConfigurationError:
             debug("Not loading ssh key")
             self.ssh_key_data = None

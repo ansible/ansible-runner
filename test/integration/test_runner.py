@@ -4,7 +4,6 @@ import json
 import os
 import re
 import pytest
-import six
 import sys
 
 from ansible_runner import Runner
@@ -42,8 +41,6 @@ def test_run_command(rc):
 
 def test_run_command_with_unicode(rc):
     expected = '"utf-8-䉪ቒ칸ⱷ?噂폄蔆㪗輥"'
-    if six.PY2:
-        expected = expected.decode('utf-8')
     rc.command = ['echo', '"utf-8-䉪ቒ칸ⱷ?噂폄蔆㪗輥"']
     rc.envvars = {"䉪ቒ칸": "蔆㪗輥"}
     rc.prepare_env()

@@ -1,5 +1,4 @@
 ansible-core
 pexpect
-six
 sphinx
 sphinx-ansible-theme

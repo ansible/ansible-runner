@@ -2,24 +2,17 @@
 
 import os
 import re
-import six
-
 from functools import partial
 
-import pytest
+from test.utils.common import RSAKey
 
+import pytest
+import six
 from pexpect import TIMEOUT, EOF
 
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError
-from test.utils.common import RSAKey
-
-try:
-    Pattern = re._pattern_type
-except AttributeError:
-    # Python 3.7
-    Pattern = re.Pattern
 
 
 def load_file_side_effect(path, value=None, *args, **kwargs):
@@ -74,9 +67,9 @@ def test_base_config_project_dir(tmp_path):
 
 
 def test_prepare_environment_vars_only_strings_from_file(mocker):
-    rc = BaseConfig(envvars=dict(D='D'))
+    rc = BaseConfig(envvars={'D': 'D'})
 
-    value = dict(A=1, B=True, C="foo")
+    value = {"A": 1, "B": True, "C": "foo"}
     envvar_side_effect = partial(load_file_side_effect, 'env/envvars', value)
 
     mocker.patch.object(rc.loader, 'load_file', side_effect=envvar_side_effect)
@@ -93,7 +86,7 @@ def test_prepare_environment_vars_only_strings_from_file(mocker):
 
 
 def test_prepare_environment_vars_only_strings_from_interface():
-    rc = BaseConfig(envvars=dict(D='D', A=1, B=True, C="foo"))
+    rc = BaseConfig(envvars={'D': 'D', 'A': 1, 'B': True, 'C': 'foo'})
     rc._prepare_env()
 
     assert 'A' in rc.env
@@ -128,7 +121,7 @@ def test_prepare_env_passwords(mocker):
     rc.expect_passwords.pop(TIMEOUT)
     rc.expect_passwords.pop(EOF)
     assert len(rc.expect_passwords) == 1
-    assert isinstance(list(rc.expect_passwords.keys())[0], Pattern)
+    assert isinstance(list(rc.expect_passwords.keys())[0], re.Pattern)
     assert 'secret' in rc.expect_passwords.values()
 
 
@@ -285,7 +278,7 @@ def test_container_volume_mounting_with_Z(tmp_path, mocker):
             if mount.endswith('project_path/:Z'):
                 break
     else:
-        raise Exception('Could not find expected mount, args: {}'.format(new_args))
+        raise Exception(f'Could not find expected mount, args: {new_args}')
 
 
 @pytest.mark.parametrize('runtime', ('docker', 'podman'))
@@ -323,8 +316,8 @@ def test_containerization_settings(tmp_path, runtime, mocker):
         '--interactive',
         '--workdir',
         '/runner/project',
-        '-v', '{}/.ssh/:/home/runner/.ssh/'.format(str(tmp_path)),
-        '-v', '{}/.ssh/:/root/.ssh/'.format(str(tmp_path)),
+        '-v', f'{str(tmp_path)}/.ssh/:/home/runner/.ssh/',
+        '-v', f'{str(tmp_path)}/.ssh/:/root/.ssh/',
     ]
 
     if os.path.exists('/etc/ssh/ssh_known_hosts'):
@@ -334,9 +327,9 @@ def test_containerization_settings(tmp_path, runtime, mocker):
         expected_command_start.extend(['--group-add=root', '--ipc=host'])
 
     expected_command_start.extend([
-        '-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir),
-        '-v', '{}/:/runner/:Z'.format(rc.private_data_dir),
-        '--env-file', '{}/env.list'.format(rc.artifact_dir),
+        '-v', f'{rc.private_data_dir}/artifacts/:/runner/artifacts/:Z',
+        '-v', f'{rc.private_data_dir}/:/runner/:Z',
+        '--env-file', f'{rc.artifact_dir}/env.list',
     ])
 
     expected_command_start.extend(extra_container_args)

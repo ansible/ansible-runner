@@ -2,9 +2,9 @@
 predictably and consistently """
 
 import os
-import pytest
-
 from typing import NamedTuple
+
+import pytest
 
 from ansible_runner.config._base import BaseConfig
 from ansible_runner.exceptions import ConfigurationError

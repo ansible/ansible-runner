@@ -1,9 +1,8 @@
-import pytest
 import base64
 import json
 from io import StringIO
 
-from six.moves import xrange
+import pytest
 
 from ansible_runner.utils import OutputEventFilter
 
@@ -15,9 +14,9 @@ def write_encoded_event_data(fileobj, data):
     b64data = base64.b64encode(json.dumps(data).encode('utf-8')).decode()
     # pattern corresponding to OutputEventFilter expectation
     fileobj.write(u'\x1b[K')
-    for offset in xrange(0, len(b64data), MAX_WIDTH):
+    for offset in range(0, len(b64data), MAX_WIDTH):
         chunk = b64data[offset:offset + MAX_WIDTH]
-        escaped_chunk = u'{}\x1b[{}D'.format(chunk, len(chunk))
+        escaped_chunk = f'{chunk}\x1b[{len(chunk)}D'
         fileobj.write(escaped_chunk)
     fileobj.write(u'\x1b[K')
 
@@ -43,7 +42,7 @@ def job_event_callback(fake_callback, fake_cache):
     def method(event_data):
         print('fake callback called')
         if 'uuid' in event_data:
-            cache_event = fake_cache.get(':1:ev-{}'.format(event_data['uuid']), None)
+            cache_event = fake_cache.get(f":1:ev-{event_data['uuid']}", None)
             if cache_event is not None:
                 event_data.update(cache_event)
         fake_callback.append(event_data)
@@ -52,7 +51,7 @@ def job_event_callback(fake_callback, fake_cache):
 
 def test_event_recomb(fake_callback, fake_cache, wrapped_handle):
     # Pretend that this is done by the Ansible callback module
-    fake_cache[':1:ev-{}'.format(EXAMPLE_UUID)] = {'event': 'foo'}
+    fake_cache[f':1:ev-{EXAMPLE_UUID}'] = {'event': 'foo'}
     write_encoded_event_data(wrapped_handle, {
         'uuid': EXAMPLE_UUID
     })
@@ -84,7 +83,7 @@ def test_separate_verbose_events(fake_callback, wrapped_handle):
 
 def test_large_data_payload(fake_callback, fake_cache, wrapped_handle):
     # Pretend that this is done by the Ansible callback module
-    fake_cache[':1:ev-{}'.format(EXAMPLE_UUID)] = {'event': 'foo'}
+    fake_cache[f':1:ev-{EXAMPLE_UUID}'] = {'event': 'foo'}
     event_data_to_encode = {
         'uuid': EXAMPLE_UUID,
         'host': 'localhost',
@@ -107,7 +106,7 @@ def test_large_data_payload(fake_callback, fake_cache, wrapped_handle):
 
 def test_event_lazy_parsing(fake_callback, fake_cache, wrapped_handle):
     # Pretend that this is done by the Ansible callback module
-    fake_cache[':1:ev-{}'.format(EXAMPLE_UUID)] = {'event': 'foo'}
+    fake_cache[f':1:ev-{EXAMPLE_UUID}'] = {'event': 'foo'}
     buff = StringIO()
     event_data_to_encode = {
         'uuid': EXAMPLE_UUID,

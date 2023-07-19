@@ -4,23 +4,17 @@ from functools import partial
 from io import StringIO
 import os
 import re
-import six
+
+from test.utils.common import RSAKey
 
 from pexpect import TIMEOUT, EOF
-
 import pytest
+import six
 
 from ansible_runner.config.runner import RunnerConfig, ExecutionMode
 from ansible_runner.interface import init_runner
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError
-from test.utils.common import RSAKey
-
-try:
-    Pattern = re._pattern_type
-except AttributeError:
-    # Python 3.7
-    Pattern = re.Pattern
 
 
 def load_file_side_effect(path, value=None, *args, **kwargs):
@@ -41,7 +35,7 @@ def test_runner_config_init_defaults(mocker):
     assert rc.limit is None
     assert rc.module is None
     assert rc.module_args is None
-    assert rc.artifact_dir == os.path.join('/artifacts/%s' % rc.ident)
+    assert rc.artifact_dir == os.path.join(f'/artifacts/{rc.ident}')
     assert isinstance(rc.loader, ArtifactLoader)
 
 
@@ -79,9 +73,9 @@ def test_runner_config_project_dir(mocker):
 def test_prepare_environment_vars_only_strings(mocker):
     mocker.patch('os.makedirs', return_value=True)
 
-    rc = RunnerConfig(private_data_dir="/", envvars=dict(D='D'))
+    rc = RunnerConfig(private_data_dir="/", envvars={'D': 'D'})
 
-    value = dict(A=1, B=True, C="foo")
+    value = {'A': 1, 'B': True, 'C': 'foo'}
     envvar_side_effect = partial(load_file_side_effect, 'env/envvars', value)
 
     mocker.patch.object(rc.loader, 'load_file', side_effect=envvar_side_effect)
@@ -138,7 +132,7 @@ def test_prepare_env_passwords(mocker):
     rc.expect_passwords.pop(TIMEOUT)
     rc.expect_passwords.pop(EOF)
     assert len(rc.expect_passwords) == 1
-    assert isinstance(list(rc.expect_passwords.keys())[0], Pattern)
+    assert isinstance(list(rc.expect_passwords.keys())[0], re.Pattern)
     assert 'secret' in rc.expect_passwords.values()
 
 
@@ -303,7 +297,7 @@ def test_generate_ansible_command(mocker):
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', '/inventory', 'main.yaml']
 
-    rc.extra_vars = dict(test="key")
+    rc.extra_vars = {'test': 'key'}
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '{"test":"key"}', 'main.yaml']
     rc.extra_vars = None
@@ -708,7 +702,7 @@ def test_container_volume_mounting_with_Z(mocker, tmp_path):
             if mount.endswith(':/tmp/project_path/:Z'):
                 break
     else:
-        raise Exception('Could not find expected mount, args: {}'.format(new_args))
+        raise Exception(f'Could not find expected mount, args: {new_args}')
 
 
 @pytest.mark.parametrize('runtime', ('docker', 'podman'))
@@ -738,7 +732,7 @@ def test_containerization_settings(tmp_path, runtime, mocker):
 
     # validate ANSIBLE_CALLBACK_PLUGINS contains callback plugin dir
     callback_plugins = rc.env['ANSIBLE_CALLBACK_PLUGINS'].split(':')
-    callback_dir = os.path.join("/runner/artifacts", "{}".format(rc.ident), "callback")
+    callback_dir = os.path.join("/runner/artifacts", str(rc.ident), "callback")
     assert callback_dir in callback_plugins
 
     extra_container_args = []
@@ -748,9 +742,9 @@ def test_containerization_settings(tmp_path, runtime, mocker):
         extra_container_args = [f'--user={os.getuid()}']
 
     expected_command_start = [runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
-        ['-v', '{}/:/runner/:Z'.format(rc.private_data_dir)] + \
+        ['-v', f'{rc.private_data_dir}/:/runner/:Z'] + \
         ['-v', '/host1/:/container1/', '-v', '/host2/:/container2/'] + \
-        ['--env-file', '{}/env.list'.format(rc.artifact_dir)] + \
+        ['--env-file', f'{rc.artifact_dir}/env.list'] + \
         extra_container_args + \
         ['--name', 'ansible_runner_foo'] + \
         ['my_container', 'ansible-playbook', '-i', '/runner/inventory/hosts', 'main.yaml']

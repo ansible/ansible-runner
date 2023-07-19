@@ -3,15 +3,15 @@
 import codecs
 import datetime
 import os
-
+import sys
 import json
 from pathlib import Path
+
+from test.utils.common import iterate_timeout
+
 import pexpect
 import pytest
 import six
-import sys
-
-from test.utils.common import iterate_timeout
 
 from ansible_runner import Runner
 from ansible_runner.exceptions import CallbackError, AnsibleRunnerException
@@ -102,7 +102,7 @@ def test_event_callback_data_check(rc, mocker):
     runner.event_handler = mocker.Mock()
 
     with pytest.raises(AnsibleRunnerException) as exc:
-        runner.event_callback(dict(uuid="testuuid", counter=0))
+        runner.event_callback({"uuid": "testuuid", "counter": 0})
 
     assert "Failed to open ansible stdout callback plugin partial data" in str(exc)
 
@@ -111,16 +111,19 @@ def test_event_callback_interface_has_ident(rc, mocker):
     rc.ident = "testident"
     runner = Runner(config=rc, remove_partials=False)
     runner.event_handler = mocker.Mock()
-    mocker.patch('codecs.open', mocker.mock_open(read_data=json.dumps(dict(event="test"))))
+    mocker.patch('codecs.open', mocker.mock_open(read_data=json.dumps({"event": "test"})))
     chmod = mocker.patch('os.chmod', mocker.Mock())
     mocker.patch('os.mkdir', mocker.Mock())
 
-    runner.event_callback(dict(uuid="testuuid", counter=0))
+    runner.event_callback({"uuid": "testuuid", "counter": 0})
     assert runner.event_handler.call_count == 1
-    runner.event_handler.assert_called_with(dict(
-        runner_ident='testident', counter=0, uuid='testuuid', event='test',
-        created=mocker.ANY
-    ))
+    runner.event_handler.assert_called_with({
+        'runner_ident': 'testident',
+        'counter': 0,
+        'uuid': 'testuuid',
+        'event': 'test',
+        'created': mocker.ANY
+    })
     chmod.assert_called_once()
     runner.status_callback("running")
 
@@ -131,12 +134,15 @@ def test_event_callback_interface_calls_event_handler_for_verbose_event(rc, mock
     runner = Runner(config=rc, event_handler=event_handler)
     mocker.patch('os.mkdir', mocker.Mock())
 
-    runner.event_callback(dict(uuid="testuuid", event='verbose', counter=0))
+    runner.event_callback({"uuid": "testuuid", "event": "verbose", "counter": 0})
     assert event_handler.call_count == 1
-    event_handler.assert_called_with(dict(
-        runner_ident='testident', counter=0, uuid='testuuid', event='verbose',
-        created=mocker.ANY
-    ))
+    event_handler.assert_called_with({
+        'runner_ident': 'testident',
+        'counter': 0,
+        'uuid': 'testuuid',
+        'event': 'verbose',
+        'created': mocker.ANY
+    })
 
 
 def test_status_callback_interface(rc, mocker):
@@ -145,7 +151,9 @@ def test_status_callback_interface(rc, mocker):
     runner.status_handler = mocker.Mock()
     runner.status_callback("running")
     assert runner.status_handler.call_count == 1
-    runner.status_handler.assert_called_with(dict(status='running', runner_ident=str(rc.ident)), runner_config=runner.config)
+    runner.status_handler.assert_called_with(
+        {'status': 'running', 'runner_ident': str(rc.ident)},
+        runner_config=runner.config)
     assert runner.status == 'running'
 
 

@@ -15,7 +15,7 @@ def iterate_timeout(max_seconds, purpose, interval=2):
         count += 1
         yield count
         time.sleep(interval)
-    raise Exception("Timeout waiting for %s" % purpose)
+    raise Exception(f"Timeout waiting for {purpose}")
 
 
 class RSAKey:

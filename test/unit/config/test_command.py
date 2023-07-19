@@ -94,9 +94,9 @@ def test_prepare_run_command_with_containerization(tmp_path, runtime, mocker):
         '--interactive',
         '--workdir',
         '/runner/project',
-        '-v', '{}/:{}/'.format(cwd, cwd),
-        '-v', '{}/.ssh/:/home/runner/.ssh/'.format(rc.private_data_dir),
-        '-v', '{}/.ssh/:/root/.ssh/'.format(rc.private_data_dir),
+        '-v', f'{cwd}/:{cwd}/',
+        '-v', f'{rc.private_data_dir}/.ssh/:/home/runner/.ssh/',
+        '-v', f'{rc.private_data_dir}/.ssh/:/root/.ssh/',
     ]
 
     if os.path.exists('/etc/ssh/ssh_known_hosts'):
@@ -106,9 +106,9 @@ def test_prepare_run_command_with_containerization(tmp_path, runtime, mocker):
         expected_command_start.extend(['--group-add=root', '--ipc=host'])
 
     expected_command_start.extend([
-        '-v', '{}/artifacts/:/runner/artifacts/:Z'.format(rc.private_data_dir),
-        '-v', '{}/:/runner/:Z'.format(rc.private_data_dir),
-        '--env-file', '{}/env.list'.format(rc.artifact_dir),
+        '-v', f'{rc.private_data_dir}/artifacts/:/runner/artifacts/:Z',
+        '-v', f'{rc.private_data_dir}/:/runner/:Z',
+        '--env-file', f'{rc.artifact_dir}/env.list',
     ])
 
     expected_command_start.extend(extra_container_args)

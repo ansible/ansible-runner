@@ -1,5 +1,6 @@
-from ansible_runner.utils import open_fifo_write
 from os import remove
+
+from ansible_runner.utils import open_fifo_write
 
 
 def test_fifo_write_bytes(tmp_path):

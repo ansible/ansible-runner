@@ -11,7 +11,6 @@ from test.utils.common import iterate_timeout
 
 import pexpect
 import pytest
-import six
 
 from ansible_runner import Runner
 from ansible_runner.exceptions import CallbackError, AnsibleRunnerException
@@ -84,7 +83,7 @@ def test_verbose_event_created_time(rc):
         assert datetime.datetime.fromisoformat(event['created']).tzinfo == datetime.timezone.utc
 
 
-@pytest.mark.parametrize('value', ['abc123', six.u('Iñtërnâtiônàlizætiøn')])
+@pytest.mark.parametrize('value', ['abc123', 'Iñtërnâtiônàlizætiøn'])
 def test_env_vars(rc, value):
     rc.command = [sys.executable, '-c', 'import os; print(os.getenv("X_MY_ENV"))']
     rc.env = {'X_MY_ENV': value}

@@ -7,7 +7,6 @@ from functools import partial
 from test.utils.common import RSAKey
 
 import pytest
-import six
 from pexpect import TIMEOUT, EOF
 
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode
@@ -76,11 +75,11 @@ def test_prepare_environment_vars_only_strings_from_file(mocker):
 
     rc._prepare_env()
     assert 'A' in rc.env
-    assert isinstance(rc.env['A'], six.string_types)
+    assert isinstance(rc.env['A'], str)
     assert 'B' in rc.env
-    assert isinstance(rc.env['B'], six.string_types)
+    assert isinstance(rc.env['B'], str)
     assert 'C' in rc.env
-    assert isinstance(rc.env['C'], six.string_types)
+    assert isinstance(rc.env['C'], str)
     assert 'D' in rc.env
     assert rc.env['D'] == 'D'
 
@@ -90,11 +89,11 @@ def test_prepare_environment_vars_only_strings_from_interface():
     rc._prepare_env()
 
     assert 'A' in rc.env
-    assert isinstance(rc.env['A'], six.string_types)
+    assert isinstance(rc.env['A'], str)
     assert 'B' in rc.env
-    assert isinstance(rc.env['B'], six.string_types)
+    assert isinstance(rc.env['B'], str)
     assert 'C' in rc.env
-    assert isinstance(rc.env['C'], six.string_types)
+    assert isinstance(rc.env['C'], str)
     assert 'D' in rc.env
     assert rc.env['D'] == 'D'
 

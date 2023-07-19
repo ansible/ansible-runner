@@ -10,7 +10,6 @@ import codecs
 import collections
 import datetime
 import logging
-import six
 import pexpect
 
 import ansible_runner.plugins
@@ -195,7 +194,7 @@ class Runner:
             cwd = self.config.cwd
             pexpect_env = self.config.env
         env = {
-            ensure_str(k): ensure_str(v) if k != 'PATH' and isinstance(v, six.text_type) else v
+            ensure_str(k): ensure_str(v) if k != 'PATH' and isinstance(v, str) else v
             for k, v in pexpect_env.items()
         }
 
@@ -301,16 +300,13 @@ class Runner:
                     close=lambda: None,
                 )
 
-                def _decode(x):
-                    return x.decode('utf-8') if six.PY2 else x
-
                 # create the events directory (the callback plugin won't run, so it
                 # won't get created)
                 events_directory = os.path.join(self.config.artifact_dir, 'job_events')
                 if not os.path.exists(events_directory):
                     os.mkdir(events_directory, 0o700)
-                stdout_handle.write(_decode(str(e)))
-                stdout_handle.write(_decode('\n'))
+                stdout_handle.write(str(e))
+                stdout_handle.write('\n')
 
             job_start = time.time()
             while child.isalive():

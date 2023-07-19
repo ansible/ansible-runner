@@ -21,7 +21,6 @@ import signal
 
 from collections.abc import Iterable, MutableMapping
 from io import StringIO
-from six import string_types, PY2, PY3, text_type, binary_type
 
 from ansible_runner.exceptions import ConfigurationError
 
@@ -85,7 +84,7 @@ def isplaybook(obj):
     Returns:
         boolean: True if the object is a list and False if it is not
     '''
-    return isinstance(obj, Iterable) and (not isinstance(obj, string_types) and not isinstance(obj, MutableMapping))
+    return isinstance(obj, Iterable) and (not isinstance(obj, str) and not isinstance(obj, MutableMapping))
 
 
 def isinventory(obj):
@@ -98,7 +97,7 @@ def isinventory(obj):
     Returns:
         boolean: True if the object is an inventory dict and False if it is not
     '''
-    return isinstance(obj, MutableMapping) or isinstance(obj, string_types)
+    return isinstance(obj, MutableMapping) or isinstance(obj, str)
 
 
 def check_isolation_executable_installed(isolation_executable):
@@ -230,7 +229,7 @@ def dump_artifacts(kwargs):
         path = os.path.join(private_data_dir, 'inventory')
         if isinstance(obj, MutableMapping):
             kwargs['inventory'] = dump_artifact(json.dumps(obj), path, 'hosts.json')
-        elif isinstance(obj, string_types):
+        elif isinstance(obj, str):
             if not os.path.exists(os.path.join(path, obj)):
                 kwargs['inventory'] = dump_artifact(obj, path, 'hosts')
             elif os.path.isabs(obj):
@@ -331,9 +330,7 @@ class OutputEventFilter:
 
             if stdout_actual and stdout_actual != "{}":
                 if not self.suppress_ansible_output:
-                    sys.stdout.write(
-                        stdout_actual.encode('utf-8') if PY2 else stdout_actual
-                    )
+                    sys.stdout.write(stdout_actual)
                     sys.stdout.write("\n")
                     sys.stdout.flush()
                 if self._handle:
@@ -354,9 +351,7 @@ class OutputEventFilter:
                 for line in lines:
                     self._emit_event(line)
                     if not self.suppress_ansible_output:
-                        sys.stdout.write(
-                            line.encode('utf-8') if PY2 else line
-                        )
+                        sys.stdout.write(line)
                     if self._handle:
                         self._handle.write(line)
                         self._handle.flush()
@@ -412,7 +407,7 @@ def open_fifo_write(path, data):
     '''
     os.mkfifo(path, stat.S_IRUSR | stat.S_IWUSR)
     # If the data is a string instead of bytes, convert it before writing the fifo
-    if isinstance(data, string_types):
+    if isinstance(data, str):
         data = data.encode()
 
     def worker(path, data):
@@ -429,25 +424,14 @@ def args2cmdline(*args):
 
 def ensure_str(s, encoding='utf-8', errors='strict'):
     """
-    Copied from six==1.12
-
     Coerce *s* to ``str``.
-
-    For Python 2:
-
-      - ``unicode`` -> encoded to ``str``
-      - ``str`` -> ``str``
-
-    For Python 3:
 
       - ``str`` -> ``str``
       - ``bytes`` -> decoded to ``str``
     """
-    if not isinstance(s, (text_type, binary_type)):
+    if not isinstance(s, (str, bytes)):
         raise TypeError(f"not expecting type '{type(s)}'")
-    if PY2 and isinstance(s, text_type):
-        s = s.encode(encoding, errors)
-    elif PY3 and isinstance(s, binary_type):
+    elif isinstance(s, bytes):
         s = s.decode(encoding, errors)
     return s
 
@@ -461,7 +445,7 @@ def sanitize_container_name(original_name):
     :param str original_name: Container name containing potentially invalid characters
     """
 
-    return re.sub('[^a-zA-Z0-9_-]', '_', text_type(original_name))
+    return re.sub('[^a-zA-Z0-9_-]', '_', str(original_name))
 
 
 def cli_mounts():

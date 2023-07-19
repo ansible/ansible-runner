@@ -1,7 +1,6 @@
 from io import BytesIO
 
 from pytest import raises, fixture
-from six import string_types
 
 import ansible_runner.loader
 
@@ -62,7 +61,7 @@ def test_load_file_text_cache_hit(loader, mocker, tmp_path):
     testfile = tmp_path.joinpath('test').as_posix()
 
     # cache miss
-    res = loader.load_file(testfile, string_types)
+    res = loader.load_file(testfile, str)
     assert mock_get_contents.called
     assert mock_get_contents.called_with_args(testfile)
     assert res == b'test\nstring'
@@ -71,7 +70,7 @@ def test_load_file_text_cache_hit(loader, mocker, tmp_path):
     mock_get_contents.reset_mock()
 
     # cache hit
-    res = loader.load_file(testfile, string_types)
+    res = loader.load_file(testfile, str)
     assert not mock_get_contents.called
     assert res == b'test\nstring'
     assert testfile in loader._cache

@@ -33,6 +33,7 @@ enable = [
   "R1735",  # use-dict-literal
   "W0102",  # dangerous-default-value
   "W0108",  # unnecessary-lambda
+  "W0201",  # attribute-defined-outside-init
   "W0612",  # unused-variable
   "W0707",  # raise-missing-from
   "W1202",  # logging-format-interpolation

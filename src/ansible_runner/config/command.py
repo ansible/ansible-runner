@@ -16,6 +16,9 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+
+# pylint: disable=W0201
+
 import logging
 import os
 

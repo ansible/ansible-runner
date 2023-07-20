@@ -126,6 +126,7 @@ class EventContext:
 
     def __init__(self):
         self.display_lock = multiprocessing.RLock()
+        self._global_ctx = {}
         self._local = threading.local()
         if os.getenv('AWX_ISOLATED_DATA_DIR', False):
             self.cache = IsolatedFileWrite()
@@ -151,14 +152,11 @@ class EventContext:
         return getattr(getattr(self, '_local', None), '_ctx', {})
 
     def add_global(self, **kwargs):
-        if not hasattr(self, '_global_ctx'):
-            self._global_ctx = {}
         self._global_ctx.update(kwargs)
 
     def remove_global(self, **kwargs):
-        if hasattr(self, '_global_ctx'):
-            for key in kwargs.keys():
-                self._global_ctx.pop(key, None)
+        for key in kwargs.keys():
+            self._global_ctx.pop(key, None)
 
     @contextlib.contextmanager
     def set_global(self, **kwargs):
@@ -169,7 +167,7 @@ class EventContext:
             self.remove_global(**kwargs)
 
     def get_global(self):
-        return getattr(self, '_global_ctx', {})
+        return self._global_ctx
 
     def get(self):
         ctx = {}
@@ -349,6 +347,9 @@ class CallbackModule(DefaultCallbackModule):
         self.play_uuids = set()
         self.duplicate_play_counts = collections.defaultdict(lambda: 1)
 
+        # NOTE: Ansible doesn't generate a UUID for playbook_on_start so do it for them.
+        self.playbook_uuid = str(uuid.uuid4())
+
     @contextlib.contextmanager
     def capture_event_data(self, event, **event_data):
         event_data.setdefault('uuid', str(uuid.uuid4()))
@@ -381,8 +382,6 @@ class CallbackModule(DefaultCallbackModule):
                 event_context.remove_local(event=None, **event_data)
 
     def set_playbook(self, playbook):
-        # NOTE: Ansible doesn't generate a UUID for playbook_on_start so do it for them.
-        self.playbook_uuid = str(uuid.uuid4())
         file_name = getattr(playbook, '_file_name', '???')
         event_context.add_global(playbook=file_name, playbook_uuid=self.playbook_uuid)
         self.clear_play()

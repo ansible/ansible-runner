@@ -38,6 +38,7 @@ class Runner:
         self.status = "unstarted"
         self.rc = None
         self.remove_partials = remove_partials
+        self.last_stdout_update = 0.0
 
         # default runner mode to pexpect
         self.runner_mode = self.config.runner_mode if hasattr(self.config, 'runner_mode') else 'pexpect'

@@ -75,7 +75,7 @@ class Runner:
                           f" file {partial_filename} with error {str(e)}"
                     debug(msg)
                     if self.config.check_job_event_data:
-                        raise AnsibleRunnerException(msg)
+                        raise AnsibleRunnerException(msg) from e
 
                 # prefer 'created' from partial data, but verbose events set time here
                 if 'created' not in event_data:
@@ -324,7 +324,7 @@ class Runner:
                         # TODO: logger.exception('Could not check cancel callback - cancelling immediately')
                         # if isinstance(extra_update_fields, dict):
                         #     extra_update_fields['job_explanation'] = "System error during job execution, check system logs"
-                        raise CallbackError(f"Exception in Cancel Callback: {e}")
+                        raise CallbackError(f"Exception in Cancel Callback: {e}") from e
                 if self.config.job_timeout and not self.canceled and (time.time() - job_start) > self.config.job_timeout:
                     self.timed_out = True
                     # if isinstance(extra_update_fields, dict):
@@ -380,13 +380,13 @@ class Runner:
             try:
                 self.artifacts_handler(self.config.artifact_dir)
             except Exception as e:
-                raise CallbackError(f"Exception in Artifact Callback: {e}")
+                raise CallbackError(f"Exception in Artifact Callback: {e}") from e
 
         if self.finished_callback is not None:
             try:
                 self.finished_callback(self)
             except Exception as e:
-                raise CallbackError(f"Exception in Finished Callback: {e}")
+                raise CallbackError(f"Exception in Finished Callback: {e}") from e
         return self.status, self.rc
 
     @property

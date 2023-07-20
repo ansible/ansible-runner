@@ -101,7 +101,7 @@ class ArtifactLoader:
             return data
 
         except (IOError, OSError) as exc:
-            raise ConfigurationError(f"error trying to load file contents: {exc}")
+            raise ConfigurationError(f"error trying to load file contents: {exc}") from exc
 
     def abspath(self, path):
         '''
@@ -166,8 +166,8 @@ class ArtifactLoader:
         except ConfigurationError as exc:
             debug(exc)
             raise
-        except UnicodeEncodeError:
-            raise ConfigurationError('unable to encode file contents')
+        except UnicodeEncodeError as exc:
+            raise ConfigurationError('unable to encode file contents') from exc
 
         if objtype is not str:
             for deserializer in (self._load_json, self._load_yaml):

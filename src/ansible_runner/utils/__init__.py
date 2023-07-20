@@ -112,7 +112,7 @@ def check_isolation_executable_installed(isolation_executable):
         return bool(proc.returncode == 0)
     except (OSError, ValueError) as e:
         if isinstance(e, ValueError) or getattr(e, 'errno', 1) != 2:  # ENOENT, no such file or directory
-            raise RuntimeError(f'{isolation_executable} unavailable for unexpected reason.')
+            raise RuntimeError(f'{isolation_executable} unavailable for unexpected reason.') from e
         return False
 
 
@@ -141,7 +141,7 @@ def dump_artifact(obj, path, filename=None):
         p_sha1.update(obj.encode(encoding='UTF-8'))
 
     if filename is None:
-        fd, fn = tempfile.mkstemp(dir=path)
+        _, fn = tempfile.mkstemp(dir=path)
     else:
         fn = os.path.join(path, filename)
 
@@ -172,8 +172,10 @@ def cleanup_artifact_dir(path, num_keep=0):
     # 0 disables artifact dir cleanup/rotation
     if num_keep < 1:
         return
-    all_paths = sorted([os.path.join(path, p) for p in os.listdir(path)],
-                       key=lambda x: os.path.getmtime(x))
+    all_paths = sorted(
+        [os.path.join(path, p) for p in os.listdir(path)],
+        key=os.path.getmtime
+    )
     total_remove = len(all_paths) - num_keep
     for f in range(total_remove):
         shutil.rmtree(all_paths[f])

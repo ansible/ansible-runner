@@ -143,7 +143,7 @@ def test_large_stdout_blob():
         pass
 
     f = OutputEventFilter(StringIO(), _callback)
-    for x in range(1024 * 10):
+    for _ in range(1024 * 10):
         f.write(u'x' * 1024)
 
 

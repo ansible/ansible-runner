@@ -95,7 +95,7 @@ def test_transmit_symlink(tmp_path, symlink_dest, check_content):
     dest_dir.mkdir()
 
     # Extract twice so we assure that existing data does not break things
-    for i in range(2):
+    for _ in range(2):
 
         # rewind the buffer and extract into destination private_data_dir
         outgoing_buffer.seek(0)

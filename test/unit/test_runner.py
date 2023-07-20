@@ -52,14 +52,14 @@ def test_error_code(rc):
 def test_job_timeout(rc):
     rc.command = [sys.executable, '-c', 'import time; time.sleep(5)']
     runner = Runner(config=rc)
-    status, exitcode = runner.run()
+    status, _ = runner.run()
     assert status == 'timeout'
     assert runner.timed_out is True
 
 
 def test_cancel_callback(rc):
     rc.command = [sys.executable, '-c', 'print(input("Password: "))']
-    status, exitcode = Runner(config=rc, cancel_callback=lambda: True).run()
+    status, _ = Runner(config=rc, cancel_callback=lambda: True).run()
     assert status == 'canceled'
 
 
@@ -163,7 +163,7 @@ def test_stdout_file_write(rc, runner_mode):
     rc.command = ['echo', 'hello_world_marker']
     rc.runner_mode = runner_mode
     runner = Runner(config=rc)
-    status, exitcode = runner.run()
+    status, _ = runner.run()
     assert status == 'successful'
     stdout_path = Path(rc.artifact_dir) / 'stdout'
     # poll until we are sure the file has been written to
@@ -181,7 +181,7 @@ def test_stdout_file_no_write(rc, runner_mode):
     rc.runner_mode = runner_mode
     rc.suppress_output_file = True
     runner = Runner(config=rc)
-    status, exitcode = runner.run()
+    status, _ = runner.run()
     assert status == 'successful'
     for filename in ('stdout', 'stderr'):
         stdout_path = Path(rc.artifact_dir) / filename
@@ -197,7 +197,7 @@ def test_multiline_blank_write(rc, runner_mode):
     rc.command = ['echo', 'hello_world_marker\n\n\n']
     rc.runner_mode = runner_mode
     runner = Runner(config=rc)
-    status, exitcode = runner.run()
+    status, _ = runner.run()
     assert status == 'successful'
     stdout_path = Path(rc.artifact_dir) / 'stdout'
     assert stdout_path.read_text() == 'hello_world_marker\n\n\n\n'  # one extra newline okay
@@ -215,5 +215,5 @@ def test_no_ResourceWarning_error(rc, runner_mode):
     rc.command = ['echo', 'Hello World']
     rc.runner_mode = runner_mode
     runner = Runner(config=rc)
-    status, exitcode = runner.run()
+    status, _ = runner.run()
     assert status == 'successful'

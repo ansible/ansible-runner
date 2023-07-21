@@ -20,14 +20,18 @@ disable = [
   # Some codes we will leave disabled
   "C0103",  # invalid-name
   "C0114",  # missing-module-docstring
+  "C0115",  # missing-class-docstring
   "C0116",  # missing-function-docstring
   "C0301",  # line-too-long
   "R0902",  # too-many-instance-attributes
 ]
 
 enable = [
+  "C0201",  # consider-iterating-dictionary
   "C0209",  # consider-using-f-string
   "C0411",  # wrong-import-order
+  "C0413",  # wrong-import-position
+  "C0415",  # import-outside-toplevel
   "E1101",  # no-member
   "R0205",  # useless-object-inheritance
   "R1735",  # use-dict-literal

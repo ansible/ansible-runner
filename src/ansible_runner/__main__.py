@@ -34,6 +34,8 @@ import tempfile
 from contextlib import contextmanager
 from uuid import uuid4
 
+import daemon
+from daemon.pidfile import TimeoutPIDLockFile
 from yaml import safe_dump, safe_load
 
 from ansible_runner import run
@@ -822,8 +824,6 @@ def main(sys_args=None):
     if vargs.get('command') in ('start', 'run', 'transmit', 'worker', 'process'):
 
         if vargs.get('command') == 'start':
-            import daemon
-            from daemon.pidfile import TimeoutPIDLockFile
             context = daemon.DaemonContext(pidfile=TimeoutPIDLockFile(pidfile))
         else:
             context = threading.Lock()

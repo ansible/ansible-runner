@@ -1,6 +1,7 @@
 import base64
 import json
 from io import StringIO
+from pprint import pprint
 
 import pytest
 
@@ -192,7 +193,6 @@ def test_verbose_line_buffering():
 
     f.close()
 
-    from pprint import pprint
     pprint(events)
     assert len(events) == 6
 

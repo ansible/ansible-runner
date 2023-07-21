@@ -143,7 +143,7 @@ class BaseConfig:
     def containerized(self):
         return self.process_isolation and self.process_isolation_executable in self._CONTAINER_ENGINES
 
-    def _prepare_env(self, runner_mode='pexpect'):
+    def prepare_env(self, runner_mode='pexpect'):
         """
         Manages reading environment metadata files under ``private_data_dir`` and merging/updating
         with existing values so the :py:class:`ansible_runner.runner.Runner` object can read and use them easily
@@ -314,7 +314,7 @@ class BaseConfig:
         for k, v in sorted(self.env.items()):
             debug(f' {k}: {v}')
 
-    def _handle_command_wrap(self, execution_mode, cmdline_args):
+    def handle_command_wrap(self, execution_mode, cmdline_args):
         if self.ssh_key_data:
             logger.debug('ssh key data added')
             self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path)

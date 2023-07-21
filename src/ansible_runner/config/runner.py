@@ -147,7 +147,7 @@ class RunnerConfig(BaseConfig):
         elif self.execution_mode == ExecutionMode.NONE:
             raise ConfigurationError("No executable for runner to run")
 
-        self._handle_command_wrap()
+        self.handle_command_wrap()
 
         debug('env:')
         for k, v in sorted(self.env.items()):
@@ -174,7 +174,7 @@ class RunnerConfig(BaseConfig):
         """
 
         # setup common env settings
-        super(RunnerConfig, self)._prepare_env()
+        super(RunnerConfig, self).prepare_env()
 
         self.process_isolation_path = self.settings.get('process_isolation_path', self.process_isolation_path)
         self.process_isolation_hide_paths = self.settings.get('process_isolation_hide_paths', self.process_isolation_hide_paths)
@@ -389,7 +389,7 @@ class RunnerConfig(BaseConfig):
         new_args.extend(args)
         return new_args
 
-    def _handle_command_wrap(self):
+    def handle_command_wrap(self):
         # wrap args for ssh-agent
         if self.ssh_key_data:
             debug('ssh-agent agrs added')

@@ -82,7 +82,7 @@ class InventoryConfig(BaseConfig):
         if action == "graph" and response_format and response_format != 'json':
             raise ConfigurationError("'graph' action supports only 'json' response format")
 
-        self._prepare_env(runner_mode=self.runner_mode)
+        self.prepare_env(runner_mode=self.runner_mode)
         self.cmdline_args = []
 
         self.cmdline_args.append(f'--{action}')
@@ -111,4 +111,4 @@ class InventoryConfig(BaseConfig):
             self.cmdline_args.append('--export')
 
         self.command = [self._ansible_inventory_exec_path] + self.cmdline_args
-        self._handle_command_wrap(self.execution_mode, self.cmdline_args)
+        self.handle_command_wrap(self.execution_mode, self.cmdline_args)

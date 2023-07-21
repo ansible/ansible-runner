@@ -72,7 +72,7 @@ class DocConfig(BaseConfig):
         if not isinstance(plugin_names, list):
             raise ConfigurationError(f"plugin_names should be of type list, instead received {plugin_names} of type {type(plugin_names)}")
 
-        self._prepare_env(runner_mode=self.runner_mode)
+        self.prepare_env(runner_mode=self.runner_mode)
         self.cmdline_args = []
 
         if response_format == 'json':
@@ -93,7 +93,7 @@ class DocConfig(BaseConfig):
         self.cmdline_args.extend(plugin_names)
 
         self.command = [self._ansible_doc_exec_path] + self.cmdline_args
-        self._handle_command_wrap(self.execution_mode, self.cmdline_args)
+        self.handle_command_wrap(self.execution_mode, self.cmdline_args)
 
     def prepare_plugin_list_command(self, list_files=None, response_format=None, plugin_type=None,
                                     playbook_dir=None, module_path=None):
@@ -102,7 +102,7 @@ class DocConfig(BaseConfig):
             raise ConfigurationError(f"Invalid response_format {response_format}, "
                                      f'valid value is one of either {", ".join(DocConfig._supported_response_formats)}')
 
-        self._prepare_env(runner_mode=self.runner_mode)
+        self.prepare_env(runner_mode=self.runner_mode)
         self.cmdline_args = []
 
         if list_files:
@@ -123,13 +123,13 @@ class DocConfig(BaseConfig):
             self.cmdline_args.extend(['-M', module_path])
 
         self.command = [self._ansible_doc_exec_path] + self.cmdline_args
-        self._handle_command_wrap(self.execution_mode, self.cmdline_args)
+        self.handle_command_wrap(self.execution_mode, self.cmdline_args)
 
     def prepare_role_list_command(self, collection_name, playbook_dir):
         """
         ansible-doc -t role -l -j <collection_name>
         """
-        self._prepare_env(runner_mode=self.runner_mode)
+        self.prepare_env(runner_mode=self.runner_mode)
         self.cmdline_args = ['-t', 'role', '-l', '-j']
         if playbook_dir:
             self.cmdline_args.extend(['--playbook-dir', playbook_dir])
@@ -137,13 +137,13 @@ class DocConfig(BaseConfig):
             self.cmdline_args.append(collection_name)
 
         self.command = [self._ansible_doc_exec_path] + self.cmdline_args
-        self._handle_command_wrap(self.execution_mode, self.cmdline_args)
+        self.handle_command_wrap(self.execution_mode, self.cmdline_args)
 
     def prepare_role_argspec_command(self, role_name, collection_name, playbook_dir):
         """
         ansible-doc -t role -j <collection_name>.<role_name>
         """
-        self._prepare_env(runner_mode=self.runner_mode)
+        self.prepare_env(runner_mode=self.runner_mode)
         self.cmdline_args = ['-t', 'role', '-j']
         if playbook_dir:
             self.cmdline_args.extend(['--playbook-dir', playbook_dir])
@@ -152,4 +152,4 @@ class DocConfig(BaseConfig):
         self.cmdline_args.append(role_name)
 
         self.command = [self._ansible_doc_exec_path] + self.cmdline_args
-        self._handle_command_wrap(self.execution_mode, self.cmdline_args)
+        self.handle_command_wrap(self.execution_mode, self.cmdline_args)

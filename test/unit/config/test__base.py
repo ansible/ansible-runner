@@ -45,7 +45,7 @@ def test_base_config_with_artifact_dir(tmp_path, patch_private_data_dir):
     assert rc.private_data_dir.startswith(base_private_data_dir)
     assert len(rc.private_data_dir) > len(base_private_data_dir)
 
-    rc._prepare_env()
+    rc.prepare_env()
     assert not tmp_path.joinpath('artifacts').exists()
     assert tmp_path.joinpath('this-is-some-dir').exists()
 
@@ -73,7 +73,7 @@ def test_prepare_environment_vars_only_strings_from_file(mocker):
 
     mocker.patch.object(rc.loader, 'load_file', side_effect=envvar_side_effect)
 
-    rc._prepare_env()
+    rc.prepare_env()
     assert 'A' in rc.env
     assert isinstance(rc.env['A'], str)
     assert 'B' in rc.env
@@ -86,7 +86,7 @@ def test_prepare_environment_vars_only_strings_from_file(mocker):
 
 def test_prepare_environment_vars_only_strings_from_interface():
     rc = BaseConfig(envvars={'D': 'D', 'A': 1, 'B': True, 'C': 'foo'})
-    rc._prepare_env()
+    rc.prepare_env()
 
     assert 'A' in rc.env
     assert isinstance(rc.env['A'], str)
@@ -100,7 +100,7 @@ def test_prepare_environment_vars_only_strings_from_interface():
 
 def test_prepare_environment_pexpect_defaults():
     rc = BaseConfig()
-    rc._prepare_env()
+    rc.prepare_env()
 
     assert len(rc.expect_passwords) == 2
     assert TIMEOUT in rc.expect_passwords
@@ -116,7 +116,7 @@ def test_prepare_env_passwords(mocker):
     password_side_effect = partial(load_file_side_effect, 'env/passwords', value)
 
     mocker.patch.object(rc.loader, 'load_file', side_effect=password_side_effect)
-    rc._prepare_env()
+    rc.prepare_env()
     rc.expect_passwords.pop(TIMEOUT)
     rc.expect_passwords.pop(EOF)
     assert len(rc.expect_passwords) == 1
@@ -126,20 +126,20 @@ def test_prepare_env_passwords(mocker):
 
 def test_prepare_environment_subprocess_defaults():
     rc = BaseConfig()
-    rc._prepare_env(runner_mode="subprocess")
+    rc.prepare_env(runner_mode="subprocess")
     assert rc.subprocess_timeout is None
 
 
 def test_prepare_environment_subprocess_timeout():
     rc = BaseConfig(timeout=100)
-    rc._prepare_env(runner_mode="subprocess")
+    rc.prepare_env(runner_mode="subprocess")
 
     assert rc.subprocess_timeout == 100
 
 
 def test_prepare_env_settings_defaults():
     rc = BaseConfig()
-    rc._prepare_env()
+    rc.prepare_env()
     assert rc.settings == {}
 
 
@@ -150,13 +150,13 @@ def test_prepare_env_settings(mocker):
     settings_side_effect = partial(load_file_side_effect, 'env/settings', value)
 
     mocker.patch.object(rc.loader, 'load_file', side_effect=settings_side_effect)
-    rc._prepare_env()
+    rc.prepare_env()
     assert rc.settings == value
 
 
 def test_prepare_env_sshkey_defaults():
     rc = BaseConfig()
-    rc._prepare_env()
+    rc.prepare_env()
     assert rc.ssh_key_data is None
 
 
@@ -168,13 +168,13 @@ def test_prepare_env_sshkey(mocker):
     sshkey_side_effect = partial(load_file_side_effect, 'env/ssh_key', rsa_private_key_value)
 
     mocker.patch.object(rc.loader, 'load_file', side_effect=sshkey_side_effect)
-    rc._prepare_env()
+    rc.prepare_env()
     assert rc.ssh_key_data == rsa_private_key_value
 
 
 def test_prepare_env_defaults():
     rc = BaseConfig(host_cwd='/tmp/project')
-    rc._prepare_env()
+    rc.prepare_env()
 
     assert rc.idle_timeout is None
     assert rc.job_timeout is None
@@ -193,7 +193,7 @@ def test_prepare_env_ansible_vars(mocker, tmp_path):
     rc.env = {}
     rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
 
-    rc._prepare_env()
+    rc.prepare_env()
 
     assert not hasattr(rc, 'ssh_key_path')
     assert not hasattr(rc, 'command')
@@ -216,7 +216,7 @@ def test_prepare_with_ssh_key(mocker, tmp_path):
     rc.ssh_key_data = rsa_key.private
     rc.command = 'ansible-playbook'
     rc.cmdline_args = []
-    rc._prepare_env()
+    rc.prepare_env()
 
     assert rc.ssh_key_path == custom_artifacts.joinpath('ssh_key_data').as_posix()
     assert open_fifo_write_mock.called
@@ -298,8 +298,8 @@ def test_containerization_settings(tmp_path, runtime, mocker):
     rc.container_image = 'my_container'
     rc.container_volume_mounts = ['/host1:/container1', 'host2:/container2']
     rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
-    rc._prepare_env()
-    rc._handle_command_wrap(rc.execution_mode, rc.cmdline_args)
+    rc.prepare_env()
+    rc.handle_command_wrap(rc.execution_mode, rc.cmdline_args)
 
     extra_container_args = []
     if runtime == 'podman':
@@ -356,8 +356,8 @@ def test_containerization_unsafe_write_setting(tmp_path, runtime, mocker):
     rc.container_volume_mounts = ['/host1:/container1', 'host2:/container2']
     mock_containerized.return_value = True
     rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
-    rc._prepare_env()
-    rc._handle_command_wrap(rc.execution_mode, rc.cmdline_args)
+    rc.prepare_env()
+    rc.handle_command_wrap(rc.execution_mode, rc.cmdline_args)
 
     expected = {
         'docker': None,

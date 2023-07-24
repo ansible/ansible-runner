@@ -6,7 +6,7 @@ import os
 
 def test_combine_python_and_file_settings(project_fixtures):
     rc = BaseConfig(private_data_dir=str(project_fixtures / 'job_env'), settings={'job_timeout': 40}, container_image='bar')
-    rc._prepare_env()
+    rc.prepare_env()
     assert rc.settings == {'job_timeout': 40, 'process_isolation': True}
 
 

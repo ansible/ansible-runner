@@ -1,3 +1,5 @@
+# pylint: disable=W0212
+
 from io import BytesIO
 
 from pytest import raises, fixture

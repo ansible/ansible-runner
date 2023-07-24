@@ -150,6 +150,7 @@ class Worker:
         Utility decorator to synchronize event writes and flushes to avoid keepalives splatting in the middle of
         mid-write events, and reset keepalive interval on write completion.
         """
+        # pylint: disable=W0212
         @wraps(wrapped_method)
         def wrapper(self, *args, **kwargs):
             with self._output_lock:

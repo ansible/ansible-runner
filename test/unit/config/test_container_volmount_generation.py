@@ -1,6 +1,8 @@
 """ Ensure the generation of container volume mounts is handled
 predictably and consistently """
 
+# pylint: disable=W0212
+
 import os
 from typing import NamedTuple
 

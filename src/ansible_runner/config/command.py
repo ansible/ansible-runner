@@ -82,10 +82,10 @@ class CommandConfig(BaseConfig):
         if self.runner_mode is None:
             self._set_runner_mode()
 
-        self._prepare_env(runner_mode=self.runner_mode)
+        self.prepare_env(runner_mode=self.runner_mode)
         self._prepare_command()
 
-        self._handle_command_wrap(self.execution_mode, self.cmdline_args)
+        self.handle_command_wrap(self.execution_mode, self.cmdline_args)
 
     def _prepare_command(self):
         """

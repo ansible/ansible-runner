@@ -69,7 +69,7 @@ class AnsibleCfgConfig(BaseConfig):
 
         if action != 'dump' and only_changed:
             raise ConfigurationError("only_changed is applicable for action 'dump'")
-        self._prepare_env(runner_mode=self.runner_mode)
+        self.prepare_env(runner_mode=self.runner_mode)
         self.cmdline_args = []
 
         self.cmdline_args.append(action)
@@ -80,4 +80,4 @@ class AnsibleCfgConfig(BaseConfig):
             self.cmdline_args.append('--only-changed')
 
         self.command = [self._ansible_config_exec_path] + self.cmdline_args
-        self._handle_command_wrap(self.execution_mode, self.cmdline_args)
+        self.handle_command_wrap(self.execution_mode, self.cmdline_args)

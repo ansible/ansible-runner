@@ -31,6 +31,9 @@ class UUIDEncoder(json.JSONEncoder):
 class MockConfig:
     def __init__(self, settings):
         self.settings = settings
+        self.command = None
+        self.cwd = None
+        self.env = None
 
 
 class Transmitter:

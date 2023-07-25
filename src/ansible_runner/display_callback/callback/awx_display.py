@@ -19,20 +19,6 @@
 
 from __future__ import (absolute_import, division, print_function)
 
-
-DOCUMENTATION = '''
-    callback: awx_display
-    short_description: Playbook event dispatcher for ansible-runner
-    version_added: "2.0"
-    description:
-        - This callback is necessary for ansible-runner to work
-    type: stdout
-    extends_documentation_fragment:
-      - default_callback
-    requirements:
-      - Set as stdout in config
-'''
-
 # Python
 import json
 import stat
@@ -53,6 +39,20 @@ from ansible import constants as C
 from ansible.plugins.callback import CallbackBase
 from ansible.plugins.loader import callback_loader
 from ansible.utils.display import Display
+
+
+DOCUMENTATION = '''
+    callback: awx_display
+    short_description: Playbook event dispatcher for ansible-runner
+    version_added: "2.0"
+    description:
+        - This callback is necessary for ansible-runner to work
+    type: stdout
+    extends_documentation_fragment:
+      - default_callback
+    requirements:
+      - Set as stdout in config
+'''
 
 IS_ADHOC = os.getenv('AD_HOC_COMMAND_ID', False)
 
@@ -139,7 +139,7 @@ class EventContext:
         ctx.update(kwargs)
 
     def remove_local(self, **kwargs):
-        for key in kwargs.keys():
+        for key in kwargs:
             self._local._ctx.pop(key, None)
 
     @contextlib.contextmanager
@@ -157,7 +157,7 @@ class EventContext:
         self._global_ctx.update(kwargs)
 
     def remove_global(self, **kwargs):
-        for key in kwargs.keys():
+        for key in kwargs:
             self._global_ctx.pop(key, None)
 
     @contextlib.contextmanager
@@ -208,7 +208,7 @@ class EventContext:
                     break
         else:
             event_dict['parent_uuid'] = event_data.get('parent_uuid', None)
-        if "verbosity" in event_data.keys():
+        if "verbosity" in event_data:
             event_dict["verbosity"] = event_data.pop("verbosity")
         if not omit_event_data and should_process_event_data:
             max_res = int(os.getenv("MAX_EVENT_RES", 700000))

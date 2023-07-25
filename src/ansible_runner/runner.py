@@ -10,6 +10,8 @@ import codecs
 import collections
 import datetime
 import logging
+import traceback
+
 import pexpect
 
 import ansible_runner.plugins
@@ -258,7 +260,6 @@ class Runner:
                 stderr_response = exc.stderr
                 self.timed_out = True
             except Exception as exc:
-                import traceback
                 stderr_response = traceback.format_exc()
                 self.rc = 254
                 self.errored = True

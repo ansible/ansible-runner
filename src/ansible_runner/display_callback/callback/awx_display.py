@@ -92,9 +92,9 @@ class AnsibleJSONEncoderLocal(json.JSONEncoder):
             if isinstance(encrypted_form, bytes):
                 encrypted_form = encrypted_form.decode('utf-8')
             return {'__ansible_vault': encrypted_form}
-        elif isinstance(o, (datetime.date, datetime.datetime)):
+        if isinstance(o, (datetime.date, datetime.datetime)):
             return o.isoformat()
-        return super(AnsibleJSONEncoderLocal, self).default(o)
+        return super().default(o)
 
 
 class IsolatedFileWrite:
@@ -341,7 +341,7 @@ class CallbackModule(DefaultCallbackModule):
     ]
 
     def __init__(self):
-        super(CallbackModule, self).__init__()
+        super().__init__()
         self._host_start = {}
         self.task_uuids = set()
         self.duplicate_task_counts = collections.defaultdict(lambda: 1)
@@ -455,7 +455,7 @@ class CallbackModule(DefaultCallbackModule):
             'uuid': self.playbook_uuid,
         }
         with self.capture_event_data('playbook_on_start', **event_data):
-            super(CallbackModule, self).v2_playbook_on_start(playbook)
+            super().v2_playbook_on_start(playbook)
 
     def v2_playbook_on_vars_prompt(self, varname, private=True, prompt=None,
                                    encrypt=None, confirm=False, salt_size=None,
@@ -472,7 +472,7 @@ class CallbackModule(DefaultCallbackModule):
             'unsafe': unsafe,
         }
         with self.capture_event_data('playbook_on_vars_prompt', **event_data):
-            super(CallbackModule, self).v2_playbook_on_vars_prompt(
+            super().v2_playbook_on_vars_prompt(
                 varname, private, prompt, encrypt, confirm, salt_size, salt,
                 default,
             )
@@ -482,7 +482,7 @@ class CallbackModule(DefaultCallbackModule):
             'included_file': included_file._filename if included_file is not None else None,
         }
         with self.capture_event_data('playbook_on_include', **event_data):
-            super(CallbackModule, self).v2_playbook_on_include(included_file)
+            super().v2_playbook_on_include(included_file)
 
     def v2_playbook_on_play_start(self, play):
         if IS_ADHOC:
@@ -520,22 +520,22 @@ class CallbackModule(DefaultCallbackModule):
             'uuid': str(play._uuid),
         }
         with self.capture_event_data('playbook_on_play_start', **event_data):
-            super(CallbackModule, self).v2_playbook_on_play_start(play)
+            super().v2_playbook_on_play_start(play)
 
     def v2_playbook_on_import_for_host(self, result, imported_file):
         # NOTE: Not used by Ansible 2.x.
         with self.capture_event_data('playbook_on_import_for_host'):
-            super(CallbackModule, self).v2_playbook_on_import_for_host(result, imported_file)
+            super().v2_playbook_on_import_for_host(result, imported_file)
 
     def v2_playbook_on_not_import_for_host(self, result, missing_file):
         # NOTE: Not used by Ansible 2.x.
         with self.capture_event_data('playbook_on_not_import_for_host'):
-            super(CallbackModule, self).v2_playbook_on_not_import_for_host(result, missing_file)
+            super().v2_playbook_on_not_import_for_host(result, missing_file)
 
     def v2_playbook_on_setup(self):
         # NOTE: Not used by Ansible 2.x.
         with self.capture_event_data('playbook_on_setup'):
-            super(CallbackModule, self).v2_playbook_on_setup()
+            super().v2_playbook_on_setup()
 
     def v2_playbook_on_task_start(self, task, is_conditional):
         if IS_ADHOC:
@@ -566,7 +566,7 @@ class CallbackModule(DefaultCallbackModule):
             'uuid': task_uuid,
         }
         with self.capture_event_data('playbook_on_task_start', **event_data):
-            super(CallbackModule, self).v2_playbook_on_task_start(task, is_conditional)
+            super().v2_playbook_on_task_start(task, is_conditional)
 
     def v2_playbook_on_cleanup_task_start(self, task):
         # NOTE: Not used by Ansible 2.x.
@@ -578,7 +578,7 @@ class CallbackModule(DefaultCallbackModule):
             'is_conditional': True,
         }
         with self.capture_event_data('playbook_on_task_start', **event_data):
-            super(CallbackModule, self).v2_playbook_on_cleanup_task_start(task)
+            super().v2_playbook_on_cleanup_task_start(task)
 
     def v2_playbook_on_handler_task_start(self, task):
         # NOTE: Re-using playbook_on_task_start event for this v2-specific
@@ -592,15 +592,15 @@ class CallbackModule(DefaultCallbackModule):
             'is_conditional': True,
         }
         with self.capture_event_data('playbook_on_task_start', **event_data):
-            super(CallbackModule, self).v2_playbook_on_handler_task_start(task)
+            super().v2_playbook_on_handler_task_start(task)
 
     def v2_playbook_on_no_hosts_matched(self):
         with self.capture_event_data('playbook_on_no_hosts_matched'):
-            super(CallbackModule, self).v2_playbook_on_no_hosts_matched()
+            super().v2_playbook_on_no_hosts_matched()
 
     def v2_playbook_on_no_hosts_remaining(self):
         with self.capture_event_data('playbook_on_no_hosts_remaining'):
-            super(CallbackModule, self).v2_playbook_on_no_hosts_remaining()
+            super().v2_playbook_on_no_hosts_remaining()
 
     def v2_playbook_on_notify(self, handler, host):
         # NOTE: Not used by Ansible < 2.5.
@@ -609,7 +609,7 @@ class CallbackModule(DefaultCallbackModule):
             'handler': handler.get_name(),
         }
         with self.capture_event_data('playbook_on_notify', **event_data):
-            super(CallbackModule, self).v2_playbook_on_notify(handler, host)
+            super().v2_playbook_on_notify(handler, host)
 
     '''
     ansible_stats is, retroactively, added in 2.2
@@ -630,13 +630,13 @@ class CallbackModule(DefaultCallbackModule):
         }
 
         with self.capture_event_data('playbook_on_stats', **event_data):
-            super(CallbackModule, self).v2_playbook_on_stats(stats)
+            super().v2_playbook_on_stats(stats)
 
     @staticmethod
     def _get_event_loop(task):
         if hasattr(task, 'loop_with'):  # Ansible >=2.5
             return task.loop_with
-        elif hasattr(task, 'loop'):  # Ansible <2.4
+        if hasattr(task, 'loop'):  # Ansible <2.4
             return task.loop
         return None
 
@@ -667,7 +667,7 @@ class CallbackModule(DefaultCallbackModule):
             'event_loop': self._get_event_loop(result._task),
         }
         with self.capture_event_data('runner_on_ok', **event_data):
-            super(CallbackModule, self).v2_runner_on_ok(result)
+            super().v2_runner_on_ok(result)
 
     def v2_runner_on_failed(self, result, ignore_errors=False):
         # FIXME: Add verbosity for exception/results output.
@@ -684,7 +684,7 @@ class CallbackModule(DefaultCallbackModule):
             'event_loop': self._get_event_loop(result._task),
         }
         with self.capture_event_data('runner_on_failed', **event_data):
-            super(CallbackModule, self).v2_runner_on_failed(result, ignore_errors)
+            super().v2_runner_on_failed(result, ignore_errors)
 
     def v2_runner_on_skipped(self, result):
         host_start, end_time, duration = self._get_result_timing_data(result)
@@ -698,7 +698,7 @@ class CallbackModule(DefaultCallbackModule):
             'event_loop': self._get_event_loop(result._task),
         }
         with self.capture_event_data('runner_on_skipped', **event_data):
-            super(CallbackModule, self).v2_runner_on_skipped(result)
+            super().v2_runner_on_skipped(result)
 
     def v2_runner_on_unreachable(self, result):
         host_start, end_time, duration = self._get_result_timing_data(result)
@@ -712,7 +712,7 @@ class CallbackModule(DefaultCallbackModule):
             'res': result._result,
         }
         with self.capture_event_data('runner_on_unreachable', **event_data):
-            super(CallbackModule, self).v2_runner_on_unreachable(result)
+            super().v2_runner_on_unreachable(result)
 
     def v2_runner_on_no_hosts(self, task):
         # NOTE: Not used by Ansible 2.x.
@@ -720,7 +720,7 @@ class CallbackModule(DefaultCallbackModule):
             'task': task,
         }
         with self.capture_event_data('runner_on_no_hosts', **event_data):
-            super(CallbackModule, self).v2_runner_on_no_hosts(task)
+            super().v2_runner_on_no_hosts(task)
 
     def v2_runner_on_async_poll(self, result):
         # NOTE: Not used by Ansible 2.x.
@@ -731,7 +731,7 @@ class CallbackModule(DefaultCallbackModule):
             'jid': result._result.get('ansible_job_id'),
         }
         with self.capture_event_data('runner_on_async_poll', **event_data):
-            super(CallbackModule, self).v2_runner_on_async_poll(result)
+            super().v2_runner_on_async_poll(result)
 
     def v2_runner_on_async_ok(self, result):
         # NOTE: Not used by Ansible 2.x.
@@ -742,7 +742,7 @@ class CallbackModule(DefaultCallbackModule):
             'jid': result._result.get('ansible_job_id'),
         }
         with self.capture_event_data('runner_on_async_ok', **event_data):
-            super(CallbackModule, self).v2_runner_on_async_ok(result)
+            super().v2_runner_on_async_ok(result)
 
     def v2_runner_on_async_failed(self, result):
         # NOTE: Not used by Ansible 2.x.
@@ -753,7 +753,7 @@ class CallbackModule(DefaultCallbackModule):
             'jid': result._result.get('ansible_job_id'),
         }
         with self.capture_event_data('runner_on_async_failed', **event_data):
-            super(CallbackModule, self).v2_runner_on_async_failed(result)
+            super().v2_runner_on_async_failed(result)
 
     def v2_runner_on_file_diff(self, result, diff):
         # NOTE: Not used by Ansible 2.x.
@@ -763,7 +763,7 @@ class CallbackModule(DefaultCallbackModule):
             'diff': diff,
         }
         with self.capture_event_data('runner_on_file_diff', **event_data):
-            super(CallbackModule, self).v2_runner_on_file_diff(result, diff)
+            super().v2_runner_on_file_diff(result, diff)
 
     def v2_on_file_diff(self, result):
         # NOTE: Logged as runner_on_file_diff.
@@ -773,7 +773,7 @@ class CallbackModule(DefaultCallbackModule):
             'diff': result._result.get('diff'),
         }
         with self.capture_event_data('runner_on_file_diff', **event_data):
-            super(CallbackModule, self).v2_on_file_diff(result)
+            super().v2_on_file_diff(result)
 
     def v2_runner_item_on_ok(self, result):
         event_data = {
@@ -782,7 +782,7 @@ class CallbackModule(DefaultCallbackModule):
             'res': result._result,
         }
         with self.capture_event_data('runner_item_on_ok', **event_data):
-            super(CallbackModule, self).v2_runner_item_on_ok(result)
+            super().v2_runner_item_on_ok(result)
 
     def v2_runner_item_on_failed(self, result):
         event_data = {
@@ -791,7 +791,7 @@ class CallbackModule(DefaultCallbackModule):
             'res': result._result,
         }
         with self.capture_event_data('runner_item_on_failed', **event_data):
-            super(CallbackModule, self).v2_runner_item_on_failed(result)
+            super().v2_runner_item_on_failed(result)
 
     def v2_runner_item_on_skipped(self, result):
         event_data = {
@@ -800,7 +800,7 @@ class CallbackModule(DefaultCallbackModule):
             'res': result._result,
         }
         with self.capture_event_data('runner_item_on_skipped', **event_data):
-            super(CallbackModule, self).v2_runner_item_on_skipped(result)
+            super().v2_runner_item_on_skipped(result)
 
     def v2_runner_retry(self, result):
         event_data = {
@@ -809,7 +809,7 @@ class CallbackModule(DefaultCallbackModule):
             'res': result._result,
         }
         with self.capture_event_data('runner_retry', **event_data):
-            super(CallbackModule, self).v2_runner_retry(result)
+            super().v2_runner_retry(result)
 
     def v2_runner_on_start(self, host, task):
         event_data = {
@@ -818,4 +818,4 @@ class CallbackModule(DefaultCallbackModule):
         }
         self._host_start[host.get_name()] = current_time()
         with self.capture_event_data('runner_on_start', **event_data):
-            super(CallbackModule, self).v2_runner_on_start(host, task)
+            super().v2_runner_on_start(host, task)

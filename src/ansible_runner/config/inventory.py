@@ -57,7 +57,7 @@ class InventoryConfig(BaseConfig):
             self._ansible_inventory_exec_path = get_executable_path("ansible-inventory")
 
         self.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
-        super(InventoryConfig, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     _supported_response_formats = ('json', 'yaml', 'toml')
     _supported_actions = ('graph', 'host', 'list')

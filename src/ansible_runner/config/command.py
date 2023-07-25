@@ -61,7 +61,7 @@ class CommandConfig(BaseConfig):
 
         self.execution_mode = BaseExecutionMode.NONE
 
-        super(CommandConfig, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     _ANSIBLE_NON_INERACTIVE_CMDS = (
         'ansible-config',
@@ -107,5 +107,5 @@ class CommandConfig(BaseConfig):
         if self.execution_mode == BaseExecutionMode.GENERIC_COMMANDS \
            and 'python' in self.executable_cmd.split(os.pathsep)[-1] and self.cmdline_args is None:
             raise ConfigurationError("Runner requires python filename for execution")
-        elif self.execution_mode == BaseExecutionMode.NONE:
+        if self.execution_mode == BaseExecutionMode.NONE:
             raise ConfigurationError("No executable for runner to run")

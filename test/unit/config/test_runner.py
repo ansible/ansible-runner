@@ -11,7 +11,6 @@ from pexpect import TIMEOUT, EOF
 import pytest
 
 from ansible_runner.config.runner import RunnerConfig, ExecutionMode
-from ansible_runner.interface import init_runner
 from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError
 
@@ -517,26 +516,6 @@ def test_wrap_args_with_ssh_agent_silent(mocker):
         'sh', '-c',
         "trap 'rm -f /tmp/sshkey' EXIT && ssh-add /tmp/sshkey 2>/dev/null && rm -f /tmp/sshkey && ansible-playbook main.yaml"
     ]
-
-
-@pytest.mark.parametrize('executable_present', [True, False])
-def test_process_isolation_executable_not_found(executable_present, mocker):
-    mocker.patch('ansible_runner.runner_config.RunnerConfig.prepare')
-    mock_sys = mocker.patch('ansible_runner.interface.sys')
-    mock_subprocess = mocker.patch('ansible_runner.utils.subprocess')
-    # Mock subprocess.Popen indicates if
-    # process isolation executable is present
-    mock_proc = mocker.Mock()
-    mock_proc.returncode = (0 if executable_present else 1)
-    mock_subprocess.Popen.return_value = mock_proc
-
-    kwargs = {'process_isolation': True,
-              'process_isolation_executable': 'fake_executable'}
-    init_runner(**kwargs)
-    if executable_present:
-        assert not mock_sys.exit.called
-    else:
-        assert mock_sys.exit.called
 
 
 def test_bwrap_process_isolation_defaults(mocker):

@@ -73,7 +73,7 @@ class RunnerConfig(BaseConfig):
 
         self.runner_mode = "pexpect"
 
-        super(RunnerConfig, self).__init__(private_data_dir, **kwargs)
+        super().__init__(private_data_dir, **kwargs)
 
         self.playbook = playbook
         self.inventory = inventory
@@ -142,9 +142,9 @@ class RunnerConfig(BaseConfig):
 
         if self.execution_mode == ExecutionMode.ANSIBLE_PLAYBOOK and self.playbook is None:
             raise ConfigurationError("Runner playbook required when running ansible-playbook")
-        elif self.execution_mode == ExecutionMode.ANSIBLE and self.module is None:
+        if self.execution_mode == ExecutionMode.ANSIBLE and self.module is None:
             raise ConfigurationError("Runner module required when running ansible")
-        elif self.execution_mode == ExecutionMode.NONE:
+        if self.execution_mode == ExecutionMode.NONE:
             raise ConfigurationError("No executable for runner to run")
 
         self.handle_command_wrap()
@@ -174,7 +174,7 @@ class RunnerConfig(BaseConfig):
         """
 
         # setup common env settings
-        super(RunnerConfig, self).prepare_env()
+        super().prepare_env()
 
         self.process_isolation_path = self.settings.get('process_isolation_path', self.process_isolation_path)
         self.process_isolation_hide_paths = self.settings.get('process_isolation_hide_paths', self.process_isolation_hide_paths)

@@ -23,7 +23,15 @@ disable = [
   "C0115",  # missing-class-docstring
   "C0116",  # missing-function-docstring
   "C0301",  # line-too-long
+  "R0801",  # duplicate-code
   "R0902",  # too-many-instance-attributes
+  "R0903",  # too-few-public-methods
+  "R0904",  # too-many-public-methods
+  "R0911",  # too-many-return-statements
+  "R0912",  # too-many-branches
+  "R0913",  # too-many-arguments
+  "R0914",  # too-many-locals
+  "R0915",  # too-many-statements
 ]
 
 enable = [
@@ -34,6 +42,16 @@ enable = [
   "C0415",  # import-outside-toplevel
   "E1101",  # no-member
   "R0205",  # useless-object-inheritance
+  "R1701",  # consider-merging-isinstance
+  "R1704",  # redefined-argument-from-local
+  "R1705",  # no-else-return
+  "R1710",  # inconsistent-return-statements
+  "R1720",  # no-else-raise
+  "R1724",  # no-else-continue
+  "R1725",  # super-with-arguments
+  "R1729",  # use-a-generator
+  "R1730",  # consider-using-min-builtin
+  "R1732",  # consider-using-with
   "R1735",  # use-dict-literal
   "W0102",  # dangerous-default-value
   "W0108",  # unnecessary-lambda

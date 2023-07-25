@@ -15,6 +15,7 @@ import pytest
 from ansible_runner.utils import (
     isplaybook,
     isinventory,
+    check_isolation_executable_installed,
     args2cmdline,
     sanitize_container_name,
     signal_handler,
@@ -46,6 +47,11 @@ def test_isinventory_invalid(inventory):
 def test_args2cmdline():
     res = args2cmdline('ansible', '-m', 'setup', 'localhost')
     assert res == 'ansible -m setup localhost'
+
+
+def test_check_isolation_executable_installed():
+    assert check_isolation_executable_installed("true")
+    assert not check_isolation_executable_installed("does-not-exist")
 
 
 @pytest.mark.parametrize('container_name,expected_name', [

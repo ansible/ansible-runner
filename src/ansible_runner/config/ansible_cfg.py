@@ -58,7 +58,7 @@ class AnsibleCfgConfig(BaseConfig):
             self._ansible_config_exec_path = get_executable_path("ansible-config")
 
         self.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
-        super(AnsibleCfgConfig, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     _supported_actions = ('list', 'dump', 'view')
 

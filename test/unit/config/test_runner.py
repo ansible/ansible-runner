@@ -688,7 +688,7 @@ def test_container_volume_mounting_with_Z(mocker, tmp_path):
 def test_containerization_settings(tmp_path, runtime, mocker):
     mocker.patch('os.path.isdir', return_value=True)
     mocker.patch('os.path.exists', return_value=True)
-    mock_containerized = mocker.patch('ansible_runner.config.runner.RunnerConfig.containerized', new_callable=mocker.PropertyMock)
+    mock_containerized = mocker.patch('ansible_runner.runner_config.RunnerConfig.containerized', new_callable=mocker.PropertyMock)
     mock_containerized.return_value = True
 
     # In this test get_callback_dir() will not return a callback plugin dir that exists

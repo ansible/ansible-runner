@@ -493,6 +493,7 @@ def get_executable_path(name):
 
 def signal_handler():
     # Only the main thread is allowed to set a new signal handler
+    # pylint: disable=W4902
     if threading.current_thread() is not threading.main_thread():
         return None
 

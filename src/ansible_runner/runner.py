@@ -336,10 +336,10 @@ class Runner:
                     #     extra_update_fields['job_explanation'] = "Job terminated due to timeout"
                 if self.canceled or self.timed_out or self.errored:
                     self.kill_container()
-                    Runner.handle_termination(child.pid, is_cancel=self.canceled)
+                    Runner.handle_termination(child.pid)
                 if self.config.idle_timeout and (time.time() - self.last_stdout_update) > self.config.idle_timeout:
                     self.kill_container()
-                    Runner.handle_termination(child.pid, is_cancel=False)
+                    Runner.handle_termination(child.pid)
                     self.timed_out = True
 
             stdout_handle.close()
@@ -526,14 +526,12 @@ class Runner:
                     logger.info("Killed container %s", container_name)
 
     @classmethod
-    def handle_termination(cls, pid, pidfile=None, is_cancel=True):
+    def handle_termination(cls, pid, pidfile=None):
         '''
         Internal method to terminate a subprocess spawned by ``pexpect`` representing an invocation of runner.
 
         :param pid:       the process id of the running the job.
         :param pidfile:   the daemon's PID file
-        :param is_cancel: flag showing whether this termination is caused by
-                          instance's cancel_flag.
         '''
 
         try:

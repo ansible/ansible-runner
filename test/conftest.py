@@ -1,3 +1,5 @@
+# pylint: disable=W0621
+
 import shutil
 
 from pathlib import Path

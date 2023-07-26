@@ -10,6 +10,7 @@ from ansible_runner.utils import get_executable_path
 
 
 def test_ansible_inventory_init_defaults(tmp_path, patch_private_data_dir):
+    # pylint: disable=W0613
     rc = InventoryConfig()
 
     # Check that the private data dir is placed in our default location with our default prefix

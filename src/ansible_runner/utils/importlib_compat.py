@@ -1,3 +1,5 @@
+# pylint: disable=W0611
+
 import sys
 
 if sys.version_info < (3, 10):

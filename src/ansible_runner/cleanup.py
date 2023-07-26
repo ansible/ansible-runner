@@ -63,7 +63,7 @@ def add_cleanup_args(command: argparse.ArgumentParser) -> None:
 
 def run_command(cmd: list) -> str:
     '''Given list cmd, runs command and returns standard out, expecting success'''
-    process = subprocess.run(cmd, capture_output=True)
+    process = subprocess.run(cmd, capture_output=True, check=False)
     stdout = str(process.stdout, encoding='utf-8')
     if process.returncode != 0:
         print('Error running command:')
@@ -74,8 +74,8 @@ def run_command(cmd: list) -> str:
     return stdout.strip()
 
 
-def is_alive(dir: str) -> int:
-    pidfile = os.path.join(dir, 'pid')
+def is_alive(directory: str) -> int:
+    pidfile = os.path.join(directory, 'pid')
 
     try:
         with open(pidfile, 'r') as f:
@@ -90,17 +90,17 @@ def is_alive(dir: str) -> int:
         return 1
 
 
-def project_idents(dir: str) -> list:
-    """Given dir, give list of idents that we have artifacts for"""
+def project_idents(directory: str) -> list:
+    """Given directory, give list of idents that we have artifacts for"""
     try:
-        return os.listdir(os.path.join(dir, 'artifacts'))
+        return os.listdir(os.path.join(directory, 'artifacts'))
     except (FileNotFoundError, NotADirectoryError):
         return []
 
 
-def delete_associated_folders(dir: str) -> None:
-    """Where dir is the private_data_dir for a completed job, this deletes related tmp folders it used"""
-    for ident in project_idents(dir):
+def delete_associated_folders(directory: str) -> None:
+    """Where directory is the private_data_dir for a completed job, this deletes related tmp folders it used"""
+    for ident in project_idents(directory):
         registry_auth_pattern = f'{gettempdir()}/{registry_auth_prefix}{ident}_*'
         for radir in glob.glob(registry_auth_pattern):
             changed = cleanup_folder(radir)
@@ -132,19 +132,19 @@ def cleanup_dirs(pattern: str, exclude_strings: list | None = None, grace_period
         sys.exit(str(e))
     ct = 0
     now_time = datetime.datetime.now()
-    for dir in glob.glob(pattern):
-        if any(str(exclude_string) in dir for exclude_string in exclude_strings):
+    for directory in glob.glob(pattern):
+        if any(str(exclude_string) in directory for exclude_string in exclude_strings):
             continue
         if grace_period:
-            st = os.stat(dir)
+            st = os.stat(directory)
             modtime = datetime.datetime.fromtimestamp(st.st_mtime)
             if modtime > now_time - datetime.timedelta(minutes=grace_period):
                 continue
-        if is_alive(dir):
-            print(f'Excluding running project {dir} from cleanup')
+        if is_alive(directory):
+            print(f'Excluding running project {directory} from cleanup')
             continue
-        delete_associated_folders(dir)
-        changed = cleanup_folder(dir)
+        delete_associated_folders(directory)
+        changed = cleanup_folder(directory)
         if changed:
             ct += 1
 

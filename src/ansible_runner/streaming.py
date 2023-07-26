@@ -22,10 +22,10 @@ from ansible_runner.utils.streaming import stream_dir, unstream_dir
 
 
 class UUIDEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, uuid.UUID):
-            return obj.hex
-        return json.JSONEncoder.default(self, obj)
+    def default(self, o):
+        if isinstance(o, uuid.UUID):
+            return o.hex
+        return json.JSONEncoder.default(self, o)
 
 
 class MockConfig:
@@ -153,7 +153,7 @@ class Worker:
         Utility decorator to synchronize event writes and flushes to avoid keepalives splatting in the middle of
         mid-write events, and reset keepalive interval on write completion.
         """
-        # pylint: disable=W0212
+        # pylint: disable=E0213,E1102,W0212
         @wraps(wrapped_method)
         def wrapper(self, *args, **kwargs):
             with self._output_lock:

@@ -6,7 +6,7 @@ from .interface import run, run_async, \
                         get_inventory, \
                         get_ansible_config     # noqa
 from .exceptions import AnsibleRunnerException, ConfigurationError, CallbackError # noqa
-from .runner_config import RunnerConfig # noqa
+from .config.runner import RunnerConfig # noqa
 from .runner import Runner # noqa
 
 plugins = {

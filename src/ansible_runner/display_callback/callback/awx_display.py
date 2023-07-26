@@ -54,7 +54,7 @@ DOCUMENTATION = '''
       - Set as stdout in config
 '''
 
-IS_ADHOC = os.getenv('AD_HOC_COMMAND_ID', False)
+IS_ADHOC = os.getenv('AD_HOC_COMMAND_ID') or False
 
 # Dynamically construct base classes for our callback module, to support custom stdout callbacks.
 if os.getenv('ORIGINAL_STDOUT_CALLBACK'):
@@ -130,7 +130,7 @@ class EventContext:
         self.display_lock = multiprocessing.RLock()
         self._global_ctx = {}
         self._local = threading.local()
-        if os.getenv('AWX_ISOLATED_DATA_DIR', False):
+        if os.getenv('AWX_ISOLATED_DATA_DIR'):
             self.cache = IsolatedFileWrite()
 
     def add_local(self, **kwargs):
@@ -211,7 +211,7 @@ class EventContext:
         if "verbosity" in event_data:
             event_dict["verbosity"] = event_data.pop("verbosity")
         if not omit_event_data and should_process_event_data:
-            max_res = int(os.getenv("MAX_EVENT_RES", 700000))
+            max_res = int(os.getenv("MAX_EVENT_RES", "700000"))
             if event not in ('playbook_on_stats',) and "res" in event_data and len(str(event_data['res'])) > max_res:
                 event_data['res'] = {}
         else:
@@ -248,7 +248,7 @@ event_context = EventContext()
 
 
 def with_context(**context):
-    global event_context
+    global event_context  # pylint: disable=W0602
 
     def wrap(f):
         @functools.wraps(f)
@@ -270,7 +270,7 @@ for attr in dir(Display):
 
 
 def with_verbosity(f):
-    global event_context
+    global event_context  # pylint: disable=W0602
 
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
@@ -611,9 +611,7 @@ class CallbackModule(DefaultCallbackModule):
         with self.capture_event_data('playbook_on_notify', **event_data):
             super().v2_playbook_on_notify(handler, host)
 
-    '''
-    ansible_stats is, retroactively, added in 2.2
-    '''
+    # ansible_stats is, retroactively, added in 2.2
     def v2_playbook_on_stats(self, stats):
         self.clear_play()
         # FIXME: Add count of plays/tasks.

@@ -32,6 +32,9 @@ disable = [
   "R0913",  # too-many-arguments
   "R0914",  # too-many-locals
   "R0915",  # too-many-statements
+  "W0511",  # fixme
+  "W0718",  # broad-exception-caught
+  "W0719",  # broad-exception-raised
 ]
 
 enable = [
@@ -58,7 +61,10 @@ enable = [
   "W0201",  # attribute-defined-outside-init
   "W0212",  # protected-access
   "W0612",  # unused-variable
+  "W0613",  # unused-argument
+  "W0621",  # redefined-outer-name
   "W0707",  # raise-missing-from
   "W1202",  # logging-format-interpolation
   "W1203",  # logging-fstring-interpolation
+  "W1406",  # redundant-u-string-prefix
 ]

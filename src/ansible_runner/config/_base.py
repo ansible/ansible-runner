@@ -66,6 +66,8 @@ class BaseConfig:
                  container_image=None, container_volume_mounts=None, container_options=None, container_workdir=None, container_auth_data=None,
                  ident=None, rotate_artifacts=0, timeout=None, ssh_key=None, quiet=False, json_mode=False,
                  check_job_event_data=False, suppress_env_files=False, keepalive_seconds=None):
+        # pylint: disable=W0613
+
         # common params
         self.host_cwd = host_cwd
         self.envvars = envvars

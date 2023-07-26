@@ -15,6 +15,7 @@ from ansible_runner.exceptions import ConfigurationError
 
 
 def load_file_side_effect(path, value=None, *args, **kwargs):
+    # pylint: disable=W0613
     if args[0] == path:
         if value:
             return value
@@ -36,6 +37,7 @@ def test_base_config_init_defaults(tmp_path):
 
 
 def test_base_config_with_artifact_dir(tmp_path, patch_private_data_dir):
+    # pylint: disable=W0613
     rc = BaseConfig(artifact_dir=tmp_path.joinpath('this-is-some-dir').as_posix())
     assert rc.artifact_dir == tmp_path.joinpath('this-is-some-dir').joinpath(rc.ident).as_posix()
 

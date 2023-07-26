@@ -3,7 +3,7 @@ import pytest
 from ansible_runner.utils import dump_artifacts
 
 
-def test_dump_artifacts_private_data_dir_does_not_exists(mocker):
+def test_dump_artifacts_private_data_dir_does_not_exists():
     data_dir = '/not/a/path'
     kwargs = {'private_data_dir': data_dir}
 

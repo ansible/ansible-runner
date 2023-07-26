@@ -16,6 +16,7 @@ from ansible_runner.exceptions import ConfigurationError
 
 
 def load_file_side_effect(path, value=None, *args, **kwargs):
+    # pylint: disable=W0613
     if args[0] == path:
         if value:
             return value
@@ -373,8 +374,8 @@ def test_generate_ansible_command_with_dict_extravars(mocker):
 
 
 @pytest.mark.parametrize('cmdline,tokens', [
-    (u'--tags foo --skip-tags', ['--tags', 'foo', '--skip-tags']),
-    (u'--limit "䉪ቒ칸ⱷ?噂폄蔆㪗輥"', ['--limit', '䉪ቒ칸ⱷ?噂폄蔆㪗輥']),
+    ('--tags foo --skip-tags', ['--tags', 'foo', '--skip-tags']),
+    ('--limit "䉪ቒ칸ⱷ?噂폄蔆㪗輥"', ['--limit', '䉪ቒ칸ⱷ?噂폄蔆㪗輥']),
 ])
 def test_generate_ansible_command_with_cmdline_args(cmdline, tokens, mocker):
     mocker.patch('os.makedirs', return_value=True)
@@ -400,7 +401,7 @@ def test_prepare_command_defaults(mocker):
     cmd_side_effect = partial(load_file_side_effect, 'args')
 
     def generate_side_effect():
-        return StringIO(u'test "string with spaces"')
+        return StringIO('test "string with spaces"')
 
     mocker.patch.object(rc.loader, 'load_file', side_effect=cmd_side_effect)
     mocker.patch.object(rc, 'generate_ansible_command', side_effect=generate_side_effect)
@@ -552,6 +553,7 @@ def test_bwrap_process_isolation_defaults(mocker):
 
 
 def test_bwrap_process_isolation_and_directory_isolation(mocker, patch_private_data_dir, tmp_path):
+    # pylint: disable=W0613
 
     def mock_exists(path):
         if path == "/project":
@@ -565,7 +567,7 @@ def test_bwrap_process_isolation_and_directory_isolation(mocker, patch_private_d
         def load_file(self, path, objtype=None, encoding='utf-8'):
             raise ConfigurationError
 
-        def isfile(self, path):
+        def isfile(self, _):
             return False
 
     mocker.patch('ansible_runner.config.runner.os.makedirs', return_value=True)

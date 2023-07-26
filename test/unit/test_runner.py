@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# pylint: disable=W0621
+
 import codecs
 import datetime
 import os
@@ -19,6 +21,7 @@ from ansible_runner.config.runner import RunnerConfig
 
 @pytest.fixture(scope='function')
 def rc(request, tmp_path):
+    # pylint: disable=W0613
     rc = RunnerConfig(str(tmp_path))
     rc.suppress_ansible_output = True
     rc.expect_passwords = {

@@ -1,3 +1,5 @@
+# pylint: disable=W0621,W0613
+
 import pytest
 
 from ansible_runner.utils.capacity import (

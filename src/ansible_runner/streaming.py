@@ -223,6 +223,7 @@ class Worker:
 
     @_synchronize_output_reset_keepalive  # type: ignore
     def status_handler(self, status_data, runner_config):
+        # pylint: disable=W0613
         self.status = status_data['status']
         self._output.write(json.dumps(status_data).encode('utf-8'))
         self._output.write(b'\n')
@@ -241,6 +242,7 @@ class Worker:
 
     @_synchronize_output_reset_keepalive  # type: ignore
     def finished_callback(self, runner_obj):
+        # pylint: disable=W0613
         self._end_keepalive()  # ensure that we can't splat a keepalive event after the eof event
         self._output.write(json.dumps({'eof': True}).encode('utf-8'))
         self._output.write(b'\n')
@@ -304,15 +306,15 @@ class Processor:
     def event_callback(self, event_data):
         # FIXME: this needs to be more defensive to not blow up on "malformed" events or new values it doesn't recognize
         counter = event_data.get('counter')
-        uuid = event_data.get('uuid')
+        uuid_val = event_data.get('uuid')
 
-        if not counter or not uuid:
+        if not counter or not uuid_val:
             # FIXME: log a warning about a malformed event?
             return
 
         full_filename = os.path.join(self.artifact_dir,
                                      'job_events',
-                                     f'{counter}-{uuid}.json')
+                                     f'{counter}-{uuid_val}.json')
 
         if not self.quiet and 'stdout' in event_data:
             print(event_data['stdout'])

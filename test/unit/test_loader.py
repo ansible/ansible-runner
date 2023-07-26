@@ -1,4 +1,4 @@
-# pylint: disable=W0212
+# pylint: disable=W0212,W0621
 
 from io import BytesIO
 

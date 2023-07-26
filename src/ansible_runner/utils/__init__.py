@@ -500,6 +500,7 @@ def signal_handler():
 
     # closure to set signal event
     def _handler(number, frame):
+        # pylint: disable=W0613
         signal_event.set()
 
     signal.signal(signal.SIGTERM, _handler)

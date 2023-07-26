@@ -360,7 +360,7 @@ class BaseConfig:
             for arg in _book_keeping_copy[1:]:
                 if arg[0] == '-':
                     continue
-                elif _book_keeping_copy[(_book_keeping_copy.index(arg) - 1)][0] != '-':
+                if _book_keeping_copy[(_book_keeping_copy.index(arg) - 1)][0] != '-':
                     _playbook = arg
                     break
 

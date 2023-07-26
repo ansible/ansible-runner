@@ -58,7 +58,7 @@ class ArtifactLoader:
         try:
             return json.loads(contents)
         except ValueError:
-            pass
+            return None
 
     def _load_yaml(self, contents):
         '''
@@ -75,7 +75,7 @@ class ArtifactLoader:
         try:
             return safe_load(contents)
         except YAMLError:
-            pass
+            return None
 
     def get_contents(self, path):
         '''

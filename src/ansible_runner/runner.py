@@ -114,6 +114,9 @@ class Runner:
         Launch the Ansible task configured in self.config (A RunnerConfig object), returns once the
         invocation is complete
         '''
+
+        # pylint: disable=R1732
+
         password_patterns = []
         password_values = []
 
@@ -514,13 +517,13 @@ class Runner:
         if container_name:
             container_cli = self.config.process_isolation_executable
             cmd = [container_cli, 'kill', container_name]
-            proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
-            _, stderr = proc.communicate()
-            if proc.returncode:
-                logger.info("Error from %s kill %s command:\n%s",
-                            container_cli, container_name, stderr)
-            else:
-                logger.info("Killed container %s", container_name)
+            with Popen(cmd, stdout=PIPE, stderr=PIPE) as proc:
+                _, stderr = proc.communicate()
+                if proc.returncode:
+                    logger.info("Error from %s kill %s command:\n%s",
+                                container_cli, container_name, stderr)
+                else:
+                    logger.info("Killed container %s", container_name)
 
     @classmethod
     def handle_termination(cls, pid, pidfile=None, is_cancel=True):

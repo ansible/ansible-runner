@@ -97,7 +97,7 @@ def isinventory(obj):
     Returns:
         boolean: True if the object is an inventory dict and False if it is not
     '''
-    return isinstance(obj, MutableMapping) or isinstance(obj, str)
+    return isinstance(obj, (MutableMapping, str))
 
 
 def check_isolation_executable_installed(isolation_executable):
@@ -106,14 +106,14 @@ def check_isolation_executable_installed(isolation_executable):
     '''
     cmd = [isolation_executable, '--version']
     try:
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-        proc.communicate()
-        return bool(proc.returncode == 0)
-    except (OSError, ValueError) as e:
-        if isinstance(e, ValueError) or getattr(e, 'errno', 1) != 2:  # ENOENT, no such file or directory
-            raise RuntimeError(f'{isolation_executable} unavailable for unexpected reason.') from e
-        return False
+        with subprocess.Popen(cmd,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE) as proc:
+            proc.communicate()
+            return bool(proc.returncode == 0)
+    except FileNotFoundError:
+        pass
+    return False
 
 
 def dump_artifact(obj, path, filename=None):
@@ -433,7 +433,7 @@ def ensure_str(s, encoding='utf-8', errors='strict'):
     """
     if not isinstance(s, (str, bytes)):
         raise TypeError(f"not expecting type '{type(s)}'")
-    elif isinstance(s, bytes):
+    if isinstance(s, bytes):
         s = s.decode(encoding, errors)
     return s
 

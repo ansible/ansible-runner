@@ -112,6 +112,9 @@ class Worker:
 
     def _keepalive_loop(self):
         """Main loop for keepalive injection thread; exits when keepalive interval is <= 0"""
+
+        # pylint: disable=R1732
+
         while self._keepalive_interval_sec > 0:
             # block until output has occurred or keepalive interval elapses
             if self._output_event.wait(timeout=self._keepalive_interval_sec):

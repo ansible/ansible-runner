@@ -58,7 +58,7 @@ class DocConfig(BaseConfig):
             self._ansible_doc_exec_path = get_executable_path("ansible-doc")
 
         self.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
-        super(DocConfig, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     _supported_response_formats = ('json', 'human')
 

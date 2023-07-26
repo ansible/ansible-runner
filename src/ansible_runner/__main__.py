@@ -380,7 +380,7 @@ class AnsibleRunnerArgumentParser(argparse.ArgumentParser):
         if 'required: command' in message.lower():
             print_common_usage()
 
-        super(AnsibleRunnerArgumentParser, self).error(message)
+        super().error(message)
 
 
 @contextmanager
@@ -875,7 +875,8 @@ def main(sys_args=None):
                 except Exception:
                     e = traceback.format_exc()
                     if stderr_path:
-                        open(stderr_path, 'w+').write(e)
+                        with open(stderr_path, 'w+') as ep:
+                            ep.write(e)
                     else:
                         sys.stderr.write(e)
                     return 1
@@ -891,12 +892,14 @@ def main(sys_args=None):
         Runner.handle_termination(pid, pidfile=pidfile)
         return 0
 
-    elif vargs.get('command') == 'is-alive':
+    if vargs.get('command') == 'is-alive':
         try:
             os.kill(pid, signal.SIG_DFL)
             return 0
         except OSError:
             return 1
+
+    return 0
 
 
 if __name__ == '__main__':

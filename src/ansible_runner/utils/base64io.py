@@ -85,7 +85,7 @@ class Base64IO(io.IOBase):
             raise TypeError(
                 f"Base64IO wrapped object must have attributes: {repr(sorted(required_attrs))}"
             )
-        super(Base64IO, self).__init__()
+        super().__init__()
         self.__wrapped = wrapped
         self.__read_buffer = b""
         self.__write_buffer = b""
@@ -126,8 +126,7 @@ class Base64IO(io.IOBase):
             method = getattr(self.__wrapped, method_name)
         except AttributeError:
             return False
-        else:
-            return method()
+        return method()
 
     def writable(self):
         # type: () -> bool
@@ -259,7 +258,7 @@ class Base64IO(io.IOBase):
         # Remove whitespace from read data and attempt to read more data to get the desired
         # number of bytes.
 
-        if any([char in data for char in string.whitespace.encode("utf-8")]):
+        if any(char in data for char in string.whitespace.encode("utf-8")):
             data = self._read_additional_data_removing_whitespace(data, _bytes_to_read)
 
         results = io.BytesIO()

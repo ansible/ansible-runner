@@ -102,10 +102,10 @@ def delete_associated_folders(dir: str) -> None:
     """Where dir is the private_data_dir for a completed job, this deletes related tmp folders it used"""
     for ident in project_idents(dir):
         registry_auth_pattern = f'{gettempdir()}/{registry_auth_prefix}{ident}_*'
-        for dir in glob.glob(registry_auth_pattern):
-            changed = cleanup_folder(dir)
+        for radir in glob.glob(registry_auth_pattern):
+            changed = cleanup_folder(radir)
             if changed:
-                print(f'Removed associated registry auth dir {dir}')
+                print(f'Removed associated registry auth dir {radir}')
 
 
 def validate_pattern(pattern: str) -> None:

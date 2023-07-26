@@ -1,3 +1,5 @@
+# pylint: disable=R0914
+
 import io
 import time
 import tempfile
@@ -66,8 +68,7 @@ def unstream_dir(stream: io.FileIO, length: int, target_directory: str) -> None:
                 remaining = length
                 chunk_size = 1024 * 1000  # 1 MB
                 while remaining != 0:
-                    if chunk_size >= remaining:
-                        chunk_size = remaining
+                    chunk_size = min(chunk_size, remaining)
 
                     data = source.read(chunk_size)
                     target.write(data)

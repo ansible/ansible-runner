@@ -35,10 +35,10 @@ def ensure_uuid(uuid_file_path: Path | None = None, mode: int = 0o0600):
         # Read the contents of file if it already exists
         saved_uuid = uuid_file_path.read_text()
         return saved_uuid.strip()
-    else:
-        # Generate a new UUID if file is not found
-        newly_generated_uuid = _set_uuid(uuid_file_path, mode)
-        return newly_generated_uuid
+
+    # Generate a new UUID if file is not found
+    newly_generated_uuid = _set_uuid(uuid_file_path, mode)
+    return newly_generated_uuid
 
 
 def _set_uuid(uuid_file_path: Path | None = None, mode: int = 0o0600):

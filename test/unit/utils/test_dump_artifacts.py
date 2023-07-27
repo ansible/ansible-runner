@@ -144,7 +144,7 @@ def test_dump_artifacts_inventory_object(mocker):
     kwargs = {'private_data_dir': '/tmp', 'inventory': inv}
     dump_artifacts(kwargs)
 
-    assert mock_dump_artifact.called_once_with(inv_string, '/tmp/inventory', 'hosts.json')
+    mock_dump_artifact.assert_called_once_with(inv_string, '/tmp/inventory', 'hosts.json')
 
 
 def test_dump_artifacts_inventory_string_path(mocker):

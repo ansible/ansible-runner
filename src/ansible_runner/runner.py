@@ -188,7 +188,7 @@ class Runner:
             # But we still rely on env vars to pass secrets
             pexpect_env.update(self.config.env)
             # Write the keys to pass into container to expected file in artifacts dir
-            # option expecting should have already been written in ansible_runner.runner_config
+            # option expecting should have already been written in ansible_runner.config.runner
             env_file_host = os.path.join(self.config.artifact_dir, 'env.list')
             with open(env_file_host, 'w') as f:
                 f.write(
@@ -237,13 +237,12 @@ class Runner:
                     'stdin': input_fd,
                     'stdout': output_fd,
                     'stderr': error_fd,
-                    'check': True,
                     'universal_newlines': True,
                 }
                 if subprocess_timeout is not None:
                     kwargs.update({'timeout': subprocess_timeout})
 
-                proc_out = run_subprocess(command, **kwargs)
+                proc_out = run_subprocess(command, check=True, **kwargs)
 
                 stdout_response = proc_out.stdout
                 stderr_response = proc_out.stderr

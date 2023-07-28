@@ -15,8 +15,6 @@ ignore_missing_imports = true
 [tool.pylint.main]
 output-format = "colorized"
 disable = [
-  "all",
-
   # Some codes we will leave disabled
   "C0103",  # invalid-name
   "C0114",  # missing-module-docstring
@@ -32,39 +30,10 @@ disable = [
   "R0913",  # too-many-arguments
   "R0914",  # too-many-locals
   "R0915",  # too-many-statements
+  "W0221",  # arguments-differ
   "W0511",  # fixme
+  "W0603",  # global-statement
   "W0718",  # broad-exception-caught
   "W0719",  # broad-exception-raised
-]
-
-enable = [
-  "C0201",  # consider-iterating-dictionary
-  "C0209",  # consider-using-f-string
-  "C0411",  # wrong-import-order
-  "C0413",  # wrong-import-position
-  "C0415",  # import-outside-toplevel
-  "E1101",  # no-member
-  "R0205",  # useless-object-inheritance
-  "R1701",  # consider-merging-isinstance
-  "R1704",  # redefined-argument-from-local
-  "R1705",  # no-else-return
-  "R1710",  # inconsistent-return-statements
-  "R1720",  # no-else-raise
-  "R1724",  # no-else-continue
-  "R1725",  # super-with-arguments
-  "R1729",  # use-a-generator
-  "R1730",  # consider-using-min-builtin
-  "R1732",  # consider-using-with
-  "R1735",  # use-dict-literal
-  "W0102",  # dangerous-default-value
-  "W0108",  # unnecessary-lambda
-  "W0201",  # attribute-defined-outside-init
-  "W0212",  # protected-access
-  "W0612",  # unused-variable
-  "W0613",  # unused-argument
-  "W0621",  # redefined-outer-name
-  "W0707",  # raise-missing-from
-  "W1202",  # logging-format-interpolation
-  "W1203",  # logging-fstring-interpolation
-  "W1406",  # redundant-u-string-prefix
+  "W1514",  # unspecified-encoding
 ]

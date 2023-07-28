@@ -14,7 +14,7 @@ from ansible_runner.loader import ArtifactLoader
 from ansible_runner.exceptions import ConfigurationError
 
 
-def load_file_side_effect(path, value=None, *args, **kwargs):
+def load_file_side_effect(path, value, *args, **kwargs):
     # pylint: disable=W0613
     if args[0] == path:
         if value:

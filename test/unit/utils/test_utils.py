@@ -60,7 +60,7 @@ def test_check_isolation_executable_installed():
     (42, '42')  # AWX will use primary keys and may not be careful about type
 ])
 def test_sanitize_container_name(container_name, expected_name):
-    sanitize_container_name(str(container_name)) == expected_name
+    assert sanitize_container_name(str(container_name)) == expected_name
 
 
 @pytest.mark.parametrize('symlink_dest,check_content', [

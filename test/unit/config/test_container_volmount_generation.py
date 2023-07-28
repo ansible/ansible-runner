@@ -122,7 +122,7 @@ def test_duplicate_detection_dst(path, mocker):
 def test_no_dst_all_dirs(path, labels, mocker):
     mocker.patch("os.path.exists", return_value=True)
     mocker.patch("os.path.isdir", return_value=True)
-    """Ensure dst == src when not provided"""
+    # Ensure dst == src when not provided
     src_str = os.path.join(resolve_path(path.path), "")
     dst_str = src_str
     expected = generate_volmount_args(src_str=src_str, dst_str=dst_str, vol_labels=labels)
@@ -147,7 +147,7 @@ def test_no_dst_all_dirs(path, labels, mocker):
 def test_src_dst_all_dirs(src, dst, labels, mocker):
     mocker.patch("os.path.exists", return_value=True)
     mocker.patch("os.path.isdir", return_value=True)
-    """Ensure src and dest end with trailing slash"""
+    # Ensure src and dest end with trailing slash
     src_str = os.path.join(resolve_path(src.path), "")
     dst_str = os.path.join(resolve_path(dst.path), "")
     expected = generate_volmount_args(src_str=src_str, dst_str=dst_str, vol_labels=labels)
@@ -201,7 +201,7 @@ def test_src_dst_all_files(path, labels, mocker):
 def test_src_dst_all_relative_dirs(src, dst, labels, relative, mocker):
     mocker.patch("os.path.exists", return_value=True)
     mocker.patch("os.path.isdir", return_value=True)
-    """Ensure src is resolved and dest mapped to workdir when relative"""
+    # Ensure src is resolved and dest mapped to workdir when relative
     relative_src = f"{relative}{src.path}"
     relative_dst = f"{relative}{dst.path}"
     workdir = "/workdir"

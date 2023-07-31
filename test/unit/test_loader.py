@@ -55,7 +55,7 @@ def test_abspath(loader, tmp_path):
 
 
 def test_load_file_text_cache_hit(loader, mocker, tmp_path):
-    mock_get_contents = mocker.patch.object(ansible_runner.loader.ArtifactLoader, 'get_contents')
+    mock_get_contents = mocker.patch.object(ansible_runner.loader.ArtifactLoader, '_get_contents')
     mock_get_contents.return_value = 'test\nstring'
 
     assert not loader._cache
@@ -79,7 +79,7 @@ def test_load_file_text_cache_hit(loader, mocker, tmp_path):
 
 
 def test_load_file_json(loader, mocker, tmp_path):
-    mock_get_contents = mocker.patch.object(ansible_runner.loader.ArtifactLoader, 'get_contents')
+    mock_get_contents = mocker.patch.object(ansible_runner.loader.ArtifactLoader, '_get_contents')
     mock_get_contents.return_value = '---\ntest: string'
 
     assert not loader._cache
@@ -94,7 +94,7 @@ def test_load_file_json(loader, mocker, tmp_path):
 
 
 def test_load_file_type_check(loader, mocker, tmp_path):
-    mock_get_contents = mocker.patch.object(ansible_runner.loader.ArtifactLoader, 'get_contents')
+    mock_get_contents = mocker.patch.object(ansible_runner.loader.ArtifactLoader, '_get_contents')
     mock_get_contents.return_value = '---\ntest: string'
 
     assert not loader._cache
@@ -125,15 +125,15 @@ def test_get_contents_ok(loader, mocker):
 
     mock_open.return_value.__enter__.return_value = handler
 
-    res = loader.get_contents('/tmp')
+    res = loader._get_contents('/tmp')
     assert res == b'test string'
 
 
 def test_get_contents_invalid_path(loader, tmp_path):
     with raises(ConfigurationError):
-        loader.get_contents(tmp_path.joinpath('invalid').as_posix())
+        loader._get_contents(tmp_path.joinpath('invalid').as_posix())
 
 
 def test_get_contents_exception(loader, tmp_path):
     with raises(ConfigurationError):
-        loader.get_contents(tmp_path.as_posix())
+        loader._get_contents(tmp_path.as_posix())

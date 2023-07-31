@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint: disable: R0401
 
 import os
 import pytest

@@ -11,7 +11,7 @@ whether that be through a container image interface, as a standalone tool, or as
 is to provide a stable and consistent interface abstraction to Ansible. This allows **Ansible** to be embedded into other systems that don't
 want to manage the complexities of the interface on their own (such as CI/CD platforms, Jenkins, or other automated tooling).
 
-**Ansible Runner** represents the modularization of the part of `Ansible Tower/AWX <https://github.com/ansible/awx>`_ that is responsible
+**Ansible Runner** represents the modularization of the part of `Ansible AWX <https://github.com/ansible/awx>`_ that is responsible
 for running ``ansible`` and ``ansible-playbook`` tasks and gathers the output from it. It does this by presenting a common interface that doesn't
 change, even as **Ansible** itself grows and evolves.
 
@@ -27,7 +27,7 @@ There are 3 primary ways of interacting with **Runner**
 
 Examples of this could include:
 
-* Sending status to Ansible Tower/AWX
+* Sending status to Ansible AWX
 * Sending events to an external logging service
 
 
@@ -41,7 +41,6 @@ Examples of this could include:
    standalone
    python_interface
    execution_environments
-   container
    remote_jobs
    modules
 

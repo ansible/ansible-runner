@@ -7,7 +7,7 @@ Using Runner with Execution Environments
 and sharable method to run Ansible Automation jobs in the exact same way on
 your laptop as they are executed in `Ansible AWX <https://github.com/ansible/awx/>`_.
 This aids in the development of automation jobs and Ansible Content that is
-meant to be run in **Ansible AWX**, `Ansible Tower <https://www.ansible.com/products/tower>`_,
+meant to be run in **Ansible AWX**,
 or via `Red Hat Ansible Automation Platform <https://www.ansible.com/products/automation-platform>`_
 in a predictable way.
 
@@ -39,7 +39,7 @@ file is another way to ensure a successful pull of a protected execution environ
 Note that this involves listing sensitive information in a file which will not automatically get cleaned
 up after the job run is complete.
 
-When running a job remotely via AWX or Ansible Tower, Ansible Runner can pick up the authentication
+When running a job remotely via AWX, Ansible Runner can pick up the authentication
 information from the Container Registry Credential that was provided by the user. The ``host``,
 ``username``, ``password``, and ``verify_ssl`` inputs from the credential are passed into Ansible Runner via the ``container_auth_data``
 dictionary as key word arguments into a ``json`` file which gets deleted at the end of the job run (even if
@@ -58,7 +58,7 @@ Secrets
 Typically with Ansible you are able to provide secret data via a series of
 mechanisms, many of which are pluggable and configurable. When using
 Ansible Runner, however, certain considerations need to be made; these are analogous to
-how Ansible AWX and Tower manage this information.
+how Ansible AWX manage this information.
 
 See :ref:`inputdir` for more information
 

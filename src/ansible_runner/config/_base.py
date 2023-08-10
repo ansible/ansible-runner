@@ -371,9 +371,14 @@ class BaseConfig:
     def _update_volume_mount_paths(
         self, args_list, src_mount_path, dst_mount_path=None, labels=None
     ):
+        if src_mount_path is None:
+            logger.debug("Source volume mount path was not provided")
+            return
 
-        if src_mount_path is None or not os.path.exists(src_mount_path):
-            logger.debug("Source volume mount path does not exist: %s", src_mount_path)
+        if not os.path.exists(src_mount_path) and not (
+            self.containerized and self.process_isolation_executable == "docker" and os.path.abspath(src_mount_path).startswith("/run/host-services")
+        ):
+            logger.debug("Source volume mount path does not exit {0}".format(src_mount_path))
             return
 
         # ensure source is abs

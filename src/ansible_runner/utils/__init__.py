@@ -116,42 +116,40 @@ def check_isolation_executable_installed(isolation_executable):
     return False
 
 
-def dump_artifact(obj, path, filename=None):
+def dump_artifact(obj: str, path: str, filename: str) -> str:
     '''
-    Write the artifact to disk at the specified path
+    Write the artifact to disk at the specified path if contents differ from
+    'obj', or if the file does not exist.
 
-    Args:
-        obj (string): The string object to be dumped to disk in the specified
-            path.  The artifact filename will be automatically created
+    :param str obj: The string object to be dumped to disk in the specified
+        path. The artifact filename will be automatically created.
+    :param str path: The full path to the artifacts data directory.
+    :param str filename: The name of file to write the artifact to.
 
-        path (string): The full path to the artifacts data directory.
-
-        filename (string, optional): The name of file to write the artifact to.
-            If the filename is not provided, then one will be generated.
-
-    Returns:
-        string: The full path filename for the artifact that was generated
+    :return: The full path filename for the artifact that was generated.
     '''
-    p_sha1 = None
+
+    should_write = False
+    fn = os.path.join(path, filename)
 
     if not os.path.exists(path):
         os.makedirs(path, mode=0o700)
-    else:
+
+    if os.path.exists(fn):
         p_sha1 = hashlib.sha1()
         p_sha1.update(obj.encode(encoding='UTF-8'))
 
-    if filename is None:
-        _, fn = tempfile.mkstemp(dir=path)
-    else:
-        fn = os.path.join(path, filename)
-
-    if os.path.exists(fn):
         c_sha1 = hashlib.sha1()
         with open(fn) as f:
             contents = f.read()
         c_sha1.update(contents.encode(encoding='UTF-8'))
 
-    if not os.path.exists(fn) or p_sha1.hexdigest() != c_sha1.hexdigest():
+        if p_sha1.hexdigest() != c_sha1.hexdigest():
+            should_write = True
+    else:
+        should_write = True
+
+    if should_write:
         lock_fp = os.path.join(path, '.artifact_write_lock')
         lock_fd = os.open(lock_fp, os.O_RDWR | os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR)
         fcntl.lockf(lock_fd, fcntl.LOCK_EX)

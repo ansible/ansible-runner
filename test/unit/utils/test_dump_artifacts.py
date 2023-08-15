@@ -1,6 +1,6 @@
 import pytest
 
-from ansible_runner.utils import dump_artifacts
+from ansible_runner.utils import dump_artifact, dump_artifacts
 
 
 def test_dump_artifacts_private_data_dir_does_not_exists():
@@ -220,3 +220,59 @@ def test_dump_artifacts_extra_keys(mocker, key, value, value_str):
 
     mock_dump_artifact.assert_called_once_with(value_str, '/tmp/env', key)
     assert 'settings' not in kwargs
+
+
+def test_dump_artifact_new_file(tmp_path):
+    '''
+    Test dump_artifact() with a file that does not exist.
+    '''
+    contents = 'blerg'
+
+    artifacts_dir = tmp_path / 'artifacts'
+    assert not artifacts_dir.exists()
+
+    filename = 'main.json'
+    expected_file = artifacts_dir / filename
+    assert not expected_file.exists()
+
+    ret = dump_artifact(contents, str(artifacts_dir), filename)
+    assert ret == str(expected_file)
+    assert contents == expected_file.read_text()
+
+
+def test_dump_artifact_existing_file_diff_contents(tmp_path):
+    '''
+    Test dump_artifact() with a file that exists but has contents that
+    are different from the supplied new contents.
+    '''
+    contents = 'blerg'
+
+    artifacts_dir = tmp_path / 'artifacts'
+    artifacts_dir.mkdir()
+
+    filename = 'main.json'
+    expected_file = artifacts_dir / filename
+    expected_file.write_text('flooblah')
+
+    ret = dump_artifact(contents, str(artifacts_dir), filename)
+    assert ret == str(expected_file)
+    assert contents == expected_file.read_text()
+
+
+def test_dump_artifact_existing_file_same_contents(tmp_path):
+    '''
+    Test dump_artifact() with a file that exists and has contents
+    that are identical to the supplied new contents.
+    '''
+    contents = 'blerg'
+
+    artifacts_dir = tmp_path / 'artifacts'
+    artifacts_dir.mkdir()
+
+    filename = 'main.json'
+    expected_file = artifacts_dir / filename
+    expected_file.write_text(contents)
+
+    ret = dump_artifact(contents, str(artifacts_dir), filename)
+    assert ret == str(expected_file)
+    assert contents == expected_file.read_text()

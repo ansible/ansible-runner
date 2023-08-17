@@ -176,7 +176,7 @@ class BaseConfig:
         self.runner_mode = runner_mode
         try:
             if self.settings and isinstance(self.settings, dict):
-                self.settings.update(self.loader.load_file('env/settings', Mapping))
+                self.settings.update(self.loader.load_file('env/settings', Mapping))  # type: ignore
             else:
                 self.settings = self.loader.load_file('env/settings', Mapping)
         except ConfigurationError:
@@ -186,7 +186,7 @@ class BaseConfig:
         if self.runner_mode == 'pexpect':
             try:
                 if self.passwords and isinstance(self.passwords, dict):
-                    self.passwords.update(self.loader.load_file('env/passwords', Mapping))
+                    self.passwords.update(self.loader.load_file('env/passwords', Mapping))  # type: ignore
                 else:
                     self.passwords = self.passwords or self.loader.load_file('env/passwords', Mapping)
             except ConfigurationError:
@@ -262,14 +262,14 @@ class BaseConfig:
         try:
             envvars = self.loader.load_file('env/envvars', Mapping)
             if envvars:
-                self.env.update(envvars)
+                self.env.update(envvars)  # type: ignore
         except ConfigurationError:
             debug("Not loading environment vars")
             # Still need to pass default environment to pexpect
 
         try:
             if self.ssh_key_data is None:
-                self.ssh_key_data = self.loader.load_file('env/ssh_key', str)
+                self.ssh_key_data = self.loader.load_file('env/ssh_key', str)  # type: ignore
         except ConfigurationError:
             debug("Not loading ssh key")
             self.ssh_key_data = None

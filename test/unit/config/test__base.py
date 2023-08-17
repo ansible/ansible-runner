@@ -198,7 +198,7 @@ def test_prepare_env_ansible_vars(mocker, tmp_path):
     rc.prepare_env()
 
     assert not hasattr(rc, 'ssh_key_path')
-    assert not hasattr(rc, 'command')
+    assert rc.command == []
 
     assert rc.env['ANSIBLE_STDOUT_CALLBACK'] == 'awx_display'
     assert rc.env['ANSIBLE_RETRY_FILES_ENABLED'] == 'False'

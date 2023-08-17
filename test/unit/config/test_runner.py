@@ -449,7 +449,7 @@ def test_prepare(mocker):
     assert rc.prepare_command.called
 
     assert not hasattr(rc, 'ssh_key_path')
-    assert not hasattr(rc, 'command')
+    assert rc.command == []
 
     assert rc.env['ANSIBLE_STDOUT_CALLBACK'] == 'awx_display'
     assert rc.env['ANSIBLE_RETRY_FILES_ENABLED'] == 'False'

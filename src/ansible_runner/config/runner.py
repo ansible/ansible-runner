@@ -160,7 +160,7 @@ class RunnerConfig(BaseConfig):
         Prepares the inventory default under ``private_data_dir`` if it's not overridden by the constructor.
         """
         if self.containerized:
-            self.inventory = '/runner/inventory/hosts'
+            self.inventory = '/runner/inventory'
             return
 
         if self.inventory is None:

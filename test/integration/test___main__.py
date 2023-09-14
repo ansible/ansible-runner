@@ -27,9 +27,9 @@ def random_json(keys=None):
 
 
 def cmdline(command, *args):
-    cmdline = ['ansible-runner', command]
-    cmdline.extend(args)
-    sys.argv = cmdline
+    cmd = ['ansible-runner', command]
+    cmd.extend(args)
+    sys.argv = cmd
 
 
 def test_main_bad_private_data_dir():

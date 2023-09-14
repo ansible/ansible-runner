@@ -25,6 +25,7 @@ import json
 import logging
 import os
 import re
+import sys
 import stat
 import tempfile
 import shutil
@@ -495,7 +496,7 @@ class BaseConfig:
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm'])
 
-        if self.runner_mode == 'pexpect' or getattr(self, 'input_fd', False):
+        if self.runner_mode == 'pexpect' or self.runner_mode == "subprocess" and sys.stdout.isatty():
             new_args.extend(['--tty'])
 
         new_args.append('--interactive')

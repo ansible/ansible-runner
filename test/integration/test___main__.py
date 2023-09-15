@@ -131,7 +131,8 @@ def test_cmdline_playbook_hosts():
     cmdline('run', 'private_data_dir', '-p', 'fake', '--hosts', 'all')
     with pytest.raises(SystemExit) as exc:
         ansible_runner.__main__.main()
-        assert exc == 1
+
+    assert exc.value.code == 1
 
 
 def test_cmdline_includes_one_option():
@@ -140,7 +141,8 @@ def test_cmdline_includes_one_option():
     cmdline('run', 'private_data_dir')
     with pytest.raises(SystemExit) as exc:
         ansible_runner.__main__.main()
-        assert exc == 1
+
+    assert exc.value.code == 1
 
 
 def test_cmdline_cmdline_override(tmp_path):
@@ -162,3 +164,19 @@ def test_cmdline_cmdline_override(tmp_path):
 
     cmdline('run', str(private_data_dir), '-p', str(playbook), '--cmdline', '-e foo=bar')
     assert ansible_runner.__main__.main() == 0
+
+
+def test_cmdline_invalid_inventory(tmp_path):
+    """
+    Test that an invalid inventory path causes an error.
+    """
+    private_data_dir = tmp_path
+    inv_path = private_data_dir / 'inventory'
+    inv_path.mkdir(parents=True)
+
+    cmdline('run', str(private_data_dir), '-p', 'test.yml', '--inventory', 'badInventoryPath')
+
+    with pytest.raises(SystemExit) as exc:
+        ansible_runner.__main__.main()
+
+    assert exc.value.code == 1

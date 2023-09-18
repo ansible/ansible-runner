@@ -523,7 +523,7 @@ def valid_inventory(private_data_dir: str, inventory: str) -> str | None:
     Validate the --inventory value is an actual file or directory.
 
     The inventory value from the CLI may only be an existing file. Validate it
-    exists. Supplied value may be either be relative to <private_data_dir/inventory/
+    exists. Supplied value may either be relative to <private_data_dir>/inventory/
     or an absolute path to a file or directory (even outside of private_data_dir).
     Since ansible itself accepts a file or directory for the inventory, we check
     for either.

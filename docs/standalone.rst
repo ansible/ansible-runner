@@ -96,6 +96,33 @@ Ansible/Runner doesn't pollute or overwrite the playbook content you can give a 
 **Runner** will copy the project directory to a temporary directory created under that path, set it as the working directory, and execute from that location.
 After running that temp directory will be cleaned up and removed.
 
+
+Specifying an Alternate Inventory
+---------------------------------
+
+The default inventory, if not specified, will be ``<private_data_dir>/inventory/``.
+All files within this subdirectory of the private data directory will be processed as
+potential inventory host files. You may specify a different inventory using the ``--inventory``
+option. This value may be one of:
+
+  - A file name located within ``<private_data_dir>/inventory/``.
+  - An absolute or relative path to an alternate inventory file or directory.
+    This path is not required to be inside of the private data directory.
+
+Examples::
+
+  # Use inventory <private_data_dir>/inventory/hosts.backup
+  $ ansible-runner run demo -p test.yml --inventory hosts.backup
+
+  # Use inventory in the /path/to/alternate-inventory directory (outside of <private_data_dir>)
+  $ ansible-runner run demo -p test.yml --inventory /path/to/alternate-inventory
+
+  # Use inventory in the inventory2 subdirectory, relative to current directory
+  $ ansible-runner run demo -p test.yml --inventory inventory2
+
+.. note:: This option has no effect when using process isolation.
+
+
 Outputting json (raw event data) to the console instead of normal output
 ------------------------------------------------------------------------
 

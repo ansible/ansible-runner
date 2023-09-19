@@ -726,6 +726,6 @@ def test_containerization_settings(tmp_path, runtime, mocker):
         ['--env-file', f'{rc.artifact_dir}/env.list'] + \
         extra_container_args + \
         ['--name', 'ansible_runner_foo'] + \
-        ['my_container', 'ansible-playbook', '-i', '/runner/inventory/hosts', 'main.yaml']
+        ['my_container', 'ansible-playbook', '-i', '/runner/inventory', 'main.yaml']
 
     assert expected_command_start == rc.command

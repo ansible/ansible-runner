@@ -50,6 +50,19 @@ def init_runner(**kwargs):
 
     See parameters given to :py:func:`ansible_runner.interface.run`
     '''
+
+    # Handle logging first thing
+    debug = kwargs.pop('debug', None)
+    logfile = kwargs.pop('logfile', None)
+
+    if not kwargs.pop("ignore_logging", True):
+        output.configure()
+        if debug in (True, False):
+            output.set_debug('enable' if debug is True else 'disable')
+
+        if logfile:
+            output.set_logfile(logfile)
+
     # If running via the transmit-worker-process method, we must only extract things as read-only
     # inside of one of these commands. That could be either transmit or worker.
     if kwargs.get('streamer') not in ('worker', 'process'):
@@ -71,17 +84,6 @@ def init_runner(**kwargs):
         roles_path = kwargs.get('envvars', {}).get('ANSIBLE_ROLES_PATH') or ''
         if os.path.isabs(roles_path) and roles_path.startswith(private_data_dir):
             kwargs['envvars']['ANSIBLE_ROLES_PATH'] = os.path.relpath(roles_path, private_data_dir)
-
-    debug = kwargs.pop('debug', None)
-    logfile = kwargs.pop('logfile', None)
-
-    if not kwargs.pop("ignore_logging", True):
-        output.configure()
-        if debug in (True, False):
-            output.set_debug('enable' if debug is True else 'disable')
-
-        if logfile:
-            output.set_logfile(logfile)
 
     event_callback_handler = kwargs.pop('event_handler', None)
     status_callback_handler = kwargs.pop('status_handler', None)

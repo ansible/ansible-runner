@@ -16,6 +16,8 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+from __future__ import annotations
+
 import ast
 import threading
 import traceback
@@ -32,6 +34,7 @@ import textwrap
 import tempfile
 
 from contextlib import contextmanager
+from pathlib import Path
 from uuid import uuid4
 
 import daemon
@@ -45,7 +48,6 @@ from ansible_runner.utils import dump_artifact, Bunch, register_for_cleanup
 from ansible_runner.utils.capacity import get_cpu_count, get_mem_in_bytes, ensure_uuid
 from ansible_runner.utils.importlib_compat import importlib_metadata
 from ansible_runner.runner import Runner
-from ansible_runner.exceptions import AnsibleRunnerException
 
 VERSION = importlib_metadata.version("ansible_runner")
 
@@ -437,11 +439,8 @@ def role_manager(vargs):
         output.debug(f"using playbook file {playbook}")
 
         if vargs.get('inventory'):
-            inventory_file = os.path.join(vargs.get('private_data_dir'), 'inventory', vargs.get('inventory'))
-            if not os.path.exists(inventory_file):
-                raise AnsibleRunnerException('location specified by --inventory does not exist')
-            kwargs.inventory = inventory_file
-            output.debug(f"using inventory file {inventory_file}")
+            kwargs.inventory = vargs.get('inventory')
+            output.debug(f"using inventory file {kwargs.inventory}")
 
         roles_path = vargs.get('roles_path') or os.path.join(vargs.get('private_data_dir'), 'roles')
         roles_path = os.path.abspath(roles_path)
@@ -517,6 +516,34 @@ def add_args_to_parser(parser, args):
     """
     for arg in args:
         parser.add_argument(*arg[0], **arg[1])
+
+
+def valid_inventory(private_data_dir: str, inventory: str) -> str | None:
+    """
+    Validate the --inventory value is an actual file or directory.
+
+    The inventory value from the CLI may only be an existing file. Validate it
+    exists. Supplied value may either be relative to <private_data_dir>/inventory/
+    or an absolute path to a file or directory (even outside of private_data_dir).
+    Since ansible itself accepts a file or directory for the inventory, we check
+    for either.
+
+    :return: Absolute path to the valid inventory, or None otherwise.
+    """
+
+    # check if absolute or relative path exists
+    inv = Path(inventory)
+    if inv.exists() and (inv.is_file() or inv.is_dir()):
+        return str(inv.absolute())
+
+    # check for a file in the pvt_data_dir inventory subdir
+    inv_subdir_path = Path(private_data_dir, 'inventory', inv)
+    if (not inv.is_absolute()
+            and inv_subdir_path.exists()
+            and (inv_subdir_path.is_file() or inv_subdir_path.is_dir())):
+        return str(inv_subdir_path.absolute())
+
+    return None
 
 
 def main(sys_args=None):
@@ -789,6 +816,11 @@ def main(sys_args=None):
             parser.exit(status=1, message="The --hosts option can only be used with -m or -r\n")
         if not (vargs.get('module') or vargs.get('role')) and not vargs.get('playbook'):
             parser.exit(status=1, message="The -p option must be specified when not using -m or -r\n")
+        if vargs.get('inventory'):
+            if not (abs_inv := valid_inventory(vargs['private_data_dir'], vargs.get('inventory'))):
+                parser.exit(status=1, message="Value for --inventory does not appear to be a valid path.\n")
+            else:
+                vargs['inventory'] = abs_inv
 
     output.configure()
 

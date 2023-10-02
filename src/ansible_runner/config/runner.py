@@ -339,6 +339,7 @@ class RunnerConfig(BaseConfig):
             '--ro-bind', '/etc', '/etc',
             '--ro-bind', '/usr', '/usr',
             '--ro-bind', '/opt', '/opt',
+            '--symlink', 'usr/lib', '/lib',
             '--symlink', 'usr/lib64', '/lib64',
         ])
 

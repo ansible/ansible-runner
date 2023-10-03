@@ -14,7 +14,7 @@ from ansible_runner.interface import run
 def is_running(cli, runtime, container_name):
     cmd = [runtime, 'ps', '-aq', '--filter', f'name={container_name}']
     r = cli(cmd, bare=True)
-    output = '{}{}'.format(r.stdout, r.stderr)
+    output = f'{r.stdout}{r.stderr}'
     print(' '.join(cmd))
     print(output)
     return output.strip()
@@ -24,7 +24,7 @@ class CancelStandIn:
     def __init__(self, runtime, cli, container_name, delay=0.2):
         self.runtime = runtime
         self.cli = cli
-        self.delay = 0.2
+        self.delay = delay
         self.container_name = container_name
         self.checked_running = False
         self.start_time = None
@@ -37,7 +37,7 @@ class CancelStandIn:
             return False
         # guard against false passes by checking for running container
         if not self.checked_running:
-            for i in range(5):
+            for _ in range(5):
                 if is_running(self.cli, self.runtime, self.container_name):
                     break
                 time.sleep(0.2)

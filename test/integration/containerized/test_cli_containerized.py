@@ -3,11 +3,10 @@ import os
 import signal
 import sys
 
+from test.utils.common import iterate_timeout
 from uuid import uuid4
 
 import pytest
-
-from test.utils.common import iterate_timeout
 
 
 @pytest.mark.test_all_runtimes

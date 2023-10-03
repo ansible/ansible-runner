@@ -77,11 +77,11 @@ def get_env_data(res):
         )
         if found and 'res' in event['event_data']:
             return event['event_data']['res']
-    else:
-        print('output:')
-        with res.stdout as f:
-            print(f.read())
-        raise RuntimeError('Count not find look_at_environment task from playbook')
+
+    print('output:')
+    with res.stdout as f:
+        print(f.read())
+    raise RuntimeError('Count not find look_at_environment task from playbook')
 
 
 def test_env_accuracy(request, project_fixtures):
@@ -117,7 +117,7 @@ def test_env_accuracy(request, project_fixtures):
     assert os.path.exists(printenv_example / "env/envvars") == 1
 
 
-def test_no_env_files(request, project_fixtures):
+def test_no_env_files(project_fixtures):
     printenv_example = project_fixtures / 'printenv'
     os.environ['SET_BEFORE_TEST'] = 'MADE_UP_VALUE'
 
@@ -174,7 +174,7 @@ def test_env_accuracy_inside_container(request, project_fixtures, runtime, conta
     # all environment variables, particularly those set by the entrypoint script
     for key, value in expected_env.items():
         assert key in actual_env
-        assert actual_env[key] == value, 'Reported value wrong for {0} env var'.format(key)
+        assert actual_env[key] == value, f'Reported value wrong for {key} env var'
 
     assert env_data['cwd'] == res.config.cwd
 
@@ -230,7 +230,7 @@ def test_run_command(project_fixtures):
 
 
 def test_run_command_injection_error():
-    out, err, rc = run_command(
+    _, err, rc = run_command(
         executable_cmd='whoami',
         cmdline_args=[';hostname'],
         runner_mode='subprocess',
@@ -241,7 +241,7 @@ def test_run_command_injection_error():
 
 @pytest.mark.test_all_runtimes
 def test_run_command_injection_error_within_container(runtime, container_image):
-    out, err, rc = run_command(
+    _, err, rc = run_command(
         executable_cmd='whoami',
         cmdline_args=[';hostname'],
         runner_mode='subprocess',
@@ -278,7 +278,7 @@ def test_run_ansible_command_within_container(project_fixtures, runtime, contain
 def test_run_script_within_container(project_fixtures, runtime, container_image):
     private_data_dir = project_fixtures / 'debug'
     script_path = project_fixtures / 'files'
-    container_volume_mounts = ["{}:{}:Z".format(script_path, script_path)]
+    container_volume_mounts = [f"{script_path}:{script_path}:Z"]
     container_kwargs = {
         'process_isolation_executable': runtime,
         'process_isolation': True,
@@ -437,6 +437,7 @@ def test_run_role(project_fixtures):
     assert 'Hello World!' in stdout
 
 
+# pylint: disable=W0613
 def test_get_role_list(project_fixtures, skipif_pre_ansible211):
     """
     Test get_role_list() running locally, specifying a playbook directory
@@ -450,7 +451,7 @@ def test_get_role_list(project_fixtures, skipif_pre_ansible211):
         }
     }
 
-    resp, err = get_role_list(playbook_dir=pdir)
+    resp, _ = get_role_list(playbook_dir=pdir)
     assert isinstance(resp, dict)
 
     # So that tests can work locally, where multiple roles might be returned,
@@ -478,7 +479,7 @@ def test_get_role_list_within_container(project_fixtures, runtime, skipif_pre_an
         'process_isolation': True,
         'container_image': container_image,
     }
-    resp, err = get_role_list(private_data_dir=pdir, playbook_dir="/runner/project", **container_kwargs)
+    resp, _ = get_role_list(private_data_dir=pdir, playbook_dir="/runner/project", **container_kwargs)
     assert isinstance(resp, dict)
     assert resp == expected
 
@@ -512,7 +513,7 @@ def test_get_role_argspec(project_fixtures, skipif_pre_ansible211):
         }
     }
 
-    resp, err = get_role_argspec('Into_The_Mystic', playbook_dir=use_role_example)
+    resp, _ = get_role_argspec('Into_The_Mystic', playbook_dir=use_role_example)
     assert isinstance(resp, dict)
     assert 'Into_The_Mystic' in resp
     assert resp['Into_The_Mystic']['entry_points'] == expected_epoint
@@ -554,7 +555,7 @@ def test_get_role_argspec_within_container(project_fixtures, runtime, skipif_pre
         'process_isolation': True,
         'container_image': container_image,
     }
-    resp, err = get_role_argspec('Into_The_Mystic', private_data_dir=pdir, playbook_dir="/runner/project", **container_kwargs)
+    resp, _ = get_role_argspec('Into_The_Mystic', private_data_dir=pdir, playbook_dir="/runner/project", **container_kwargs)
     assert isinstance(resp, dict)
     assert 'Into_The_Mystic' in resp
     assert resp['Into_The_Mystic']['entry_points'] == expected_epoint

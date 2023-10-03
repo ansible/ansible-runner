@@ -1,5 +1,6 @@
 import base64
 import io
+import json
 import os
 import socket
 import concurrent.futures
@@ -7,7 +8,6 @@ import time
 import threading
 
 import pytest
-import json
 
 from ansible_runner import run
 from ansible_runner.streaming import Transmitter, Worker, Processor
@@ -16,22 +16,23 @@ import ansible_runner.interface  # AWX import pattern
 
 
 class TestStreamingUsage:
+    # pylint: disable=W0201
 
     @pytest.fixture(autouse=True)
     def reset_self_props(self):
         self.status_data = None
 
-    def status_handler(self, status_data, runner_config=None):
+    def status_handler(self, status_data, runner_config=None):  # pylint: disable=W0613
         self.status_data = status_data
 
     def get_job_kwargs(self, job_type):
         """For this test scenaro, the ansible-runner interface kwargs"""
         if job_type == 'run':
-            job_kwargs = dict(playbook='debug.yml')
+            job_kwargs = {'playbook': 'debug.yml'}
         else:
-            job_kwargs = dict(module='setup', host_pattern='localhost')
+            job_kwargs = {'module': 'setup', 'host_pattern': 'localhost'}
         # also test use of user env vars
-        job_kwargs['envvars'] = dict(MY_ENV_VAR='bogus')
+        job_kwargs['envvars'] = {'MY_ENV_VAR': 'bogus'}
         return job_kwargs
 
     @staticmethod
@@ -115,6 +116,7 @@ class TestStreamingUsage:
         None,  # default disable, test sets envvar for keepalives
     ])
     def test_keepalive_setting(self, tmp_path, project_fixtures, keepalive_setting):
+        # pylint: disable=W0212
         verbosity = None
         output_corruption_test_mode = 0 < (keepalive_setting or 0) < 1
 
@@ -131,8 +133,8 @@ class TestStreamingUsage:
 
         worker_dir = tmp_path / 'for_worker'
         process_dir = tmp_path / 'for_process'
-        for dir in (worker_dir, process_dir):
-            dir.mkdir()
+        for directory in (worker_dir, process_dir):
+            directory.mkdir()
 
         outgoing_buffer = io.BytesIO()
         incoming_buffer = io.BytesIO()
@@ -141,7 +143,7 @@ class TestStreamingUsage:
 
         status, rc = Transmitter(
             _output=outgoing_buffer, private_data_dir=project_fixtures / 'sleep',
-            playbook='sleep.yml', extravars=dict(sleep_interval=2), verbosity=verbosity
+            playbook='sleep.yml', extravars={'sleep_interval': 2}, verbosity=verbosity
         ).run()
         assert rc in (None, 0)
         assert status == 'unstarted'
@@ -348,7 +350,7 @@ def transmit_stream(project_fixtures, tmp_path):
 
 
 @pytest.fixture
-def worker_stream(transmit_stream, tmp_path):
+def worker_stream(transmit_stream, tmp_path):  # pylint: disable=W0621
     ingoing_buffer = tmp_path / 'buffer2'  # basically how some demos work
     ingoing_buffer.touch()
 
@@ -364,7 +366,7 @@ def worker_stream(transmit_stream, tmp_path):
             return ingoing_buffer
 
 
-def test_worker_without_delete_no_dir(tmp_path, cli, transmit_stream):
+def test_worker_without_delete_no_dir(tmp_path, cli, transmit_stream):  # pylint: disable=W0621
     worker_dir = tmp_path / 'for_worker'
 
     with open(transmit_stream, 'rb') as stream:
@@ -375,7 +377,7 @@ def test_worker_without_delete_no_dir(tmp_path, cli, transmit_stream):
     assert worker_dir.joinpath('project', 'debug.yml').exists()
 
 
-def test_worker_without_delete_dir_exists(tmp_path, cli, transmit_stream):
+def test_worker_without_delete_dir_exists(tmp_path, cli, transmit_stream):  # pylint: disable=W0621
     worker_dir = tmp_path / 'for_worker'
     worker_dir.mkdir()
 
@@ -391,7 +393,7 @@ def test_worker_without_delete_dir_exists(tmp_path, cli, transmit_stream):
     assert test_file_path.exists()
 
 
-def test_worker_delete_no_dir(tmp_path, cli, transmit_stream):
+def test_worker_delete_no_dir(tmp_path, cli, transmit_stream):  # pylint: disable=W0621
     """
     Case where non-existing --delete is provided to worker command
     it should always delete everything both before and after the run
@@ -407,7 +409,7 @@ def test_worker_delete_no_dir(tmp_path, cli, transmit_stream):
     assert not worker_dir.joinpath('project', 'debug.yml').exists()
 
 
-def test_worker_delete_dir_exists(tmp_path, cli, transmit_stream):
+def test_worker_delete_dir_exists(tmp_path, cli, transmit_stream):  # pylint: disable=W0621
     """
     Case where non-existing --delete is provided to worker command
     it should always delete everything both before and after the run
@@ -427,7 +429,7 @@ def test_worker_delete_dir_exists(tmp_path, cli, transmit_stream):
     assert not worker_dir.joinpath('project', 'debug.yml').exists()
 
 
-def test_process_with_custom_ident(tmp_path, cli, worker_stream):
+def test_process_with_custom_ident(tmp_path, cli, worker_stream):  # pylint: disable=W0621
     process_dir = tmp_path / 'for_process'
     process_dir.mkdir()
 
@@ -441,7 +443,7 @@ def test_process_with_custom_ident(tmp_path, cli, worker_stream):
     assert (process_dir / 'artifacts' / 'custom_ident' / 'job_events').exists()
 
 
-def test_missing_private_dir_transmit(tmpdir):
+def test_missing_private_dir_transmit():
     outgoing_buffer = io.BytesIO()
 
     # Transmit
@@ -503,7 +505,7 @@ def test_unparsable_really_big_line_processor(tmp_path):
     process_dir.mkdir()
     incoming_buffer = io.BytesIO(bytes(f'not-json-data with extra garbage:{"f"*10000}', encoding='utf-8'))
 
-    def status_receiver(status_data, runner_config):
+    def status_receiver(status_data, runner_config):  # pylint: disable=W0613
         assert status_data['status'] == 'error'
         assert 'Failed to JSON parse a line from worker stream.' in status_data['job_explanation']
         assert 'not-json-data with extra garbage:ffffffffff' in status_data['job_explanation']

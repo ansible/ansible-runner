@@ -1,7 +1,7 @@
+import os
+
 from ansible_runner.config._base import BaseConfig
 from ansible_runner.interface import run
-
-import os
 
 
 def test_combine_python_and_file_settings(project_fixtures):
@@ -32,7 +32,7 @@ def test_custom_stdout_callback_via_host_environ(project_fixtures, mocker):
     assert '"msg": "Hello world!"' in stdout, stdout
 
 
-def test_custom_stdout_callback_via_envvars(project_fixtures, mocker):
+def test_custom_stdout_callback_via_envvars(project_fixtures):
     res = run(private_data_dir=str(project_fixtures / 'debug'), playbook='debug.yml', envvars={'ANSIBLE_STDOUT_CALLBACK': 'minimal'})
     with res.stdout as f:
         stdout = f.read()

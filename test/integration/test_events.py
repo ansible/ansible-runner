@@ -28,8 +28,7 @@ def test_basic_events(containerized, runtime, tmp_path, container_image, is_run_
         thread.join()  # ensure async run finishes
 
     event_types = [x['event'] for x in r.events if x['event'] != 'verbose']
-    okay_events = [x for x in filter(lambda x: 'event' in x and x['event'] == 'runner_on_ok',
-                                     r.events)]
+    okay_events = list(filter(lambda x: 'event' in x and x['event'] == 'runner_on_ok', r.events))
 
     assert event_types[0] == 'playbook_on_start'
     assert "playbook_on_play_start" in event_types
@@ -61,7 +60,7 @@ def test_basic_serializeable(tmp_path):
     r = run(private_data_dir=str(tmp_path),
             inventory=inv,
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
-    events = [x for x in r.events]
+    events = list(r.events)
     json.dumps(events)
 
 
@@ -79,7 +78,7 @@ def test_event_omission(tmp_path):
             continue
         events.append(x)
 
-    assert not any([x['event_data'] for x in events])
+    assert not any(x['event_data'] for x in events)
 
 
 def test_event_omission_except_failed(tmp_path):
@@ -101,12 +100,11 @@ def test_event_omission_except_failed(tmp_path):
     assert len(all_event_datas) == 1
 
 
-def test_runner_on_start(rc, tmp_path):
+def test_runner_on_start(tmp_path):
     r = run(private_data_dir=str(tmp_path),
             inventory='localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"',
             playbook=[{'hosts': 'all', 'gather_facts': False, 'tasks': [{'debug': {'msg': "test"}}]}])
-    start_events = [x for x in filter(lambda x: 'event' in x and x['event'] == 'runner_on_start',
-                                      r.events)]
+    start_events = list(filter(lambda x: 'event' in x and x['event'] == 'runner_on_start', r.events))
     assert len(start_events) == 1
 
 

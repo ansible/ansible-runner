@@ -249,13 +249,16 @@ def test_prepare_inventory(mocker):
     rc = RunnerConfig(private_data_dir='/')
     rc.prepare_inventory()
     assert rc.inventory == '/inventory'
+
     rc.inventory = '/tmp/inventory'
     rc.prepare_inventory()
     assert rc.inventory == '/tmp/inventory'
+
+    path_exists.return_value = False
     rc.inventory = 'localhost,anotherhost,'
     rc.prepare_inventory()
     assert rc.inventory == 'localhost,anotherhost,'
-    path_exists.return_value = False
+
     rc.inventory = None
     rc.prepare_inventory()
     assert rc.inventory is None

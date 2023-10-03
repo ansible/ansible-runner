@@ -1,12 +1,14 @@
 import json
 import os
 import subprocess
-import yaml
 import pathlib
-import pytest
-import pexpect
 import random
+
 from string import ascii_lowercase
+
+import pexpect
+import pytest
+import yaml
 
 from ansible_runner.config.runner import RunnerConfig
 
@@ -15,22 +17,22 @@ here = pathlib.Path(__file__).parent
 
 @pytest.fixture(scope='function')
 def rc(tmp_path):
-    rc = RunnerConfig(str(tmp_path))
-    rc.suppress_ansible_output = True
-    rc.expect_passwords = {
+    conf = RunnerConfig(str(tmp_path))
+    conf.suppress_ansible_output = True
+    conf.expect_passwords = {
         pexpect.TIMEOUT: None,
         pexpect.EOF: None
     }
-    rc.cwd = str(tmp_path)
-    rc.env = {}
-    rc.job_timeout = 10
-    rc.idle_timeout = 0
-    rc.pexpect_timeout = 2.
-    rc.pexpect_use_poll = True
-    return rc
+    conf.cwd = str(tmp_path)
+    conf.env = {}
+    conf.job_timeout = 10
+    conf.idle_timeout = 0
+    conf.pexpect_timeout = 2.
+    conf.pexpect_use_poll = True
+    return conf
 
 
-class CompletedProcessProxy(object):
+class CompletedProcessProxy:
 
     def __init__(self, result):
         self.result = result
@@ -54,7 +56,7 @@ class CompletedProcessProxy(object):
 
 
 @pytest.fixture(scope='function')
-def cli(request):
+def cli():
     def run(args, *a, **kw):
         if not kw.pop('bare', None):
             args = ['ansible-runner'] + args
@@ -73,7 +75,7 @@ def cli(request):
         })
 
         try:
-            ret = CompletedProcessProxy(subprocess.run(' '.join(args), shell=True, *a, **kw))
+            ret = CompletedProcessProxy(subprocess.run(' '.join(args), check=kw.pop('check'), shell=True, *a, **kw))
         except subprocess.CalledProcessError as err:
             pytest.fail(
                 f"Running {err.cmd} resulted in a non-zero return code: {err.returncode} - stdout: {err.stdout}, stderr: {err.stderr}"
@@ -84,7 +86,7 @@ def cli(request):
 
 
 @pytest.fixture
-def container_image(request, cli, tmp_path):
+def container_image(request, cli, tmp_path):  # pylint: disable=W0621
     try:
         containerized = request.getfixturevalue('containerized')
         if not containerized:
@@ -104,7 +106,7 @@ def container_image(request, cli, tmp_path):
         bare=True,
     )
 
-    wheel = next(tmp_path.glob('*.whl'))
+    wheel = next(tmp_path.glob('*.whl'))  # pylint: disable=R1708
 
     runtime = request.getfixturevalue('runtime')
     dockerfile_path = tmp_path / 'Dockerfile'

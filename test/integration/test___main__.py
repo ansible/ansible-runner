@@ -16,7 +16,7 @@ def random_string():
 
 
 def random_json(keys=None):
-    data = dict()
+    data = {}
     if keys:
         for key in keys:
             data[key] = random_string()

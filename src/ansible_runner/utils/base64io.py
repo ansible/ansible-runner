@@ -38,8 +38,7 @@ __version__ = "1.0.3"
 _LOGGER = logging.getLogger(LOGGER_NAME)
 
 
-def _to_bytes(data):
-    # type: (AnyStr) -> bytes
+def _to_bytes(data: AnyStr) -> bytes:
     """Convert input data from either string or bytes to bytes.
 
     :param data: Data to convert
@@ -74,8 +73,7 @@ class Base64IO(io.IOBase):
 
     closed = False
 
-    def __init__(self, wrapped):
-        # type: (Base64IO, IO) -> None
+    def __init__(self, wrapped: IO) -> None:
         """Check for required methods on wrapped stream and set up read buffer.
 
         :raises TypeError: if ``wrapped`` does not have attributes needed to determine the stream's state
@@ -91,17 +89,17 @@ class Base64IO(io.IOBase):
         self.__write_buffer = b""
 
     def __enter__(self):
-        # type: () -> Base64IO
         """Return self on enter."""
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        # type: (Optional[Type[BaseException]], Optional[BaseException], Optional[TracebackType]) -> None
+    def __exit__(self,
+                 exc_type: Optional[Type[BaseException]],
+                 exc_value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
         """Properly close self on exit."""
         self.close()
 
-    def close(self):
-        # type: () -> None
+    def close(self) -> None:
         """Close this stream, encoding and writing any buffered bytes is present.
 
         .. note::
@@ -113,8 +111,7 @@ class Base64IO(io.IOBase):
             self.__write_buffer = b""
         self.closed = True
 
-    def _passthrough_interactive_check(self, method_name):
-        # type: (str) -> bool
+    def _passthrough_interactive_check(self, method_name: str) -> bool:
         """Attempt to call the specified method on the wrapped stream and return the result.
 
         If the method is not found on the wrapped stream, return False.
@@ -128,8 +125,7 @@ class Base64IO(io.IOBase):
             return False
         return method()
 
-    def writable(self):
-        # type: () -> bool
+    def writable(self) -> bool:
         """Determine if the stream can be written to.
 
         Delegates to wrapped stream when possible.
@@ -139,8 +135,7 @@ class Base64IO(io.IOBase):
         """
         return self._passthrough_interactive_check("writable")
 
-    def readable(self):
-        # type: () -> bool
+    def readable(self) -> bool:
         """Determine if the stream can be read from.
 
         Delegates to wrapped stream when possible.
@@ -150,13 +145,11 @@ class Base64IO(io.IOBase):
         """
         return self._passthrough_interactive_check("readable")
 
-    def flush(self):
-        # type: () -> None
+    def flush(self) -> None:
         """Flush the write buffer of the wrapped stream."""
         return self.__wrapped.flush()
 
-    def write(self, b):
-        # type: (bytes) -> int
+    def write(self, b: bytes) -> int:
         """Base64-encode the bytes and write them to the wrapped stream.
 
         Any bytes that would require padding for the next write call are buffered until the
@@ -191,8 +184,7 @@ class Base64IO(io.IOBase):
         self.__write_buffer = _bytes_to_write[trailing_byte_pos:]
         return self.__wrapped.write(base64.b64encode(_bytes_to_write[:trailing_byte_pos]))
 
-    def _read_additional_data_removing_whitespace(self, data, total_bytes_to_read):
-        # type: (bytes, int) -> bytes
+    def _read_additional_data_removing_whitespace(self, data: bytes, total_bytes_to_read: int) -> bytes:
         """Read additional data from wrapped stream until we reach the desired number of bytes.
 
         .. note::
@@ -224,8 +216,7 @@ class Base64IO(io.IOBase):
             _remaining_bytes_to_read = total_bytes_to_read - _data_buffer.tell()
         return _data_buffer.getvalue()
 
-    def read(self, b=-1):
-        # type: (int) -> bytes
+    def read(self, b=-1) -> bytes:
         """Read bytes from wrapped stream, base64-decoding before return.
 
         .. note::

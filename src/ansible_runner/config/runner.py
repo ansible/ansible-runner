@@ -135,7 +135,7 @@ class RunnerConfig(BaseConfig):
             self.directory_isolation_path = tempfile.mkdtemp(prefix='runner_di_', dir=self.directory_isolation_path)
             if os.path.exists(self.project_dir):
                 output.debug(f"Copying directory tree from {self.project_dir} to {self.directory_isolation_path} for working directory isolation")
-                shutil.copytree(self.project_dir, self.directory_isolation_path, symlinks=True)
+                shutil.copytree(self.project_dir, self.directory_isolation_path, dirs_exist_ok=True, symlinks=True)
 
         self.prepare_inventory()
         self.prepare_command()

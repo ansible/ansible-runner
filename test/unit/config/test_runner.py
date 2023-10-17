@@ -239,7 +239,7 @@ def test_prepare_env_directory_isolation_from_settings(mocker, project_fixtures)
     mkdtemp.assert_called_once_with(prefix='runner_di_', dir='/tmp/runner')
 
     # The project files should be copied to the isolation path.
-    copy_tree.assert_called_once_with(rc.project_dir, rc.directory_isolation_path, symlinks=True)
+    copy_tree.assert_called_once_with(rc.project_dir, rc.directory_isolation_path, dirs_exist_ok=True, symlinks=True)
 
 
 def test_prepare_inventory(mocker):

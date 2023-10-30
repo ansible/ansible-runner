@@ -1,11 +1,11 @@
-mypy==1.3.0
-pylint==2.17.4
+mypy==1.6.0
+pylint==3.0.1
 pytest==7.1.2
 pytest-cov
 pytest-mock
 pytest-timeout
 pytest-xdist==2.5.0
 types-pyyaml
-flake8==4.0.1
-yamllint
+flake8==6.1.0
+yamllint==1.32.0
 cryptography

@@ -547,6 +547,7 @@ def test_bwrap_process_isolation_defaults(mocker):
         '--ro-bind', '/etc', '/etc',
         '--ro-bind', '/usr', '/usr',
         '--ro-bind', '/opt', '/opt',
+        '--symlink', 'usr/lib', '/lib',
         '--symlink', 'usr/lib64', '/lib64',
         '--bind', '/', '/',
         '--chdir', '/project',
@@ -601,6 +602,7 @@ def test_bwrap_process_isolation_and_directory_isolation(mocker, patch_private_d
         '--ro-bind', '/etc', '/etc',
         '--ro-bind', '/usr', '/usr',
         '--ro-bind', '/opt', '/opt',
+        '--symlink', 'usr/lib', '/lib',
         '--symlink', 'usr/lib64', '/lib64',
         '--bind', '/', '/',
         '--chdir', os.path.realpath(rc.directory_isolation_path),
@@ -639,6 +641,7 @@ def test_process_isolation_settings(mocker, tmp_path):
         '--ro-bind', '/etc', '/etc',
         '--ro-bind', '/usr', '/usr',
         '--ro-bind', '/opt', '/opt',
+        '--symlink', 'usr/lib', '/lib',
         '--symlink', 'usr/lib64', '/lib64',
     ]
     index = len(expected)

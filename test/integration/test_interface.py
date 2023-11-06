@@ -559,3 +559,51 @@ def test_get_role_argspec_within_container(project_fixtures, runtime, skipif_pre
     assert isinstance(resp, dict)
     assert 'Into_The_Mystic' in resp
     assert resp['Into_The_Mystic']['entry_points'] == expected_epoint
+
+
+class TestRelativePvtDataDirPaths:
+    """
+    Class to handle test setup/teardown of tests that need to change working
+    directory to test relative paths.
+    """
+
+    def setup_method(self):
+        self._old_workdir = os.getcwd()  # pylint: disable=W0201
+
+    def teardown_method(self):
+        os.chdir(self._old_workdir)
+
+    def test_inventory_as_string(self, project_fixtures):
+        """
+        Test of bug fix for GH issue #1216: https://github.com/ansible/ansible-runner/issues/1216
+
+        A relative private data directory combined with an inventory specified as a string
+        would produce an invalid inventory path being passed along to ansible.
+        """
+        os.chdir(str(project_fixtures))
+
+        inventory = 'hostA ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"'
+
+        r = run(private_data_dir='debug',
+                inventory=inventory,
+                playbook='debug.yml')
+
+        with r.stdout as output:
+            text = output.read()
+
+        assert r.status == 'successful'
+        assert "No inventory was parsed" not in text
+
+    def test_default_inventory(self, project_fixtures):
+        """
+        Test relative pvt data dir with the default inventory.
+        """
+        os.chdir(str(project_fixtures))
+
+        r = run(private_data_dir='debug', playbook='debug.yml')
+
+        with r.stdout as output:
+            text = output.read()
+
+        assert r.status == 'successful'
+        assert "No inventory was parsed" not in text

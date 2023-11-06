@@ -158,14 +158,20 @@ class RunnerConfig(BaseConfig):
     def prepare_inventory(self):
         """
         Prepares the inventory default under ``private_data_dir`` if it's not overridden by the constructor.
+
+        We make sure that if inventory is a path, that it is an absolute path.
         """
         if self.containerized:
             self.inventory = '/runner/inventory'
             return
 
         if self.inventory is None:
+            # At this point we expect self.private_data_dir to be an absolute path
+            # since that is expanded in the base class.
             if os.path.exists(os.path.join(self.private_data_dir, "inventory")):
                 self.inventory = os.path.join(self.private_data_dir, "inventory")
+        elif isinstance(self.inventory, str) and os.path.exists(self.inventory):
+            self.inventory = os.path.abspath(self.inventory)
 
     def prepare_env(self):
         """

@@ -5,7 +5,7 @@ babel==2.12.1
 certifi==2023.7.22
 cffi==1.15.1
 charset-normalizer==3.1.0
-cryptography==41.0.4
+cryptography==41.0.6
 docutils==0.18.1
 idna==3.4
 imagesize==1.4.1

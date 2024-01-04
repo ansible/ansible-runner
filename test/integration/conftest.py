@@ -125,3 +125,62 @@ def container_image(request, cli, tmp_path):  # pylint: disable=W0621
         [runtime, 'rmi', '-f', image_name],
         bare=True,
     )
+
+
+@pytest.fixture
+def container_image_devel(request, cli, tmp_path):  # pylint: disable=W0621
+    branch = request.getfixturevalue('branch')
+
+    DOCKERFILE = f"""
+FROM quay.io/centos/centos:stream9
+ARG WHEEL
+COPY $WHEEL /$WHEEL
+
+# Need python 3.11 minimum for devel
+RUN dnf install -y python3.11 python3.11-pip git
+RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 0
+RUN python3 -m pip install /$WHEEL git+https://github.com/ansible/ansible@{branch}
+
+RUN mkdir -p /runner/{{env,inventory,project,artifacts}} /home/runner/.ansible/tmp
+RUN chmod -R 777 /runner /home/runner
+WORKDIR /runner
+ENV HOME=/home/runner
+CMD ["ansible-runner", "run", "/runner"]
+"""
+
+    try:
+        containerized = request.getfixturevalue('containerized')
+        if not containerized:
+            yield None
+            return
+    except Exception:
+        # Test func doesn't use containerized
+        pass
+
+    if (env_image_name := os.getenv('RUNNER_TEST_IMAGE_NAME')):
+        yield env_image_name
+        return
+
+    cli(
+        ['pyproject-build', '-w', '-o', str(tmp_path)],
+        cwd=here.parent.parent,
+        bare=True,
+    )
+
+    wheel = next(tmp_path.glob('*.whl'))  # pylint: disable=R1708
+
+    runtime = request.getfixturevalue('runtime')
+    dockerfile_path = tmp_path / 'Dockerfile'
+    dockerfile_path.write_text(DOCKERFILE)
+    random_string = ''.join(random.choice(ascii_lowercase) for i in range(10))
+    image_name = f'ansible-runner-{random_string}-event-test'
+
+    cli(
+        [runtime, 'build', '--build-arg', f'WHEEL={wheel.name}', '--rm=true', '-t', image_name, '-f', str(dockerfile_path), str(tmp_path)],
+        bare=True,
+    )
+    yield image_name
+    cli(
+        [runtime, 'rmi', '-f', image_name],
+        bare=True,
+    )

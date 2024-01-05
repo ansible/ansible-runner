@@ -297,10 +297,11 @@ class Runner:
                 child.logfile_read = stdout_handle
             except pexpect.exceptions.ExceptionPexpect as e:
                 child = collections.namedtuple(
-                    'MissingProcess', 'exitstatus isalive close'
+                    'MissingProcess', 'exitstatus isalive expect close'
                 )(
                     exitstatus=127,
                     isalive=lambda: False,
+                    expect=lambda *args, **kwargs: None,
                     close=lambda: None,
                 )
 
@@ -341,9 +342,17 @@ class Runner:
                     Runner.handle_termination(child.pid)
                     self.timed_out = True
 
+            # fix for https://github.com/ansible/ansible-runner/issues/1330
+            # Since we're (ab)using pexpect's logging callback as our source of stdout data, we need to pump the stream one last
+            # time, in case any new output was written by the child between the last return from expect and its termination. Ideally
+            # this would have an arbitrarily large timeout value as well, in case a ridiculous amount of data was written, but just
+            # invoking one last pump should cover the vast majority of real-world cases.
+            child.expect(pexpect.EOF, timeout=5)
+
+            # close the child to ensure no more output will be written before we close the stream interposers
+            child.close()
             stdout_handle.close()
             stderr_handle.close()
-            child.close()
             self.rc = child.exitstatus if not (self.timed_out or self.canceled) else 254
 
         if self.canceled:

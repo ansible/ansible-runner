@@ -3,15 +3,16 @@
 import json
 import os
 import re
-import pytest
 import six
 import sys
-
-from ansible_runner import Runner
-
-from ansible_runner.exceptions import AnsibleRunnerException
+import time
 
 from test.utils.common import iterate_timeout
+
+import pytest
+
+from ansible_runner import Runner, run
+from ansible_runner.exceptions import AnsibleRunnerException
 
 
 @pytest.mark.xfail(reason='Test is unstable')
@@ -281,3 +282,16 @@ def test_set_extra_vars(rc):
         with open(os.path.join(rc.artifact_dir, 'stdout')) as f:
             if 'hello there' in f.read():
                 break
+
+
+# regression test for https://github.com/ansible/ansible-runner/issues/1330
+def test_pexpect_timeout(project_fixtures):
+    r = run(
+        private_data_dir=str(project_fixtures / 'pexpect_timeout_data_loss'),
+        playbook='pb.yml',
+        settings={"pexpect_timeout": 0.1},  # set the pexpect timeout very low
+        cancel_callback=lambda: time.sleep(3) or False,  # induce enough delay in the child polling loop that the child will exit before being polled again
+    )
+
+    # ensure we got playbook_on_stats; if pexpect ate it, we won't...
+    assert any(ev for ev in r.events if ev.get('event', None) == 'playbook_on_stats')

@@ -22,6 +22,19 @@ def load_file_side_effect(path, value, *args, **kwargs):
     raise ConfigurationError
 
 
+def test_base_config_volume_mounts():
+    # pylint: disable=W0212
+    base = BaseConfig()
+    base._record_volume_mount("src1:dst1:Z")
+    base._record_volume_mount("src1:dst1:Z")
+    base._record_volume_mount("src2:dst2")
+
+    # Volumes should not be duplicated
+    assert base._mounted_volumes == ["src1:dst1:Z", "src2:dst2"]
+    assert base._volume_is_mounted("src1:dst1:Z")
+    assert base._volume_is_mounted("src2:dst2")
+
+
 def test_base_config_init_defaults(tmp_path):
     rc = BaseConfig(private_data_dir=tmp_path.as_posix())
     assert rc.private_data_dir == tmp_path.as_posix()

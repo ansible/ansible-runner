@@ -92,6 +92,9 @@ class BaseConfig:
                  ):
         # pylint: disable=W0613
 
+        # Currently mounted container items
+        self._mounted_volumes: list[str] = []
+
         # common params
         self.host_cwd = host_cwd
         self.envvars = envvars
@@ -167,6 +170,13 @@ class BaseConfig:
     @property
     def containerized(self):
         return self.process_isolation and self.process_isolation_executable in self._CONTAINER_ENGINES
+
+    def _volume_is_mounted(self, volume: str):
+        return volume in self._mounted_volumes
+
+    def _record_volume_mount(self, volume: str):
+        if not self._volume_is_mounted(volume):
+            self._mounted_volumes.append(volume)
 
     def prepare_env(self, runner_mode: str = 'pexpect') -> None:
         """
@@ -392,15 +402,14 @@ class BaseConfig:
         return _playbook
 
     def _update_volume_mount_paths(self,
-                                   args_list: list[str],
                                    src_mount_path: str | None,
                                    dst_mount_path: str | None = None,
                                    labels: str | None = None
-                                   ) -> None:
+                                   ) -> list[str]:
 
         if src_mount_path is None or not os.path.exists(src_mount_path):
             logger.debug("Source volume mount path does not exist: %s", src_mount_path)
-            return
+            return []
 
         # ensure source is abs
         src_path = os.path.abspath(os.path.expanduser(os.path.expandvars(src_mount_path)))
@@ -441,8 +450,11 @@ class BaseConfig:
             volume_mount_path += labels
 
         # check if mount path already added in args list
-        if volume_mount_path not in args_list:
-            args_list.extend(["-v", volume_mount_path])
+        if not self._volume_is_mounted(volume_mount_path):
+            self._record_volume_mount(volume_mount_path)
+            return ["-v", volume_mount_path]
+
+        return []
 
     def _handle_ansible_cmd_options_bind_mounts(self, args_list: list[str], cmdline_args: list[str]) -> None:
         inventory_file_options = ['-i', '--inventory', '--inventory-file']
@@ -461,7 +473,7 @@ class BaseConfig:
             if 'ansible-playbook' in value:
                 playbook_file_path = self._get_playbook_path(cmdline_args)
                 if playbook_file_path:
-                    self._update_volume_mount_paths(args_list, playbook_file_path)
+                    args_list.extend(self._update_volume_mount_paths(playbook_file_path))
                     break
 
         cmdline_args_copy = cmdline_args.copy()
@@ -485,7 +497,7 @@ class BaseConfig:
                 # comma separated host list provided as value
                 continue
 
-            self._update_volume_mount_paths(args_list, optional_arg_value)
+            args_list.extend(self._update_volume_mount_paths(optional_arg_value))
 
     def wrap_args_for_containerization(self,
                                        args: list[str],
@@ -505,7 +517,7 @@ class BaseConfig:
         elif self.host_cwd is not None and os.path.exists(self.host_cwd):
             # mount current host working diretory if passed and exist
             self._ensure_path_safe_to_mount(self.host_cwd)
-            self._update_volume_mount_paths(new_args, self.host_cwd)
+            new_args.extend(self._update_volume_mount_paths(self.host_cwd))
             workdir = self.host_cwd
         else:
             workdir = "/runner/project"
@@ -521,7 +533,7 @@ class BaseConfig:
                 self._handle_ansible_cmd_options_bind_mounts(new_args, cmdline_args)
 
             # Handle automounts for .ssh config
-            self._handle_automounts(new_args)
+            new_args.extend(self._handle_automounts())
 
             if 'podman' in self.process_isolation_executable:
                 # container namespace stuff
@@ -536,10 +548,12 @@ class BaseConfig:
                     os.mkdir(subdir_path, 0o700)
 
             # runtime commands need artifacts mounted to output data
-            self._update_volume_mount_paths(new_args,
-                                            f"{self.private_data_dir}/artifacts",
-                                            dst_mount_path="/runner/artifacts",
-                                            labels=":Z")
+            new_args.extend(
+                self._update_volume_mount_paths(
+                    f"{self.private_data_dir}/artifacts",
+                    dst_mount_path="/runner/artifacts",
+                    labels=":Z")
+            )
 
         else:
             subdir_path = os.path.join(self.private_data_dir, 'artifacts')
@@ -548,7 +562,9 @@ class BaseConfig:
 
         # Mount the entire private_data_dir
         # custom show paths inside private_data_dir do not make sense
-        self._update_volume_mount_paths(new_args, self.private_data_dir, dst_mount_path="/runner", labels=":Z")
+        new_args.extend(
+            self._update_volume_mount_paths(self.private_data_dir, dst_mount_path="/runner", labels=":Z")
+        )
 
         if self.container_auth_data:
             # Pull in the necessary registry auth info, if there is a container cred
@@ -571,7 +587,9 @@ class BaseConfig:
                 labels = None
                 if len(volume_mounts) == 3:
                     labels = f":{volume_mounts[2]}"
-                self._update_volume_mount_paths(new_args, volume_mounts[0], dst_mount_path=volume_mounts[1], labels=labels)
+                new_args.extend(
+                    self._update_volume_mount_paths(volume_mounts[0], dst_mount_path=volume_mounts[1], labels=labels)
+                )
 
         # Reference the file with list of keys to pass into container
         # this file will be written in ansible_runner.runner
@@ -664,7 +682,9 @@ class BaseConfig:
             args.extend(['sh', '-c', cmd])
         return args
 
-    def _handle_automounts(self, new_args: list[str]) -> None:
+    def _handle_automounts(self) -> list[str]:
+        new_args: list[str] = []
+
         for cli_automount in cli_mounts():
             for env in cli_automount['ENVS']:
                 if env in os.environ:
@@ -678,10 +698,16 @@ class BaseConfig:
                         else:
                             dest_path = os.environ[env]
 
-                        self._update_volume_mount_paths(new_args, os.environ[env], dst_mount_path=dest_path)
+                        new_args.extend(
+                            self._update_volume_mount_paths(os.environ[env], dst_mount_path=dest_path)
+                        )
 
                     new_args.extend(["-e", f"{env}={dest_path}"])
 
             for paths in cli_automount['PATHS']:
                 if os.path.exists(paths['src']):
-                    self._update_volume_mount_paths(new_args, paths['src'], dst_mount_path=paths['dest'])
+                    new_args.extend(
+                        self._update_volume_mount_paths(paths['src'], dst_mount_path=paths['dest'])
+                    )
+
+        return new_args

@@ -77,7 +77,7 @@ def test_check_not_safe_to_mount_dir(not_safe, mocker):
         bc = BaseConfig()
         mocker.patch("os.path.exists", return_value=True)
         bc._update_volume_mount_paths(
-            args_list=[], src_mount_path=not_safe, dst_mount_path=None
+            src_mount_path=not_safe, dst_mount_path=None
         )
 
 
@@ -89,7 +89,7 @@ def test_check_not_safe_to_mount_file(not_safe, mocker):
         bc = BaseConfig()
         mocker.patch("os.path.exists", return_value=True)
         bc._update_volume_mount_paths(
-            args_list=[], src_mount_path=file_path, dst_mount_path=None
+            src_mount_path=file_path, dst_mount_path=None
         )
 
 
@@ -101,20 +101,23 @@ def test_duplicate_detection_dst(path, mocker):
     base_config = BaseConfig()
 
     def generate():
+        vols = []
         for entry in dir_variations:
             for label in labels:
-                base_config._update_volume_mount_paths(
-                    args_list=first_pass,
-                    src_mount_path=path.path,
-                    dst_mount_path=entry.path,
-                    labels=label,
+                vols.extend(
+                    base_config._update_volume_mount_paths(
+                        src_mount_path=path.path,
+                        dst_mount_path=entry.path,
+                        labels=label,
+                    )
                 )
+        return vols
 
-    first_pass = []
-    generate()
-    second_pass = first_pass[:]
-    generate()
-    assert first_pass == second_pass
+    first_pass = generate()
+    second_pass = generate()
+
+    assert not second_pass
+    assert first_pass != second_pass
 
 
 @pytest.mark.parametrize("labels", labels, ids=id_for_label)
@@ -127,9 +130,8 @@ def test_no_dst_all_dirs(path, labels, mocker):
     dst_str = src_str
     expected = generate_volmount_args(src_str=src_str, dst_str=dst_str, vol_labels=labels)
 
-    result = []
-    BaseConfig()._update_volume_mount_paths(
-        args_list=result, src_mount_path=path.path, dst_mount_path=None, labels=labels
+    result = BaseConfig()._update_volume_mount_paths(
+        src_mount_path=path.path, dst_mount_path=None, labels=labels
     )
 
     explanation = (
@@ -152,9 +154,8 @@ def test_src_dst_all_dirs(src, dst, labels, mocker):
     dst_str = os.path.join(resolve_path(dst.path), "")
     expected = generate_volmount_args(src_str=src_str, dst_str=dst_str, vol_labels=labels)
 
-    result = []
-    BaseConfig()._update_volume_mount_paths(
-        args_list=result, src_mount_path=src.path, dst_mount_path=dst.path, labels=labels
+    result = BaseConfig()._update_volume_mount_paths(
+        src_mount_path=src.path, dst_mount_path=dst.path, labels=labels
     )
 
     explanation = (
@@ -174,15 +175,14 @@ def test_src_dst_all_files(path, labels, mocker):
     dst_str = src_str
     expected = generate_volmount_args(src_str=src_str, dst_str=dst_str, vol_labels=labels)
 
-    result = []
     src_file = os.path.join(path.path, "", "file.txt")
     dest_file = src_file
 
     base_config = BaseConfig()
     mocker.patch("os.path.exists", return_value=True)
     mocker.patch("os.path.isdir", return_value=False)
-    base_config._update_volume_mount_paths(
-        args_list=result, src_mount_path=src_file, dst_mount_path=dest_file, labels=labels
+    result = base_config._update_volume_mount_paths(
+        src_mount_path=src_file, dst_mount_path=dest_file, labels=labels
     )
 
     explanation = (
@@ -209,9 +209,8 @@ def test_src_dst_all_relative_dirs(src, dst, labels, relative, mocker):
     dst_str = os.path.join(resolve_path(os.path.join(workdir, relative_dst)), "")
     expected = generate_volmount_args(src_str=src_str, dst_str=dst_str, vol_labels=labels)
 
-    result = []
-    BaseConfig(container_workdir=workdir)._update_volume_mount_paths(
-        args_list=result, src_mount_path=relative_src, dst_mount_path=relative_dst, labels=labels
+    result = BaseConfig(container_workdir=workdir)._update_volume_mount_paths(
+        src_mount_path=relative_src, dst_mount_path=relative_dst, labels=labels
     )
 
     explanation = (

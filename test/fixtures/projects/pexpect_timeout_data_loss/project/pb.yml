@@ -1,0 +1,9 @@
+# part of the regression test for https://github.com/ansible/ansible-runner/issues/1330
+
+- hosts: localhost
+  gather_facts: no
+  tasks:
+    # sleep significantly longer than the configured pexpect timeout; the cancel callback will inject
+    # additional delay before the next process status sampling interval that can cause further output to be lost;
+    # if all is well, we'll do another loop over the child output until it's all been consumed...
+    - raw: sleep 2

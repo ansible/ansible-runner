@@ -152,15 +152,29 @@ def cleanup_dirs(pattern: str, exclude_strings: list | None = None, grace_period
 
 
 def cleanup_images(images: list, runtime: str) -> int:
-    """Note: docker will just untag while podman will remove layers with same command"""
+    """
+    `docker rmi` will just untag while
+    `podman rmi` will untag and remove layers and cause runing container to be killed
+    for podman we use `untag` to achieve the same behavior
+
+    NOTE: this only untag the image and does not delete the image prune_images need to be call to delete
+    """
     rm_ct = 0
     for image_tag in images:
         stdout = run_command([runtime, 'images', '--format="{{.Repository}}:{{.Tag}}"', image_tag])
         if not stdout:
             continue
         for discovered_tag in stdout.split('\n'):
-            stdout = run_command([runtime, 'rmi', discovered_tag.strip().strip('"'), '-f'])
-            rm_ct += stdout.count('Untagged:')
+            if runtime == 'podman':
+                try:
+                    stdout = run_command([runtime, 'untag', image_tag])
+                    if not stdout:
+                        rm_ct += 1
+                except Exception:
+                    pass  # best effort untag
+            else:
+                stdout = run_command([runtime, 'rmi', discovered_tag.strip().strip('"'), '-f'])
+                rm_ct += stdout.count('Untagged:')
     return rm_ct
 
 

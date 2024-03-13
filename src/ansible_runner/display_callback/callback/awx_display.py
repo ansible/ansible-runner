@@ -256,7 +256,7 @@ def display_context(f):
         host = callargs.get('host')
         caplevel = callargs.get('caplevel')
         log_only = callargs.get('log_only')
-        stderr  = callargs.get('stderr')
+        stderr = callargs.get('stderr')
         if host:
             ctx['remote_addr'] = host
         if caplevel:

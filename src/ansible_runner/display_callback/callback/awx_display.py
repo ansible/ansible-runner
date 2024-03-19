@@ -70,7 +70,7 @@ CENSORED = "the output has been hidden due to the fact that 'no_log: true' was s
 
 
 def current_time():
-    return datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+    return datetime.datetime.now(datetime.timezone.utc)
 
 
 # use a custom JSON serializer so we can properly handle !unsafe and !vault

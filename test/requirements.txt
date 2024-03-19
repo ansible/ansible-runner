@@ -1,6 +1,6 @@
 mypy==1.6.0
 pylint==3.0.1
-pytest==7.1.2
+pytest==8.1.1
 pytest-cov
 pytest-mock
 pytest-timeout

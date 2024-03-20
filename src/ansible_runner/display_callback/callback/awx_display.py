@@ -19,17 +19,19 @@
 
 from __future__ import (absolute_import, division, print_function)
 
-import inspect
-import json
-import stat
-import threading
 import base64
-import functools
 import collections
+import collections.abc as c
 import contextlib
 import datetime
+import functools
+import inspect
+import json
 import os
+import stat
 import sys
+import threading
+import typing as t
 import uuid
 
 # Ansible
@@ -38,6 +40,8 @@ from ansible.plugins.callback import CallbackBase
 from ansible.plugins.loader import callback_loader
 from ansible.utils.display import Display
 from ansible.utils.multiprocessing import context as multiprocessing
+
+P = t.ParamSpec('P')
 
 display = Display()
 
@@ -243,18 +247,24 @@ class EventContext:
 event_context = EventContext()
 
 
-def display_context(f):
+def _getcallargs(sig: inspect.Signature, *args: P.args, **kwargs: P.kwargs) -> dict:
+    ba = sig.bind(*args, **kwargs)
+    ba.apply_defaults()
+    return ba.arguments
+
+
+def display_context(f: c.Callable[t.Concatenate[Display, P], None]) -> c.Callable[..., None]:
+
+    sig = inspect.signature(f)
 
     @functools.wraps(f)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
         if multiprocessing.parent_process() is not None:
             return f(*args, **kwargs)
 
         name = f.__name__
         ctx = {'event': name}
-        ba = inspect.signature(f).bind(*args, **kwargs)
-        ba.apply_defaults()
-        callargs = ba.arguments
+        callargs = _getcallargs(sig, *args, **kwargs)
         host = callargs.get('host')
         caplevel = callargs.get('caplevel')
         log_only = callargs.get('log_only')

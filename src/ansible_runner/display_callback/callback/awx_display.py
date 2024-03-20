@@ -268,13 +268,13 @@ def display_context(f):
         if caplevel and display.verbosity <= caplevel:
             dump = False
 
-        if name == 'debug' and not C.DEFAULT_DEBUG:
+        if name == 'debug' and not C.DEFAULT_DEBUG:  # pylint: disable=no-member
             dump = False
 
-        if name == 'system_warning' and not C.SYSTEM_WARNINGS:
+        if name == 'system_warning' and not C.SYSTEM_WARNINGS:  # pylint: disable=no-member
             dump = False
 
-        if name == "deprecated" and not C.DEPRECATION_WARNINGS:
+        if name == "deprecated" and not C.DEPRECATION_WARNINGS:  # pylint: disable=no-member
             dump = False
 
         if not dump:

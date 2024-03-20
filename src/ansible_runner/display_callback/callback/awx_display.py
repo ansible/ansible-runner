@@ -252,7 +252,9 @@ def display_context(f):
 
         name = f.__name__
         ctx = {'event': name}
-        callargs = inspect.getcallargs(f, *args, **kwargs)
+        ba = inspect.signature(f).bind(*args, **kwargs)
+        ba.apply_defaults()
+        callargs = ba.arguments
         host = callargs.get('host')
         caplevel = callargs.get('caplevel')
         log_only = callargs.get('log_only')

@@ -386,14 +386,14 @@ class OutputEventFilter:
             event_data = self._current_event_data
             stdout_chunks = [buffered_stdout]
         elif buffered_stdout:
-            event_data = dict({'event': 'verbose'})
+            event_data = dict({'event': 'unclassified_display'})
             stdout_chunks = buffered_stdout.splitlines(True)
         else:
             event_data = {}
             stdout_chunks = []
 
         for stdout_chunk in stdout_chunks:
-            if event_data.get('event') == 'verbose':
+            if event_data.get('event') == 'unclassified_display':
                 event_data['uuid'] = str(uuid.uuid4())
             self._counter += 1
             event_data['counter'] = self._counter

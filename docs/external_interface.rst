@@ -10,7 +10,7 @@ Alternatively **Runner** can be configured to send events to an external system 
 * HTTP Status/Event Emitter Plugin - `ansible-runner-http GitHub repo <https://github.com/ansible/ansible-runner-http>`_
 * ZeroMQ Status/Event Emitter Plugin - `ansible-runner-zeromq GitHub repo <https://github.com/ansible/ansible-runner-zeromq>`_
 
-Please refer respective repos to configure these plugins.
+Please refer to respective repos to configure these plugins.
 
 .. _plugineventstructure:
 

@@ -98,14 +98,6 @@ jobs:
         run: |
           RUNNER_TEST_IMAGE_NAME=ansible-runner-gha${{ github.run_id }}-event-test tox
 
-      - name: Upload coverage report
-        uses: codecov/codecov-action@v3
-        with:
-          files: test/coverage/reports/coverage.xml
-          flags: ${{ matrix.py_version.tox_env }}
-          fail_ci_if_error: true
-          verbose: true
-
 
   unit:
     name: Unit - ${{ matrix.py_version.name}}
@@ -149,11 +141,3 @@ jobs:
 
       - name: Run tests
         run: tox
-
-      - name: Upload coverage report
-        uses: codecov/codecov-action@v3
-        with:
-          files: test/coverage/reports/coverage.xml
-          flags: ${{ matrix.py_version.tox_env }}
-          fail_ci_if_error: true
-          verbose: true

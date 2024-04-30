@@ -87,13 +87,6 @@ jobs:
           podman build --rm=true -t quay.io/ansible/ansible-runner:devel -t quay.io/ansible/ansible-runner:latest .
           tox
 
-      - name: Upload coverage report
-        uses: codecov/codecov-action@v3
-        with:
-          files: test/coverage/reports/coverage.xml
-          flags: ${{ matrix.py_version.tox_env }}
-
-
   unit:
     name: Unit - ${{ matrix.py_version.name}}
     runs-on: ubuntu-22.04
@@ -136,9 +129,3 @@ jobs:
 
       - name: Run tests
         run: tox
-
-      - name: Upload coverage report
-        uses: codecov/codecov-action@v3
-        with:
-          files: test/coverage/reports/coverage.xml
-          flags: ${{ matrix.py_version.tox_env }}

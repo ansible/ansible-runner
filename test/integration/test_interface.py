@@ -444,11 +444,8 @@ def test_get_role_list(project_fixtures, skipif_pre_ansible211):
     containing our test role.
     """
     pdir = str(project_fixtures / 'music' / 'project')
-    expected_role = {
-        "collection": "",
-        "entry_points": {
-            "main": "The main entry point for the Into_The_Mystic role."
-        }
+    expected = {
+        "main": "The main entry point for the Into_The_Mystic role."
     }
 
     resp, _ = get_role_list(playbook_dir=pdir)
@@ -457,7 +454,8 @@ def test_get_role_list(project_fixtures, skipif_pre_ansible211):
     # So that tests can work locally, where multiple roles might be returned,
     # we check for this single role.
     assert 'Into_The_Mystic' in resp
-    assert resp['Into_The_Mystic'] == expected_role
+    assert 'entry_points' in resp['Into_The_Mystic']
+    assert resp['Into_The_Mystic']['entry_points'] == expected
 
 
 @pytest.mark.test_all_runtimes

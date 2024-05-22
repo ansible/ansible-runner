@@ -46,10 +46,10 @@ DOCUMENTATION = '''
     short_description: Playbook event dispatcher for ansible-runner
     version_added: "2.0"
     description:
-        - This callback is necessary for ansible-runner to work
+      - This callback is necessary for ansible-runner to work
+      - This callback works by dynamically inheriting from the original stdout callback plugin
+      - Configurable parameters conform to the original stdout callback plugin
     type: stdout
-    extends_documentation_fragment:
-      - default_callback
     requirements:
       - Set as stdout in config
 '''
@@ -64,7 +64,9 @@ elif IS_ADHOC:
 else:
     default_stdout_callback = 'default'
 
-DefaultCallbackModule: CallbackBase = callback_loader.get(default_stdout_callback).__class__
+_DefaultCallbackModule = callback_loader.get(default_stdout_callback)
+DefaultCallbackModuleMeta: CallbackBase = _DefaultCallbackModule.__class__
+DefaultCallbackModuleName: str = _DefaultCallbackModule._load_name
 
 CENSORED = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"
 
@@ -314,7 +316,7 @@ def display_with_context(f):
 Display.display = display_with_context(Display.display)
 
 
-class CallbackModule(DefaultCallbackModule):
+class CallbackModule(DefaultCallbackModuleMeta):
     '''
     Callback module for logging ansible/ansible-playbook events.
     '''
@@ -351,6 +353,16 @@ class CallbackModule(DefaultCallbackModule):
 
         # NOTE: Ansible doesn't generate a UUID for playbook_on_start so do it for them.
         self.playbook_uuid = str(uuid.uuid4())
+
+    def set_options(self, task_keys=None, var_options=None, direct=None):
+        # since the options are gathered by referring self._load_name,
+        # temporarily fake the plugin name itself as the originally specified plugin
+        _current_load_name = self._load_name
+        self._load_name = DefaultCallbackModuleName
+
+        # get the options for the originally specified plugin and restore the plugin name
+        super(CallbackModule, self).set_options(task_keys=task_keys, var_options=var_options, direct=direct)
+        self._load_name = _current_load_name
 
     @contextlib.contextmanager
     def capture_event_data(self, event, **event_data):

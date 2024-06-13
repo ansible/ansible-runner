@@ -157,7 +157,7 @@ def run(**kwargs):
             - A list of inventory sources, or an empty list to disable passing inventory
 
     :param str role: Name of the role to execute.
-    :param dict or list roles_path: Directory or list of directories to assign to ANSIBLE_ROLES_PATH
+    :param str or list roles_path: Directory or list of directories to assign to ANSIBLE_ROLES_PATH
     :param dict envvars: Environment variables to be used when running Ansible. Environment variables will also be
                     read from ``env/envvars`` in ``private_data_dir``
     :param dict extravars: Extra variables to be passed to Ansible at runtime using ``-e``. Extra vars will also be

@@ -345,9 +345,17 @@ class RunnerConfig(BaseConfig):
             '--ro-bind', '/etc', '/etc',
             '--ro-bind', '/usr', '/usr',
             '--ro-bind', '/opt', '/opt',
-            '--symlink', 'usr/lib', '/lib',
-            '--symlink', 'usr/lib64', '/lib64',
+            '--ro-bind', '/lib', '/lib',
+            '--ro-bind', '/lib64', '/lib64',
         ])
+
+        envs = os.environ.copy()
+        sensitive_envs = ['KEY', 'PASSWORD', 'TOKEN', 'SECRET', 'PASSWD', 'REDIS_', 'DB_']
+        for name in envs.keys():
+            for key in sensitive_envs:
+                if key in name:
+                    new_args.extend(['--unsetenv', name])
+                    break
 
         for path in sorted(set(self.process_isolation_hide_paths or [])):
             if not os.path.exists(path):

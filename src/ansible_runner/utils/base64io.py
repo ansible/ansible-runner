@@ -78,6 +78,10 @@ class Base64IO(io.IOBase):
 
         :raises TypeError: if ``wrapped`` does not have attributes needed to determine the stream's state
         """
+        # set before the attr check as we may reach close() after that check fails
+        self.__read_buffer = b""
+        self.__write_buffer = b""
+
         required_attrs = ("read", "write", "close", "closed", "flush")
         if not all(hasattr(wrapped, attr) for attr in required_attrs):
             raise TypeError(
@@ -85,8 +89,6 @@ class Base64IO(io.IOBase):
             )
         super().__init__()
         self.__wrapped = wrapped
-        self.__read_buffer = b""
-        self.__write_buffer = b""
 
     def __enter__(self):
         """Return self on enter."""

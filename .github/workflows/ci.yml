@@ -65,6 +65,9 @@ jobs:
           - name: '3.12'
             tox_env: integration-py312
 
+          - name: '3.13.0-alpha - 3.13.0'
+            tox_env: integration-py313
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -121,6 +124,9 @@ jobs:
 
           - name: '3.12'
             tox_env: unit-py312
+
+          - name: '3.13.0-alpha - 3.13.0'
+            tox_env: unit-py313
 
     steps:
       - name: Checkout

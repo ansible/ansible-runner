@@ -109,6 +109,10 @@ class TestStreamingUsage:
         incoming_buffer.close()
         self.check_artifacts(str(process_dir), job_type)
 
+    # The keepalive tests will run serially since Python 3.13 somehow causes a longer delay
+    # in the tests, thus causing the keepalive timeout count to exceed the hardcoded value
+    # of 5.
+    @pytest.mark.serial
     @pytest.mark.parametrize("keepalive_setting", [
         0,  # keepalive explicitly disabled, default
         1,  # emit keepalives every 1s

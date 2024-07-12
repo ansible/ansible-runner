@@ -102,15 +102,3 @@ def project_fixtures(tmp_path):
     yield dest
 
     shutil.rmtree(dest, ignore_errors=True)
-
-
-def pytest_collection_modifyitems(session, config, items):
-    # pylint: disable=W0613
-    # mark serial items as skipped if it looks like we're running with some obvious kinds of parallelism
-    numproc = getattr(config.known_args_namespace, 'numprocesses', None)
-
-    if isinstance(numproc, int) and numproc > 1:
-        for serial_item in (i for i in items if any(i.iter_markers(name='serial'))):
-            serial_item.add_marker(
-                pytest.mark.skip(reason='test requires serial execution (add --numprocesses 0 to allow)')
-            )

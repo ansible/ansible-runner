@@ -37,6 +37,7 @@ Examples of this could include:
 
    intro
    install
+   community
    external_interface
    standalone
    python_interface

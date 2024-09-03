@@ -12,18 +12,17 @@ Ansible Runner is a tool and Python library that helps when interfacing with Ans
 See the [latest documentation] for usage details.
 
 Get Involved
-============
+------------
 
 * [GitHub issues] to track bug report and feature ideas
 * [GitHub Milestones] to track what's for the next release
 * Want to contribute? Please check out our [contributing guide]
-* Join us in the `#ansible-runner` channel on Libera.chat IRC
-* Join the discussion in [`#awx-project`][irc]
-* For the full list of Ansible email Lists, IRC channels see the [Ansible Mailing lists].
+* Visit the [Community] section of the docs.
+* See the [Ansible communication guide] for complete information about getting in touch.
 
 [GitHub issues]: https://github.com/ansible/ansible-runner/issues
 [GitHub Milestones]: https://github.com/ansible/ansible-runner/milestones
 [contributing guide]: https://github.com/ansible/ansible-runner/blob/devel/CONTRIBUTING.md
-[irc]: https://groups.google.com/forum/#!forum/awx-project
-[Ansible Mailing lists]: https://docs.ansible.com/ansible/latest/community/communication.html#mailing-list-information
-[latest documentation]: https://ansible-runner.readthedocs.io/en/latest/
+[Community]: https://ansible.readthedocs.io/projects/runner/en/latest/community/
+[Ansible communication guide]: https://docs.ansible.com/ansible/devel/community/communication.html
+[latest documentation]: https://ansible.readthedocs.io/projects/runner/en/latest/

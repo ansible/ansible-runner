@@ -2,7 +2,8 @@
 
 Hi there! We're excited to have you as a contributor.
 
-If you have questions about this document or anything not covered here? Come chat with us `#ansible-awx` on irc.libera.chat
+If you have questions about this document or anything not covered here?
+See the [Community section](https://ansible.readthedocs.io/projects/runner/en/latest/community/) of the docs for information about getting in touch.
 
 ## Things to know prior to submitting code
 

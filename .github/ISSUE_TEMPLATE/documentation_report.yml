@@ -10,11 +10,9 @@ body:
       value: |
         **Thank you reporting an issue with Ansible Runner documentation.**
 
-        If you are looking for community support, please reach out on IRC:
-
-          [#ansible](https://web.libera.chat/#ansible)
-          [#ansible-runner](https://web.libera.chat/#ansible-runner)
-
+        If you are looking for community support, please visit
+        the [Community guide](https://ansible.readthedocs.io/projects/runner/en/latest/community/)
+        for information on how to get in touch.
 
   - type:
     attributes:

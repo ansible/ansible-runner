@@ -5,7 +5,7 @@ Using Runner with Execution Environments
 
 .. note::
 
-  For an Execution Environments general technology overview and to learn how get started using it in a few easy steps, see the `Getting started with Execution Environments guide <https://ansible.readthedocs.io/en/latest/getting_started_ee/index.html>`_.
+  For an Execution Environments general technology overview and to learn how get started using it in a few easy steps, see the `Getting started with Execution Environments guide <https://docs.ansible.com/ansible/devel/getting_started_ee/index.html>`_.
 
 **Execution Environments** are meant to be a consistent, reproducible, portable,
 and shareable method to run Ansible Automation jobs in the exact same way on

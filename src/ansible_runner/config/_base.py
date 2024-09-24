@@ -29,6 +29,7 @@ import stat
 import tempfile
 import shutil
 from base64 import b64encode
+from dataclasses import dataclass, field
 from enum import Enum
 from uuid import uuid4
 from collections.abc import Mapping
@@ -61,69 +62,58 @@ class BaseExecutionMode(Enum):
     GENERIC_COMMANDS = 2
 
 
+@dataclass
+class _ArgField(dict):
+    required: bool = True
+
+    def __getattr__(self, attr):
+        return self[attr]
+
+
+@dataclass
 class BaseConfig:
 
-    def __init__(self,
-                 private_data_dir: str | None = None,
-                 host_cwd: str | None = None,
-                 envvars: dict[str, Any] | None = None,
-                 passwords=None,
-                 settings=None,
-                 project_dir: str | None = None,
-                 artifact_dir: str | None = None,
-                 fact_cache_type: str = 'jsonfile',
-                 fact_cache=None,
-                 process_isolation: bool = False,
-                 process_isolation_executable: str | None = None,
-                 container_image: str = "",
-                 container_volume_mounts=None,
-                 container_options=None,
-                 container_workdir: str | None = None,
-                 container_auth_data=None,
-                 ident: str | None = None,
-                 rotate_artifacts: int = 0,
-                 timeout: int | None = None,
-                 ssh_key: str | None = None,
-                 quiet: bool = False,
-                 json_mode: bool = False,
-                 check_job_event_data: bool = False,
-                 suppress_env_files: bool = False,
-                 keepalive_seconds: int | None = None
-                 ):
+    private_data_dir: str | None = field(metadata=_ArgField(), default=None)
+    host_cwd: str | None = field(metadata=_ArgField(), default=None)
+    envvars: dict[str, Any] | None = field(metadata=_ArgField(), default=None)
+    passwords: dict[str, str] | None = field(metadata=_ArgField(), default=None)
+    settings: dict | None = field(metadata=_ArgField(), default=None)
+    project_dir: str | None = field(metadata=_ArgField(), default=None)
+    artifact_dir: str | None = field(metadata=_ArgField(), default=None)
+    fact_cache_type: str = field(metadata=_ArgField(), default='jsonfile')
+    fact_cache: str | None = field(metadata=_ArgField(), default=None)
+    process_isolation: bool = field(metadata=_ArgField(), default=False)
+    process_isolation_executable: str = field(metadata=_ArgField(), default=defaults.default_process_isolation_executable)
+    container_image: str = field(metadata=_ArgField(), default="")
+    container_volume_mounts: list[str] | None = field(metadata=_ArgField(), default=None)
+    container_options: list[str] | None = field(metadata=_ArgField(), default=None)
+    container_workdir: str | None = field(metadata=_ArgField(), default=None)
+    container_auth_data: dict[str, str] | None = field(metadata=_ArgField(), default=None)
+    ident: str | None = field(metadata=_ArgField(), default=None)
+    rotate_artifacts: int = field(metadata=_ArgField(), default=0)
+    timeout: int | None = field(metadata=_ArgField(), default=None)
+    ssh_key: str | None = field(metadata=_ArgField(), default=None)
+    quiet: bool = field(metadata=_ArgField(), default=False)
+    json_mode: bool = field(metadata=_ArgField(), default=False)
+    check_job_event_data: bool = field(metadata=_ArgField(), default=False)
+    suppress_env_files: bool = field(metadata=_ArgField(), default=False)
+    keepalive_seconds: int | None = field(metadata=_ArgField(), default=None)
+
+    _CONTAINER_ENGINES = ('docker', 'podman')
+
+    def __post_init__(self) -> None:
         # pylint: disable=W0613
 
-        # common params
-        self.host_cwd = host_cwd
-        self.envvars = envvars
-        self.ssh_key_data = ssh_key
         self.command: list[str] = []
-
-        # container params
-        self.process_isolation = process_isolation
-        self.process_isolation_executable = process_isolation_executable or defaults.default_process_isolation_executable
-        self.container_image = container_image
-        self.container_volume_mounts = container_volume_mounts
-        self.container_workdir = container_workdir
-        self.container_auth_data = container_auth_data
         self.registry_auth_path: str
         self.container_name: str = ""  # like other properties, not accurate until prepare is called
-        self.container_options = container_options
 
-        # runner params
-        self.rotate_artifacts = rotate_artifacts
-        self.quiet = quiet
-        self.json_mode = json_mode
-        self.passwords = passwords
-        self.settings = settings
-        self.timeout = timeout
-        self.check_job_event_data = check_job_event_data
-        self.suppress_env_files = suppress_env_files
         # ignore this for now since it's worker-specific and would just trip up old runners
         # self.keepalive_seconds = keepalive_seconds
 
         # setup initial environment
-        if private_data_dir:
-            self.private_data_dir = os.path.abspath(private_data_dir)
+        if self.private_data_dir:
+            self.private_data_dir = os.path.abspath(self.private_data_dir)
             # Note that os.makedirs, exist_ok=True is dangerous.  If there's a directory writable
             # by someone other than the user anywhere in the path to be created, an attacker can
             # attempt to compromise the directories via a race.
@@ -131,26 +121,22 @@ class BaseConfig:
         else:
             self.private_data_dir = tempfile.mkdtemp(prefix=defaults.AUTO_CREATE_NAMING, dir=defaults.AUTO_CREATE_DIR)
 
-        if artifact_dir is None:
-            artifact_dir = os.path.join(self.private_data_dir, 'artifacts')
+        if self.artifact_dir is None:
+            self.artifact_dir = os.path.join(self.private_data_dir, 'artifacts')
         else:
-            artifact_dir = os.path.abspath(artifact_dir)
+            self.artifact_dir = os.path.abspath(self.artifact_dir)
 
-        if ident is None:
+        if self.ident is None:
             self.ident = str(uuid4())
         else:
-            self.ident = str(ident)
+            self.ident = str(self.ident)
 
-        self.artifact_dir = os.path.join(artifact_dir, self.ident)
+        self.artifact_dir = os.path.join(self.artifact_dir, self.ident)
 
-        if not project_dir:
+        if not self.project_dir:
             self.project_dir = os.path.join(self.private_data_dir, 'project')
-        else:
-            self.project_dir = project_dir
 
-        self.rotate_artifacts = rotate_artifacts
-        self.fact_cache_type = fact_cache_type
-        self.fact_cache = os.path.join(self.artifact_dir, fact_cache or 'fact_cache') if self.fact_cache_type == 'jsonfile' else None
+        self.fact_cache = os.path.join(self.artifact_dir, self.fact_cache or 'fact_cache') if self.fact_cache_type == 'jsonfile' else None
 
         self.loader = ArtifactLoader(self.private_data_dir)
 
@@ -162,11 +148,18 @@ class BaseConfig:
 
         os.makedirs(self.artifact_dir, exist_ok=True, mode=0o700)
 
-    _CONTAINER_ENGINES = ('docker', 'podman')
-
     @property
     def containerized(self):
         return self.process_isolation and self.process_isolation_executable in self._CONTAINER_ENGINES
+
+    @property
+    def ssh_key_data(self):
+        """ Alias for backward compatibility. """
+        return self.ssh_key
+
+    @ssh_key_data.setter
+    def ssh_key_data(self, value):
+        self.ssh_key = value
 
     def prepare_env(self, runner_mode: str = 'pexpect') -> None:
         """
@@ -178,7 +171,7 @@ class BaseConfig:
             if self.settings and isinstance(self.settings, dict):
                 self.settings.update(self.loader.load_file('env/settings', Mapping))  # type: ignore
             else:
-                self.settings = self.loader.load_file('env/settings', Mapping)
+                self.settings = self.loader.load_file('env/settings', Mapping)  # type: ignore
         except ConfigurationError:
             debug("Not loading settings")
             self.settings = {}
@@ -188,11 +181,11 @@ class BaseConfig:
                 if self.passwords and isinstance(self.passwords, dict):
                     self.passwords.update(self.loader.load_file('env/passwords', Mapping))  # type: ignore
                 else:
-                    self.passwords = self.passwords or self.loader.load_file('env/passwords', Mapping)
+                    self.passwords = self.passwords or self.loader.load_file('env/passwords', Mapping)  # type: ignore
             except ConfigurationError:
                 debug('Not loading passwords')
 
-            self.expect_passwords = {}
+            self.expect_passwords: dict[Any, Any] = {}
             try:
                 if self.passwords:
                     self.expect_passwords = {
@@ -268,16 +261,16 @@ class BaseConfig:
             # Still need to pass default environment to pexpect
 
         try:
-            if self.ssh_key_data is None:
-                self.ssh_key_data = self.loader.load_file('env/ssh_key', str)  # type: ignore
+            if self.ssh_key is None:
+                self.ssh_key = self.loader.load_file('env/ssh_key', str)  # type: ignore
         except ConfigurationError:
             debug("Not loading ssh key")
-            self.ssh_key_data = None
+            self.ssh_key = None
 
         # write the SSH key data into a fifo read by ssh-agent
-        if self.ssh_key_data:
+        if self.ssh_key:
             self.ssh_key_path = os.path.join(self.artifact_dir, 'ssh_key_data')
-            open_fifo_write(self.ssh_key_path, self.ssh_key_data)
+            open_fifo_write(self.ssh_key_path, self.ssh_key)
 
         self.suppress_output_file = self.settings.get('suppress_output_file', False)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
@@ -340,7 +333,7 @@ class BaseConfig:
             debug(f' {k}: {v}')
 
     def handle_command_wrap(self, execution_mode: BaseExecutionMode, cmdline_args: list[str]) -> None:
-        if self.ssh_key_data:
+        if self.ssh_key:
             logger.debug('ssh key data added')
             self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path)
 

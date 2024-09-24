@@ -45,7 +45,7 @@ class Runner:
         # default runner mode to pexpect
         self.runner_mode = self.config.runner_mode if hasattr(self.config, 'runner_mode') else 'pexpect'
 
-        self.directory_isolation_path = self.config.directory_isolation_path if hasattr(self.config, 'directory_isolation_path') else None
+        self.directory_isolation_path = self.config.directory_isolation_base_path if hasattr(self.config, 'directory_isolation_path') else None
         self.directory_isolation_cleanup = self.config.directory_isolation_cleanup if hasattr(self.config, 'directory_isolation_cleanup') else None
         self.process_isolation = self.config.process_isolation if hasattr(self.config, 'process_isolation') else None
         self.process_isolation_path_actual = self.config.process_isolation_path_actual if hasattr(self.config, 'process_isolation_path_actual') else None

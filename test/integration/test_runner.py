@@ -271,7 +271,7 @@ def test_set_extra_vars(rc):
     rc.module = "debug"
     rc.module_args = "var=test_extra_vars"
     rc.host_pattern = "localhost"
-    rc.extra_vars = {'test_extra_vars': 'hello there'}
+    rc.extravars = {'test_extra_vars': 'hello there'}
     rc.prepare()
     runner = Runner(config=rc)
     runner.run()

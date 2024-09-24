@@ -159,7 +159,7 @@ def test_prepare_env_settings(mocker):
 def test_prepare_env_sshkey_defaults():
     rc = BaseConfig()
     rc.prepare_env()
-    assert rc.ssh_key_data is None
+    assert rc.ssh_key is None
 
 
 def test_prepare_env_sshkey(mocker):
@@ -171,7 +171,7 @@ def test_prepare_env_sshkey(mocker):
 
     mocker.patch.object(rc.loader, 'load_file', side_effect=sshkey_side_effect)
     rc.prepare_env()
-    assert rc.ssh_key_data == rsa_private_key_value
+    assert rc.ssh_key == rsa_private_key_value
 
 
 def test_prepare_env_defaults():
@@ -191,7 +191,7 @@ def test_prepare_env_ansible_vars(mocker, tmp_path):
 
     artifact_dir = tmp_path.joinpath('some_artifacts')
     rc = BaseConfig(artifact_dir=artifact_dir.as_posix())
-    rc.ssh_key_data = None
+    rc.ssh_key = None
     rc.env = {}
     rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
 
@@ -215,7 +215,7 @@ def test_prepare_with_ssh_key(mocker, tmp_path):
     rc.env = {}
     rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
     rsa_key = RSAKey()
-    rc.ssh_key_data = rsa_key.private
+    rc.ssh_key = rsa_key.private
     rc.command = 'ansible-playbook'
     rc.cmdline_args = []
     rc.prepare_env()

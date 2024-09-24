@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+from __future__ import annotations
 
 # pylint: disable=W0201
 
@@ -27,8 +28,10 @@ import stat
 import tempfile
 import shutil
 
+from dataclasses import dataclass, field
+
 from ansible_runner import output
-from ansible_runner.config._base import BaseConfig, BaseExecutionMode
+from ansible_runner.config._base import _ArgField, BaseConfig, BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.output import debug
 from ansible_runner.utils import register_for_cleanup
@@ -44,6 +47,7 @@ class ExecutionMode():
     RAW = 3
 
 
+@dataclass
 class RunnerConfig(BaseConfig):
     """
     A ``Runner`` configuration object that's meant to encapsulate the configuration used by the
@@ -62,49 +66,69 @@ class RunnerConfig(BaseConfig):
 
     """
 
-    def __init__(self,
-                 private_data_dir, playbook=None, inventory=None, roles_path=None, limit=None,
-                 module=None, module_args=None, verbosity=None, host_pattern=None, binary=None,
-                 extravars=None, suppress_output_file=False, suppress_ansible_output=False, process_isolation_path=None,
-                 process_isolation_hide_paths=None, process_isolation_show_paths=None,
-                 process_isolation_ro_paths=None, tags=None, skip_tags=None,
-                 directory_isolation_base_path=None, forks=None, cmdline=None, omit_event_data=False,
-                 only_failed_event_data=False, **kwargs):
+    # 'binary' comes from the --binary CLI opt for an alternative ansible command path
+    binary: str | None = field(metadata=_ArgField(), default=None)
+    cmdline: str | None = field(metadata=_ArgField(), default=None)
+    directory_isolation_base_path: str | None = field(metadata=_ArgField(), default=None)
+    extravars: dict | None = field(metadata=_ArgField(), default=None)
+    forks: int | None = field(metadata=_ArgField(), default=None)
+    host_pattern: str | None = field(metadata=_ArgField(), default=None)
+    inventory: str | dict | list | None = field(metadata=_ArgField(), default=None)
+    limit: str | None = field(metadata=_ArgField(), default=None)
+    module: str | None = field(metadata=_ArgField(), default=None)
+    module_args: str | None = field(metadata=_ArgField(), default=None)
+    omit_event_data: bool = field(metadata=_ArgField(), default=False)
+    only_failed_event_data: bool = field(metadata=_ArgField(), default=False)
+    playbook: str | None = field(metadata=_ArgField(), default=None)
+    process_isolation_hide_paths: str | list | None = field(metadata=_ArgField(), default=None)
+    process_isolation_ro_paths: str | list | None = field(metadata=_ArgField(), default=None)
+    process_isolation_show_paths: str | list | None = field(metadata=_ArgField(), default=None)
+    process_isolation_path: str | None = field(metadata=_ArgField(), default=None)
+    roles_path: str | None = field(metadata=_ArgField(), default=None)
+    skip_tags: str | None = field(metadata=_ArgField(), default=None)
+    suppress_ansible_output: bool = field(metadata=_ArgField(), default=False)
+    suppress_output_file: bool = field(metadata=_ArgField(), default=False)
+    tags: str | None = field(metadata=_ArgField(), default=None)
+    verbosity: int | None = field(metadata=_ArgField(), default=None)
 
+    def __post_init__(self) -> None:
+        # NOTE: Cannot call base class __init__() here as that causes some recursion madness.
+        # We can call its __post_init__().
+        super().__post_init__()   # TODO: Should we rename this in base class?
         self.runner_mode = "pexpect"
-
-        super().__init__(private_data_dir, **kwargs)
-
-        self.playbook = playbook
-        self.inventory = inventory
-        self.roles_path = roles_path
-        self.limit = limit
-        self.module = module
-        self.module_args = module_args
-        self.host_pattern = host_pattern
-        self.binary = binary
-        self.extra_vars = extravars
-        self.process_isolation_path = process_isolation_path
         self.process_isolation_path_actual = None
-        self.process_isolation_hide_paths = process_isolation_hide_paths
-        self.process_isolation_show_paths = process_isolation_show_paths
-        self.process_isolation_ro_paths = process_isolation_ro_paths
-        self.directory_isolation_path = directory_isolation_base_path
-        self.verbosity = verbosity
-        self.suppress_output_file = suppress_output_file
-        self.suppress_ansible_output = suppress_ansible_output
-        self.tags = tags
-        self.skip_tags = skip_tags
         self.execution_mode = ExecutionMode.NONE
-        self.forks = forks
-        self.cmdline_args = cmdline
-
-        self.omit_event_data = omit_event_data
-        self.only_failed_event_data = only_failed_event_data
 
     @property
     def sandboxed(self):
         return self.process_isolation and self.process_isolation_executable not in self._CONTAINER_ENGINES
+
+    @property
+    def cmdline_args(self):
+        """ Alias for backward compatibility. """
+        return self.cmdline
+
+    @cmdline_args.setter
+    def cmdline_args(self, value):
+        self.cmdline = value
+
+    @property
+    def directory_isolation_path(self):
+        """ Alias for backward compatibility. """
+        return self.directory_isolation_base_path
+
+    @directory_isolation_path.setter
+    def directory_isolation_path(self, value):
+        self.directory_isolation_base_path = value
+
+    @property
+    def extra_vars(self):
+        """ Alias for backward compatibility. """
+        return self.extravars
+
+    @extra_vars.setter
+    def extra_vars(self, value):
+        self.extravars = value
 
     def prepare(self):
         """
@@ -131,11 +155,11 @@ class RunnerConfig(BaseConfig):
         # we must call prepare_env() before we can reference it.
         self.prepare_env()
 
-        if self.sandboxed and self.directory_isolation_path is not None:
-            self.directory_isolation_path = tempfile.mkdtemp(prefix='runner_di_', dir=self.directory_isolation_path)
+        if self.sandboxed and self.directory_isolation_base_path is not None:
+            self.directory_isolation_base_path = tempfile.mkdtemp(prefix='runner_di_', dir=self.directory_isolation_base_path)
             if os.path.exists(self.project_dir):
-                output.debug(f"Copying directory tree from {self.project_dir} to {self.directory_isolation_path} for working directory isolation")
-                shutil.copytree(self.project_dir, self.directory_isolation_path, dirs_exist_ok=True, symlinks=True)
+                output.debug(f"Copying directory tree from {self.project_dir} to {self.directory_isolation_base_path} for working directory isolation")
+                shutil.copytree(self.project_dir, self.directory_isolation_base_path, dirs_exist_ok=True, symlinks=True)
 
         self.prepare_inventory()
         self.prepare_command()
@@ -186,14 +210,14 @@ class RunnerConfig(BaseConfig):
         self.process_isolation_hide_paths = self.settings.get('process_isolation_hide_paths', self.process_isolation_hide_paths)
         self.process_isolation_show_paths = self.settings.get('process_isolation_show_paths', self.process_isolation_show_paths)
         self.process_isolation_ro_paths = self.settings.get('process_isolation_ro_paths', self.process_isolation_ro_paths)
-        self.directory_isolation_path = self.settings.get('directory_isolation_base_path', self.directory_isolation_path)
+        self.directory_isolation_base_path = self.settings.get('directory_isolation_base_path', self.directory_isolation_base_path)
         self.directory_isolation_cleanup = bool(self.settings.get('directory_isolation_cleanup', True))
 
         if 'AD_HOC_COMMAND_ID' in self.env or not os.path.exists(self.project_dir):
             self.cwd = self.private_data_dir
         else:
-            if self.directory_isolation_path is not None:
-                self.cwd = self.directory_isolation_path
+            if self.directory_isolation_base_path is not None:
+                self.cwd = self.directory_isolation_base_path
             else:
                 self.cwd = self.project_dir
 
@@ -240,8 +264,8 @@ class RunnerConfig(BaseConfig):
         exec_list = [base_command]
 
         try:
-            if self.cmdline_args:
-                cmdline_args = self.cmdline_args
+            if self.cmdline:
+                cmdline_args = self.cmdline
             else:
                 cmdline_args = self.loader.load_file('env/cmdline', str, encoding=None)
 
@@ -271,11 +295,11 @@ class RunnerConfig(BaseConfig):
                 extravars_path = self.loader.abspath('env/extravars')
             exec_list.extend(['-e', f'@{extravars_path}'])
 
-        if self.extra_vars:
-            if isinstance(self.extra_vars, dict) and self.extra_vars:
+        if self.extravars:
+            if isinstance(self.extravars, dict) and self.extravars:
                 extra_vars_list = []
-                for k in self.extra_vars:
-                    extra_vars_list.append(f"\"{k}\":{json.dumps(self.extra_vars[k])}")
+                for k in self.extravars:
+                    extra_vars_list.append(f"\"{k}\":{json.dumps(self.extravars[k])}")
 
                 exec_list.extend(
                     [
@@ -283,8 +307,8 @@ class RunnerConfig(BaseConfig):
                         f'{{{",".join(extra_vars_list)}}}'
                     ]
                 )
-            elif self.loader.isfile(self.extra_vars):
-                exec_list.extend(['-e', f'@{self.loader.abspath(self.extra_vars)}'])
+            elif self.loader.isfile(self.extravars):
+                exec_list.extend(['-e', f'@{self.loader.abspath(self.extravars)}'])
 
         if self.verbosity:
             v = 'v' * self.verbosity
@@ -385,8 +409,8 @@ class RunnerConfig(BaseConfig):
 
         if self.execution_mode == ExecutionMode.ANSIBLE_PLAYBOOK:
             # playbook runs should cwd to the SCM checkout dir
-            if self.directory_isolation_path is not None:
-                new_args.extend(['--chdir', os.path.realpath(self.directory_isolation_path)])
+            if self.directory_isolation_base_path is not None:
+                new_args.extend(['--chdir', os.path.realpath(self.directory_isolation_base_path)])
             else:
                 new_args.extend(['--chdir', os.path.realpath(self.project_dir)])
         elif self.execution_mode == ExecutionMode.ANSIBLE:
@@ -398,7 +422,7 @@ class RunnerConfig(BaseConfig):
 
     def handle_command_wrap(self):
         # wrap args for ssh-agent
-        if self.ssh_key_data:
+        if self.ssh_key:
             debug('ssh-agent agrs added')
             self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path)
 
@@ -413,6 +437,6 @@ class RunnerConfig(BaseConfig):
             # container volume mount is handled explicitly for run API's
             # using 'container_volume_mounts' arguments
             base_execution_mode = BaseExecutionMode.NONE
-            self.command = self.wrap_args_for_containerization(self.command, base_execution_mode, self.cmdline_args)
+            self.command = self.wrap_args_for_containerization(self.command, base_execution_mode, self.cmdline)
         else:
             debug('containerization disabled')

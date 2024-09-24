@@ -166,6 +166,12 @@ class BaseConfig:
         Manages reading environment metadata files under ``private_data_dir`` and merging/updating
         with existing values so the :py:class:`ansible_runner.runner.Runner` object can read and use them easily
         """
+
+        if self.ident is None:
+            raise ConfigurationError("ident value cannot be None")
+        if self.artifact_dir is None:
+            raise ConfigurationError("artifact_dir value cannot be None")
+
         self.runner_mode = runner_mode
         try:
             if self.settings and isinstance(self.settings, dict):
@@ -174,6 +180,10 @@ class BaseConfig:
                 self.settings = self.loader.load_file('env/settings', Mapping)  # type: ignore
         except ConfigurationError:
             debug("Not loading settings")
+            self.settings = {}
+
+        # Safety net
+        if self.settings is None:
             self.settings = {}
 
         if self.runner_mode == 'pexpect':
@@ -485,6 +495,12 @@ class BaseConfig:
                                        execution_mode: BaseExecutionMode,
                                        cmdline_args: list[str]
                                        ) -> list[str]:
+        if self.artifact_dir is None:
+            raise ConfigurationError("artifact_dir value cannot be None")
+
+        if self.private_data_dir is None:
+            raise ConfigurationError("private_data_dir value cannot be None")
+
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm'])
 
@@ -632,6 +648,9 @@ class BaseConfig:
         Given an existing command line and parameterization this will return the same command line wrapped with the
         necessary calls to ``ssh-agent``
         """
+        if self.ident is None:
+            raise ConfigurationError("ident value cannot be None")
+
         if self.containerized:
             artifact_dir = os.path.join("/runner/artifacts", self.ident)
             ssh_key_path = os.path.join(artifact_dir, "ssh_key_data")

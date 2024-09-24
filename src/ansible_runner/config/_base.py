@@ -73,31 +73,37 @@ class _ArgField(dict):
 @dataclass
 class BaseConfig:
 
+    # This MUST be the first field we define to handle the use case where a RunnerConfig object
+    # is instantiated with private_data_dir as the first positional argument (non-keyword).
+    # No other config objects make use of positional parameters, so this should be fine.
+    #
+    # Example use case: RunnerConfig("/tmp/demo", playbook="main.yml", ...)
     private_data_dir: str | None = field(metadata=_ArgField(), default=None)
-    host_cwd: str | None = field(metadata=_ArgField(), default=None)
-    envvars: dict[str, Any] | None = field(metadata=_ArgField(), default=None)
-    passwords: dict[str, str] | None = field(metadata=_ArgField(), default=None)
-    settings: dict | None = field(metadata=_ArgField(), default=None)
-    project_dir: str | None = field(metadata=_ArgField(), default=None)
+
     artifact_dir: str | None = field(metadata=_ArgField(), default=None)
-    fact_cache_type: str = field(metadata=_ArgField(), default='jsonfile')
+    check_job_event_data: bool = field(metadata=_ArgField(), default=False)
+    container_auth_data: dict[str, str] | None = field(metadata=_ArgField(), default=None)
+    container_image: str = field(metadata=_ArgField(), default="")
+    container_options: list[str] | None = field(metadata=_ArgField(), default=None)
+    container_volume_mounts: list[str] | None = field(metadata=_ArgField(), default=None)
+    container_workdir: str | None = field(metadata=_ArgField(), default=None)
+    envvars: dict[str, Any] | None = field(metadata=_ArgField(), default=None)
     fact_cache: str | None = field(metadata=_ArgField(), default=None)
+    fact_cache_type: str = field(metadata=_ArgField(), default='jsonfile')
+    host_cwd: str | None = field(metadata=_ArgField(), default=None)
+    ident: str | None = field(metadata=_ArgField(), default=None)
+    json_mode: bool = field(metadata=_ArgField(), default=False)
+    keepalive_seconds: int | None = field(metadata=_ArgField(), default=None)
+    passwords: dict[str, str] | None = field(metadata=_ArgField(), default=None)
     process_isolation: bool = field(metadata=_ArgField(), default=False)
     process_isolation_executable: str = field(metadata=_ArgField(), default=defaults.default_process_isolation_executable)
-    container_image: str = field(metadata=_ArgField(), default="")
-    container_volume_mounts: list[str] | None = field(metadata=_ArgField(), default=None)
-    container_options: list[str] | None = field(metadata=_ArgField(), default=None)
-    container_workdir: str | None = field(metadata=_ArgField(), default=None)
-    container_auth_data: dict[str, str] | None = field(metadata=_ArgField(), default=None)
-    ident: str | None = field(metadata=_ArgField(), default=None)
-    rotate_artifacts: int = field(metadata=_ArgField(), default=0)
-    timeout: int | None = field(metadata=_ArgField(), default=None)
-    ssh_key: str | None = field(metadata=_ArgField(), default=None)
+    project_dir: str | None = field(metadata=_ArgField(), default=None)
     quiet: bool = field(metadata=_ArgField(), default=False)
-    json_mode: bool = field(metadata=_ArgField(), default=False)
-    check_job_event_data: bool = field(metadata=_ArgField(), default=False)
+    rotate_artifacts: int = field(metadata=_ArgField(), default=0)
+    settings: dict | None = field(metadata=_ArgField(), default=None)
+    ssh_key: str | None = field(metadata=_ArgField(), default=None)
     suppress_env_files: bool = field(metadata=_ArgField(), default=False)
-    keepalive_seconds: int | None = field(metadata=_ArgField(), default=None)
+    timeout: int | None = field(metadata=_ArgField(), default=None)
 
     _CONTAINER_ENGINES = ('docker', 'podman')
 

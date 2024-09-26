@@ -31,7 +31,7 @@ import shutil
 from dataclasses import dataclass, field
 
 from ansible_runner import output
-from ansible_runner.config._base import _ArgField, BaseConfig, BaseExecutionMode
+from ansible_runner.config._base import BaseConfig, BaseExecutionMode
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.output import debug
 from ansible_runner.utils import register_for_cleanup
@@ -67,29 +67,29 @@ class RunnerConfig(BaseConfig):
     """
 
     # 'binary' comes from the --binary CLI opt for an alternative ansible command path
-    binary: str | None = field(metadata=_ArgField(), default=None)
-    cmdline: str | None = field(metadata=_ArgField(), default=None)
-    directory_isolation_base_path: str | None = field(metadata=_ArgField(), default=None)
-    extravars: dict | None = field(metadata=_ArgField(), default=None)
-    forks: int | None = field(metadata=_ArgField(), default=None)
-    host_pattern: str | None = field(metadata=_ArgField(), default=None)
-    inventory: str | dict | list | None = field(metadata=_ArgField(), default=None)
-    limit: str | None = field(metadata=_ArgField(), default=None)
-    module: str | None = field(metadata=_ArgField(), default=None)
-    module_args: str | None = field(metadata=_ArgField(), default=None)
-    omit_event_data: bool = field(metadata=_ArgField(), default=False)
-    only_failed_event_data: bool = field(metadata=_ArgField(), default=False)
-    playbook: str | None = field(metadata=_ArgField(), default=None)
-    process_isolation_hide_paths: str | list | None = field(metadata=_ArgField(), default=None)
-    process_isolation_ro_paths: str | list | None = field(metadata=_ArgField(), default=None)
-    process_isolation_show_paths: str | list | None = field(metadata=_ArgField(), default=None)
-    process_isolation_path: str | None = field(metadata=_ArgField(), default=None)
-    roles_path: str | None = field(metadata=_ArgField(), default=None)
-    skip_tags: str | None = field(metadata=_ArgField(), default=None)
-    suppress_ansible_output: bool = field(metadata=_ArgField(), default=False)
-    suppress_output_file: bool = field(metadata=_ArgField(), default=False)
-    tags: str | None = field(metadata=_ArgField(), default=None)
-    verbosity: int | None = field(metadata=_ArgField(), default=None)
+    binary: str | None = field(metadata={}, default=None)
+    cmdline: str | None = field(metadata={}, default=None)
+    directory_isolation_base_path: str | None = field(metadata={}, default=None)
+    extravars: dict | None = field(metadata={}, default=None)
+    forks: int | None = field(metadata={}, default=None)
+    host_pattern: str | None = field(metadata={}, default=None)
+    inventory: str | dict | list | None = field(metadata={}, default=None)
+    limit: str | None = field(metadata={}, default=None)
+    module: str | None = field(metadata={}, default=None)
+    module_args: str | None = field(metadata={}, default=None)
+    omit_event_data: bool = field(metadata={}, default=False)
+    only_failed_event_data: bool = field(metadata={}, default=False)
+    playbook: str | None = field(metadata={}, default=None)
+    process_isolation_hide_paths: str | list | None = field(metadata={}, default=None)
+    process_isolation_ro_paths: str | list | None = field(metadata={}, default=None)
+    process_isolation_show_paths: str | list | None = field(metadata={}, default=None)
+    process_isolation_path: str | None = field(metadata={}, default=None)
+    roles_path: str | None = field(metadata={}, default=None)
+    skip_tags: str | None = field(metadata={}, default=None)
+    suppress_ansible_output: bool = field(metadata={}, default=False)
+    suppress_output_file: bool = field(metadata={}, default=False)
+    tags: str | None = field(metadata={}, default=None)
+    verbosity: int | None = field(metadata={}, default=None)
 
     def __post_init__(self) -> None:
         # NOTE: Cannot call base class __init__() here as that causes some recursion madness.

@@ -32,7 +32,7 @@ from base64 import b64encode
 from dataclasses import dataclass, field
 from enum import Enum
 from uuid import uuid4
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any
 
 import pexpect
@@ -64,6 +64,13 @@ class BaseExecutionMode(Enum):
 
 @dataclass
 class BaseConfig:
+    """The base configuration object.
+
+    This object has multiple initialization responsibilities, including:
+        - guaranteeing the `private_data_dir` directory exists
+        - guaranteeing that `ident` value is set
+        - setting the various work directory attributes based on `private_data_dir`
+    """
 
     # This MUST be the first field we define to handle the use case where a RunnerConfig object
     # is instantiated with private_data_dir as the first positional argument (non-keyword).
@@ -97,6 +104,12 @@ class BaseConfig:
     suppress_env_files: bool = field(metadata={}, default=False)
     timeout: int | None = field(metadata={}, default=None)
 
+    event_handler: Callable[[dict], None] | None = None
+    status_handler: Callable[[dict, BaseConfig], bool] | None = None
+    artifacts_handler: Callable[[str], None] | None = None
+    cancel_callback: Callable[[], bool] | None = None
+    finished_callback: Callable[[BaseConfig], None] | None = None
+
     _CONTAINER_ENGINES = ('docker', 'podman')
 
     def __post_init__(self) -> None:
@@ -115,7 +128,10 @@ class BaseConfig:
             # Note that os.makedirs, exist_ok=True is dangerous.  If there's a directory writable
             # by someone other than the user anywhere in the path to be created, an attacker can
             # attempt to compromise the directories via a race.
-            os.makedirs(self.private_data_dir, exist_ok=True, mode=0o700)
+            try:
+                os.makedirs(self.private_data_dir, exist_ok=True, mode=0o700)
+            except Exception as error:
+                raise ConfigurationError(f"Unable to create private_data_dir {self.private_data_dir}") from error
         else:
             self.private_data_dir = tempfile.mkdtemp(prefix=defaults.AUTO_CREATE_NAMING, dir=defaults.AUTO_CREATE_DIR)
 

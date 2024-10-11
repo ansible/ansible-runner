@@ -64,7 +64,7 @@ def set_traceback(value: str) -> None:
     TRACEBACK_ENABLED = value.lower() == 'enable'
 
 
-def configure() -> None:
+def configure(debug: bool, logfile: str) -> None:
     '''
     Configures the logging facility
 
@@ -89,3 +89,7 @@ def configure() -> None:
         formatter = logging.Formatter('%(message)s')
         stdout_handler.setFormatter(formatter)
         _display_logger.addHandler(stdout_handler)
+
+    set_debug('enable' if debug is True else 'disable')
+    if logfile:
+        set_logfile(logfile)

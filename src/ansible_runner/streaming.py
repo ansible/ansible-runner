@@ -1,6 +1,7 @@
 from __future__ import annotations  # allow newer type syntax until 3.10 is our minimum
 
 import codecs
+import io
 import json
 import os
 import stat
@@ -37,12 +38,12 @@ class MockConfig:
 
 
 class Transmitter:
-    def __init__(self, _output=None, **kwargs):
+    def __init__(self, only_transmit_kwargs: bool, _output: io.FileIO | None, **kwargs):
         if _output is None:
             _output = sys.stdout.buffer
         self._output = _output
-        self.private_data_dir = os.path.abspath(kwargs.pop('private_data_dir'))
-        self.only_transmit_kwargs = kwargs.pop('only_transmit_kwargs', False)
+        self.private_data_dir = os.path.abspath(kwargs['private_data_dir'])
+        self.only_transmit_kwargs = only_transmit_kwargs
         if 'keepalive_seconds' in kwargs:
             kwargs.pop('keepalive_seconds')  # don't confuse older runners with this Worker-only arg
 

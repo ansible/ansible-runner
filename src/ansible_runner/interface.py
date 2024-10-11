@@ -17,13 +17,18 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+from __future__ import annotations
+
+import io
 import os
 import json
 import sys
 import threading
 import logging
+from dataclasses import asdict
 
 from ansible_runner import output
+from ansible_runner._internal._dump_artifacts import dump_artifacts
 from ansible_runner.config.runner import RunnerConfig
 from ansible_runner.config.command import CommandConfig
 from ansible_runner.config.inventory import InventoryConfig
@@ -32,7 +37,6 @@ from ansible_runner.config.doc import DocConfig
 from ansible_runner.runner import Runner
 from ansible_runner.streaming import Transmitter, Worker, Processor
 from ansible_runner.utils import (
-    dump_artifacts,
     check_isolation_executable_installed,
     sanitize_json_response,
     signal_handler,
@@ -41,7 +45,12 @@ from ansible_runner.utils import (
 logging.getLogger('ansible-runner').addHandler(logging.NullHandler())
 
 
-def init_runner(**kwargs):
+def init_runner(
+        config: RunnerConfig,
+        streamer: str,
+        only_transmit_kwargs: bool,
+        _input: io.FileIO | None = None,
+        _output: io.FileIO | None = None):
     '''
     Initialize the Runner() instance
 
@@ -51,89 +60,74 @@ def init_runner(**kwargs):
     See parameters given to :py:func:`ansible_runner.interface.run`
     '''
 
-    # Handle logging first thing
-    debug = kwargs.pop('debug', None)
-    logfile = kwargs.pop('logfile', None)
-
-    if not kwargs.pop("ignore_logging", True):
-        output.configure()
-        if debug in (True, False):
-            output.set_debug('enable' if debug is True else 'disable')
-
-        if logfile:
-            output.set_logfile(logfile)
-
     # If running via the transmit-worker-process method, we must only extract things as read-only
     # inside of one of these commands. That could be either transmit or worker.
-    if kwargs.get('streamer') not in ('worker', 'process'):
-        dump_artifacts(kwargs)
+    if streamer not in ('worker', 'process'):
+        dump_artifacts(config)
 
-    if kwargs.get('streamer'):
+    if streamer:
         # undo any full paths that were dumped by dump_artifacts above in the streamer case
-        private_data_dir = kwargs['private_data_dir']
+        private_data_dir = config.private_data_dir
         project_dir = os.path.join(private_data_dir, 'project')
 
-        playbook_path = kwargs.get('playbook') or ''
+        playbook_path = config.playbook or ''
         if os.path.isabs(playbook_path) and playbook_path.startswith(project_dir):
-            kwargs['playbook'] = os.path.relpath(playbook_path, project_dir)
+            config.playbook = os.path.relpath(playbook_path, project_dir)
 
-        inventory_path = kwargs.get('inventory') or ''
+        inventory_path = config.inventory or ''
         if os.path.isabs(inventory_path) and inventory_path.startswith(private_data_dir):
-            kwargs['inventory'] = os.path.relpath(inventory_path, private_data_dir)
+            config.inventory = os.path.relpath(inventory_path, private_data_dir)
 
-        roles_path = kwargs.get('envvars', {}).get('ANSIBLE_ROLES_PATH') or ''
+        envvars = config.envvars or {}
+        roles_path = envvars.get('ANSIBLE_ROLES_PATH') or ''
         if os.path.isabs(roles_path) and roles_path.startswith(private_data_dir):
-            kwargs['envvars']['ANSIBLE_ROLES_PATH'] = os.path.relpath(roles_path, private_data_dir)
+            config.envvars['ANSIBLE_ROLES_PATH'] = os.path.relpath(roles_path, private_data_dir)
 
-    event_callback_handler = kwargs.pop('event_handler', None)
-    status_callback_handler = kwargs.pop('status_handler', None)
-    artifacts_handler = kwargs.pop('artifacts_handler', None)
-    cancel_callback = kwargs.pop('cancel_callback', None)
-    if cancel_callback is None:
+    if config.cancel_callback is None:
         # attempt to load signal handler.
         # will return None if we are not in the main thread
-        cancel_callback = signal_handler()
-    finished_callback = kwargs.pop('finished_callback', None)
+        config.cancel_callback = signal_handler()
 
-    streamer = kwargs.pop('streamer', None)
-    if streamer:
-        if streamer == 'transmit':
-            stream_transmitter = Transmitter(**kwargs)
-            return stream_transmitter
+    if streamer == 'transmit':
+        kwargs = asdict(config)
+        stream_transmitter = Transmitter(only_transmit_kwargs, _output=_output, **kwargs)
+        return stream_transmitter
 
-        if streamer == 'worker':
-            stream_worker = Worker(**kwargs)
-            return stream_worker
+    if streamer == 'worker':
+        kwargs = asdict(config)
+        stream_worker = Worker(_input=_input, _output=_output, **kwargs)
+        return stream_worker
 
-        if streamer == 'process':
-            stream_processor = Processor(event_handler=event_callback_handler,
-                                         status_handler=status_callback_handler,
-                                         artifacts_handler=artifacts_handler,
-                                         cancel_callback=cancel_callback,
-                                         finished_callback=finished_callback,
-                                         **kwargs)
-            return stream_processor
+    if streamer == 'process':
+        kwargs = asdict(config)
+        stream_processor = Processor(_input=_input, **kwargs)
+        return stream_processor
 
-    if kwargs.get("process_isolation", False):
-        pi_executable = kwargs.get("process_isolation_executable", "podman")
+    if config.process_isolation:
+        pi_executable = config.process_isolation_executable
         if not check_isolation_executable_installed(pi_executable):
             print(f'Unable to find process isolation executable: {pi_executable}')
             sys.exit(1)
 
-    kwargs.pop('_input', None)
-    kwargs.pop('_output', None)
-    rc = RunnerConfig(**kwargs)
-    rc.prepare()
+    config.prepare()
 
-    return Runner(rc,
-                  event_handler=event_callback_handler,
-                  status_handler=status_callback_handler,
-                  artifacts_handler=artifacts_handler,
-                  cancel_callback=cancel_callback,
-                  finished_callback=finished_callback)
+    return Runner(config,
+                  event_handler=config.event_handler,
+                  status_handler=config.status_handler,
+                  artifacts_handler=config.artifacts_handler,
+                  cancel_callback=config.cancel_callback,
+                  finished_callback=config.finished_callback)
 
 
-def run(**kwargs):
+def run(config: RunnerConfig | None = None,
+        streamer: str = "",
+        debug: bool = False,
+        logfile: str = "",
+        ignore_logging: bool = True,
+        _input: io.FileIO | None = None,
+        _output: io.FileIO | None = None,
+        only_transmit_kwargs: bool = False,
+        **kwargs):
     '''
     Run an Ansible Runner task in the foreground and return a Runner object when complete.
 
@@ -209,7 +203,19 @@ def run(**kwargs):
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object, or a simple object containing ``rc`` if run remotely
     '''
-    r = init_runner(**kwargs)
+
+    # Initialize logging
+    if not ignore_logging:
+        output.configure(debug, logfile)
+
+    if not config:
+        config = RunnerConfig(**kwargs)
+
+    r = init_runner(
+        config=config, streamer=streamer,
+        only_transmit_kwargs=only_transmit_kwargs,
+        _input=_input, _output=_output,
+    )
     r.run()
     return r
 

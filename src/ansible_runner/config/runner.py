@@ -79,12 +79,15 @@ class RunnerConfig(BaseConfig):
     module_args: str | None = field(metadata={}, default=None)
     omit_event_data: bool = field(metadata={}, default=False)
     only_failed_event_data: bool = field(metadata={}, default=False)
-    playbook: str | None = field(metadata={}, default=None)
+    playbook: str | dict | list | None = field(metadata={}, default=None)
     process_isolation_hide_paths: str | list | None = field(metadata={}, default=None)
     process_isolation_ro_paths: str | list | None = field(metadata={}, default=None)
     process_isolation_show_paths: str | list | None = field(metadata={}, default=None)
     process_isolation_path: str | None = field(metadata={}, default=None)
+    role: str = ""
+    role_skip_facts: bool = False
     roles_path: str | None = field(metadata={}, default=None)
+    role_vars: dict[str, str] | None = None
     skip_tags: str | None = field(metadata={}, default=None)
     suppress_ansible_output: bool = field(metadata={}, default=False)
     suppress_output_file: bool = field(metadata={}, default=False)
@@ -120,6 +123,21 @@ class RunnerConfig(BaseConfig):
     @directory_isolation_path.setter
     def directory_isolation_path(self, value):
         self.directory_isolation_base_path = value
+
+    @property
+    def hosts(self):
+        """
+        Alias for backward compatibility.
+
+        dump_artifacts() makes reference to 'hosts' kwargs (API) value, even though it
+        is undocumented as an API parameter to interface.run(). We make it equivalent
+        to 'host_pattern' here to not break anyone.
+        """
+        return self.host_pattern
+
+    @hosts.setter
+    def hosts(self, value):
+        self.host_pattern = value
 
     @property
     def extra_vars(self):

@@ -6,10 +6,7 @@ import sys
 import re
 import os
 import stat
-import fcntl
 import shutil
-import hashlib
-import tempfile
 import subprocess
 import base64
 import threading
@@ -120,55 +117,6 @@ def check_isolation_executable_installed(isolation_executable: str) -> bool:
     return False
 
 
-def dump_artifact(obj: str,
-                  path: str,
-                  filename: str | None = None
-                  ) -> str:
-    '''
-    Write the artifact to disk at the specified path
-
-    :param str obj: The string object to be dumped to disk in the specified
-        path. The artifact filename will be automatically created.
-    :param str path: The full path to the artifacts data directory.
-    :param str filename: The name of file to write the artifact to.
-        If the filename is not provided, then one will be generated.
-
-    :return: The full path filename for the artifact that was generated.
-    '''
-    if not os.path.exists(path):
-        os.makedirs(path, mode=0o700)
-
-    p_sha1 = hashlib.sha1()
-    p_sha1.update(obj.encode(encoding='UTF-8'))
-
-    if filename is None:
-        _, fn = tempfile.mkstemp(dir=path)
-    else:
-        fn = os.path.join(path, filename)
-
-    if os.path.exists(fn):
-        c_sha1 = hashlib.sha1()
-        with open(fn) as f:
-            contents = f.read()
-        c_sha1.update(contents.encode(encoding='UTF-8'))
-
-    if not os.path.exists(fn) or p_sha1.hexdigest() != c_sha1.hexdigest():
-        lock_fp = os.path.join(path, '.artifact_write_lock')
-        lock_fd = os.open(lock_fp, os.O_RDWR | os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR)
-        fcntl.lockf(lock_fd, fcntl.LOCK_EX)
-
-        try:
-            with open(fn, 'w') as f:
-                os.chmod(fn, stat.S_IRUSR | stat.S_IWUSR)
-                f.write(str(obj))
-        finally:
-            fcntl.lockf(lock_fd, fcntl.LOCK_UN)
-            os.close(lock_fd)
-            os.remove(lock_fp)
-
-    return fn
-
-
 def cleanup_artifact_dir(path: str, num_keep: int = 0) -> None:
     # 0 disables artifact dir cleanup/rotation
     if num_keep < 1:
@@ -180,80 +128,6 @@ def cleanup_artifact_dir(path: str, num_keep: int = 0) -> None:
     total_remove = len(all_paths) - num_keep
     for f in range(total_remove):
         shutil.rmtree(all_paths[f])
-
-
-def dump_artifacts(kwargs: dict) -> None:
-    '''
-    Introspect the kwargs and dump objects to disk
-    '''
-    private_data_dir = kwargs.get('private_data_dir')
-    if not private_data_dir:
-        private_data_dir = tempfile.mkdtemp()
-        kwargs['private_data_dir'] = private_data_dir
-
-    if not os.path.exists(private_data_dir):
-        raise ValueError('private_data_dir path is either invalid or does not exist')
-
-    if 'role' in kwargs:
-        role = {'name': kwargs.pop('role')}
-        if 'role_vars' in kwargs:
-            role['vars'] = kwargs.pop('role_vars')
-
-        play = [{'hosts': kwargs.pop('hosts', 'all'), 'roles': [role]}]
-
-        if kwargs.pop('role_skip_facts', False):
-            play[0]['gather_facts'] = False
-
-        kwargs['playbook'] = play
-
-        if 'envvars' not in kwargs:
-            kwargs['envvars'] = {}
-
-        roles_path = kwargs.pop('roles_path', None)
-        if not roles_path:
-            roles_path = os.path.join(private_data_dir, 'roles')
-        else:
-            roles_path += f":{os.path.join(private_data_dir, 'roles')}"
-
-        kwargs['envvars']['ANSIBLE_ROLES_PATH'] = roles_path
-
-    playbook = kwargs.get('playbook')
-    if playbook:
-        # Ensure the play is a list of dictionaries
-        if isinstance(playbook, MutableMapping):
-            playbook = [playbook]
-
-        if isplaybook(playbook):
-            path = os.path.join(private_data_dir, 'project')
-            kwargs['playbook'] = dump_artifact(json.dumps(playbook), path, 'main.json')
-
-    obj = kwargs.get('inventory')
-    if obj and isinventory(obj):
-        path = os.path.join(private_data_dir, 'inventory')
-        if isinstance(obj, MutableMapping):
-            kwargs['inventory'] = dump_artifact(json.dumps(obj), path, 'hosts.json')
-        elif isinstance(obj, str):
-            if not os.path.exists(os.path.join(path, obj)):
-                kwargs['inventory'] = dump_artifact(obj, path, 'hosts')
-            elif os.path.isabs(obj):
-                kwargs['inventory'] = obj
-            else:
-                kwargs['inventory'] = os.path.join(path, obj)
-
-    if not kwargs.get('suppress_env_files', False):
-        for key in ('envvars', 'extravars', 'passwords', 'settings'):
-            obj = kwargs.get(key)
-            if obj and not os.path.exists(os.path.join(private_data_dir, 'env', key)):
-                path = os.path.join(private_data_dir, 'env')
-                dump_artifact(json.dumps(obj), path, key)
-                kwargs.pop(key)
-
-        for key in ('ssh_key', 'cmdline'):
-            obj = kwargs.get(key)
-            if obj and not os.path.exists(os.path.join(private_data_dir, 'env', key)):
-                path = os.path.join(private_data_dir, 'env')
-                dump_artifact(str(kwargs[key]), path, key)
-                kwargs.pop(key)
 
 
 def collect_new_events(event_path: str, old_events: dict) -> Iterator[tuple[dict, dict]]:

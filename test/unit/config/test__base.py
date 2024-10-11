@@ -2,6 +2,7 @@
 
 import os
 import re
+import tempfile
 from functools import partial
 
 from test.utils.common import RSAKey
@@ -20,6 +21,19 @@ def load_file_side_effect(path, value, *args, **kwargs):
         if value:
             return value
     raise ConfigurationError
+
+
+def test_base_config_empty_pvt_data_dir():
+    """Make sure we create a pvt data dir even when not supplied"""
+    rc = BaseConfig()
+    tmpdir = tempfile.gettempdir()
+    assert tmpdir in rc.private_data_dir
+
+
+def test_base_config_invalid_pvt_data_dir():
+    """A ConfigurationError should be raised if we cannot create the requested pvt data dir"""
+    with pytest.raises(ConfigurationError, match="Unable to create private_data_dir"):
+        BaseConfig("/not/a/writable/path")
 
 
 def test_base_config_init_defaults(tmp_path):

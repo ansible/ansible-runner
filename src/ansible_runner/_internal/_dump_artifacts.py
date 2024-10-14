@@ -8,6 +8,7 @@ import stat
 import tempfile
 
 from collections.abc import MutableMapping
+from typing import Any
 
 from ansible_runner.config.runner import RunnerConfig
 from ansible_runner.utils import isinventory, isplaybook
@@ -15,13 +16,15 @@ from ansible_runner.utils import isinventory, isplaybook
 
 def dump_artifacts(config: RunnerConfig) -> None:
     """Introspect the arguments and dump objects to disk"""
+    private_data_dir = config.private_data_dir or ""
+
     if config.role:
-        role = {'name': config.role}
+        role: dict[str, Any] = {'name': config.role}
         if config.role_vars:
             role['vars'] = config.role_vars
 
         hosts = config.host_pattern or 'all'
-        play = [{'hosts': hosts, 'roles': [role]}]
+        play: list[dict[str, Any]] = [{'hosts': hosts, 'roles': [role]}]
 
         if config.role_skip_facts:
             play[0]['gather_facts'] = False
@@ -33,9 +36,9 @@ def dump_artifacts(config: RunnerConfig) -> None:
 
         roles_path = config.roles_path
         if not roles_path:
-            roles_path = os.path.join(config.private_data_dir, 'roles')
+            roles_path = os.path.join(private_data_dir, 'roles')
         else:
-            roles_path += f":{os.path.join(config.private_data_dir, 'roles')}"
+            roles_path += f":{os.path.join(private_data_dir, 'roles')}"
 
         config.envvars['ANSIBLE_ROLES_PATH'] = roles_path
 
@@ -46,12 +49,12 @@ def dump_artifacts(config: RunnerConfig) -> None:
             playbook = [playbook]
 
         if isplaybook(playbook):
-            path = os.path.join(config.private_data_dir, 'project')
+            path = os.path.join(private_data_dir, 'project')
             config.playbook = dump_artifact(json.dumps(playbook), path, 'main.json')
 
     obj = config.inventory
     if obj and isinventory(obj):
-        path = os.path.join(config.private_data_dir, 'inventory')
+        path = os.path.join(private_data_dir, 'inventory')
         if isinstance(obj, MutableMapping):
             config.inventory = dump_artifact(json.dumps(obj), path, 'hosts.json')
         elif isinstance(obj, str):
@@ -65,14 +68,14 @@ def dump_artifacts(config: RunnerConfig) -> None:
     if not config.suppress_env_files:
         for key in ('envvars', 'extravars', 'passwords', 'settings'):
             obj = getattr(config, key, None)
-            if obj and not os.path.exists(os.path.join(config.private_data_dir, 'env', key)):
-                path = os.path.join(config.private_data_dir, 'env')
+            if obj and not os.path.exists(os.path.join(private_data_dir, 'env', key)):
+                path = os.path.join(private_data_dir, 'env')
                 dump_artifact(json.dumps(obj), path, key)
 
         for key in ('ssh_key', 'cmdline'):
             obj = getattr(config, key, None)
-            if obj and not os.path.exists(os.path.join(config.private_data_dir, 'env', key)):
-                path = os.path.join(config.private_data_dir, 'env')
+            if obj and not os.path.exists(os.path.join(private_data_dir, 'env', key)):
+                path = os.path.join(private_data_dir, 'env')
                 dump_artifact(obj, path, key)
 
 

@@ -44,7 +44,8 @@ from yaml import safe_dump, safe_load
 from ansible_runner import run
 from ansible_runner import output
 from ansible_runner import cleanup
-from ansible_runner.utils import dump_artifact, Bunch, register_for_cleanup
+from ansible_runner._internal._dump_artifacts import dump_artifact
+from ansible_runner.utils import Bunch, register_for_cleanup
 from ansible_runner.utils.capacity import get_cpu_count, get_mem_in_bytes, ensure_uuid
 from ansible_runner.utils.importlib_compat import importlib_metadata
 from ansible_runner.runner import Runner
@@ -822,14 +823,11 @@ def main(sys_args=None):
             else:
                 vargs['inventory'] = abs_inv
 
-    output.configure()
-
-    # enable or disable debug mode
-    output.set_debug('enable' if vargs.get('debug') else 'disable')
-
-    # set the output logfile
+    debug = bool(vargs.get('debug'))
+    logfile = ''
     if ('logfile' in args) and vargs.get('logfile'):
-        output.set_logfile(vargs.get('logfile'))
+        logfile = vargs.get('logfile')
+    output.configure(debug, logfile)
 
     output.debug('starting debug logging')
 

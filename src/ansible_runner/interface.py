@@ -67,19 +67,20 @@ def init_runner(
 
     if streamer:
         # undo any full paths that were dumped by dump_artifacts above in the streamer case
-        private_data_dir = config.private_data_dir
+        private_data_dir = config.private_data_dir or ""
         project_dir = os.path.join(private_data_dir, 'project')
 
         playbook_path = config.playbook or ''
-        if os.path.isabs(playbook_path) and playbook_path.startswith(project_dir):
+        if isinstance(playbook_path, str) and os.path.isabs(playbook_path) and playbook_path.startswith(project_dir):
             config.playbook = os.path.relpath(playbook_path, project_dir)
 
         inventory_path = config.inventory or ''
-        if os.path.isabs(inventory_path) and inventory_path.startswith(private_data_dir):
+        if isinstance(inventory_path, str) and os.path.isabs(inventory_path) and inventory_path.startswith(private_data_dir):
             config.inventory = os.path.relpath(inventory_path, private_data_dir)
 
-        envvars = config.envvars or {}
-        roles_path = envvars.get('ANSIBLE_ROLES_PATH') or ''
+        if config.envvars is None:
+            config.envvars = {}
+        roles_path = config.envvars.get('ANSIBLE_ROLES_PATH') or ''
         if os.path.isabs(roles_path) and roles_path.startswith(private_data_dir):
             config.envvars['ANSIBLE_ROLES_PATH'] = os.path.relpath(roles_path, private_data_dir)
 

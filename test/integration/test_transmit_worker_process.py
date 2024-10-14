@@ -142,6 +142,7 @@ class TestStreamingUsage:
             buffer.name = 'foo'
 
         status, rc = Transmitter(
+            only_transmit_kwargs=False,
             _output=outgoing_buffer, private_data_dir=project_fixtures / 'sleep',
             playbook='sleep.yml', extravars={'sleep_interval': 2}, verbosity=verbosity
         ).run()
@@ -341,7 +342,7 @@ def transmit_stream(project_fixtures, tmp_path):
 
     transmit_dir = project_fixtures / 'debug'
     with outgoing_buffer.open('wb') as f:
-        transmitter = Transmitter(_output=f, private_data_dir=transmit_dir, playbook='debug.yml')
+        transmitter = Transmitter(only_transmit_kwargs=False, _output=f, private_data_dir=transmit_dir, playbook='debug.yml')
         status, rc = transmitter.run()
 
         assert rc in (None, 0)

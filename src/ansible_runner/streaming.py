@@ -1,7 +1,6 @@
 from __future__ import annotations  # allow newer type syntax until 3.10 is our minimum
 
 import codecs
-import io
 import json
 import os
 import stat
@@ -13,6 +12,7 @@ import traceback
 from collections.abc import Mapping
 from functools import wraps
 from threading import Event, RLock, Thread
+from typing import BinaryIO
 
 import ansible_runner
 from ansible_runner.exceptions import ConfigurationError
@@ -38,7 +38,7 @@ class MockConfig:
 
 
 class Transmitter:
-    def __init__(self, only_transmit_kwargs: bool, _output: io.FileIO | None, **kwargs):
+    def __init__(self, only_transmit_kwargs: bool, _output: BinaryIO | None, **kwargs):
         if _output is None:
             _output = sys.stdout.buffer
         self._output = _output

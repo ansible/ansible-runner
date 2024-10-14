@@ -1,7 +1,7 @@
 import os
 import stat
 
-from ansible_runner.utils import dump_artifact
+from ansible_runner._internal._dump_artifacts import dump_artifact
 
 
 def test_artifact_permissions(tmp_path):

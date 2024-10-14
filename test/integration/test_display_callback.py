@@ -6,6 +6,7 @@ import yaml
 
 import pytest
 
+from ansible_runner import RunnerConfig
 from ansible_runner.interface import init_runner
 
 
@@ -29,12 +30,14 @@ def executor(tmp_path, request):
 
     inventory = 'localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"'
 
-    r = init_runner(
-        private_data_dir=private_data_dir,
+    rc = RunnerConfig(
+        private_data_dir=str(private_data_dir),
         inventory=inventory,
         envvars=envvars,
         playbook=yaml.safe_load(playbook)
     )
+
+    r = init_runner(rc, '', False)
 
     return r
 
@@ -355,12 +358,14 @@ def test_output_when_given_invalid_playbook(tmp_path):
     #
     # But no test validated it.  This does that.
     private_data_dir = str(tmp_path)
-    ex = init_runner(
+
+    rc = RunnerConfig(
         private_data_dir=private_data_dir,
         inventory='localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"',
         envvars={"ANSIBLE_DEPRECATION_WARNINGS": "False"},
         playbook=os.path.join(private_data_dir, 'fake_playbook.yml')
     )
+    ex = init_runner(rc, '', False)
 
     ex.run()
     with ex.stdout as f:
@@ -392,11 +397,12 @@ def test_output_when_given_non_playbook_script(tmp_path):
     with open(os.path.join(private_data_dir, "env", "settings"), 'w') as settings_file:
         settings_file.write("pexpect_timeout: 0.2")
 
-    ex = init_runner(
+    rc = RunnerConfig(
         private_data_dir=private_data_dir,
         inventory='localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"',
         envvars={"ANSIBLE_DEPRECATION_WARNINGS": "False"}
     )
+    ex = init_runner(rc, '', False)
 
     ex.run()
 

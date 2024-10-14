@@ -67,9 +67,9 @@ class BaseConfig:
     """The base configuration object.
 
     This object has multiple initialization responsibilities, including:
-        - guaranteeing the `private_data_dir` directory exists
-        - guaranteeing that `ident` value is set
-        - setting the various work directory attributes based on `private_data_dir`
+        - guaranteeing the 'private_data_dir' directory exists
+        - guaranteeing that 'ident' value is set
+        - setting the various work directory attributes based on 'private_data_dir'
     """
 
     # This MUST be the first field we define to handle the use case where a RunnerConfig object

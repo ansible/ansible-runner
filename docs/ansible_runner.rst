@@ -25,6 +25,7 @@ ansible_runner.interface module
 
 .. automodule:: ansible_runner.interface
     :members:
+    :exclude-members: init_runner
     :undoc-members:
     :show-inheritance:
 

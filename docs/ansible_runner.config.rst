@@ -7,4 +7,5 @@ Submodules
 ansible_runner.config.runner module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. autoclass:: ansible_runner.config.runner.BaseConfig
 .. autoclass:: ansible_runner.config.runner.RunnerConfig

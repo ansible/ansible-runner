@@ -21,6 +21,7 @@ disable = [
   "C0115",  # missing-class-docstring
   "C0116",  # missing-function-docstring
   "C0301",  # line-too-long
+  "C0302",  # too-many-lines
   "R0401",  # cyclic-import
   "R0801",  # duplicate-code
   "R0902",  # too-many-instance-attributes

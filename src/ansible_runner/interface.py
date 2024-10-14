@@ -221,7 +221,16 @@ def run(config: RunnerConfig | None = None,
     return r
 
 
-def run_async(**kwargs):
+def run_async(
+        config: RunnerConfig | None = None,
+        streamer: str = "",
+        debug: bool = False,
+        logfile: str = "",
+        ignore_logging: bool = True,
+        _input: io.FileIO | None = None,
+        _output: io.FileIO | None = None,
+        only_transmit_kwargs: bool = False,
+        **kwargs):
     '''
     Runs an Ansible Runner task in the background which will start immediately. Returns the thread object and a Runner object.
 
@@ -229,7 +238,19 @@ def run_async(**kwargs):
 
     :returns: A tuple containing a :py:class:`threading.Thread` object and a :py:class:`ansible_runner.runner.Runner` object
     '''
-    r = init_runner(**kwargs)
+
+    # Initialize logging
+    if not ignore_logging:
+        output.configure(debug, logfile)
+
+    if not config:
+        config = RunnerConfig(**kwargs)
+
+    r = init_runner(
+        config=config, streamer=streamer,
+        only_transmit_kwargs=only_transmit_kwargs,
+        _input=_input, _output=_output,
+    )
     runner_thread = threading.Thread(target=r.run)
     runner_thread.start()
     return runner_thread, r

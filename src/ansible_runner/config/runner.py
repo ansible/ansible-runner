@@ -28,10 +28,11 @@ import stat
 import tempfile
 import shutil
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, fields
+from typing import Any
 
 from ansible_runner import output
-from ansible_runner.config._base import BaseConfig, BaseExecutionMode
+from ansible_runner.config._base import BaseConfig, BaseExecutionMode, MetaValues
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.output import debug
 from ansible_runner.utils import register_for_cleanup
@@ -67,32 +68,32 @@ class RunnerConfig(BaseConfig):
     """
 
     # 'binary' comes from the --binary CLI opt for an alternative ansible command path
-    binary: str | None = field(metadata={}, default=None)
-    cmdline: str | None = field(metadata={}, default=None)
-    directory_isolation_base_path: str | None = field(metadata={}, default=None)
-    extravars: dict | None = field(metadata={}, default=None)
-    forks: int | None = field(metadata={}, default=None)
-    host_pattern: str | None = field(metadata={}, default=None)
-    inventory: str | dict | list | None = field(metadata={}, default=None)
-    limit: str | None = field(metadata={}, default=None)
-    module: str | None = field(metadata={}, default=None)
-    module_args: str | None = field(metadata={}, default=None)
-    omit_event_data: bool = field(metadata={}, default=False)
-    only_failed_event_data: bool = field(metadata={}, default=False)
-    playbook: str | dict | list | None = field(metadata={}, default=None)
-    process_isolation_hide_paths: str | list | None = field(metadata={}, default=None)
-    process_isolation_ro_paths: str | list | None = field(metadata={}, default=None)
-    process_isolation_show_paths: str | list | None = field(metadata={}, default=None)
-    process_isolation_path: str | None = field(metadata={}, default=None)
+    binary: str | None = None
+    cmdline: str | None = None
+    directory_isolation_base_path: str | None = None
+    extravars: dict | None = None
+    forks: int | None = None
+    host_pattern: str | None = None
+    inventory: str | dict | list | None = None
+    limit: str | None = None
+    module: str | None = None
+    module_args: str | None = None
+    omit_event_data: bool = False
+    only_failed_event_data: bool = False
+    playbook: str | dict | list | None = None
+    process_isolation_hide_paths: str | list | None = None
+    process_isolation_ro_paths: str | list | None = None
+    process_isolation_show_paths: str | list | None = None
+    process_isolation_path: str | None = None
     role: str = ""
     role_skip_facts: bool = False
-    roles_path: str | None = field(metadata={}, default=None)
+    roles_path: str | None = None
     role_vars: dict[str, str] | None = None
-    skip_tags: str | None = field(metadata={}, default=None)
-    suppress_ansible_output: bool = field(metadata={}, default=False)
-    suppress_output_file: bool = field(metadata={}, default=False)
-    tags: str | None = field(metadata={}, default=None)
-    verbosity: int | None = field(metadata={}, default=None)
+    skip_tags: str | None = None
+    suppress_ansible_output: bool = False
+    suppress_output_file: bool = False
+    tags: str | None = None
+    verbosity: int | None = None
 
     def __post_init__(self) -> None:
         # NOTE: Cannot call base class __init__() here as that causes some recursion madness.
@@ -147,6 +148,23 @@ class RunnerConfig(BaseConfig):
     @extra_vars.setter
     def extra_vars(self, value):
         self.extravars = value
+
+    def streamable_attributes(self) -> dict[str, Any]:
+        """Get the set of streamable attributes that have a value that is different from the default.
+
+        The field metadata indicates if the attribute is streamable. By default, an attribute
+        is considered streamable (must be explicitly disabled).
+
+        :return: A dict of attribute names and their values.
+        """
+        retval = {}
+        for field_obj in fields(self):
+            if field_obj.metadata and not field_obj.metadata.get(MetaValues.STREAMABLE, True):
+                continue
+            current_value = getattr(self, field_obj.name)
+            if not field_obj.default == current_value:
+                retval[field_obj.name] = current_value
+        return retval
 
     def prepare(self):
         """

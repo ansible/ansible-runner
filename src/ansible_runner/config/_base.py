@@ -62,6 +62,11 @@ class BaseExecutionMode(Enum):
     GENERIC_COMMANDS = 2
 
 
+# Metadata string values
+class MetaValues(Enum):
+    STREAMABLE = 'streamable'
+
+
 @dataclass
 class BaseConfig:
     """The base configuration object.
@@ -77,38 +82,38 @@ class BaseConfig:
     # No other config objects make use of positional parameters, so this should be fine.
     #
     # Example use case: RunnerConfig("/tmp/demo", playbook="main.yml", ...)
-    private_data_dir: str | None = field(metadata={}, default=None)
+    private_data_dir: str | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
 
-    artifact_dir: str | None = field(metadata={}, default=None)
-    check_job_event_data: bool = field(metadata={}, default=False)
-    container_auth_data: dict[str, str] | None = field(metadata={}, default=None)
-    container_image: str = field(metadata={}, default="")
-    container_options: list[str] | None = field(metadata={}, default=None)
-    container_volume_mounts: list[str] | None = field(metadata={}, default=None)
-    container_workdir: str | None = field(metadata={}, default=None)
-    envvars: dict[str, Any] | None = field(metadata={}, default=None)
-    fact_cache: str | None = field(metadata={}, default=None)
-    fact_cache_type: str = field(metadata={}, default='jsonfile')
-    host_cwd: str | None = field(metadata={}, default=None)
-    ident: str | None = field(metadata={}, default=None)
-    json_mode: bool = field(metadata={}, default=False)
-    keepalive_seconds: int | None = field(metadata={}, default=None)
-    passwords: dict[str, str] | None = field(metadata={}, default=None)
-    process_isolation: bool = field(metadata={}, default=False)
-    process_isolation_executable: str = field(metadata={}, default=defaults.default_process_isolation_executable)
-    project_dir: str | None = field(metadata={}, default=None)
-    quiet: bool = field(metadata={}, default=False)
-    rotate_artifacts: int = field(metadata={}, default=0)
-    settings: dict | None = field(metadata={}, default=None)
-    ssh_key: str | None = field(metadata={}, default=None)
-    suppress_env_files: bool = field(metadata={}, default=False)
-    timeout: int | None = field(metadata={}, default=None)
+    artifact_dir: str | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
+    check_job_event_data: bool = False
+    container_auth_data: dict[str, str] | None = None
+    container_image: str = ""
+    container_options: list[str] | None = None
+    container_volume_mounts: list[str] | None = None
+    container_workdir: str | None = None
+    envvars: dict[str, Any] | None = None
+    fact_cache: str | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
+    fact_cache_type: str = 'jsonfile'
+    host_cwd: str | None = None
+    ident: str | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
+    json_mode: bool = False
+    keepalive_seconds: int | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
+    passwords: dict[str, str] | None = None
+    process_isolation: bool = False
+    process_isolation_executable: str = defaults.default_process_isolation_executable
+    project_dir: str | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
+    quiet: bool = False
+    rotate_artifacts: int = 0
+    settings: dict | None = None
+    ssh_key: str | None = None
+    suppress_env_files: bool = False
+    timeout: int | None = None
 
-    event_handler: Callable[[dict], None] | None = None
-    status_handler: Callable[[dict, BaseConfig], bool] | None = None
-    artifacts_handler: Callable[[str], None] | None = None
-    cancel_callback: Callable[[], bool] | None = None
-    finished_callback: Callable[[BaseConfig], None] | None = None
+    event_handler: Callable[[dict], None] | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
+    status_handler: Callable[[dict, BaseConfig], bool] | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
+    artifacts_handler: Callable[[str], None] | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
+    cancel_callback: Callable[[], bool] | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
+    finished_callback: Callable[[BaseConfig], None] | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
 
     _CONTAINER_ENGINES = ('docker', 'podman')
 

@@ -735,3 +735,25 @@ def test_containerization_settings(tmp_path, runtime, mocker):
         ['my_container', 'ansible-playbook', '-i', '/runner/inventory', 'main.yaml']
 
     assert expected_command_start == rc.command
+
+
+def test_streamable_attributes_all_defaults():
+    """Test that all default values return an empty dict."""
+    rc = RunnerConfig()
+    assert not rc.streamable_attributes()
+
+
+def test_streamable_attributes_non_default(tmp_path):
+    """Test that non-default, streamable values are returned."""
+    rc = RunnerConfig(private_data_dir=str(tmp_path),
+                      keepalive_seconds=10,
+                      host_pattern="hostA,",
+                      json_mode=True,
+                      verbosity=3)
+
+    # Don't expect private_data_dir or keepalive_seconds since they are not streamable.
+    assert rc.streamable_attributes() == {
+        "host_pattern": "hostA,",
+        "json_mode": True,
+        "verbosity": 3,
+    }

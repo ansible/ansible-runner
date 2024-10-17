@@ -25,7 +25,6 @@ import json
 import sys
 import threading
 import logging
-from dataclasses import asdict
 
 from ansible_runner import output
 from ansible_runner._internal._dump_artifacts import dump_artifacts
@@ -90,18 +89,15 @@ def init_runner(
         config.cancel_callback = signal_handler()
 
     if streamer == 'transmit':
-        kwargs = asdict(config)
-        stream_transmitter = Transmitter(only_transmit_kwargs, _output=_output, **kwargs)
+        stream_transmitter = Transmitter(config, only_transmit_kwargs, _output=_output)
         return stream_transmitter
 
     if streamer == 'worker':
-        kwargs = asdict(config)
-        stream_worker = Worker(_input=_input, _output=_output, **kwargs)
+        stream_worker = Worker(config, _input=_input, _output=_output)
         return stream_worker
 
     if streamer == 'process':
-        kwargs = asdict(config)
-        stream_processor = Processor(_input=_input, **kwargs)
+        stream_processor = Processor(config, _input=_input)
         return stream_processor
 
     if config.process_isolation:

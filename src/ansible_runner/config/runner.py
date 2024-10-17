@@ -152,18 +152,27 @@ class RunnerConfig(BaseConfig):
     def streamable_attributes(self) -> dict[str, Any]:
         """Get the set of streamable attributes that have a value that is different from the default.
 
-        The field metadata indicates if the attribute is streamable. By default, an attribute
+        The field metadata indicates if the attribute is streamable from Transmit. By default, an attribute
         is considered streamable (must be explicitly disabled).
 
         :return: A dict of attribute names and their values.
         """
         retval = {}
         for field_obj in fields(self):
-            if field_obj.metadata and not field_obj.metadata.get(MetaValues.STREAMABLE, True):
+            if field_obj.metadata and not field_obj.metadata.get(MetaValues.TRANSMIT, True):
                 continue
             current_value = getattr(self, field_obj.name)
-            if not field_obj.default == current_value:
-                retval[field_obj.name] = current_value
+
+            if field_obj.default == current_value:
+                continue
+
+            # Treat an empty current value (e.g., {} or "") as the same as a default of None to prevent
+            # streaming unnecessary empty values.
+            if field_obj.default is None and current_value in ({}, "", []):
+                continue
+
+            retval[field_obj.name] = current_value
+
         return retval
 
     def prepare(self):

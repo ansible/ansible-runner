@@ -5,7 +5,6 @@ import json
 import os
 import stat
 import sys
-import tempfile
 import uuid
 import traceback
 
@@ -15,10 +14,10 @@ from threading import Event, RLock, Thread
 from typing import BinaryIO
 
 import ansible_runner
+from ansible_runner.config.runner import RunnerConfig
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.loader import ArtifactLoader
 import ansible_runner.plugins
-from ansible_runner.utils import register_for_cleanup
 from ansible_runner.utils.streaming import stream_dir, unstream_dir
 
 
@@ -38,16 +37,14 @@ class MockConfig:
 
 
 class Transmitter:
-    def __init__(self, only_transmit_kwargs: bool, _output: BinaryIO | None, **kwargs):
+    def __init__(self, config: RunnerConfig, only_transmit_kwargs: bool = False, _output: BinaryIO | None = None):
         if _output is None:
             _output = sys.stdout.buffer
         self._output = _output
-        self.private_data_dir = os.path.abspath(kwargs['private_data_dir'])
+        self.private_data_dir = os.path.abspath(config.private_data_dir) if config.private_data_dir else ""
         self.only_transmit_kwargs = only_transmit_kwargs
-        if 'keepalive_seconds' in kwargs:
-            kwargs.pop('keepalive_seconds')  # don't confuse older runners with this Worker-only arg
 
-        self.kwargs = kwargs
+        self.kwargs = config.streamable_attributes()
 
         self.status = "unstarted"
         self.rc = None
@@ -70,12 +67,13 @@ class Transmitter:
 
 
 class Worker:
-    def __init__(self, _input=None, _output=None, keepalive_seconds: float | None = None, **kwargs):
+    def __init__(self, config: RunnerConfig, _input=None, _output=None):
         if _input is None:
             _input = sys.stdin.buffer
         if _output is None:
             _output = sys.stdout.buffer
 
+        keepalive_seconds: float | int | None = config.keepalive_seconds
         if keepalive_seconds is None:  # if we didn't get an explicit int value, fall back to envvar
             # FIXME: emit/log a warning and silently continue if this value won't parse
             keepalive_seconds = float(os.environ.get('ANSIBLE_RUNNER_KEEPALIVE_SECONDS', 0))
@@ -88,14 +86,10 @@ class Worker:
         self._input = _input
         self._output = _output
 
-        self.kwargs = kwargs
+        self.kwargs = config.streamable_attributes()
         self.job_kwargs = None
 
-        private_data_dir = kwargs.get('private_data_dir')
-        if private_data_dir is None:
-            private_data_dir = tempfile.mkdtemp()
-            register_for_cleanup(private_data_dir)
-        self.private_data_dir = private_data_dir
+        self.private_data_dir = config.private_data_dir
 
         self.status = "unstarted"
         self.rc = None
@@ -251,43 +245,36 @@ class Worker:
 
 
 class Processor:
-    def __init__(self, _input=None, status_handler=None, event_handler=None,
-                 artifacts_handler=None, cancel_callback=None, finished_callback=None, **kwargs):
+    def __init__(self, config: RunnerConfig, _input: BinaryIO | None = None):
         if _input is None:
             _input = sys.stdin.buffer
         self._input = _input
 
-        self.quiet = kwargs.get('quiet')
+        self.quiet = config.quiet
 
-        private_data_dir = kwargs.get('private_data_dir')
-        if private_data_dir is None:
-            private_data_dir = tempfile.mkdtemp()
-        self.private_data_dir = private_data_dir
+        self.private_data_dir: str = config.private_data_dir or ''
         self._loader = ArtifactLoader(self.private_data_dir)
 
-        settings = kwargs.get('settings')
+        settings = config.settings
         if settings is None:
             try:
-                settings = self._loader.load_file('env/settings', Mapping)
+                settings = self._loader.load_file('env/settings', Mapping)  # type: ignore
             except ConfigurationError:
                 settings = {}
         self.config = MockConfig(settings)
 
-        if kwargs.get('artifact_dir'):
-            self.artifact_dir = os.path.abspath(kwargs.get('artifact_dir'))
-        else:
-            project_artifacts = os.path.abspath(os.path.join(self.private_data_dir, 'artifacts'))
-            if ident := kwargs.get('ident'):
-                self.artifact_dir = os.path.join(project_artifacts, str(ident))
-            else:
-                self.artifact_dir = project_artifacts
+        self.artifact_dir = config.artifact_dir
+        if self.artifact_dir and not config.ident_set_by_user:
+            # If an ident value was not explicitly supplied, for some reason, we don't bother with
+            # using a subdir named with the ident value.
+            self.artifact_dir, _ = os.path.split(self.artifact_dir)
 
-        self.status_handler = status_handler
-        self.event_handler = event_handler
-        self.artifacts_handler = artifacts_handler
+        self.status_handler = config.status_handler
+        self.event_handler = config.event_handler
+        self.artifacts_handler = config.artifacts_handler
 
-        self.cancel_callback = cancel_callback  # FIXME: unused
-        self.finished_callback = finished_callback
+        self.cancel_callback = config.cancel_callback  # FIXME: unused
+        self.finished_callback = config.finished_callback
 
         self.status = "unstarted"
         self.rc = None

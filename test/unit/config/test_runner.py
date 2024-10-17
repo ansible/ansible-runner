@@ -749,9 +749,11 @@ def test_streamable_attributes_non_default(tmp_path):
                       keepalive_seconds=10,
                       host_pattern="hostA,",
                       json_mode=True,
+                      playbook=[],
                       verbosity=3)
 
     # Don't expect private_data_dir or keepalive_seconds since they are not streamable.
+    # Don't expect playbook since it is an empty value.
     assert rc.streamable_attributes() == {
         "host_pattern": "hostA,",
         "json_mode": True,

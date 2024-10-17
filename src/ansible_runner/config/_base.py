@@ -64,7 +64,7 @@ class BaseExecutionMode(Enum):
 
 # Metadata string values
 class MetaValues(Enum):
-    STREAMABLE = 'streamable'
+    TRANSMIT = 'transmit'
 
 
 @dataclass
@@ -82,26 +82,26 @@ class BaseConfig:
     # No other config objects make use of positional parameters, so this should be fine.
     #
     # Example use case: RunnerConfig("/tmp/demo", playbook="main.yml", ...)
-    private_data_dir: str | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
+    private_data_dir: str | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
 
-    artifact_dir: str | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
+    artifact_dir: str | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
     check_job_event_data: bool = False
     container_auth_data: dict[str, str] | None = None
-    container_image: str = ""
+    container_image: str | None = None
     container_options: list[str] | None = None
     container_volume_mounts: list[str] | None = None
     container_workdir: str | None = None
     envvars: dict[str, Any] | None = None
-    fact_cache: str | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
+    fact_cache: str | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
     fact_cache_type: str = 'jsonfile'
     host_cwd: str | None = None
-    ident: str | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
+    ident: str | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
     json_mode: bool = False
-    keepalive_seconds: int | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
+    keepalive_seconds: int | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
     passwords: dict[str, str] | None = None
     process_isolation: bool = False
     process_isolation_executable: str = defaults.default_process_isolation_executable
-    project_dir: str | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
+    project_dir: str | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
     quiet: bool = False
     rotate_artifacts: int = 0
     settings: dict | None = None
@@ -109,11 +109,11 @@ class BaseConfig:
     suppress_env_files: bool = False
     timeout: int | None = None
 
-    event_handler: Callable[[dict], None] | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
-    status_handler: Callable[[dict, BaseConfig], bool] | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
-    artifacts_handler: Callable[[str], None] | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
-    cancel_callback: Callable[[], bool] | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
-    finished_callback: Callable[[BaseConfig], None] | None = field(metadata={MetaValues.STREAMABLE: False}, default=None)
+    event_handler: Callable[[dict], None] | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+    status_handler: Callable[[dict, BaseConfig], bool] | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+    artifacts_handler: Callable[[str], None] | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+    cancel_callback: Callable[[], bool] | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+    finished_callback: Callable[[BaseConfig], None] | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
 
     _CONTAINER_ENGINES = ('docker', 'podman')
 
@@ -123,6 +123,8 @@ class BaseConfig:
         self.command: list[str] = []
         self.registry_auth_path: str
         self.container_name: str = ""  # like other properties, not accurate until prepare is called
+        if self.container_image is None:
+            self.container_image = ''
 
         # ignore this for now since it's worker-specific and would just trip up old runners
         # self.keepalive_seconds = keepalive_seconds
@@ -139,6 +141,7 @@ class BaseConfig:
                 raise ConfigurationError(f"Unable to create private_data_dir {self.private_data_dir}") from error
         else:
             self.private_data_dir = tempfile.mkdtemp(prefix=defaults.AUTO_CREATE_NAMING, dir=defaults.AUTO_CREATE_DIR)
+            register_for_cleanup(self.private_data_dir)
 
         if self.artifact_dir is None:
             self.artifact_dir = os.path.join(self.private_data_dir, 'artifacts')
@@ -147,7 +150,9 @@ class BaseConfig:
 
         if self.ident is None:
             self.ident = str(uuid4())
+            self.ident_set_by_user = False
         else:
+            self.ident_set_by_user = True
             self.ident = str(self.ident)
 
         self.artifact_dir = os.path.join(self.artifact_dir, self.ident)
@@ -185,7 +190,6 @@ class BaseConfig:
         Manages reading environment metadata files under ``private_data_dir`` and merging/updating
         with existing values so the :py:class:`ansible_runner.runner.Runner` object can read and use them easily
         """
-
         if self.ident is None:
             raise ConfigurationError("ident value cannot be None")
         if self.artifact_dir is None:
@@ -519,6 +523,9 @@ class BaseConfig:
 
         if self.private_data_dir is None:
             raise ConfigurationError("private_data_dir value cannot be None")
+
+        if self.container_image is None:
+            raise ConfigurationError("container_image value cannot be None")
 
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm'])

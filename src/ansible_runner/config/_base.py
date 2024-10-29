@@ -64,6 +64,7 @@ class BaseExecutionMode(Enum):
 
 # Metadata string values
 class MetaValues(Enum):
+    # When True, value is emitted from Transmitter to send to Worker.
     TRANSMIT = 'transmit'
 
 

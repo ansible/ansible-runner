@@ -27,7 +27,7 @@ class TestStreamingUsage:
         self.status_data = status_data
 
     def get_job_kwargs(self, job_type):
-        """For this test scenaro, the ansible-runner interface kwargs"""
+        """For this test scenario, the ansible-runner interface kwargs"""
         if job_type == 'run':
             job_kwargs = {'playbook': 'debug.yml'}
         else:
@@ -75,7 +75,7 @@ class TestStreamingUsage:
         outgoing_buffer_file.touch()
         outgoing_buffer = outgoing_buffer_file.open('b+r')
 
-        config = RunnerConfig(private_data_dir=transmit_dir, **job_kwargs)
+        config = RunnerConfig(private_data_dir=str(transmit_dir), **job_kwargs)
         transmitter = Transmitter(config, _output=outgoing_buffer)
 
         for key, value in job_kwargs.items():
@@ -96,7 +96,7 @@ class TestStreamingUsage:
 
         outgoing_buffer.seek(0)
 
-        rc = RunnerConfig(private_data_dir=worker_dir)
+        rc = RunnerConfig(private_data_dir=str(worker_dir))
         worker = Worker(rc, _input=outgoing_buffer, _output=incoming_buffer)
         worker.run()
 
@@ -105,7 +105,7 @@ class TestStreamingUsage:
 
         incoming_buffer.seek(0)  # again, be kind, rewind
 
-        rc = RunnerConfig(private_data_dir=process_dir)
+        rc = RunnerConfig(private_data_dir=str(process_dir))
         processor = Processor(rc, _input=incoming_buffer)
         processor.run()
 
@@ -161,7 +161,7 @@ class TestStreamingUsage:
 
         worker_start_time = time.time()
 
-        rc = RunnerConfig(private_data_dir=worker_dir, keepalive_seconds=keepalive_setting)
+        rc = RunnerConfig(private_data_dir=str(worker_dir), keepalive_seconds=keepalive_setting)
         worker = Worker(rc, _input=outgoing_buffer, _output=incoming_buffer)
         worker.run()
 
@@ -172,7 +172,7 @@ class TestStreamingUsage:
         assert not worker._keepalive_thread.is_alive()  # make sure it's dead
 
         incoming_buffer.seek(0)
-        rc = RunnerConfig(private_data_dir=process_dir)
+        rc = RunnerConfig(private_data_dir=str(process_dir))
         Processor(rc, _input=incoming_buffer, ).run()
 
         stdout = self.get_stdout(process_dir)
@@ -352,7 +352,7 @@ def transmit_stream(project_fixtures, tmp_path):
     outgoing_buffer.touch()
 
     transmit_dir = project_fixtures / 'debug'
-    config = RunnerConfig(private_data_dir=transmit_dir, playbook='debug.yml')
+    config = RunnerConfig(private_data_dir=str(transmit_dir), playbook='debug.yml')
 
     with outgoing_buffer.open('wb') as f:
         transmitter = Transmitter(config, only_transmit_kwargs=False, _output=f)
@@ -372,7 +372,7 @@ def worker_stream(transmit_stream, tmp_path):  # pylint: disable=W0621
     worker_dir.mkdir()
     with transmit_stream.open('rb') as out:
         with ingoing_buffer.open('wb') as f:
-            config = RunnerConfig(private_data_dir=worker_dir)
+            config = RunnerConfig(private_data_dir=str(worker_dir))
             worker = Worker(config, _input=out, _output=f)
             status, rc = worker.run()
 
@@ -529,6 +529,6 @@ def test_unparsable_really_big_line_processor(tmp_path):
     ansible_runner.interface.run(
         streamer='process',
         _input=incoming_buffer,
-        private_data_dir=process_dir,
+        private_data_dir=str(process_dir),
         status_handler=status_receiver
     )

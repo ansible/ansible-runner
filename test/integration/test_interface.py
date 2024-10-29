@@ -1,8 +1,11 @@
+import json
 import os
 import shutil
 
 import pytest
 
+from ansible_runner.config.runner import RunnerConfig
+from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.interface import (
     get_ansible_config,
     get_inventory,
@@ -605,3 +608,84 @@ class TestRelativePvtDataDirPaths:
 
         assert r.status == 'successful'
         assert "No inventory was parsed" not in text
+
+
+class TestRunAPIWithConfig:
+    """Test advanced version of the run() interface using a RunnerConfig object"""
+
+    def test_run(self, project_fixtures, tmp_path):
+        """Test running a playbook from pvt data dir"""
+        private_data_dir = project_fixtures / 'debug'
+        config = RunnerConfig(private_data_dir=str(private_data_dir), playbook='debug.yml')
+        r = run(config)
+        assert r.status == 'successful'
+
+    def test_run_with_module(self):
+        """Test running a module adhoc-style"""
+        config = RunnerConfig(module='debug', host_pattern='localhost')
+        r = run(config)
+        assert r.status == 'successful'
+
+    def test_run_with_role(self, project_fixtures):
+        """Test running a role within a pvt data dir"""
+        private_data_dir = project_fixtures / 'debug'
+        config = RunnerConfig(private_data_dir=str(private_data_dir), role='hello_world')
+        res = run(config)
+        with res.stdout as f:
+            stdout = f.read()
+        assert res.rc == 0, stdout
+        assert 'Hello World!' in stdout
+
+    def test_run_empty(self):
+        """No params seems to trigger this same exception in the kwargs-only call"""
+        with pytest.raises(ConfigurationError, match="Runner playbook required when running ansible-playbook"):
+            run()
+
+    @pytest.mark.parametrize(
+        'playbook', (
+            [{'hosts': 'localhost', 'tasks': [{'ping': ''}]}],
+            {'hosts': 'localhost', 'tasks': [{'ping': ''}]},
+        )
+    )
+    def test_run_playbook_data(self, playbook, tmp_path):
+        """Test running a playbook sent as a data object"""
+        config = RunnerConfig(private_data_dir=str(tmp_path), playbook=playbook)
+        r = run(config)
+        assert r.status == 'successful'
+
+    def test_run_transmit(self, project_fixtures, tmp_path):
+        """Test the transmit process from the run() interface"""
+        private_data_dir = project_fixtures / 'debug'
+        outgoing_buffer = tmp_path / 'output'
+        config = RunnerConfig(private_data_dir=str(private_data_dir),
+                              playbook='debug.yml')
+
+        with outgoing_buffer.open("wb") as outfile:
+            run(config,
+                streamer='transmit',
+                only_transmit_kwargs=True,
+                _output=outfile)
+
+        output_string = outgoing_buffer.read_text()
+        data = output_string.split('\n')
+        assert data
+        assert json.loads(data[0]) == {"kwargs": {"playbook": "debug.yml"}}
+
+    def test_run_transmit_empty(self, tmp_path):
+        """Test the transmit process from the run() interface and an empty parameter set.
+
+        The kwargs-style call sends an empty 'kwargs' dict in the case of no params.
+        """
+        outgoing_buffer = tmp_path / 'output'
+        config = RunnerConfig()
+
+        with outgoing_buffer.open("wb") as outfile:
+            run(config,
+                streamer='transmit',
+                only_transmit_kwargs=True,
+                _output=outfile)
+
+        output_string = outgoing_buffer.read_text()
+        data = output_string.split('\n')
+        assert data
+        assert json.loads(data[0]) == {"kwargs": {}}

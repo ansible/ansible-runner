@@ -11,7 +11,6 @@ import traceback
 from collections.abc import Mapping
 from functools import wraps
 from threading import Event, RLock, Thread
-from typing import BinaryIO
 
 import ansible_runner
 from ansible_runner.config.runner import RunnerConfig
@@ -37,10 +36,9 @@ class MockConfig:
 
 
 class Transmitter:
-    def __init__(self, config: RunnerConfig, _output: BinaryIO | None = None):
-        if _output is None:
-            _output = sys.stdout.buffer
-        self._output = _output
+    def __init__(self, config: RunnerConfig):
+        self._output = config.output if config.output else sys.stdout.buffer
+
         self.private_data_dir = os.path.abspath(config.private_data_dir) if config.private_data_dir else ""
         self.only_transmit_kwargs = config.only_transmit_kwargs
 
@@ -67,11 +65,9 @@ class Transmitter:
 
 
 class Worker:
-    def __init__(self, config: RunnerConfig, _input=None, _output=None):
-        if _input is None:
-            _input = sys.stdin.buffer
-        if _output is None:
-            _output = sys.stdout.buffer
+    def __init__(self, config: RunnerConfig):
+        self._input = config.input if config.input else sys.stdin.buffer
+        self._output = config.output if config.output else sys.stdout.buffer
 
         keepalive_seconds: float | int | None = config.keepalive_seconds
         if keepalive_seconds is None:  # if we didn't get an explicit int value, fall back to envvar
@@ -82,9 +78,6 @@ class Worker:
         self._keepalive_thread: Thread | None = None
         self._output_event = Event()
         self._output_lock = RLock()
-
-        self._input = _input
-        self._output = _output
 
         self.kwargs = config.streamable_attributes()
         self.job_kwargs = None
@@ -245,10 +238,8 @@ class Worker:
 
 
 class Processor:
-    def __init__(self, config: RunnerConfig, _input: BinaryIO | None = None):
-        if _input is None:
-            _input = sys.stdin.buffer
-        self._input = _input
+    def __init__(self, config: RunnerConfig):
+        self._input = config.input if config.input else sys.stdin.buffer
 
         self.quiet = config.quiet
 

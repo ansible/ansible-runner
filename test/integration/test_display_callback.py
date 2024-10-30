@@ -37,7 +37,7 @@ def executor(tmp_path, request):
         playbook=yaml.safe_load(playbook)
     )
 
-    r = init_runner(rc, '', False)
+    r = init_runner(rc, '')
 
     return r
 
@@ -365,7 +365,7 @@ def test_output_when_given_invalid_playbook(tmp_path):
         envvars={"ANSIBLE_DEPRECATION_WARNINGS": "False"},
         playbook=os.path.join(private_data_dir, 'fake_playbook.yml')
     )
-    ex = init_runner(rc, '', False)
+    ex = init_runner(rc, '')
 
     ex.run()
     with ex.stdout as f:
@@ -402,7 +402,7 @@ def test_output_when_given_non_playbook_script(tmp_path):
         inventory='localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"',
         envvars={"ANSIBLE_DEPRECATION_WARNINGS": "False"}
     )
-    ex = init_runner(rc, '', False)
+    ex = init_runner(rc, '')
 
     ex.run()
 

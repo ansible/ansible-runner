@@ -24,12 +24,12 @@ import json
 import logging
 import os
 import shlex
+import shutil
 import stat
 import tempfile
-import shutil
 
 from dataclasses import dataclass, field, fields
-from typing import Any
+from typing import Any, BinaryIO
 
 from ansible_runner import output
 from ansible_runner.config._base import BaseConfig, BaseExecutionMode, MetaValues
@@ -66,6 +66,9 @@ class RunnerConfig(BaseConfig):
     >>> r.run()
 
     """
+
+    _input: BinaryIO | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+    _output: BinaryIO | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
 
     # 'binary' comes from the --binary CLI opt for an alternative ansible command path
     binary: str | None = None
@@ -110,7 +113,7 @@ class RunnerConfig(BaseConfig):
 
     @property
     def cmdline_args(self):
-        """ Alias for backward compatibility. """
+        """Alias for backward compatibility."""
         return self.cmdline
 
     @cmdline_args.setter
@@ -119,7 +122,7 @@ class RunnerConfig(BaseConfig):
 
     @property
     def directory_isolation_path(self):
-        """ Alias for backward compatibility. """
+        """Alias for backward compatibility."""
         return self.directory_isolation_base_path
 
     @directory_isolation_path.setter
@@ -128,8 +131,7 @@ class RunnerConfig(BaseConfig):
 
     @property
     def hosts(self):
-        """
-        Alias for backward compatibility.
+        """Alias for backward compatibility.
 
         dump_artifacts() makes reference to 'hosts' kwargs (API) value, even though it
         is undocumented as an API parameter to interface.run(). We make it equivalent
@@ -143,12 +145,30 @@ class RunnerConfig(BaseConfig):
 
     @property
     def extra_vars(self):
-        """ Alias for backward compatibility. """
+        """Alias for backward compatibility."""
         return self.extravars
 
     @extra_vars.setter
     def extra_vars(self, value):
         self.extravars = value
+
+    # Create internal aliases for '_input' and '_output' attributes since those are named like
+    # private attributes, yet they can be set from our public interfaces... go figure.
+    @property
+    def input(self):
+        return self._input
+
+    @input.setter
+    def input(self, value):
+        self._input = value
+
+    @property
+    def output(self):
+        return self._output
+
+    @output.setter
+    def output(self, value):
+        self._output = value
 
     def streamable_attributes(self) -> dict[str, Any]:
         """Get the set of streamable attributes that have a value that is different from the default.

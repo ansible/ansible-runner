@@ -73,44 +73,42 @@ class TestStreamingUsage:
 
         outgoing_buffer_file = tmp_path / 'buffer_out'
         outgoing_buffer_file.touch()
-        outgoing_buffer = outgoing_buffer_file.open('b+r')
 
-        config = RunnerConfig(private_data_dir=str(transmit_dir), **job_kwargs)
-        transmitter = Transmitter(config, _output=outgoing_buffer)
+        with outgoing_buffer_file.open('b+r') as outgoing_buffer:
+            config = RunnerConfig(private_data_dir=str(transmit_dir), _output=outgoing_buffer, **job_kwargs)
+            transmitter = Transmitter(config)
 
-        for key, value in job_kwargs.items():
-            assert transmitter.kwargs.get(key, '') == value
+            for key, value in job_kwargs.items():
+                assert transmitter.kwargs.get(key, '') == value
 
-        status, rc = transmitter.run()
-        assert rc in (None, 0)
-        assert status == 'unstarted'
+            status, rc = transmitter.run()
+            assert rc in (None, 0)
+            assert status == 'unstarted'
 
-        outgoing_buffer.seek(0)
-        sent = outgoing_buffer.read()
-        assert sent  # should not be blank at least
-        assert b'zipfile' in sent
+            outgoing_buffer.seek(0)
+            sent = outgoing_buffer.read()
+            assert sent  # should not be blank at least
+            assert b'zipfile' in sent
 
-        incoming_buffer_file = tmp_path / 'buffer_in'
-        incoming_buffer_file.touch()
-        incoming_buffer = incoming_buffer_file.open('b+r')
+            incoming_buffer_file = tmp_path / 'buffer_in'
+            incoming_buffer_file.touch()
 
-        outgoing_buffer.seek(0)
+            with incoming_buffer_file.open('b+r') as incoming_buffer:
+                outgoing_buffer.seek(0)
 
-        rc = RunnerConfig(private_data_dir=str(worker_dir))
-        worker = Worker(rc, _input=outgoing_buffer, _output=incoming_buffer)
-        worker.run()
+                rc = RunnerConfig(private_data_dir=str(worker_dir), _input=outgoing_buffer, _output=incoming_buffer)
+                worker = Worker(rc)
+                worker.run()
 
-        outgoing_buffer.seek(0)
-        assert set(os.listdir(worker_dir)) == {'artifacts', 'inventory', 'project', 'env'}, outgoing_buffer.read()
+                outgoing_buffer.seek(0)
+                assert set(os.listdir(worker_dir)) == {'artifacts', 'inventory', 'project', 'env'}, outgoing_buffer.read()
 
-        incoming_buffer.seek(0)  # again, be kind, rewind
+                incoming_buffer.seek(0)  # again, be kind, rewind
 
-        rc = RunnerConfig(private_data_dir=str(process_dir))
-        processor = Processor(rc, _input=incoming_buffer)
-        processor.run()
+                rc = RunnerConfig(private_data_dir=str(process_dir), _input=incoming_buffer)
+                processor = Processor(rc)
+                processor.run()
 
-        outgoing_buffer.close()
-        incoming_buffer.close()
         self.check_artifacts(str(process_dir), job_type)
 
     @pytest.mark.parametrize("keepalive_setting", [
@@ -150,20 +148,19 @@ class TestStreamingUsage:
                               extravars={'sleep_interval': 2},
                               verbosity=verbosity,
                               only_transmit_kwargs=False,
+                              _output=outgoing_buffer,
                               )
 
-        status, rc = Transmitter(
-            config,
-            _output=outgoing_buffer,
-        ).run()
+        status, rc = Transmitter(config).run()
         assert rc in (None, 0)
         assert status == 'unstarted'
         outgoing_buffer.seek(0)
 
         worker_start_time = time.time()
 
-        rc = RunnerConfig(private_data_dir=str(worker_dir), keepalive_seconds=keepalive_setting)
-        worker = Worker(rc, _input=outgoing_buffer, _output=incoming_buffer)
+        rc = RunnerConfig(private_data_dir=str(worker_dir), keepalive_seconds=keepalive_setting,
+                          _input=outgoing_buffer, _output=incoming_buffer)
+        worker = Worker(rc)
         worker.run()
 
         assert time.time() - worker_start_time > 2.0  # task sleeps for 2 second
@@ -173,8 +170,8 @@ class TestStreamingUsage:
         assert not worker._keepalive_thread.is_alive()  # make sure it's dead
 
         incoming_buffer.seek(0)
-        rc = RunnerConfig(private_data_dir=str(process_dir))
-        Processor(rc, _input=incoming_buffer, ).run()
+        rc = RunnerConfig(private_data_dir=str(process_dir), _input=incoming_buffer)
+        Processor(rc).run()
 
         stdout = self.get_stdout(process_dir)
         assert 'Sleep for a specified interval' in stdout
@@ -353,13 +350,14 @@ def transmit_stream(project_fixtures, tmp_path):
     outgoing_buffer.touch()
 
     transmit_dir = project_fixtures / 'debug'
-    config = RunnerConfig(private_data_dir=str(transmit_dir),
-                          playbook='debug.yml',
-                          only_transmit_kwargs=False,
-                          )
 
     with outgoing_buffer.open('wb') as f:
-        transmitter = Transmitter(config, _output=f)
+        config = RunnerConfig(private_data_dir=str(transmit_dir),
+                              playbook='debug.yml',
+                              only_transmit_kwargs=False,
+                              _output=f,
+                              )
+        transmitter = Transmitter(config)
         status, rc = transmitter.run()
 
         assert rc in (None, 0)
@@ -376,8 +374,8 @@ def worker_stream(transmit_stream, tmp_path):  # pylint: disable=W0621
     worker_dir.mkdir()
     with transmit_stream.open('rb') as out:
         with ingoing_buffer.open('wb') as f:
-            config = RunnerConfig(private_data_dir=str(worker_dir))
-            worker = Worker(config, _input=out, _output=f)
+            config = RunnerConfig(private_data_dir=str(worker_dir), _input=out, _output=f)
+            worker = Worker(config)
             status, rc = worker.run()
 
             assert rc in (None, 0)

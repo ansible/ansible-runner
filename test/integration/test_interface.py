@@ -657,13 +657,14 @@ class TestRunAPIWithConfig:
         """Test the transmit process from the run() interface"""
         private_data_dir = project_fixtures / 'debug'
         outgoing_buffer = tmp_path / 'output'
-        config = RunnerConfig(private_data_dir=str(private_data_dir),
-                              playbook='debug.yml',
-                              only_transmit_kwargs=True,
-                              )
 
         with outgoing_buffer.open("wb") as outfile:
-            run(config, streamer='transmit', _output=outfile)
+            config = RunnerConfig(private_data_dir=str(private_data_dir),
+                                  playbook='debug.yml',
+                                  only_transmit_kwargs=True,
+                                  _output=outfile,
+                                  )
+            run(config, streamer='transmit')
 
         output_string = outgoing_buffer.read_text()
         data = output_string.split('\n')
@@ -676,12 +677,10 @@ class TestRunAPIWithConfig:
         The kwargs-style call sends an empty 'kwargs' dict in the case of no params.
         """
         outgoing_buffer = tmp_path / 'output'
-        config = RunnerConfig()
 
         with outgoing_buffer.open("wb") as outfile:
-            run(config,
-                streamer='transmit',
-                _output=outfile)
+            config = RunnerConfig(_output=outfile)
+            run(config, streamer='transmit')
 
         output_string = outgoing_buffer.read_text()
         data = output_string.split('\n')

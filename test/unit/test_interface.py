@@ -8,7 +8,7 @@ def test_default_callback_set(mocker):
     mocker.patch('ansible_runner.interface.signal_handler', side_effect=AttributeError('Raised intentionally'))
 
     with pytest.raises(AttributeError, match='Raised intentionally'):
-        init_runner(RunnerConfig(), "", False)
+        init_runner(RunnerConfig(), "")
 
 
 def test_set_cancel_callback(mocker):
@@ -21,6 +21,6 @@ def test_set_cancel_callback(mocker):
 
     with pytest.raises(AttributeError, match='Raised intentionally'):
         rc = RunnerConfig(cancel_callback=custom_cancel_callback)
-        init_runner(rc, "", False)
+        init_runner(rc, "")
 
     assert mock_runner.call_args.kwargs['cancel_callback'] is custom_cancel_callback

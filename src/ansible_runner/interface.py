@@ -19,7 +19,6 @@
 #
 from __future__ import annotations
 
-import io
 import os
 import json
 import sys
@@ -44,11 +43,7 @@ from ansible_runner.utils import (
 logging.getLogger('ansible-runner').addHandler(logging.NullHandler())
 
 
-def init_runner(
-        config: RunnerConfig,
-        streamer: str,
-        _input: io.FileIO | None = None,
-        _output: io.FileIO | None = None):
+def init_runner(config: RunnerConfig, streamer: str):
     '''
     Initialize the Runner() instance
 
@@ -88,15 +83,15 @@ def init_runner(
         config.cancel_callback = signal_handler()
 
     if streamer == 'transmit':
-        stream_transmitter = Transmitter(config, _output=_output)
+        stream_transmitter = Transmitter(config)
         return stream_transmitter
 
     if streamer == 'worker':
-        stream_worker = Worker(config, _input=_input, _output=_output)
+        stream_worker = Worker(config)
         return stream_worker
 
     if streamer == 'process':
-        stream_processor = Processor(config, _input=_input)
+        stream_processor = Processor(config)
         return stream_processor
 
     if config.process_isolation:
@@ -120,8 +115,6 @@ def run(config: RunnerConfig | None = None,
         debug: bool = False,
         logfile: str = "",
         ignore_logging: bool = True,
-        _input: io.FileIO | None = None,
-        _output: io.FileIO | None = None,
         **kwargs):
     '''
     Run an Ansible Runner task in the foreground and return a Runner object when complete.
@@ -169,8 +162,8 @@ def run(config: RunnerConfig | None = None,
                     (based on ``runner_mode`` selected) while executing command. It the timeout is triggered it will force cancel the
                     execution.
     :param str streamer: Optionally invoke ansible-runner as one of the steps in the streaming pipeline
-    :param io.FileIO _input: An optional file or file-like object for use as input in a streaming pipeline
-    :param io.FileIO _output: An optional file or file-like object for use as output in a streaming pipeline
+    :param typing.BinaryIO _input: An optional file or file-like object for use as input in a streaming pipeline
+    :param typing.BinaryIO _output: An optional file or file-like object for use as output in a streaming pipeline
     :param Callable event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
     :param Callable cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
     :param Callable finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
@@ -206,10 +199,7 @@ def run(config: RunnerConfig | None = None,
     if not config:
         config = RunnerConfig(**kwargs)
 
-    r = init_runner(
-        config=config, streamer=streamer,
-        _input=_input, _output=_output,
-    )
+    r = init_runner(config=config, streamer=streamer)
     r.run()
     return r
 
@@ -220,8 +210,6 @@ def run_async(
         debug: bool = False,
         logfile: str = "",
         ignore_logging: bool = True,
-        _input: io.FileIO | None = None,
-        _output: io.FileIO | None = None,
         **kwargs):
     '''
     Runs an Ansible Runner task in the background which will start immediately. Returns the thread object and a Runner object.
@@ -238,10 +226,7 @@ def run_async(
     if not config:
         config = RunnerConfig(**kwargs)
 
-    r = init_runner(
-        config=config, streamer=streamer,
-        _input=_input, _output=_output,
-    )
+    r = init_runner(config=config, streamer=streamer)
     runner_thread = threading.Thread(target=r.run)
     runner_thread.start()
     return runner_thread, r

@@ -148,11 +148,12 @@ class TestStreamingUsage:
         config = RunnerConfig(private_data_dir=project_fixtures / 'sleep',
                               playbook='sleep.yml',
                               extravars={'sleep_interval': 2},
-                              verbosity=verbosity)
+                              verbosity=verbosity,
+                              only_transmit_kwargs=False,
+                              )
 
         status, rc = Transmitter(
             config,
-            only_transmit_kwargs=False,
             _output=outgoing_buffer,
         ).run()
         assert rc in (None, 0)
@@ -352,10 +353,13 @@ def transmit_stream(project_fixtures, tmp_path):
     outgoing_buffer.touch()
 
     transmit_dir = project_fixtures / 'debug'
-    config = RunnerConfig(private_data_dir=str(transmit_dir), playbook='debug.yml')
+    config = RunnerConfig(private_data_dir=str(transmit_dir),
+                          playbook='debug.yml',
+                          only_transmit_kwargs=False,
+                          )
 
     with outgoing_buffer.open('wb') as f:
-        transmitter = Transmitter(config, only_transmit_kwargs=False, _output=f)
+        transmitter = Transmitter(config, _output=f)
         status, rc = transmitter.run()
 
         assert rc in (None, 0)

@@ -37,12 +37,12 @@ class MockConfig:
 
 
 class Transmitter:
-    def __init__(self, config: RunnerConfig, only_transmit_kwargs: bool = False, _output: BinaryIO | None = None):
+    def __init__(self, config: RunnerConfig, _output: BinaryIO | None = None):
         if _output is None:
             _output = sys.stdout.buffer
         self._output = _output
         self.private_data_dir = os.path.abspath(config.private_data_dir) if config.private_data_dir else ""
-        self.only_transmit_kwargs = only_transmit_kwargs
+        self.only_transmit_kwargs = config.only_transmit_kwargs
 
         self.kwargs = config.streamable_attributes()
 

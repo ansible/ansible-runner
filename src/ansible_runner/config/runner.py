@@ -28,7 +28,7 @@ import stat
 import tempfile
 import shutil
 
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from typing import Any
 
 from ansible_runner import output
@@ -80,6 +80,7 @@ class RunnerConfig(BaseConfig):
     module_args: str | None = None
     omit_event_data: bool = False
     only_failed_event_data: bool = False
+    only_transmit_kwargs: bool = field(metadata={MetaValues.TRANSMIT: False}, default=False)
     playbook: str | dict | list | None = None
     process_isolation_hide_paths: str | list | None = None
     process_isolation_ro_paths: str | list | None = None

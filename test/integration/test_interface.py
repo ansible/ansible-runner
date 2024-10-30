@@ -658,13 +658,12 @@ class TestRunAPIWithConfig:
         private_data_dir = project_fixtures / 'debug'
         outgoing_buffer = tmp_path / 'output'
         config = RunnerConfig(private_data_dir=str(private_data_dir),
-                              playbook='debug.yml')
+                              playbook='debug.yml',
+                              only_transmit_kwargs=True,
+                              )
 
         with outgoing_buffer.open("wb") as outfile:
-            run(config,
-                streamer='transmit',
-                only_transmit_kwargs=True,
-                _output=outfile)
+            run(config, streamer='transmit', _output=outfile)
 
         output_string = outgoing_buffer.read_text()
         data = output_string.split('\n')
@@ -682,7 +681,6 @@ class TestRunAPIWithConfig:
         with outgoing_buffer.open("wb") as outfile:
             run(config,
                 streamer='transmit',
-                only_transmit_kwargs=True,
                 _output=outfile)
 
         output_string = outgoing_buffer.read_text()

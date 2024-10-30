@@ -47,7 +47,6 @@ logging.getLogger('ansible-runner').addHandler(logging.NullHandler())
 def init_runner(
         config: RunnerConfig,
         streamer: str,
-        only_transmit_kwargs: bool,
         _input: io.FileIO | None = None,
         _output: io.FileIO | None = None):
     '''
@@ -89,7 +88,7 @@ def init_runner(
         config.cancel_callback = signal_handler()
 
     if streamer == 'transmit':
-        stream_transmitter = Transmitter(config, only_transmit_kwargs, _output=_output)
+        stream_transmitter = Transmitter(config, _output=_output)
         return stream_transmitter
 
     if streamer == 'worker':
@@ -123,7 +122,6 @@ def run(config: RunnerConfig | None = None,
         ignore_logging: bool = True,
         _input: io.FileIO | None = None,
         _output: io.FileIO | None = None,
-        only_transmit_kwargs: bool = False,
         **kwargs):
     '''
     Run an Ansible Runner task in the foreground and return a Runner object when complete.
@@ -210,7 +208,6 @@ def run(config: RunnerConfig | None = None,
 
     r = init_runner(
         config=config, streamer=streamer,
-        only_transmit_kwargs=only_transmit_kwargs,
         _input=_input, _output=_output,
     )
     r.run()
@@ -225,7 +222,6 @@ def run_async(
         ignore_logging: bool = True,
         _input: io.FileIO | None = None,
         _output: io.FileIO | None = None,
-        only_transmit_kwargs: bool = False,
         **kwargs):
     '''
     Runs an Ansible Runner task in the background which will start immediately. Returns the thread object and a Runner object.
@@ -244,7 +240,6 @@ def run_async(
 
     r = init_runner(
         config=config, streamer=streamer,
-        only_transmit_kwargs=only_transmit_kwargs,
         _input=_input, _output=_output,
     )
     runner_thread = threading.Thread(target=r.run)

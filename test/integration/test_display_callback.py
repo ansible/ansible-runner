@@ -325,7 +325,7 @@ def test_callback_plugin_records_notify_events(executor, playbook):  # pylint: d
   connection: local
   hosts: all
   vars:
-    - pw: SENSITIVE
+    pw: SENSITIVE
   tasks:
     - uri:
         url: https://example.org

@@ -33,17 +33,33 @@ Examples of this could include:
 
 .. toctree::
    :maxdepth: 1
-   :caption: Contents:
+   :caption: Introduction
 
    intro
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Installation and Upgrade
+
    install
-   community
+   porting_guides/porting_guide
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Using Ansible Runner
+
    external_interface
    standalone
    python_interface
    execution_environments
    remote_jobs
    modules
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Getting Help
+
+   community
 
 
 Indices and tables

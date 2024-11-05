@@ -1,7 +1,7 @@
-.. _intro:
+.. _config:
 
-Introduction to Ansible Runner
-==============================
+Configuring Ansible Runner
+==========================
 
 **Runner** is intended to be most useful as part of automation and tooling that needs to invoke Ansible and consume its results.
 Most of the parameterization of the **Ansible** command line is also available on the **Runner** command line but **Runner** also

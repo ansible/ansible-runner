@@ -35,7 +35,7 @@ object. For example:
 .. code-block:: python
 
     import ansible_runner
-    config = ansible_runner.RunnerConfig('private_data_dir': '/tmp/demo', 'playbook': 'test.yml')
+    config = ansible_runner.RunnerConfig(private_data_dir='/tmp/demo', playbook='test.yml')
     r = ansible_runner.interface.run(config=config)
 
 The above is identical to the more familiar usage of the API:
@@ -43,4 +43,4 @@ The above is identical to the more familiar usage of the API:
 .. code-block:: python
 
     import ansible_runner
-    r = ansible_runner.interface.run('private_data_dir': '/tmp/demo', 'playbook': 'test.yml')
+    r = ansible_runner.interface.run(private_data_dir='/tmp/demo', playbook='test.yml')

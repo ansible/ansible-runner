@@ -73,9 +73,57 @@ class BaseConfig:
     """The base configuration object.
 
     This object has multiple initialization responsibilities, including:
-        - guaranteeing the 'private_data_dir' directory exists
-        - guaranteeing that 'ident' value is set
-        - setting the various work directory attributes based on 'private_data_dir'
+        - guaranteeing the ``private_data_dir`` directory exists
+        - guaranteeing that ``ident`` value is set
+        - setting the various work directory attributes based on ``private_data_dir``
+
+    :param str private_data_dir: The directory containing all runner metadata needed to invoke the runner
+        module. Output artifacts will also be stored here for later consumption.
+    :param str artifact_dir: The path to the directory where artifacts should live. This defaults to
+        ``artifacts`` under ``private_data_dir``.
+    :param bool check_job_event_data: Check if job events data is completely generated. If event data is
+        not completely generated and if value is set to ``True`` it will raise an `AnsibleRunnerException` exception.
+        If set to ``False``, it log a debug message and continue execution. Default value is ``False``.
+    :param dict container_auth_data: Container registry authentication data containing ``host``, ``username``, and
+        ``password`` entries.
+    :param str container_image: Container image to use when running an ansible task.
+    :param list container_options: List of container options to pass to execution engine.
+    :param list container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir`. Default to ``None``.
+    :param str container_workdir: The working directory within the container.
+    :param dict envvars: Environment variables to be used when running Ansible. Environment variables will also be
+        read from ``env/envvars`` in ``private_data_dir``.
+    :param str fact_cache: A string that will be used as the name for the subdirectory of the fact cache in
+        artifacts directory. This is only used for ``jsonfile`` type fact caches.
+    :param str fact_cache_type: A string of the type of fact cache to use. Defaults to ``jsonfile``.
+    :param str host_cwd: The host current working directory to be mounted within the container (if enabled) and will be
+        the work directory within container.
+    :param str ident: The run identifier for this invocation of Runner. Will be used to create and name
+        the artifact directory holding the results of the invocation.
+    :param bool json_mode: Store event data in place of stdout on the console and in the stdout file.
+    :param int keepalive_seconds: Use within the streaming Worker object to inject a keepalive event.
+    :param dict passwords: A dictionary containing password prompt patterns and response values used when processing
+        output from Ansible. Passwords will also be read from ``env/passwords`` in ``private_data_dir``.
+    :param bool process_isolation: Enable process isolation, using either a container engine (e.g. podman) or a
+        sandbox (e.g. bwrap).
+    :param str process_isolation_executable: Process isolation executable or container engine used to isolate
+        execution. (default: podman)
+    :param str project_dir: The path to the playbook content. Defaults to ``project`` within ``private_data_dir``.
+    :param bool quiet: Disable all output.
+    :param int rotate_artifacts: Keep at most n artifact directories. Disable with a value of ``0`` (the default).
+    :param dict settings: A dictionary containing settings values for the ``ansible-runner`` runtime environment.
+        These will also be read from ``env/settings`` in ``private_data_dir``.
+    :param str ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
+    :param bool suppress_env_files: Disable the writing of files into the ``env`` which may store sensitive information.
+    :param int timeout: The timeout value, in seconds, that will be passed to either ``pexpect`` of ``subprocess``
+        invocation (based on ``runner_mode`` selected) while executing command. It the timeout is triggered it will
+        force cancel the execution.
+    :param Callable event_handler: An optional callback that will be invoked any time an event is received by Runner itself.
+        Return ``True`` to keep the event
+    :param Callable cancel_callback: An optional callback that can inform runner to cancel (returning ``True``) or not
+        (returning ``False``).
+    :param Callable finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
+    :param Callable status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
+    :param Callable artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
     """
 
     # This MUST be the first field we define to handle the use case where a RunnerConfig object

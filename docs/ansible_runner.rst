@@ -45,14 +45,6 @@ ansible_runner.runner module
     :undoc-members:
     :show-inheritance:
 
-ansible_runner.runner\_config module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. automodule:: ansible_runner.runner_config
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 ansible_runner.utils module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

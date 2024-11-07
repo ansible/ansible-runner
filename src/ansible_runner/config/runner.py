@@ -50,12 +50,11 @@ class ExecutionMode():
 
 @dataclass
 class RunnerConfig(BaseConfig):
-    """
-    A ``Runner`` configuration object that's meant to encapsulate the configuration used by the
+    """A ``Runner`` configuration object that's meant to encapsulate the configuration used by the
     :py:mod:`ansible_runner.runner.Runner` object to launch and manage the invocation of ``ansible``
     and ``ansible-playbook``
 
-    Typically this object is initialized for you when using the standard ``run`` interfaces in :py:mod:`ansible_runner.interface`
+    Typically, this object is initialized for you when using the standard ``run`` interfaces in :py:mod:`ansible_runner.interface`
     but can be used to construct the ``Runner`` configuration to be invoked elsewhere. It can also be overridden to provide different
     functionality to the Runner object.
 
@@ -65,6 +64,48 @@ class RunnerConfig(BaseConfig):
     >>> r = Runner(config=rc)
     >>> r.run()
 
+    This class inherites all the initialization parameters of the `BaseConfig` parent class, plus:
+
+    :param BinaryIO _input: An optional file or file-like object for use as input in a streaming pipeline.
+    :param BinaryIO _output: An optional file or file-like object for use as output in a streaming pipeline.
+    :param str binary: Path to an alternative ansible command.
+    :param str cmdline: Command line options passed to Ansible read from ``env/cmdline`` in ``private_data_dir``
+    :param str directory_isolation_base_path: An optional path will be used as the base path to create a temp directory.
+        The project contents will be copied to this location which will then be used as the working directory during
+        playbook execution.
+    :param dict extravars: Extra variables to be passed to Ansible at runtime using ``-e``. Extra vars will also be
+                      read from ``env/extravars`` in ``private_data_dir``.
+    :param int forks: Control Ansible parallel concurrency.
+    :param str host_pattern: The host pattern to match when running in ad-hoc mode.
+    :param str or dict or list inventory: Overrides the inventory directory/file (supplied at ``private_data_dir/inventory``) with
+        a specific host or list of hosts. This can take the form of:
+
+            - Path to the inventory file in the ``private_data_dir/inventory`` directory or
+              an absolute path to the inventory file
+            - Native python dict supporting the YAML/json inventory structure
+            - A text INI formatted string
+            - A list of inventory sources, or an empty list to disable passing inventory
+    :param str limit: Matches ansible's ``--limit`` parameter to further constrain the inventory to be used.
+    :param str module: The module that will be invoked in ad-hoc mode by runner when executing Ansible.
+    :param str module_args: The module arguments that will be supplied to ad-hoc mode.
+    :param bool omit_event_data: Omits extra ansible event data from event payload (stdout and event still included).
+    :param bool only_failed_event_data: Omits extra ansible event data unless it's a failed event (stdout and event still included).
+    :param bool only_transmit_kwargs: If ``True``, the streaming Transmitter process will only send job arguments.
+    :param str or dict or list playbook: The playbook (either a list or dictionary of plays, or as a path relative to
+        ``private_data_dir/project``) that will be invoked by runner when executing Ansible.
+    :param str or list process_isolation_hide_paths: A path or list of paths on the system that should be hidden from the playbook run.
+    :param str or list process_isolation_ro_paths: A path or list of paths on the system that should be exposed to the playbook run as read-only.
+    :param str or list process_isolation_show_paths: A path or list of paths on the system that should be exposed to the playbook run.
+    :param str process_isolation_path: Path that an isolated playbook run will use for staging. (default: ``/tmp``)
+    :param str role: Name of the role to execute.
+    :param bool role_skip_facts: If ``True``, ``gather_facts`` will be set to ``False`` for execution of the namedgit  ``role``.
+    :param str or list roles_path: Directory or list of directories to assign to ``ANSIBLE_ROLES_PATH``.
+    :param dict role_vars: Variables and their values to use with the named ``role``.
+    :param str skip_tags: Value to pass to the ``--skip-tags`` option of ``ansible-playbook``.
+    :param bool suppress_ansible_output: If ``True``, Ansible output will not appear to stdout.
+    :param bool suppress_output_file: If ``True``, Ansible output will not be written to a file in the artifacts directory.
+    :param str tags: Value to pass to the ``--tags`` option of ``ansible-playbook``.
+    :param int verbosity: Control the verbosity level of ansible-playbook.
     """
 
     _input: BinaryIO | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
@@ -205,7 +246,7 @@ class RunnerConfig(BaseConfig):
         - prepare_command
 
         It's also responsible for wrapping the command with the proper ssh agent invocation
-        and setting early ANSIBLE_ environment variables.
+        and setting early ``ANSIBLE_`` environment variables.
         """
         # ansible_path = find_executable('ansible')
         # if ansible_path is None or not os.access(ansible_path, os.X_OK):

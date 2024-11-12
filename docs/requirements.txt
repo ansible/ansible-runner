@@ -6,7 +6,7 @@
 #
 alabaster==0.7.16
     # via sphinx
-ansible-core==2.15.12
+ansible-core==2.15.13
     # via -r requirements.in
 ansible-pygments==0.1.1
     # via sphinx-ansible-theme

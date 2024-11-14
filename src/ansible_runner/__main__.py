@@ -45,6 +45,7 @@ from ansible_runner import run
 from ansible_runner import output
 from ansible_runner import cleanup
 from ansible_runner._internal._dump_artifacts import dump_artifact
+from ansible_runner.defaults import default_process_isolation_executable
 from ansible_runner.utils import Bunch, register_for_cleanup
 from ansible_runner.utils.capacity import get_cpu_count, get_mem_in_bytes, ensure_uuid
 from ansible_runner.utils.importlib_compat import importlib_metadata
@@ -884,8 +885,8 @@ def main(sys_args=None):
                     "project_dir": vargs.get('project_dir'),
                     "artifact_dir": vargs.get('artifact_dir'),
                     "roles_path": [vargs.get('roles_path')] if vargs.get('roles_path') else None,
-                    "process_isolation": vargs.get('process_isolation'),
-                    "process_isolation_executable": vargs.get('process_isolation_executable'),
+                    "process_isolation": bool(vargs.get('process_isolation')),
+                    "process_isolation_executable": vargs.get('process_isolation_executable') or default_process_isolation_executable,
                     "process_isolation_path": vargs.get('process_isolation_path'),
                     "process_isolation_hide_paths": vargs.get('process_isolation_hide_paths'),
                     "process_isolation_show_paths": vargs.get('process_isolation_show_paths'),

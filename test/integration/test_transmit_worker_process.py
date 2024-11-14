@@ -383,6 +383,25 @@ def worker_stream(transmit_stream, tmp_path):  # pylint: disable=W0621
             return ingoing_buffer
 
 
+def test_transmit_role(tmp_path, cli, project_fixtures):
+    """When transmitting a role job via CLI, expect only 'playbook' in the job arguments.
+
+    When we 'transmit' a role through the CLI command, we expect a playbook to be generated via
+    the role_manager(), which will in turn be transmitted as an artifact. No other parameters
+    are expected to be present.
+    """
+    outgoing_buffer = tmp_path / 'buffer'
+    outgoing_buffer.touch()
+
+    transmit_dir = project_fixtures / 'debug'
+
+    r = cli(['transmit', str(transmit_dir), '--role', 'hello_world'])
+    data = json.loads(r.stdout.split('\n')[0])
+    assert 'kwargs' in data
+    assert len(data['kwargs']) == 1
+    assert 'playbook' in data['kwargs']
+
+
 def test_worker_without_delete_no_dir(tmp_path, cli, transmit_stream):  # pylint: disable=W0621
     worker_dir = tmp_path / 'for_worker'
 

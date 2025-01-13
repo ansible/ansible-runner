@@ -402,7 +402,7 @@ class BaseConfig:
 
         # ensure source is abs
         src_path = os.path.abspath(os.path.expanduser(os.path.expandvars(src_mount_path)))
-        if os.path.exists(src_mount_path):
+        if os.path.exists(src_path):
             debug(f"Source volume mount path does not exist: {src_mount_path}")
         if os.path.isfile(src_path):
             debug(f"Source volume mount path '{src_path}' is a file, will resolve to parent directory: {os.path.dirname(src_path)}")

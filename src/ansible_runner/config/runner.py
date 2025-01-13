@@ -64,7 +64,7 @@ class RunnerConfig(BaseConfig):
     >>> r = Runner(config=rc)
     >>> r.run()
 
-    This class inherites all the initialization parameters of the `BaseConfig` parent class, plus:
+    This class inherits all the initialization parameters of the `BaseConfig` parent class, plus:
 
     :param BinaryIO _input: An optional file or file-like object for use as input in a streaming pipeline.
     :param BinaryIO _output: An optional file or file-like object for use as output in a streaming pipeline.

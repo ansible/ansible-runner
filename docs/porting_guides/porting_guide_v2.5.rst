@@ -44,3 +44,19 @@ The above is identical to the more familiar usage of the API:
 
     import ansible_runner
     r = ansible_runner.interface.run(private_data_dir='/tmp/demo', playbook='test.yml')
+
+Deprecations
+============
+
+The ``RunnerConfig`` object currently allows for the ``private_data_dir`` parameter to be initialized
+as a positional parameter. For example:
+
+.. code-block:: python
+
+    config = ansible_runner.RunnerConfig('/tmp/demo', playbook='test.yml')
+
+This is the only positional argument currently allowed. A future release will require this parameter to be keyword only.
+
+.. code-block:: python
+
+    config = ansible_runner.RunnerConfig(private_data_dir='/tmp/demo', playbook='test.yml')

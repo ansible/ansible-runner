@@ -400,12 +400,14 @@ class BaseConfig:
         if src_mount_path is None:
             return
 
-        # ensure source is abs
+        # ensure source is absolute path
+        # this means that users will not be able to pass in podman|docker volumes such as volume1:/dest/dir:Z
+        # only directories can be mounted
         src_path = os.path.abspath(os.path.expanduser(os.path.expandvars(src_mount_path)))
         if not os.path.exists(src_path):
             debug(f"Source volume mount path does not exist: {src_path}")
         if os.path.isfile(src_path):
-            debug(f"Source volume mount path '{src_path}' is a file, will resolve to parent directory: {os.path.dirname(src_path)}")
+            debug(f"Source volume mount is a file, resolving to parent directory: {os.path.dirname(src_path)}")
             src_path = os.path.dirname(src_path)
 
         # set dest src (if None) relative to workdir(not absolute) or provided

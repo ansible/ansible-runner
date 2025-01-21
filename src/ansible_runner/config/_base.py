@@ -395,7 +395,8 @@ class BaseConfig:
                                    args_list: list[str],
                                    src_mount_path: str | None,
                                    dst_mount_path: str | None = None,
-                                   labels: str | None = None
+                                   labels: str | None = None,
+                                   strip_file: bool = True,
                                    ) -> None:
 
         if src_mount_path is None or not os.path.exists(src_mount_path):
@@ -417,10 +418,12 @@ class BaseConfig:
         else:
             dst_path = os.path.abspath(os.path.expanduser(os.path.expandvars(dst_mount_path)))
 
+        src_is_dir = os.path.isdir(src_path)
+
         # ensure each is a directory not file, use src for dest
         # because dest doesn't exist locally
-        src_dir = src_path if os.path.isdir(src_path) else os.path.dirname(src_path)
-        dst_dir = dst_path if os.path.isdir(src_path) else os.path.dirname(dst_path)
+        src_dir = src_path if src_is_dir else os.path.dirname(src_path)
+        dst_dir = dst_path if src_is_dir else os.path.dirname(dst_path)
 
         # always ensure a trailing slash
         src_dir = os.path.join(src_dir, "")
@@ -432,7 +435,10 @@ class BaseConfig:
         self._ensure_path_safe_to_mount(dst_dir)
 
         # format the src dest str
-        volume_mount_path = f"{src_dir}:{dst_dir}"
+        if strip_file or src_is_dir:
+            volume_mount_path = f"{src_dir}:{dst_dir}"
+        else:
+            volume_mount_path = f"{src_path}:{dst_path}"
 
         # add labels as needed
         if labels:
@@ -571,7 +577,7 @@ class BaseConfig:
                 labels = None
                 if len(volume_mounts) == 3:
                     labels = f":{volume_mounts[2]}"
-                self._update_volume_mount_paths(new_args, volume_mounts[0], dst_mount_path=volume_mounts[1], labels=labels)
+                self._update_volume_mount_paths(new_args, volume_mounts[0], dst_mount_path=volume_mounts[1], labels=labels, strip_file=False)
 
         # Reference the file with list of keys to pass into container
         # this file will be written in ansible_runner.runner

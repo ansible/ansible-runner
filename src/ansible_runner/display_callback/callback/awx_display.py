@@ -22,7 +22,6 @@ from __future__ import (absolute_import, division, print_function)
 # Python
 import json
 import stat
-import multiprocessing
 import threading
 import base64
 import functools
@@ -127,7 +126,6 @@ class EventContext:
     '''
 
     def __init__(self):
-        self.display_lock = multiprocessing.RLock()
         self._global_ctx = {}
         self._local = threading.local()
         if os.getenv('AWX_ISOLATED_DATA_DIR'):
@@ -222,18 +220,15 @@ class EventContext:
     def get_end_dict(self):
         return {}
 
-    def dump(self, fileobj, data, max_width=78, flush=False):
+    def dump(self, fileobj, data, max_width=78, flush=False):  # pylint: disable=unused-argument
         b64data = base64.b64encode(json.dumps(data).encode('utf-8')).decode()
-        with self.display_lock:
-            # pattern corresponding to OutputEventFilter expectation
-            fileobj.write('\x1b[K')
-            for offset in range(0, len(b64data), max_width):
-                chunk = b64data[offset:offset + max_width]
-                escaped_chunk = f'{chunk}\x1b[{len(chunk)}D'
-                fileobj.write(escaped_chunk)
-            fileobj.write('\x1b[K')
-            if flush:
-                fileobj.flush()
+        # pattern corresponding to OutputEventFilter expectation
+        out = '\x1b[K'
+        for offset in range(0, len(b64data), max_width):
+            chunk = b64data[offset:offset + max_width]
+            out += f'{chunk}\x1b[{len(chunk)}D'
+        out += '\x1b[K'
+        fileobj.write(out)
 
     def dump_begin(self, fileobj):
         begin_dict = self.get_begin_dict()
@@ -241,7 +236,7 @@ class EventContext:
         self.dump(fileobj, {'uuid': begin_dict['uuid']})
 
     def dump_end(self, fileobj):
-        self.dump(fileobj, self.get_end_dict(), flush=True)
+        self.dump(fileobj, self.get_end_dict())
 
 
 event_context = EventContext()
@@ -294,19 +289,18 @@ def display_with_context(f):
         log_only = args[5] if len(args) >= 6 else kwargs.get('log_only', False)
         stderr = args[3] if len(args) >= 4 else kwargs.get('stderr', False)
         event_uuid = event_context.get().get('uuid', None)
-        with event_context.display_lock:
-            # If writing only to a log file or there is already an event UUID
-            # set (from a callback module method), skip dumping the event data.
-            if log_only or event_uuid:
-                return f(*args, **kwargs)
-            try:
-                fileobj = sys.stderr if stderr else sys.stdout
-                event_context.add_local(uuid=str(uuid.uuid4()))
-                event_context.dump_begin(fileobj)
-                return f(*args, **kwargs)
-            finally:
-                event_context.dump_end(fileobj)
-                event_context.remove_local(uuid=None)
+        # If writing only to a log file or there is already an event UUID
+        # set (from a callback module method), skip dumping the event data.
+        if log_only or event_uuid:
+            return f(*args, **kwargs)
+        try:
+            fileobj = sys.stderr if stderr else sys.stdout
+            event_context.add_local(uuid=str(uuid.uuid4()))
+            event_context.dump_begin(fileobj)
+            return f(*args, **kwargs)
+        finally:
+            event_context.dump_end(fileobj)
+            event_context.remove_local(uuid=None)
 
     return wrapper
 
@@ -370,18 +364,17 @@ class CallbackModule(DefaultCallbackModule):
                 if isinstance(item, dict) and item.get('_ansible_no_log', False):
                     event_data['res']['results'][i] = {'censored': CENSORED}
 
-        with event_context.display_lock:
-            try:
-                event_context.add_local(event=event, **event_data)
-                if task:
-                    self.set_task(task, local=True)
-                event_context.dump_begin(sys.stdout)
-                yield
-            finally:
-                event_context.dump_end(sys.stdout)
-                if task:
-                    self.clear_task(local=True)
-                event_context.remove_local(event=None, **event_data)
+        try:
+            event_context.add_local(event=event, **event_data)
+            if task:
+                self.set_task(task, local=True)
+            event_context.dump_begin(sys.stdout)
+            yield
+        finally:
+            event_context.dump_end(sys.stdout)
+            if task:
+                self.clear_task(local=True)
+            event_context.remove_local(event=None, **event_data)
 
     def set_playbook(self, playbook):
         file_name = getattr(playbook, '_file_name', '???')

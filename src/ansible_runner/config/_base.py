@@ -568,10 +568,7 @@ class BaseConfig:
             for mapping in self.container_volume_mounts:
                 volume_mounts = mapping.split(':', 2)
                 self._ensure_path_safe_to_mount(volume_mounts[0])
-                labels = None
-                if len(volume_mounts) == 3:
-                    labels = f":{volume_mounts[2]}"
-                self._update_volume_mount_paths(new_args, volume_mounts[0], dst_mount_path=volume_mounts[1], labels=labels)
+                new_args.extend(["-v", mapping])
 
         # Reference the file with list of keys to pass into container
         # this file will be written in ansible_runner.runner

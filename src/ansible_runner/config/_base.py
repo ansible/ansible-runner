@@ -397,18 +397,13 @@ class BaseConfig:
                                    dst_mount_path: str | None = None,
                                    labels: str | None = None
                                    ) -> None:
-        if src_mount_path is None:
+
+        if src_mount_path is None or not os.path.exists(src_mount_path):
+            logger.debug("Source volume mount path does not exist: %s", src_mount_path)
             return
 
-        # ensure source is absolute path
-        # this means that users will not be able to pass in podman|docker volumes such as volume1:/dest/dir:Z
-        # only directories can be mounted
+        # ensure source is abs
         src_path = os.path.abspath(os.path.expanduser(os.path.expandvars(src_mount_path)))
-        if not os.path.exists(src_path):
-            debug(f"Source volume mount path does not exist: {src_path}")
-        if os.path.isfile(src_path):
-            debug(f"Source volume mount is a file, resolving to parent directory: {os.path.dirname(src_path)}")
-            src_path = os.path.dirname(src_path)
 
         # set dest src (if None) relative to workdir(not absolute) or provided
         if dst_mount_path is None:
@@ -422,14 +417,19 @@ class BaseConfig:
         else:
             dst_path = os.path.abspath(os.path.expanduser(os.path.expandvars(dst_mount_path)))
 
+        # ensure each is a directory not file, use src for dest
+        # because dest doesn't exist locally
+        src_dir = src_path if os.path.isdir(src_path) else os.path.dirname(src_path)
+        dst_dir = dst_path if os.path.isdir(src_path) else os.path.dirname(dst_path)
+
+        # always ensure a trailing slash
+        src_dir = os.path.join(src_dir, "")
+        dst_dir = os.path.join(dst_dir, "")
+
         # ensure the src and dest are safe mount points
         # after stripping off the file and resolving
-        self._ensure_path_safe_to_mount(src_path)
-        self._ensure_path_safe_to_mount(dst_path)
-
-        # ensure that paths have a trailing slash
-        src_dir = os.path.join(src_path, "")
-        dst_dir = os.path.join(dst_path, "")
+        self._ensure_path_safe_to_mount(src_dir)
+        self._ensure_path_safe_to_mount(dst_dir)
 
         # format the src dest str
         volume_mount_path = f"{src_dir}:{dst_dir}"

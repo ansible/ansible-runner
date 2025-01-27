@@ -34,10 +34,12 @@ import uuid
 from copy import copy
 
 # Ansible
+from ansible import __version__ as ansible_version_str
 from ansible import constants as C
 from ansible.plugins.callback import CallbackBase
 from ansible.plugins.loader import callback_loader
 from ansible.utils.display import Display
+from ansible.utils.multiprocessing import context as multiprocessing_context
 
 
 DOCUMENTATION = '''
@@ -66,6 +68,9 @@ else:
 DefaultCallbackModule: CallbackBase = callback_loader.get(default_stdout_callback).__class__
 
 CENSORED = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"
+
+_ANSIBLE_VERSION = tuple(int(p) for p in ansible_version_str.split('.')[:2])
+_ANSIBLE_217 = _ANSIBLE_VERSION >= (2, 17)
 
 
 def current_time():
@@ -282,10 +287,18 @@ def with_verbosity(f):
 Display.verbose = with_verbosity(Display.verbose)
 
 
+@functools.lru_cache(maxsize=2)
+def _is_child():
+    return multiprocessing_context.parent_process() is not None
+
+
 def display_with_context(f):
 
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
+        if _ANSIBLE_217 and _is_child():
+            return f(*args, **kwargs)
+
         log_only = args[5] if len(args) >= 6 else kwargs.get('log_only', False)
         stderr = args[3] if len(args) >= 4 else kwargs.get('stderr', False)
         event_uuid = event_context.get().get('uuid', None)

@@ -292,6 +292,7 @@ def display_with_context(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         if _ANSIBLE_214 and multiprocessing_context.parent_process() is not None:
+            # core 2.14 and newer proxy display, return if we are in a fork
             return f(*args, **kwargs)
 
         log_only = args[5] if len(args) >= 6 else kwargs.get('log_only', False)

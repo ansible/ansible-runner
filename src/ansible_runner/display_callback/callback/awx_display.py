@@ -70,7 +70,7 @@ DefaultCallbackModule: CallbackBase = callback_loader.get(default_stdout_callbac
 CENSORED = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"
 
 _ANSIBLE_VERSION = tuple(int(p) for p in ansible_version_str.split('.')[:2])
-_ANSIBLE_217 = _ANSIBLE_VERSION >= (2, 17)
+_ANSIBLE_214 = _ANSIBLE_VERSION >= (2, 14)
 
 
 def current_time():
@@ -287,16 +287,11 @@ def with_verbosity(f):
 Display.verbose = with_verbosity(Display.verbose)
 
 
-@functools.lru_cache(maxsize=2)
-def _is_child():
-    return multiprocessing_context.parent_process() is not None
-
-
 def display_with_context(f):
 
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
-        if _ANSIBLE_217 and _is_child():
+        if _ANSIBLE_214 and multiprocessing_context.parent_process() is not None:
             return f(*args, **kwargs)
 
         log_only = args[5] if len(args) >= 6 else kwargs.get('log_only', False)

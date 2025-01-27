@@ -24,9 +24,6 @@ def stream_dir(source_directory: str, stream: io.FileIO) -> None:
                     if relpath == ".":
                         relpath = ""
                     for fname in files + dirs:
-                        if fname.endswith('-partial.json'):
-                            # Never stream partials
-                            continue
                         full_path = os.path.join(dirpath, fname)
                         # Magic to preserve symlinks
                         if os.path.islink(full_path):

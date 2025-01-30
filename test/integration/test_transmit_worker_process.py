@@ -398,8 +398,9 @@ def test_transmit_role(tmp_path, cli, project_fixtures):
     r = cli(['transmit', str(transmit_dir), '--role', 'hello_world'])
     data = json.loads(r.stdout.split('\n')[0])
     assert 'kwargs' in data
-    assert len(data['kwargs']) == 1
+    assert len(data['kwargs']) == 2
     assert 'playbook' in data['kwargs']
+    assert 'ident' in data['kwargs']
 
 
 def test_worker_without_delete_no_dir(tmp_path, cli, transmit_stream):  # pylint: disable=W0621

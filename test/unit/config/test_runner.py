@@ -740,7 +740,9 @@ def test_containerization_settings(tmp_path, runtime, mocker):
 def test_streamable_attributes_all_defaults():
     """Test that all default values return an empty dict."""
     rc = RunnerConfig()
-    assert not rc.streamable_attributes()
+    attrs = rc.streamable_attributes()
+    assert len(attrs) == 1
+    assert 'ident' in attrs
 
 
 def test_streamable_attributes_non_default(tmp_path):
@@ -754,8 +756,10 @@ def test_streamable_attributes_non_default(tmp_path):
 
     # Don't expect private_data_dir or keepalive_seconds since they are not streamable.
     # Don't expect playbook since it is an empty value.
-    assert rc.streamable_attributes() == {
-        "host_pattern": "hostA,",
-        "json_mode": True,
-        "verbosity": 3,
-    }
+    attrs = rc.streamable_attributes()
+    assert attrs['host_pattern'] == 'hostA,'
+    assert attrs['json_mode']
+    assert attrs['verbosity'] == 3
+    assert 'private_data_dir' not in attrs
+    assert 'keepalive_seconds' not in attrs
+    assert 'playbook' not in attrs

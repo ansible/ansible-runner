@@ -144,7 +144,7 @@ class BaseConfig:
     fact_cache: str | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
     fact_cache_type: str = 'jsonfile'
     host_cwd: str | None = None
-    ident: str | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+    ident: str | None = None
     json_mode: bool = False
     keepalive_seconds: int | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
     passwords: dict[str, str] | None = None
@@ -167,10 +167,22 @@ class BaseConfig:
     _CONTAINER_ENGINES = ('docker', 'podman')
 
     def __post_init__(self) -> None:
+        """
+        Completes object initialization after the Dataclass __init__() call is complete.
+
+        Finish initialization by setting other attribute defaults and normalize the path attributes
+        by setting absolute paths. Also make sure that the private_data_dir and artifact directories
+        exist, creating them if necessary.
+
+        The Runner, Transmitter, Worker and Processor objects all depend, in some manner, on this
+        path normalization being completed when they are initialized (mostly for private_data_dir).
+
+        BaseConfig and RunnerConfig both make use of the ArtifactLoader object that is created here.
+        """
         # pylint: disable=W0613
 
         self.command: list[str] = []
-        self.registry_auth_path: str
+        self.registry_auth_path: str = ""
         self.container_name: str = ""  # like other properties, not accurate until prepare is called
         if self.container_image is None:
             self.container_image = ''

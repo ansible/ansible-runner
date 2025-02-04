@@ -225,7 +225,7 @@ class EventContext:
     def get_end_dict(self):
         return {}
 
-    def dump(self, fileobj, data, max_width=78, flush=False):  # pylint: disable=unused-argument
+    def dump(self, fileobj, data, max_width=78):
         b64data = base64.b64encode(json.dumps(data).encode('utf-8')).decode()
         # pattern corresponding to OutputEventFilter expectation
         out = '\x1b[K'

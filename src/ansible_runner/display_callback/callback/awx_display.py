@@ -17,7 +17,7 @@
 
 # pylint: disable=W0212
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import (absolute_import, annotations, division, print_function)
 
 # Python
 import json
@@ -28,8 +28,11 @@ import functools
 import collections
 import contextlib
 import datetime
+import inspect
 import os
 import sys
+import types
+import typing as t
 import uuid
 from copy import copy
 
@@ -41,6 +44,8 @@ from ansible.plugins.loader import callback_loader
 from ansible.utils.display import Display
 from ansible.utils.multiprocessing import context as multiprocessing_context
 
+if t.TYPE_CHECKING:
+    P = t.ParamSpec('P')
 
 DOCUMENTATION = '''
     callback: awx_display
@@ -247,6 +252,18 @@ class EventContext:
 event_context = EventContext()
 
 
+@functools.cache
+def _getsignature(f: t.Callable) -> inspect.Signature:
+    return inspect.signature(f)
+
+
+@functools.cache
+def _getcallargs(sig: inspect.Signature, *args: P.args, **kwargs: P.kwargs) -> types.MappingProxyType:
+    ba = sig.bind(*args, **kwargs)
+    ba.apply_defaults()
+    return types.MappingProxyType(ba.arguments)
+
+
 def with_context(**context):
     global event_context  # pylint: disable=W0602
 
@@ -274,8 +291,10 @@ def with_verbosity(f):
 
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
-        host = args[2] if len(args) >= 3 else kwargs.get('host', None)
-        caplevel = args[3] if len(args) >= 4 else kwargs.get('caplevel', 2)
+        sig = _getsignature(f)
+        callargs = _getcallargs(sig, *args, **kwargs)
+        host = callargs.get('host')
+        caplevel = callargs.get('caplevel')
         context = {'verbose': True, 'verbosity': (caplevel + 1)}
         if host is not None:
             context['remote_addr'] = host
@@ -295,8 +314,10 @@ def display_with_context(f):
             # core 2.14 and newer proxy display, return if we are in a fork
             return f(*args, **kwargs)
 
-        log_only = args[5] if len(args) >= 6 else kwargs.get('log_only', False)
-        stderr = args[3] if len(args) >= 4 else kwargs.get('stderr', False)
+        sig = _getsignature(f)
+        callargs = _getcallargs(sig, *args, **kwargs)
+        log_only = callargs.get('log_only')
+        stderr = callargs.get('stderr')
         event_uuid = event_context.get().get('uuid', None)
         # If writing only to a log file or there is already an event UUID
         # set (from a callback module method), skip dumping the event data.

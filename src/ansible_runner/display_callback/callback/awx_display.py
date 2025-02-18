@@ -257,7 +257,6 @@ def _getsignature(f: t.Callable) -> inspect.Signature:
     return inspect.signature(f)
 
 
-@functools.cache
 def _getcallargs(sig: inspect.Signature, *args: P.args, **kwargs: P.kwargs) -> types.MappingProxyType:
     ba = sig.bind(*args, **kwargs)
     ba.apply_defaults()

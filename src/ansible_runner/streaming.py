@@ -227,7 +227,7 @@ class Worker:
         self.status = status_data['status']
         printed_status_data = status_data.copy()
         if self.kwargs['suppress_env_print']:
-            printed_status_data.pop('env', None)
+            printed_status_data['env'] = "suppressed by condition"
         self._output.write(json.dumps(printed_status_data).encode('utf-8'))
         self._output.write(b'\n')
         self._output.flush()

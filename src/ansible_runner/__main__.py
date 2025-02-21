@@ -908,7 +908,7 @@ def main(sys_args=None):
                     "limit": vargs.get('limit'),
                     "streamer": streamer,
                     "suppress_env_files": vargs.get("suppress_env_files"),
-                    "suppress_env_print": [vargs.get('suppress_env_print')] if vargs.get('suppress_env_print') else DEFAULT_RUNNER_SUPPRESS_ENV_PRINT,
+                    "suppress_env_print": vargs.get('suppress_env_print') if vargs.get('suppress_env_print') else DEFAULT_RUNNER_SUPPRESS_ENV_PRINT,
                     "keepalive_seconds": vargs.get("keepalive_seconds"),
                 }
                 try:

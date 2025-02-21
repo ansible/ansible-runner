@@ -110,7 +110,7 @@ class BaseConfig:
         self.container_options = container_options
 
         # runner params
-        self.rotate_artifacts = rotate_artifacts
+        self.rotate_artifacts = self.settings.get('rotate_artifacts ', self.rotate_artifacts)
         self.quiet = quiet
         self.json_mode = json_mode
         self.passwords = passwords

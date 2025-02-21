@@ -56,6 +56,7 @@ DEFAULT_RUNNER_BINARY = os.getenv('RUNNER_BINARY', None)
 DEFAULT_RUNNER_PLAYBOOK = os.getenv('RUNNER_PLAYBOOK', None)
 DEFAULT_RUNNER_ROLE = os.getenv('RUNNER_ROLE', None)
 DEFAULT_RUNNER_MODULE = os.getenv('RUNNER_MODULE', None)
+DEFAULT_RUNNER_SUPPRESS_ENV_PRINT = os.getenv('SUPPRESS_ENV_PRINT', None)
 DEFAULT_UUID = uuid4()
 
 DEFAULT_CLI_ARGS = {
@@ -629,6 +630,13 @@ def main(sys_args=None):
         help="show the execution node's Ansible Runner version along with its memory and CPU capacities"
     )
     worker_subparser.add_argument(
+        "--suppress-env-print",
+        dest="suppress_env_print",
+        action="store_true",
+        default=DEFAULT_RUNNER_SUPPRESS_ENV_PRINT,
+        help="add flag to prevent the printing of env vars on stdout. Also set via SUPPRESS_ENV_PRINT"
+    )
+    worker_subparser.add_argument(
         "--delete",
         dest="delete_directory",
         action="store_true",
@@ -900,6 +908,7 @@ def main(sys_args=None):
                     "limit": vargs.get('limit'),
                     "streamer": streamer,
                     "suppress_env_files": vargs.get("suppress_env_files"),
+                    "suppress_env_print": vargs.get('suppress_env_print') if vargs.get('suppress_env_print') else DEFAULT_RUNNER_SUPPRESS_ENV_PRINT,
                     "keepalive_seconds": vargs.get("keepalive_seconds"),
                 }
                 try:

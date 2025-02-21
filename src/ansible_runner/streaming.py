@@ -225,7 +225,12 @@ class Worker:
     def status_handler(self, status_data, runner_config):
         # pylint: disable=W0613
         self.status = status_data['status']
-        self._output.write(json.dumps(status_data).encode('utf-8'))
+        printed_status_data = status_data.copy()
+        if self.kwargs['suppress_env_print']:
+            suppressed_env = dict()
+            suppressed_env['SUPPRESS_ENV_PRINT'] = self.kwargs['suppress_env_print']
+            printed_status_data['env'] = suppressed_env
+        self._output.write(json.dumps(printed_status_data).encode('utf-8'))
         self._output.write(b'\n')
         self._output.flush()
 

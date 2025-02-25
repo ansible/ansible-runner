@@ -633,7 +633,6 @@ def main(sys_args=None):
         "--suppress-env-print",
         dest="suppress_env_print",
         action="store_true",
-        default=DEFAULT_RUNNER_SUPPRESS_ENV_PRINT,
         help="add flag to prevent the printing of env vars on stdout. Also set via SUPPRESS_ENV_PRINT"
     )
     worker_subparser.add_argument(
@@ -874,6 +873,10 @@ def main(sys_args=None):
 
         with context:
             with role_manager(vargs) as vargs:
+                if vargs.get('suppress_env_print'):
+                    suppress_env_print = vargs.get('suppress_env_print')
+                else:
+                    suppress_env_print = os.getenv('SUPPRESS_ENV_PRINT', 'False') == 'True'
                 run_options = {
                     "private_data_dir": vargs.get('private_data_dir'),
                     "ident": vargs.get('ident'),
@@ -908,7 +911,7 @@ def main(sys_args=None):
                     "limit": vargs.get('limit'),
                     "streamer": streamer,
                     "suppress_env_files": vargs.get("suppress_env_files"),
-                    "suppress_env_print": vargs.get('suppress_env_print') if vargs.get('suppress_env_print') else DEFAULT_RUNNER_SUPPRESS_ENV_PRINT,
+                    "suppress_env_print": suppress_env_print,
                     "keepalive_seconds": vargs.get("keepalive_seconds"),
                 }
                 try:

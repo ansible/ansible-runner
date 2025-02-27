@@ -875,7 +875,7 @@ def main(sys_args=None):
                 if vargs.get('suppress_env_print'):
                     suppress_env_print = vargs.get('suppress_env_print')
                 else:
-                    suppress_env_print = os.getenv('SUPPRESS_ENV_PRINT', 'False') == 'True'
+                    suppress_env_print = os.getenv('SUPPRESS_ENV_PRINT', 'False').lower() == 'true'
                 run_options = {
                     "private_data_dir": vargs.get('private_data_dir'),
                     "ident": vargs.get('ident'),

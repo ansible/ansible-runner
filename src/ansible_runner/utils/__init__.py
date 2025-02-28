@@ -417,7 +417,11 @@ def open_fifo_write(path: str, data: str | bytes) -> None:
     This blocks the thread until an external process (such as ssh-agent)
     reads data from the pipe.
     '''
-    os.mkfifo(path, stat.S_IRUSR | stat.S_IWUSR)
+    try:
+        os.mkfifo(path, stat.S_IRUSR | stat.S_IWUSR)
+    except FileExistsError:
+        # Use existing path
+        pass
     # If the data is a string instead of bytes, convert it before writing the fifo
     if isinstance(data, str):
         data = data.encode()

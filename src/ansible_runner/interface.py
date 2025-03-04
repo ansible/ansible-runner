@@ -169,7 +169,7 @@ def run(**kwargs):
     :param str ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
     :param str cmdline: Command line options passed to Ansible read from ``env/cmdline`` in ``private_data_dir``
     :param bool suppress_env_files: Disable the writing of files into the ``env`` which may store sensitive information
-    :param bool suppress_env_print: Disable the printing of env vars on stdout which may contain sensitive information
+    :param bool mask_secrets_in_env: Mask the printing of env vars on stdout which may contain sensitive information
     :param str limit: Matches ansible's ``--limit`` parameter to further constrain the inventory to be used
     :param int forks: Control Ansible parallel concurrency
     :param int verbosity: Control how verbose the output of ansible-playbook is

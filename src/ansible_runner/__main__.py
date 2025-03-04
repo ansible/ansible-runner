@@ -629,10 +629,10 @@ def main(sys_args=None):
         help="show the execution node's Ansible Runner version along with its memory and CPU capacities"
     )
     worker_subparser.add_argument(
-        "--suppress-env-print",
-        dest="suppress_env_print",
+        "--mask-secrets-in-env",
+        dest="mask_secrets_in_env",
         action="store_true",
-        help="add flag to prevent the printing of env vars on stdout. Also set via SUPPRESS_ENV_PRINT"
+        help="add flag to mask the printing of env vars on stdout that may contain secrets. Also set via MASK_SECRETS_IN_ENV"
     )
     worker_subparser.add_argument(
         "--delete",
@@ -872,10 +872,10 @@ def main(sys_args=None):
 
         with context:
             with role_manager(vargs) as vargs:
-                if vargs.get('suppress_env_print'):
-                    suppress_env_print = vargs.get('suppress_env_print')
+                if vargs.get('mask_secrets_in_env'):
+                    mask_secrets_in_env = vargs.get('mask_secrets_in_env')
                 else:
-                    suppress_env_print = os.getenv('SUPPRESS_ENV_PRINT', 'False').lower() == 'true'
+                    mask_secrets_in_env = os.getenv('MASK_SECRETS_IN_ENV', 'False') == 'True'
                 run_options = {
                     "private_data_dir": vargs.get('private_data_dir'),
                     "ident": vargs.get('ident'),
@@ -910,7 +910,7 @@ def main(sys_args=None):
                     "limit": vargs.get('limit'),
                     "streamer": streamer,
                     "suppress_env_files": vargs.get("suppress_env_files"),
-                    "suppress_env_print": suppress_env_print,
+                    "mask_secrets_in_env": mask_secrets_in_env,
                     "keepalive_seconds": vargs.get("keepalive_seconds"),
                 }
                 try:

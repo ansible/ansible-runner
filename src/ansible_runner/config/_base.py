@@ -88,7 +88,7 @@ class BaseConfig:
                  json_mode: bool = False,
                  check_job_event_data: bool = False,
                  suppress_env_files: bool = False,
-                 suppress_env_print: bool = False,
+                 mask_secrets_in_env: bool = False,
                  keepalive_seconds: int | None = None
                  ):
         # pylint: disable=W0613
@@ -119,7 +119,7 @@ class BaseConfig:
         self.timeout = timeout
         self.check_job_event_data = check_job_event_data
         self.suppress_env_files = suppress_env_files
-        self.suppress_env_print = suppress_env_print
+        self.mask_secrets_in_env = mask_secrets_in_env
 
         # ignore this for now since it's worker-specific and would just trip up old runners
         # self.keepalive_seconds = keepalive_seconds

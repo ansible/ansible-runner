@@ -520,3 +520,23 @@ def signal_handler() -> Callable[[], bool] | None:
     signal.signal(signal.SIGINT, _handler)
 
     return signal_event.is_set
+
+
+def build_safe_env(env):
+    """
+    Build environment dictionary, hiding potentially sensitive information
+    such as passwords or keys.
+    """
+    hidden_re = re.compile(r'API|TOKEN|KEY|SECRET|PASS|PWD|CRED|AUTH', re.I)
+    urlpass_re = re.compile(r'^.*?://[^:]+:(.*?)@.*?$')
+    safe_env = dict(env)
+    for k, v in safe_env.items():
+        if k == 'AWS_ACCESS_KEY_ID':
+            continue
+        if k.startswith('ANSIBLE_') and not k.startswith('ANSIBLE_NET') and not k.startswith('ANSIBLE_GALAXY_SERVER'):
+            continue
+        if hidden_re.search(k):
+            safe_env[k] = '**********'
+        elif isinstance(type(v), str) and urlpass_re.match(v):
+            safe_env[k] = urlpass_re.sub('**********', v)
+    return safe_env

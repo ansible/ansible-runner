@@ -519,13 +519,13 @@ def test_unparsable_really_big_line_processor(tmp_path):
     )
 
 
-@pytest.mark.parametrize("suppress", [True, False])
-def test_suppress_env_print(tmp_path, suppress):
+@pytest.mark.parametrize("mask", [True, False])
+def test_mask_secrets_in_env(tmp_path, mask):
     worker_dir = tmp_path / 'for_worker'
     worker_dir.mkdir()
     incoming_buffer = io.BytesIO(
-        b'{"kwargs": {"playbook": "debug.yml", "suppress_env_print": true}}\n{"eof": true}\n' if suppress
-        else b'{"kwargs": {"playbook": "debug.yml", "suppress_env_print": false}}\n{"eof": true}\n')
+        b'{"kwargs": {"playbook": "debug.yml", "mask_secrets_in_env": true}}\n{"eof": true}\n'
+        if mask else b'{"kwargs": {"playbook": "debug.yml", "mask_secrets_in_env": false}}\n{"eof": true}\n')
     outgoing_buffer = io.BytesIO()
 
     for buffer in (outgoing_buffer, incoming_buffer):
@@ -537,9 +537,9 @@ def test_suppress_env_print(tmp_path, suppress):
         _input=incoming_buffer,
         _output=outgoing_buffer,
         private_data_dir=worker_dir,
-        envvars={"SUPPRESS_ENV_PRINT": "False"}
+        envvars={"TEST_PASSWORD": "SUPERSECRETPASSWORD"}
     )
     outgoing_buffer.seek(0)
     sent = outgoing_buffer.readline()
     data = json.loads(sent)
-    assert data["env"]["SUPPRESS_ENV_PRINT"] == str(suppress)
+    assert data["env"]["TEST_PASSWORD"] == ('**********' if mask else "SUPERSECRETPASSWORD")

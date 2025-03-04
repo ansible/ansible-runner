@@ -17,7 +17,7 @@ import ansible_runner
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.loader import ArtifactLoader
 import ansible_runner.plugins
-from ansible_runner.utils import register_for_cleanup
+from ansible_runner.utils import register_for_cleanup, build_safe_env
 from ansible_runner.utils.streaming import stream_dir, unstream_dir
 
 
@@ -226,10 +226,8 @@ class Worker:
         # pylint: disable=W0613
         self.status = status_data['status']
         printed_status_data = status_data.copy()
-        if 'suppress_env_print' in self.kwargs and self.kwargs['suppress_env_print']:
-            suppressed_env = {}
-            suppressed_env['SUPPRESS_ENV_PRINT'] = str(self.kwargs['suppress_env_print'])
-            printed_status_data['env'] = suppressed_env
+        if 'mask_secrets_in_env' in self.kwargs and self.kwargs['mask_secrets_in_env']:
+            printed_status_data['env'] = build_safe_env(status_data['env']) if 'env' in status_data else {}
         self._output.write(json.dumps(printed_status_data).encode('utf-8'))
         self._output.write(b'\n')
         self._output.flush()

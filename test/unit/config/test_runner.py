@@ -684,7 +684,7 @@ def test_container_volume_mounting_with_Z(mocker, tmp_path):
     for i, entry in enumerate(new_args):
         if entry == '-v':
             mount = new_args[i + 1]
-            if mount.endswith(':/tmp/project_path/:Z'):
+            if mount.endswith(':/tmp/project_path:Z'):
                 break
     else:
         raise Exception(f'Could not find expected mount, args: {new_args}')

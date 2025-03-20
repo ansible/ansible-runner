@@ -728,7 +728,7 @@ def test_containerization_settings(tmp_path, runtime, mocker):
 
     expected_command_start = [runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
         ['-v', f'{rc.private_data_dir}/:/runner/:Z'] + \
-        ['-v', '/host1/:/container1/', '-v', '/host2/:/container2/'] + \
+        ['-v', '/host1:/container1', '-v', '/host2:/container2'] + \
         ['--env-file', f'{rc.artifact_dir}/env.list'] + \
         extra_container_args + \
         ['--name', 'ansible_runner_foo'] + \

@@ -318,7 +318,7 @@ def test_containerization_settings(tmp_path, runtime, mocker):
         '--workdir',
         '/runner/project',
         '-v', f'{str(tmp_path)}/.ssh/:/home/runner/.ssh/',
-        '-v', f'{str(tmp_path)}/.ssh/:/root/.ssh/',
+        '-v', f'{str(tmp_path)}/.ssh/:/root/.ssh/'
     ]
 
     if os.path.exists('/etc/ssh/ssh_known_hosts'):
@@ -330,6 +330,8 @@ def test_containerization_settings(tmp_path, runtime, mocker):
     expected_command_start.extend([
         '-v', f'{rc.private_data_dir}/artifacts/:/runner/artifacts/:Z',
         '-v', f'{rc.private_data_dir}/:/runner/:Z',
+        '-v', '/host1:/container1',
+        '-v', 'host2:/container2',
         '--env-file', f'{rc.artifact_dir}/env.list',
     ])
 

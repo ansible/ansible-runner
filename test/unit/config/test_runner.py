@@ -684,7 +684,7 @@ def test_container_volume_mounting_with_Z(mocker, tmp_path):
     for i, entry in enumerate(new_args):
         if entry == '-v':
             mount = new_args[i + 1]
-            if mount.endswith(':/tmp/project_path/:Z'):
+            if mount.endswith(':/tmp/project_path:Z'):
                 break
     else:
         raise Exception(f'Could not find expected mount, args: {new_args}')
@@ -728,7 +728,7 @@ def test_containerization_settings(tmp_path, runtime, mocker):
 
     expected_command_start = [runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
         ['-v', f'{rc.private_data_dir}/:/runner/:Z'] + \
-        ['-v', '/host1/:/container1/', '-v', '/host2/:/container2/'] + \
+        ['-v', '/host1:/container1', '-v', '/host2:/container2'] + \
         ['--env-file', f'{rc.artifact_dir}/env.list'] + \
         extra_container_args + \
         ['--name', 'ansible_runner_foo'] + \

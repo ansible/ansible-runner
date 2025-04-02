@@ -438,7 +438,7 @@ def test_run_role(project_fixtures):
 
 
 # pylint: disable=W0613
-def test_get_role_list(project_fixtures, skipif_pre_ansible211):
+def test_get_role_list(project_fixtures):
     """
     Test get_role_list() running locally, specifying a playbook directory
     containing our test role.
@@ -459,7 +459,7 @@ def test_get_role_list(project_fixtures, skipif_pre_ansible211):
 
 
 @pytest.mark.test_all_runtimes
-def test_get_role_list_within_container(project_fixtures, runtime, skipif_pre_ansible211, container_image):
+def test_get_role_list_within_container(project_fixtures, runtime, container_image):
     """
     Test get_role_list() running in a container.
     """
@@ -482,7 +482,7 @@ def test_get_role_list_within_container(project_fixtures, runtime, skipif_pre_an
     assert resp == expected
 
 
-def test_get_role_argspec(project_fixtures, skipif_pre_ansible211):
+def test_get_role_argspec(project_fixtures):
     """
     Test get_role_argspec() running locally, specifying a playbook directory
     containing our test role.
@@ -518,7 +518,7 @@ def test_get_role_argspec(project_fixtures, skipif_pre_ansible211):
 
 
 @pytest.mark.test_all_runtimes
-def test_get_role_argspec_within_container(project_fixtures, runtime, skipif_pre_ansible211, container_image):
+def test_get_role_argspec_within_container(project_fixtures, runtime, container_image):
     """
     Test get_role_argspec() running inside a container. Since the test container
     does not currently contain any collections or roles, specify playbook_dir

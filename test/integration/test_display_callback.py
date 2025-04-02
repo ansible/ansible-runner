@@ -248,7 +248,7 @@ def test_become_task(executor, playbook):  # pylint: disable=W0613,W0621
     assert events[2]["event"] == "playbook_on_task_start"
     assert "task_become" in events[2]["event_data"]
     assert "task_become_user" in events[2]["event_data"]
-    assert events[2]["event_data"]["task_become"] == True
+    assert events[2]["event_data"]["task_become"]
     assert events[2]["event_data"]["task_become_user"] == "root"
 
 

@@ -248,7 +248,7 @@ def test_become_task(executor, playbook, skipif_pre_ansible212):  # pylint: disa
     assert events[2]["event"] == "playbook_on_task_start"
     assert "task_become" in events[2]["event_data"]
     assert "task_become_user" in events[2]["event_data"]
-    assert events[2]["event_data"]["task_become"] == "true"
+    assert events[2]["event_data"]["task_become"] == True
     assert events[2]["event_data"]["task_become_user"] == "root"
 
 

@@ -240,7 +240,7 @@ def test_resolved_actions(executor, playbook, skipif_pre_ansible212):  # pylint:
         },  # noqa
     ],
 )
-def test_become_task(executor, playbook, skipif_pre_ansible212):  # pylint: disable=W0613,W0621
+def test_become_task(executor, playbook):  # pylint: disable=W0613,W0621
     executor.run()
     events = list(executor.events)
 

@@ -11,6 +11,8 @@ rules:
     level: error
   comments:
     min-spaces-from-content: 1 # prettier compatibility
+  indentation:
+    indent-sequences: consistent
   line-length: disable
   document-start: disable
   truthy:

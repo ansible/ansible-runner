@@ -1,0 +1,48 @@
+---
+
+inputs:
+  calling-job-context:
+    description: A JSON with the calling job inputs
+    type: string
+  job-dependencies-context:
+    default: >-
+      {}
+    description: >-
+      The `$ {{ needs }}` context passed from the calling workflow
+      encoded as a JSON string. The caller is expected to form this
+      input as follows:
+      `job-dependencies-context: $ {{ toJSON(needs) }}`.
+    required: false
+    type: string
+
+runs:
+  using: composite
+  steps:
+  - name: Build a wheel
+    if: fromJSON(inputs.calling-job-context).toxenv == 'integration'
+    run: python3 -Im pip wheel --no-deps --wheel-dir=dist/ .
+    shell: bash
+
+  - name: Build a runner test container via docker
+    if: fromJSON(inputs.calling-job-context).toxenv == 'integration'
+    run: >-
+      docker build
+      --build-arg "WHEEL=$(basename dist/ansible_runner*.whl)"
+      --rm=true
+      -t 'ansible-runner-gha${{ github.run_id }}-event-test'
+      --file=test/integration/Dockerfile
+      dist/
+    shell: bash
+
+  - name: Build a runner test container via podman
+    if: fromJSON(inputs.calling-job-context).toxenv == 'integration'
+    run: >-
+      podman build
+      --build-arg "WHEEL=$(basename dist/ansible_runner*.whl)"
+      --rm=true
+      -t ansible-runner-gha${{ github.run_id }}-event-test
+      --file=test/integration/Dockerfile
+      dist/
+    shell: bash
+
+...

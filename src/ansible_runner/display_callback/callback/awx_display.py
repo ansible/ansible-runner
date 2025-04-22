@@ -40,6 +40,7 @@ from ansible.plugins.callback import CallbackBase
 from ansible.plugins.loader import callback_loader
 from ansible.utils.display import Display
 
+display = Display()
 
 DOCUMENTATION = '''
     callback: awx_display
@@ -213,7 +214,8 @@ class EventContext:
         if not omit_event_data and should_process_event_data:
             max_res = int(os.getenv("MAX_EVENT_RES", "700000"))
             if event not in ('playbook_on_stats',) and "res" in event_data and len(str(event_data['res'])) > max_res:
-                event_data['res'] = {}
+                display.warning(f"'res' in event data exceeds maximum allowed size ({max_res}), so it will be dropped")
+                event_data['res'] = {'msg': f"'res' in event data exceeded the maximum allowed size ({max_res}) and was dropped"}
         else:
             event_data = {}
         event_dict['event_data'] = event_data

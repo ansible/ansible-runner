@@ -19,26 +19,31 @@
 
 from __future__ import (absolute_import, division, print_function)
 
-# Python
-import json
-import stat
-import multiprocessing
-import threading
 import base64
-import functools
 import collections
+import collections.abc as c
 import contextlib
 import datetime
+import functools
+import inspect
+import json
 import os
+import stat
 import sys
+import threading
+import typing as t
 import uuid
-from copy import copy
 
 # Ansible
 from ansible import constants as C
 from ansible.plugins.callback import CallbackBase
 from ansible.plugins.loader import callback_loader
 from ansible.utils.display import Display
+from ansible.utils.multiprocessing import context as multiprocessing
+
+P = t.ParamSpec('P')
+
+display = Display()
 
 
 DOCUMENTATION = '''
@@ -48,8 +53,7 @@ DOCUMENTATION = '''
     description:
         - This callback is necessary for ansible-runner to work
     type: stdout
-    extends_documentation_fragment:
-      - default_callback
+    options: {}
     requirements:
       - Set as stdout in config
 '''
@@ -64,7 +68,7 @@ elif IS_ADHOC:
 else:
     default_stdout_callback = 'default'
 
-DefaultCallbackModule: CallbackBase = callback_loader.get(default_stdout_callback).__class__
+DefaultCallbackModule: CallbackBase = callback_loader.get(default_stdout_callback, class_only=True)
 
 CENSORED = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"
 
@@ -132,11 +136,16 @@ class EventContext:
         self._local = threading.local()
         if os.getenv('AWX_ISOLATED_DATA_DIR'):
             self.cache = IsolatedFileWrite()
+        self._global_ctx = {}
 
     def add_local(self, **kwargs):
-        tls = vars(self._local)
-        ctx = tls.setdefault('_ctx', {})
-        ctx.update(kwargs)
+        try:
+            ctx = self._local._ctx
+        except AttributeError:
+            ctx = self._local._ctx = {}
+
+        # Don't overwrite an earlier event context, this is only additive
+        ctx.update(kwargs | ctx)
 
     def remove_local(self, **kwargs):
         for key in kwargs:
@@ -172,22 +181,13 @@ class EventContext:
         return self._global_ctx
 
     def get(self):
-        ctx = {}
-        ctx.update(self.get_global())
-        ctx.update(self.get_local())
-        return ctx
+        return self.get_global() | self.get_local()
 
     def get_begin_dict(self):
         omit_event_data = os.getenv("RUNNER_OMIT_EVENTS", "False").lower() == "true"
         include_only_failed_event_data = os.getenv("RUNNER_ONLY_FAILED_EVENTS", "False").lower() == "true"
         event_data = self.get()
         event = event_data.pop('event', None)
-        if not event:
-            event = 'verbose'
-            for key in ('debug', 'verbose', 'deprecated', 'warning', 'system_warning', 'error'):
-                if event_data.get(key, False):
-                    event = key
-                    break
         event_dict = {'event': event}
         should_process_event_data = (include_only_failed_event_data and event in ('runner_on_failed', 'runner_on_async_failed', 'runner_on_item_failed')) \
             or not include_only_failed_event_data
@@ -247,62 +247,58 @@ class EventContext:
 event_context = EventContext()
 
 
-def with_context(**context):
-    global event_context  # pylint: disable=W0602
-
-    def wrap(f):
-        @functools.wraps(f)
-        def wrapper(*args, **kwargs):
-            with event_context.set_local(**context):
-                return f(*args, **kwargs)
-        return wrapper
-    return wrap
+def _getcallargs(sig: inspect.Signature, *args: P.args, **kwargs: P.kwargs) -> dict:
+    ba = sig.bind(*args, **kwargs)
+    ba.apply_defaults()
+    return ba.arguments
 
 
-for attr in dir(Display):
-    if attr.startswith('_') or 'cow' in attr or 'prompt' in attr:
-        continue
-    if attr in ('display', 'v', 'vv', 'vvv', 'vvvv', 'vvvvv', 'vvvvvv', 'verbose'):
-        continue
-    if not callable(getattr(Display, attr)):
-        continue
-    setattr(Display, attr, with_context(**{attr: True})(getattr(Display, attr)))
+def display_context(f: c.Callable[t.Concatenate[Display, P], None]) -> c.Callable[..., None]:
 
-
-def with_verbosity(f):
-    global event_context  # pylint: disable=W0602
+    sig = inspect.signature(f)
 
     @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        host = args[2] if len(args) >= 3 else kwargs.get('host', None)
-        caplevel = args[3] if len(args) >= 4 else kwargs.get('caplevel', 2)
-        context = {'verbose': True, 'verbosity': (caplevel + 1)}
-        if host is not None:
-            context['remote_addr'] = host
-        with event_context.set_local(**context):
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
+        if multiprocessing.parent_process() is not None:
             return f(*args, **kwargs)
-    return wrapper
 
+        name = f.__name__
+        ctx = {'event': name}
+        callargs = _getcallargs(sig, *args, **kwargs)
+        host = callargs.get('host')
+        caplevel = callargs.get('caplevel')
+        log_only = callargs.get('log_only')
+        stderr = callargs.get('stderr')
+        if host:
+            ctx['remote_addr'] = host
+        if caplevel:
+            ctx['verbosity'] = caplevel + 1
 
-Display.verbose = with_verbosity(Display.verbose)
+        dump = True
+        if caplevel and display.verbosity <= caplevel:
+            dump = False
 
+        if name == 'debug' and not C.DEFAULT_DEBUG:  # pylint: disable=no-member
+            dump = False
 
-def display_with_context(f):
+        if name == 'system_warning' and not C.SYSTEM_WARNINGS:  # pylint: disable=no-member
+            dump = False
 
-    @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        log_only = args[5] if len(args) >= 6 else kwargs.get('log_only', False)
-        stderr = args[3] if len(args) >= 4 else kwargs.get('stderr', False)
+        if name == "deprecated" and not C.DEPRECATION_WARNINGS:  # pylint: disable=no-member
+            dump = False
+
+        if not dump:
+            return f(*args, **kwargs)
+
         event_uuid = event_context.get().get('uuid', None)
         with event_context.display_lock:
-            # If writing only to a log file or there is already an event UUID
-            # set (from a callback module method), skip dumping the event data.
             if log_only or event_uuid:
                 return f(*args, **kwargs)
             try:
                 fileobj = sys.stderr if stderr else sys.stdout
                 event_context.add_local(uuid=str(uuid.uuid4()))
-                event_context.dump_begin(fileobj)
+                with event_context.set_local(**ctx):
+                    event_context.dump_begin(fileobj)
                 return f(*args, **kwargs)
             finally:
                 event_context.dump_end(fileobj)
@@ -311,7 +307,15 @@ def display_with_context(f):
     return wrapper
 
 
-Display.display = display_with_context(Display.display)
+for _display_attr in ('banner', 'deprecated', 'display', 'error',
+                      'system_warning', 'verbose', 'warning'):
+    setattr(
+        Display,
+        _display_attr,
+        display_context(
+            getattr(Display, _display_attr)
+        )
+    )
 
 
 class CallbackModule(DefaultCallbackModule):
@@ -352,6 +356,18 @@ class CallbackModule(DefaultCallbackModule):
         # NOTE: Ansible doesn't generate a UUID for playbook_on_start so do it for them.
         self.playbook_uuid = str(uuid.uuid4())
 
+    def set_options(self, *args, **kwargs):
+        base_config = C.config.get_configuration_definition(
+            DefaultCallbackModule._load_name, plugin_type='callback'
+        )
+        my_config = C.config.get_configuration_definition(
+            self._load_name, plugin_type='callback'
+        )
+        C.config.initialize_plugin_configuration_definitions(
+            'callback', self._load_name, base_config | my_config
+        )
+        return super().set_options(*args, **kwargs)
+
     @contextlib.contextmanager
     def capture_event_data(self, event, **event_data):
         event_data.setdefault('uuid', str(uuid.uuid4()))
@@ -365,7 +381,7 @@ class CallbackModule(DefaultCallbackModule):
             if event_data['res'].get('_ansible_no_log', False):
                 event_data['res'] = {'censored': CENSORED}
             if event_data['res'].get('results', []):
-                event_data['res']['results'] = copy(event_data['res']['results'])
+                event_data['res']['results'] = event_data['res']['results'][:]
             for i, item in enumerate(event_data['res'].get('results', [])):
                 if isinstance(item, dict) and item.get('_ansible_no_log', False):
                     event_data['res']['results'][i] = {'censored': CENSORED}

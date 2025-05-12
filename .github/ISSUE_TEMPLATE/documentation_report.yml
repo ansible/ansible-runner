@@ -10,13 +10,12 @@ body:
       value: |
         **Thank you reporting an issue with Ansible Runner documentation.**
 
-        If you are looking for community support, please visit
-        the [Community guide](https://ansible.readthedocs.io/projects/runner/en/latest/community/)
+        If you are looking for community support, please visit the [Community guide](https://ansible.readthedocs.io/projects/runner/en/latest/community/)
         for information on how to get in touch.
 
-  - type:
+  - type: textarea
     attributes:
       label: Summary
       description: Describe the problem or suggestion with the documentation
-      validations:
-        required: true
+    validations:
+      required: true

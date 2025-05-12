@@ -9,37 +9,38 @@ body:
       value: |
         **Thank you for reporting a bug in Ansible Runner.**
 
-        If you are looking for community support, please visit
-        the [Community guide](https://ansible.readthedocs.io/projects/runner/en/latest/community/)
-        for information on how to get in touch.
+        If this is a question about using `ansible-runner`, please do not use a new issue for your question.
+        New issues should be used only for submitting a new bug report. Please consult the [Community guide](https://ansible.readthedocs.io/projects/runner/en/latest/community/)
+        for information on how to submit your question to the [Ansible Forum](https://forum.ansible.com/).
 
   - type: input
-    label: Ansible Runner version
-    description: Output from `ansible-runner --version`
-    render: console
-    validations:
-      required: true
-
-  - type: textarea
-    label: Python version
-    description: Output from `python -VV`
-    render: console
-    validations:
-      required: true
-
-  - type: textarea
-    label: Operating System and Environment
-    description: Provide relevant information about the operating system and environment
-    render: console
-    placeholder: RHEL 8, Debian 10, output from `/etc/os-release`, any other relevant information
+    attributes:
+      label: Ansible Runner version
+      description: Output from `ansible-runner --version`
     validations:
       required: true
 
   - type: input
-    label: Container Runtime
-    description: Output from `podman|docker --version`
-    render: console
-    placeholder: podman --version
+    attributes:
+      label: Python version
+      description: Output from `python -VV`
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Operating System and Environment
+      description: Provide relevant information about the operating system and environment
+      render: console
+      placeholder: RHEL 8, Debian 10, output from `/etc/os-release`, any other relevant information
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Container Runtime
+      description: Output from `podman|docker --version`
+      placeholder: podman --version
     validations:
       required: true
 

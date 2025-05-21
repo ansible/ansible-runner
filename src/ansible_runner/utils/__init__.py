@@ -527,7 +527,7 @@ def build_safe_env(env):
     Build environment dictionary, hiding potentially sensitive information
     such as passwords or keys.
     """
-    hidden_re = re.compile(r'API|TOKEN|KEY|SECRET|PASS|PWD|CRED|AUTH', re.I)
+    hidden_re = re.compile(r'API|TOKEN|KEY|SECRET|PASS|PWD|CRED|AUTH|PAT', re.I)
     urlpass_re = re.compile(r'^.*?://[^:]+:(.*?)@.*?$')
     safe_env = dict(env)
     for k, v in safe_env.items():

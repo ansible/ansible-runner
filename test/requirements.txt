@@ -8,6 +8,4 @@ pytest-xdist==2.5.0
 types-pyyaml
 flake8==6.1.0
 yamllint==1.32.0
-# cffi pre-release to make cryptography work with python 3.13 (remove when 3.13 is released)
-cffi==1.17.0rc1; python_version == "3.13"
 cryptography

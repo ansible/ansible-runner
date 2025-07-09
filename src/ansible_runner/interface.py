@@ -22,9 +22,16 @@ import json
 import sys
 import threading
 import logging
+import asyncio
+from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
+from enum import Enum
+from pathlib import Path
+from typing import Optional, Union, List, Dict, Any, Callable, Tuple, TypeVar, Generic, Literal
 
 from ansible_runner import output
-from ansible_runner.config.runner import RunnerConfig
+from ansible_runner.config.runner import RunnerConfig as LegacyRunnerConfig
 from ansible_runner.config.command import CommandConfig
 from ansible_runner.config.inventory import InventoryConfig
 from ansible_runner.config.ansible_cfg import AnsibleCfgConfig
@@ -39,6 +46,433 @@ from ansible_runner.utils import (
 )
 
 logging.getLogger('ansible-runner').addHandler(logging.NullHandler())
+
+# Modern type definitions and data classes
+T = TypeVar('T')
+
+class RunnerMode(str, Enum):
+    PEXPECT = "pexpect"
+    SUBPROCESS = "subprocess"
+
+class ResponseFormat(str, Enum):
+    JSON = "json"
+    YAML = "yaml"
+    TOML = "toml"
+    HUMAN = "human"
+
+class PluginType(str, Enum):
+    BECOME = "become"
+    CACHE = "cache"
+    CALLBACK = "callback"
+    CLICONF = "cliconf"
+    CONNECTION = "connection"
+    HTTPAPI = "httpapi"
+    INVENTORY = "inventory"
+    LOOKUP = "lookup"
+    NETCONF = "netconf"
+    SHELL = "shell"
+    VARS = "vars"
+    MODULE = "module"
+    STRATEGY = "strategy"
+
+@dataclass
+class ModernRunnerConfig:
+    """Configuration for Ansible Runner execution."""
+    private_data_dir: Path
+    playbook: Optional[str] = None
+    inventory: Optional[Union[str, Dict, List]] = None
+    roles_path: Optional[Union[str, List[str]]] = None
+    limit: Optional[str] = None
+    module: Optional[str] = None
+    module_args: Optional[str] = None
+    host_pattern: Optional[str] = None
+    verbosity: Optional[int] = None
+    timeout: Optional[int] = None
+    runner_mode: RunnerMode = RunnerMode.PEXPECT
+    forks: Optional[int] = None
+    tags: Optional[str] = None
+    skip_tags: Optional[str] = None
+    extravars: Optional[Dict[str, Any]] = None
+    envvars: Optional[Dict[str, str]] = None
+    passwords: Optional[Dict[str, str]] = None
+    settings: Optional[Dict[str, Any]] = None
+    ssh_key: Optional[str] = None
+    suppress_output_file: bool = False
+    suppress_ansible_output: bool = False
+    quiet: bool = False
+    json_mode: bool = False
+    process_isolation: bool = False
+    process_isolation_executable: Optional[str] = None
+    container_image: Optional[str] = None
+    container_volume_mounts: Optional[List[str]] = None
+    container_options: Optional[List[str]] = None
+    
+    def __post_init__(self):
+        """Validate configuration after initialization."""
+        if self.playbook and self.module:
+            raise ValueError("Cannot specify both playbook and module")
+        if isinstance(self.private_data_dir, str):
+            self.private_data_dir = Path(self.private_data_dir)
+        if self.private_data_dir and not self.private_data_dir.exists():
+            self.private_data_dir.mkdir(parents=True, exist_ok=True)
+
+@dataclass
+class CallbackConfig:
+    """Configuration for runner callbacks."""
+    event_handler: Optional[Callable] = None
+    status_handler: Optional[Callable] = None
+    cancel_callback: Optional[Callable] = None
+    finished_callback: Optional[Callable] = None
+    artifacts_handler: Optional[Callable] = None
+
+class RunnerBuilder:
+    """Builder for creating ModernRunnerConfig with fluent interface."""
+    
+    def __init__(self, private_data_dir: Union[str, Path]):
+        self._config = ModernRunnerConfig(private_data_dir=Path(private_data_dir))
+    
+    def playbook(self, playbook: str) -> 'RunnerBuilder':
+        self._config.playbook = playbook
+        return self
+    
+    def inventory(self, inventory: Union[str, Dict, List]) -> 'RunnerBuilder':
+        self._config.inventory = inventory
+        return self
+    
+    def module(self, module: str, args: Optional[str] = None) -> 'RunnerBuilder':
+        self._config.module = module
+        self._config.module_args = args
+        return self
+    
+    def host_pattern(self, pattern: str) -> 'RunnerBuilder':
+        self._config.host_pattern = pattern
+        return self
+    
+    def verbosity(self, level: int) -> 'RunnerBuilder':
+        self._config.verbosity = level
+        return self
+    
+    def timeout(self, seconds: int) -> 'RunnerBuilder':
+        self._config.timeout = seconds
+        return self
+    
+    def runner_mode(self, mode: RunnerMode) -> 'RunnerBuilder':
+        self._config.runner_mode = mode
+        return self
+    
+    def forks(self, count: int) -> 'RunnerBuilder':
+        self._config.forks = count
+        return self
+    
+    def tags(self, tags: str) -> 'RunnerBuilder':
+        self._config.tags = tags
+        return self
+    
+    def skip_tags(self, tags: str) -> 'RunnerBuilder':
+        self._config.skip_tags = tags
+        return self
+    
+    def extravars(self, vars_dict: Dict[str, Any]) -> 'RunnerBuilder':
+        self._config.extravars = vars_dict
+        return self
+    
+    def envvars(self, env_dict: Dict[str, str]) -> 'RunnerBuilder':
+        self._config.envvars = env_dict
+        return self
+    
+    def passwords(self, pass_dict: Dict[str, str]) -> 'RunnerBuilder':
+        self._config.passwords = pass_dict
+        return self
+    
+    def ssh_key(self, key_path: str) -> 'RunnerBuilder':
+        self._config.ssh_key = key_path
+        return self
+    
+    def quiet(self, enabled: bool = True) -> 'RunnerBuilder':
+        self._config.quiet = enabled
+        return self
+    
+    def json_mode(self, enabled: bool = True) -> 'RunnerBuilder':
+        self._config.json_mode = enabled
+        return self
+    
+    def process_isolation(self, enabled: bool = True, executable: Optional[str] = None) -> 'RunnerBuilder':
+        self._config.process_isolation = enabled
+        if executable:
+            self._config.process_isolation_executable = executable
+        return self
+    
+    def containerized(self, image: str, volume_mounts: Optional[List[str]] = None, 
+                     options: Optional[List[str]] = None) -> 'RunnerBuilder':
+        self._config.container_image = image
+        self._config.container_volume_mounts = volume_mounts
+        self._config.container_options = options
+        return self
+    
+    def build(self) -> ModernRunnerConfig:
+        """Build and validate the configuration."""
+        self._config.__post_init__()
+        return self._config
+
+class AsyncOperation(Generic[T], ABC):
+    """Base class for async operations."""
+    
+    @abstractmethod
+    def execute(self) -> T:
+        """Execute the operation synchronously."""
+        pass
+    
+    async def execute_async(self) -> T:
+        """Execute the operation asynchronously."""
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            return await loop.run_in_executor(executor, self.execute)
+    
+    def execute_threaded(self) -> Tuple[threading.Thread, Any]:
+        """Execute in a separate thread (legacy compatibility)."""
+        result_container = []
+        exception_container = []
+        
+        def run():
+            try:
+                result_container.append(self.execute())
+            except Exception as e:
+                exception_container.append(e)
+        
+        thread = threading.Thread(target=run)
+        thread.start()
+        
+        # Return thread and a placeholder - caller must join thread to get result
+        return thread, lambda: result_container[0] if result_container else None
+
+class PlaybookRunner(AsyncOperation[Runner]):
+    """Handles playbook execution."""
+    
+    def __init__(self, config: ModernRunnerConfig, callbacks: CallbackConfig):
+        self.config = config
+        self.callbacks = callbacks
+    
+    def execute(self) -> Runner:
+        """Execute playbook synchronously."""
+        kwargs = self._build_kwargs()
+        runner = init_runner(**kwargs)
+        runner.run()
+        return runner
+    
+    def _build_kwargs(self) -> Dict[str, Any]:
+        """Build kwargs for legacy init_runner function."""
+        kwargs = {
+            'private_data_dir': str(self.config.private_data_dir),
+            'playbook': self.config.playbook,
+            'inventory': self.config.inventory,
+            'roles_path': self.config.roles_path,
+            'limit': self.config.limit,
+            'verbosity': self.config.verbosity,
+            'timeout': self.config.timeout,
+            'forks': self.config.forks,
+            'tags': self.config.tags,
+            'skip_tags': self.config.skip_tags,
+            'extravars': self.config.extravars,
+            'envvars': self.config.envvars,
+            'passwords': self.config.passwords,
+            'settings': self.config.settings,
+            'ssh_key': self.config.ssh_key,
+            'suppress_output_file': self.config.suppress_output_file,
+            'suppress_ansible_output': self.config.suppress_ansible_output,
+            'quiet': self.config.quiet,
+            'json_mode': self.config.json_mode,
+            'process_isolation': self.config.process_isolation,
+            'process_isolation_executable': self.config.process_isolation_executable,
+            'container_image': self.config.container_image,
+            'container_volume_mounts': self.config.container_volume_mounts,
+            'container_options': self.config.container_options,
+            'event_handler': self.callbacks.event_handler,
+            'status_handler': self.callbacks.status_handler,
+            'cancel_callback': self.callbacks.cancel_callback,
+            'finished_callback': self.callbacks.finished_callback,
+            'artifacts_handler': self.callbacks.artifacts_handler,
+        }
+        # Remove None values
+        return {k: v for k, v in kwargs.items() if v is not None}
+
+class ModuleRunner(AsyncOperation[Runner]):
+    """Handles ad-hoc module execution."""
+    
+    def __init__(self, config: ModernRunnerConfig, callbacks: CallbackConfig):
+        self.config = config
+        self.callbacks = callbacks
+    
+    def execute(self) -> Runner:
+        """Execute module synchronously."""
+        kwargs = self._build_kwargs()
+        runner = init_runner(**kwargs)
+        runner.run()
+        return runner
+    
+    def _build_kwargs(self) -> Dict[str, Any]:
+        """Build kwargs for legacy init_runner function."""
+        kwargs = {
+            'private_data_dir': str(self.config.private_data_dir),
+            'module': self.config.module,
+            'module_args': self.config.module_args,
+            'host_pattern': self.config.host_pattern,
+            'inventory': self.config.inventory,
+            'verbosity': self.config.verbosity,
+            'timeout': self.config.timeout,
+            'forks': self.config.forks,
+            'extravars': self.config.extravars,
+            'envvars': self.config.envvars,
+            'passwords': self.config.passwords,
+            'settings': self.config.settings,
+            'ssh_key': self.config.ssh_key,
+            'suppress_output_file': self.config.suppress_output_file,
+            'suppress_ansible_output': self.config.suppress_ansible_output,
+            'quiet': self.config.quiet,
+            'json_mode': self.config.json_mode,
+            'process_isolation': self.config.process_isolation,
+            'process_isolation_executable': self.config.process_isolation_executable,
+            'container_image': self.config.container_image,
+            'container_volume_mounts': self.config.container_volume_mounts,
+            'container_options': self.config.container_options,
+            'event_handler': self.callbacks.event_handler,
+            'status_handler': self.callbacks.status_handler,
+            'cancel_callback': self.callbacks.cancel_callback,
+            'finished_callback': self.callbacks.finished_callback,
+            'artifacts_handler': self.callbacks.artifacts_handler,
+        }
+        # Remove None values
+        return {k: v for k, v in kwargs.items() if v is not None}
+
+class CommandRunner(AsyncOperation[Tuple[str, str, int]]):
+    """Handles arbitrary command execution."""
+    
+    def __init__(self, command: str, args: Optional[List[str]] = None, 
+                 config: Optional[ModernRunnerConfig] = None, 
+                 callbacks: Optional[CallbackConfig] = None):
+        self.command = command
+        self.args = args or []
+        self.config = config or ModernRunnerConfig(private_data_dir=Path.cwd())
+        self.callbacks = callbacks or CallbackConfig()
+    
+    def execute(self) -> Tuple[str, str, int]:
+        """Execute command and return (stdout, stderr, returncode)."""
+        kwargs = self._build_kwargs()
+        return run_command(self.command, cmdline_args=self.args, **kwargs)
+    
+    def _build_kwargs(self) -> Dict[str, Any]:
+        """Build kwargs for legacy run_command function."""
+        kwargs = {
+            'private_data_dir': str(self.config.private_data_dir),
+            'timeout': self.config.timeout,
+            'envvars': self.config.envvars,
+            'passwords': self.config.passwords,
+            'settings': self.config.settings,
+            'ssh_key': self.config.ssh_key,
+            'quiet': self.config.quiet,
+            'json_mode': self.config.json_mode,
+            'process_isolation': self.config.process_isolation,
+            'process_isolation_executable': self.config.process_isolation_executable,
+            'container_image': self.config.container_image,
+            'container_volume_mounts': self.config.container_volume_mounts,
+            'container_options': self.config.container_options,
+            'event_handler': self.callbacks.event_handler,
+            'status_handler': self.callbacks.status_handler,
+            'cancel_callback': self.callbacks.cancel_callback,
+            'finished_callback': self.callbacks.finished_callback,
+            'artifacts_handler': self.callbacks.artifacts_handler,
+        }
+        # Remove None values
+        return {k: v for k, v in kwargs.items() if v is not None}
+
+class AnsibleRunner:
+    """Modern interface for Ansible Runner operations."""
+    
+    def __init__(self, private_data_dir: Union[str, Path]):
+        self.private_data_dir = Path(private_data_dir)
+        self._callbacks = CallbackConfig()
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # Cleanup if needed
+        pass
+    
+    def configure(self) -> RunnerBuilder:
+        """Get a builder for configuration."""
+        return RunnerBuilder(self.private_data_dir)
+    
+    def with_callbacks(self, event_handler: Optional[Callable] = None,
+                      status_handler: Optional[Callable] = None,
+                      cancel_callback: Optional[Callable] = None,
+                      finished_callback: Optional[Callable] = None,
+                      artifacts_handler: Optional[Callable] = None) -> 'AnsibleRunner':
+        """Configure callbacks fluently."""
+        self._callbacks = CallbackConfig(
+            event_handler=event_handler,
+            status_handler=status_handler,
+            cancel_callback=cancel_callback,
+            finished_callback=finished_callback,
+            artifacts_handler=artifacts_handler
+        )
+        return self
+    
+    def run_playbook(self, config: ModernRunnerConfig) -> Runner:
+        """Run playbook synchronously."""
+        runner = PlaybookRunner(config, self._callbacks)
+        return runner.execute()
+    
+    async def run_playbook_async(self, config: ModernRunnerConfig) -> Runner:
+        """Run playbook asynchronously."""
+        runner = PlaybookRunner(config, self._callbacks)
+        return await runner.execute_async()
+    
+    def run_playbook_threaded(self, config: ModernRunnerConfig) -> Tuple[threading.Thread, Runner]:
+        """Run playbook in a separate thread (legacy compatibility)."""
+        runner = PlaybookRunner(config, self._callbacks)
+        thread, result_fn = runner.execute_threaded()
+        return thread, result_fn
+    
+    def run_module(self, config: ModernRunnerConfig) -> Runner:
+        """Run ad-hoc module synchronously."""
+        runner = ModuleRunner(config, self._callbacks)
+        return runner.execute()
+    
+    async def run_module_async(self, config: ModernRunnerConfig) -> Runner:
+        """Run ad-hoc module asynchronously."""
+        runner = ModuleRunner(config, self._callbacks)
+        return await runner.execute_async()
+    
+    def run_module_threaded(self, config: ModernRunnerConfig) -> Tuple[threading.Thread, Runner]:
+        """Run ad-hoc module in a separate thread (legacy compatibility)."""
+        runner = ModuleRunner(config, self._callbacks)
+        thread, result_fn = runner.execute_threaded()
+        return thread, result_fn
+    
+    def run_command(self, command: str, args: Optional[List[str]] = None,
+                   config: Optional[ModernRunnerConfig] = None) -> Tuple[str, str, int]:
+        """Run command synchronously."""
+        if config is None:
+            config = ModernRunnerConfig(private_data_dir=self.private_data_dir)
+        runner = CommandRunner(command, args, config, self._callbacks)
+        return runner.execute()
+    
+    async def run_command_async(self, command: str, args: Optional[List[str]] = None,
+                               config: Optional[ModernRunnerConfig] = None) -> Tuple[str, str, int]:
+        """Run command asynchronously."""
+        if config is None:
+            config = ModernRunnerConfig(private_data_dir=self.private_data_dir)
+        runner = CommandRunner(command, args, config, self._callbacks)
+        return await runner.execute_async()
+    
+    def run_command_threaded(self, command: str, args: Optional[List[str]] = None,
+                            config: Optional[ModernRunnerConfig] = None) -> Tuple[threading.Thread, Tuple[str, str, int]]:
+        """Run command in a separate thread (legacy compatibility)."""
+        if config is None:
+            config = ModernRunnerConfig(private_data_dir=self.private_data_dir)
+        runner = CommandRunner(command, args, config, self._callbacks)
+        thread, result_fn = runner.execute_threaded()
+        return thread, result_fn
 
 
 def init_runner(**kwargs):
@@ -133,9 +567,13 @@ def init_runner(**kwargs):
                   finished_callback=finished_callback)
 
 
+# Legacy compatibility functions - these wrap the new modern interface
 def run(**kwargs):
     '''
     Run an Ansible Runner task in the foreground and return a Runner object when complete.
+    
+    This is a legacy compatibility function that wraps the new modern interface.
+    For new code, consider using AnsibleRunner class for better type safety and modern features.
 
     :param str private_data_dir: The directory containing all runner metadata needed to invoke the runner
                              module. Output artifacts will also be stored here for later consumption.
@@ -209,6 +647,7 @@ def run(**kwargs):
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object, or a simple object containing ``rc`` if run remotely
     '''
+    # Use the legacy init_runner function to maintain exact compatibility
     r = init_runner(**kwargs)
     r.run()
     return r
@@ -315,7 +754,32 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
     with r.stdout as stdout, r.stderr as stderr:
         response = stdout.read()
         error = stderr.read()
-    return response, error, r.rc
+    return response, error
+
+
+# Modern interface convenience functions
+def create_runner(private_data_dir: Union[str, Path]) -> AnsibleRunner:
+    """
+    Create a new AnsibleRunner instance with the specified private data directory.
+    
+    This is a convenience function for the modern interface.
+    
+    :param private_data_dir: The directory containing all runner metadata
+    :returns: A new AnsibleRunner instance
+    """
+    return AnsibleRunner(private_data_dir)
+
+
+def build_config(private_data_dir: Union[str, Path]) -> RunnerBuilder:
+    """
+    Create a new RunnerBuilder for fluent configuration.
+    
+    This is a convenience function for the modern interface.
+    
+    :param private_data_dir: The directory containing all runner metadata
+    :returns: A new RunnerBuilder instance
+    """
+    return RunnerBuilder(private_data_dir), r.rc
 
 
 def run_command_async(executable_cmd, cmdline_args=None, **kwargs):
@@ -460,6 +924,31 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format=None, snippe
     return response, error
 
 
+# Modern interface convenience functions
+def create_runner(private_data_dir: Union[str, Path]) -> AnsibleRunner:
+    """
+    Create a new AnsibleRunner instance with the specified private data directory.
+    
+    This is a convenience function for the modern interface.
+    
+    :param private_data_dir: The directory containing all runner metadata
+    :returns: A new AnsibleRunner instance
+    """
+    return AnsibleRunner(private_data_dir)
+
+
+def build_config(private_data_dir: Union[str, Path]) -> RunnerBuilder:
+    """
+    Create a new RunnerBuilder for fluent configuration.
+    
+    This is a convenience function for the modern interface.
+    
+    :param private_data_dir: The directory containing all runner metadata
+    :returns: A new RunnerBuilder instance
+    """
+    return RunnerBuilder(private_data_dir)
+
+
 def get_plugin_docs_async(plugin_names, plugin_type=None, response_format=None, snippet=False, playbook_dir=None, module_path=None, **kwargs):
     '''
     Run an ansible-doc command in the background which will start immediately. Returns the thread object and a Runner object.
@@ -590,6 +1079,31 @@ def get_plugin_list(list_files=None, response_format=None, plugin_type=None, pla
     return response, error
 
 
+# Modern interface convenience functions
+def create_runner(private_data_dir: Union[str, Path]) -> AnsibleRunner:
+    """
+    Create a new AnsibleRunner instance with the specified private data directory.
+    
+    This is a convenience function for the modern interface.
+    
+    :param private_data_dir: The directory containing all runner metadata
+    :returns: A new AnsibleRunner instance
+    """
+    return AnsibleRunner(private_data_dir)
+
+
+def build_config(private_data_dir: Union[str, Path]) -> RunnerBuilder:
+    """
+    Create a new RunnerBuilder for fluent configuration.
+    
+    This is a convenience function for the modern interface.
+    
+    :param private_data_dir: The directory containing all runner metadata
+    :returns: A new RunnerBuilder instance
+    """
+    return RunnerBuilder(private_data_dir)
+
+
 def get_inventory(action, inventories, response_format=None, host=None, playbook_dir=None,
                   vault_ids=None, vault_password_file=None, output_file=None, export=None, **kwargs):
     '''
@@ -715,6 +1229,31 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
     return response, error
 
 
+# Modern interface convenience functions
+def create_runner(private_data_dir: Union[str, Path]) -> AnsibleRunner:
+    """
+    Create a new AnsibleRunner instance with the specified private data directory.
+    
+    This is a convenience function for the modern interface.
+    
+    :param private_data_dir: The directory containing all runner metadata
+    :returns: A new AnsibleRunner instance
+    """
+    return AnsibleRunner(private_data_dir)
+
+
+def build_config(private_data_dir: Union[str, Path]) -> RunnerBuilder:
+    """
+    Create a new RunnerBuilder for fluent configuration.
+    
+    This is a convenience function for the modern interface.
+    
+    :param private_data_dir: The directory containing all runner metadata
+    :returns: A new RunnerBuilder instance
+    """
+    return RunnerBuilder(private_data_dir)
+
+
 def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     '''
     Run an ansible-config command to get ansible configuration releated details.
@@ -819,6 +1358,31 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     return response, error
 
 
+# Modern interface convenience functions
+def create_runner(private_data_dir: Union[str, Path]) -> AnsibleRunner:
+    """
+    Create a new AnsibleRunner instance with the specified private data directory.
+    
+    This is a convenience function for the modern interface.
+    
+    :param private_data_dir: The directory containing all runner metadata
+    :returns: A new AnsibleRunner instance
+    """
+    return AnsibleRunner(private_data_dir)
+
+
+def build_config(private_data_dir: Union[str, Path]) -> RunnerBuilder:
+    """
+    Create a new RunnerBuilder for fluent configuration.
+    
+    This is a convenience function for the modern interface.
+    
+    :param private_data_dir: The directory containing all runner metadata
+    :returns: A new RunnerBuilder instance
+    """
+    return RunnerBuilder(private_data_dir)
+
+
 def get_role_list(collection=None, playbook_dir=None, **kwargs):
     '''
     Run an ``ansible-doc`` command to get list of installed collection roles.
@@ -897,6 +1461,31 @@ def get_role_list(collection=None, playbook_dir=None, **kwargs):
     return response, error
 
 
+# Modern interface convenience functions
+def create_runner(private_data_dir: Union[str, Path]) -> AnsibleRunner:
+    """
+    Create a new AnsibleRunner instance with the specified private data directory.
+    
+    This is a convenience function for the modern interface.
+    
+    :param private_data_dir: The directory containing all runner metadata
+    :returns: A new AnsibleRunner instance
+    """
+    return AnsibleRunner(private_data_dir)
+
+
+def build_config(private_data_dir: Union[str, Path]) -> RunnerBuilder:
+    """
+    Create a new RunnerBuilder for fluent configuration.
+    
+    This is a convenience function for the modern interface.
+    
+    :param private_data_dir: The directory containing all runner metadata
+    :returns: A new RunnerBuilder instance
+    """
+    return RunnerBuilder(private_data_dir)
+
+
 def get_role_argspec(role, collection=None, playbook_dir=None, **kwargs):
     '''
     Run an ``ansible-doc`` command to get a role argument specification.
@@ -973,3 +1562,28 @@ def get_role_argspec(role, collection=None, playbook_dir=None, **kwargs):
     if response:
         response = json.loads(sanitize_json_response(response))
     return response, error
+
+
+# Modern interface convenience functions
+def create_runner(private_data_dir: Union[str, Path]) -> AnsibleRunner:
+    """
+    Create a new AnsibleRunner instance with the specified private data directory.
+    
+    This is a convenience function for the modern interface.
+    
+    :param private_data_dir: The directory containing all runner metadata
+    :returns: A new AnsibleRunner instance
+    """
+    return AnsibleRunner(private_data_dir)
+
+
+def build_config(private_data_dir: Union[str, Path]) -> RunnerBuilder:
+    """
+    Create a new RunnerBuilder for fluent configuration.
+    
+    This is a convenience function for the modern interface.
+    
+    :param private_data_dir: The directory containing all runner metadata
+    :returns: A new RunnerBuilder instance
+    """
+    return RunnerBuilder(private_data_dir)

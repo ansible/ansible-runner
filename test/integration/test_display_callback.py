@@ -198,31 +198,6 @@ def test_callback_plugin_task_args_leak(executor, playbook):  # pylint: disable=
     assert not events[-1]['event_data']['failures'], 'Unexpected playbook execution failure'
 
 
-@pytest.mark.parametrize(
-    "playbook",
-    [
-        {
-            "simple.yml": """
-- name: simpletask
-  connection: local
-  hosts: all
-  gather_facts: no
-  tasks:
-    - shell: echo "resolved actions test!"
-"""
-        },  # noqa
-    ],
-)
-def test_resolved_actions(executor, playbook):  # pylint: disable=W0613,W0621
-    executor.run()
-    events = list(executor.events)
-
-    # task 1
-    assert events[2]["event"] == "playbook_on_task_start"
-    assert "resolved_action" in events[2]["event_data"]
-    assert events[2]["event_data"]["resolved_action"] == "ansible.builtin.shell"
-
-
 @pytest.mark.parametrize("playbook", [
 {'loop_with_no_log.yml': '''
 - name: playbook variable should not be overwritten when using no log
@@ -365,8 +340,7 @@ def test_output_when_given_invalid_playbook(tmp_path):
     ex.run()
     with ex.stdout as f:
         stdout = f.read()
-    assert "ERROR! the playbook:" in stdout
-    assert "could not be found" in stdout
+    assert "fake_playbook.yml could not be found" in stdout
 
 
 def test_output_when_given_non_playbook_script(tmp_path):

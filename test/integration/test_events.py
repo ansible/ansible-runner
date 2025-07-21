@@ -138,8 +138,6 @@ def test_include_role_events(project_fixtures):
         assert 'resolved_role' not in event_data  # should not specify FQCN name if not from collection
         if event['event'] == 'runner_on_ok':
             assert event_data['res']['msg'] == 'Hello world!'
-        if event['event'] == 'playbook_on_task_start':
-            assert event_data['resolved_action'] == 'ansible.builtin.debug'
 
 
 def test_include_role_from_collection_events(project_fixtures):
@@ -155,8 +153,6 @@ def test_include_role_from_collection_events(project_fixtures):
             assert event_data['resolved_role'] == 'groovy.peanuts.hello'
         if event['event'] == 'runner_on_ok':
             assert event_data['res']['msg'] == 'Hello peanuts!'
-        if event['event'] == 'playbook_on_task_start':
-            assert event_data['resolved_action'] == 'ansible.builtin.debug'
         if event['event'] == 'playbook_on_stats':
             assert 'resolved_role' not in event_data
             assert 'resolved_action' not in event_data

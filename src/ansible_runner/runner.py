@@ -6,7 +6,6 @@ import errno
 import signal
 from subprocess import Popen, PIPE, CalledProcessError, TimeoutExpired, run as run_subprocess
 import shutil
-import codecs
 import collections
 import datetime
 import logging
@@ -68,7 +67,7 @@ class Runner:
             try:
                 event_data.update({'runner_ident': str(self.config.ident)})
                 try:
-                    with codecs.open(partial_filename, 'r', encoding='utf-8') as read_file:
+                    with open(partial_filename, 'r', encoding='utf-8') as read_file:
                         partial_event_data = json.load(read_file)
                     event_data.update(partial_event_data)
                     if self.remove_partials:
@@ -92,7 +91,7 @@ class Runner:
                     ansible_runner.plugins[plugin].event_handler(self.config, event_data)
                 if should_write:
                     temporary_filename = full_filename + '.tmp'
-                    with codecs.open(temporary_filename, 'w', encoding='utf-8') as write_file:
+                    with open(temporary_filename, 'w', encoding='utf-8') as write_file:
                         os.chmod(temporary_filename, stat.S_IRUSR | stat.S_IWUSR)
                         json.dump(event_data, write_file)
                     os.rename(temporary_filename, full_filename)
@@ -136,7 +135,7 @@ class Runner:
             os.mkdir(job_events_path, 0o700)
 
         command = self.config.command
-        with codecs.open(command_filename, 'w', encoding='utf-8') as f:
+        with open(command_filename, 'w', encoding='utf-8') as f:
             os.chmod(command_filename, stat.S_IRUSR | stat.S_IWUSR)
             json.dump(
                 {'command': command,
@@ -156,8 +155,8 @@ class Runner:
             stdout_filename = os.path.join(self.config.artifact_dir, 'stdout')
             stderr_filename = os.path.join(self.config.artifact_dir, 'stderr')
             os.close(os.open(stdout_filename, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR))
-            stdout_handle = codecs.open(stdout_filename, 'w', encoding='utf-8')
-            stderr_handle = codecs.open(stderr_filename, 'w', encoding='utf-8')
+            stdout_handle = open(stdout_filename, 'w', encoding='utf-8')
+            stderr_handle = open(stderr_filename, 'w', encoding='utf-8')
         else:
             stdout_handle = None
             stderr_handle = None

@@ -17,7 +17,6 @@ from pathlib import Path
 import pwd
 from shlex import quote
 import uuid
-import codecs
 import atexit
 import signal
 
@@ -268,7 +267,7 @@ def collect_new_events(event_path: str, old_events: dict) -> Iterator[tuple[dict
                 dir_events_actual.append(each_file)
     dir_events_actual.sort(key=lambda filenm: int(filenm.split("-", 1)[0]))
     for event_file in dir_events_actual:
-        with codecs.open(os.path.join(event_path, event_file), 'r', encoding='utf-8') as event_file_actual:
+        with open(os.path.join(event_path, event_file), 'r', encoding='utf-8') as event_file_actual:
             try:
                 event = json.load(event_file_actual)
             except ValueError:

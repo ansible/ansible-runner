@@ -2,7 +2,6 @@
 
 # pylint: disable=W0621
 
-import codecs
 import datetime
 import os
 import sys
@@ -93,7 +92,7 @@ def test_env_vars(rc, value):
     status, exitcode = Runner(config=rc).run()
     assert status == 'successful'
     assert exitcode == 0
-    with codecs.open(os.path.join(rc.artifact_dir, 'stdout'), 'r', encoding='utf-8') as f:
+    with open(os.path.join(rc.artifact_dir, 'stdout'), 'r', encoding='utf-8') as f:
         assert value in f.read()
 
 
@@ -113,7 +112,7 @@ def test_event_callback_interface_has_ident(rc, mocker):
     rc.ident = "testident"
     runner = Runner(config=rc, remove_partials=False)
     runner.event_handler = mocker.Mock()
-    mocker.patch('codecs.open', mocker.mock_open(read_data=json.dumps({"event": "test"})))
+    mocker.patch('builtins.open', mocker.mock_open(read_data=json.dumps({"event": "test"})))
     chmod = mocker.patch('os.chmod', mocker.Mock())
     mocker.patch('os.mkdir', mocker.Mock())
 

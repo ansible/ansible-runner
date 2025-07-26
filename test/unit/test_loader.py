@@ -117,7 +117,7 @@ def test_load_file_type_check(loader, mocker, tmp_path):
 
 
 def test_get_contents_ok(loader, mocker):
-    mock_open = mocker.patch('codecs.open')
+    mock_open = mocker.patch('builtins.open')
 
     handler = BytesIO()
     handler.write(b"test string")

@@ -1,6 +1,5 @@
 from __future__ import annotations  # allow newer type syntax until 3.10 is our minimum
 
-import codecs
 import json
 import os
 import stat
@@ -326,7 +325,7 @@ class Processor:
         for plugin in ansible_runner.plugins:
             ansible_runner.plugins[plugin].event_handler(self.config, event_data)
         if should_write:
-            with codecs.open(full_filename, 'w', encoding='utf-8') as write_file:
+            with open(full_filename, 'w', encoding='utf-8') as write_file:
                 os.chmod(full_filename, stat.S_IRUSR | stat.S_IWUSR)
                 json.dump(event_data, write_file)
 

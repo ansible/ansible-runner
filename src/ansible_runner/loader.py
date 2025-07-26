@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import os
 import json
-import codecs
 
 from typing import Any, Dict
 from yaml import safe_load, YAMLError
@@ -90,7 +89,7 @@ class ArtifactLoader:
         try:
             if not os.path.exists(path):
                 raise ConfigurationError(f"specified path does not exist {path}")
-            with codecs.open(path, encoding='utf-8') as f:
+            with open(path, encoding='utf-8') as f:
                 data = f.read()
 
             return data

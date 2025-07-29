@@ -4,15 +4,38 @@ import subprocess
 import pathlib
 import random
 
+from functools import cache
 from string import ascii_lowercase
 
 import pexpect
 import pytest
 import yaml
+from packaging.version import parse as parse_version
 
 from ansible_runner.config.runner import RunnerConfig
+from ansible_runner.utils.importlib_compat import importlib_metadata
+
 
 here = pathlib.Path(__file__).parent
+
+
+@cache
+def get_ansible_version():
+    """Get the ansible version string."""
+    return importlib_metadata.version("ansible-core")
+
+
+@pytest.fixture(scope='session')
+def is_ansible_219_or_higher():
+    """Return True if ansible-core version is >= 2.19.0."""
+    version_str = get_ansible_version()
+    return parse_version(version_str) >= parse_version("2.19.0")
+
+
+@pytest.fixture(scope='session')
+def skipif_ansible_219_or_higher(is_ansible_219_or_higher):  # pylint: disable=W0621
+    if is_ansible_219_or_higher:
+        pytest.skip("Test skipped for ansible-core version 2.19.0 or higher")
 
 
 @pytest.fixture(scope='function')

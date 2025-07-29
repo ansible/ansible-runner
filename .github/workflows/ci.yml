@@ -43,10 +43,10 @@ jobs:
       fail-fast: false
       matrix:
         runner-vm-os:
-        - ubuntu-latest
+        - ubuntu-24.04
         python-version:
         - >-
-          3.13
+          3.10
         toxenv:
         - linters
         - docs
@@ -154,8 +154,6 @@ jobs:
         'tox-uv == 1.25.0'
       xfail: >-
         ${{ fromJSON(matrix.xfail) }}
-      continue-on-error: >-
-        ${{ contains(matrix.python-version, '~') && true || false }}
     secrets:
       codecov-token: ${{ secrets.CODECOV_TOKEN }}
 

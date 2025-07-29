@@ -82,7 +82,7 @@ def test_cmdline_role(options, expected_playbook, tmp_path, mocker):
 
     rc = ansible_runner.__main__.main(command)
 
-    with open(tmp_path / 'play.yml') as f:
+    with open(tmp_path / 'play.yml', encoding='utf-8') as f:
         playbook = json.loads(f.read())
 
     assert rc == 1
@@ -121,7 +121,7 @@ def test_cmdline_playbook(tmp_path):
 
     assert ansible_runner.__main__.main() == 0
 
-    with open(playbook) as f:
+    with open(playbook, encoding='utf-8') as f:
         assert json.loads(f.read()) == play
 
 

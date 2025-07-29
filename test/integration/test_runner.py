@@ -23,7 +23,7 @@ def test_password_prompt(rc):
     assert exitcode == 0
     # stdout file can be subject to a race condition
     for _ in iterate_timeout(30.0, 'stdout file to be written with 1234 in it', interval=0.2):
-        with open(os.path.join(rc.artifact_dir, 'stdout')) as f:
+        with open(os.path.join(rc.artifact_dir, 'stdout'), encoding='utf-8') as f:
             if '1234' in f.read():
                 break
 
@@ -33,7 +33,7 @@ def test_run_command(rc):
     status, exitcode = Runner(config=rc).run()
     assert status == 'successful'
     assert exitcode == 0
-    with open(os.path.join(rc.artifact_dir, 'command')) as f:
+    with open(os.path.join(rc.artifact_dir, 'command'), encoding='utf-8') as f:
         data = json.load(f)
         assert data.get('command') == ['sleep', '1']
         assert 'cwd' in data
@@ -277,7 +277,7 @@ def test_set_extra_vars(rc):
     runner.run()
     # stdout file can be subject to a race condition
     for _ in iterate_timeout(30.0, 'stdout file to be written with "hello there" in it', interval=0.2):
-        with open(os.path.join(rc.artifact_dir, 'stdout')) as f:
+        with open(os.path.join(rc.artifact_dir, 'stdout'), encoding='utf-8') as f:
             if 'hello there' in f.read():
                 break
 

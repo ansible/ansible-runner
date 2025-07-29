@@ -40,7 +40,7 @@ class TestStreamingUsage:
         events_dir = os.path.join(process_dir, 'artifacts', 'job_events')
         events = []
         for file in os.listdir(events_dir):
-            with open(os.path.join(events_dir, file), 'r') as f:
+            with open(os.path.join(events_dir, file), 'r', encoding='utf-8') as f:
                 if file in ('status', 'rc'):
                     continue
                 content = f.read()

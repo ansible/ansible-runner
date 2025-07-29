@@ -31,6 +31,7 @@ disable = [
   "R0913",  # too-many-arguments
   "R0914",  # too-many-locals
   "R0915",  # too-many-statements
+  "R0917",  # too-many-positional-arguments
   "W0221",  # arguments-differ
   "W0511",  # fixme
   "W0603",  # global-statement

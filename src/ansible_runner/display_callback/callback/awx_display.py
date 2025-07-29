@@ -275,7 +275,7 @@ def _getcallargs(sig: inspect.Signature, *args, **kwargs) -> types.MappingProxyT
 
 
 def with_context(**context):
-    global event_context  # pylint: disable=W0602
+    global event_context  # pylint: disable=W0602  # noqa: F824
 
     def wrap(f):
         @functools.wraps(f)
@@ -297,7 +297,7 @@ for attr in dir(Display):
 
 
 def with_verbosity(f):
-    global event_context  # pylint: disable=W0602
+    global event_context  # pylint: disable=W0602  # noqa: F824
 
     @functools.wraps(f)
     def wrapper(*args, **kwargs):

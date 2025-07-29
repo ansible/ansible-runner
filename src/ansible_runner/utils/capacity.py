@@ -14,6 +14,7 @@ def get_cpu_count() -> int:
 
 
 def get_mem_in_bytes() -> int | str:
+    mem_capacity = 0
     try:
         with open('/proc/meminfo') as f:
             mem = f.read()

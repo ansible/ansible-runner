@@ -233,7 +233,7 @@ def test_run_command_ansible_rotate_artifacts(rc):
     assert exitcode == 0
 
 
-def test_get_fact_cache(rc):
+def test_get_fact_cache(rc, skipif_ansible_219_or_higher):  # pylint: disable=W0613
     assert os.path.basename(rc.fact_cache) == 'fact_cache'
     rc.module = "setup"
     rc.host_pattern = "localhost"
@@ -249,7 +249,7 @@ def test_get_fact_cache(rc):
     assert data
 
 
-def test_set_fact_cache(rc):
+def test_set_fact_cache(rc, skipif_ansible_219_or_higher):  # pylint: disable=W0613
     assert os.path.basename(rc.fact_cache) == 'fact_cache'
     rc.module = "debug"
     rc.module_args = "var=message"

@@ -503,7 +503,7 @@ def test_unparsable_line_worker(tmp_path):
 def test_unparsable_really_big_line_processor(tmp_path):
     process_dir = tmp_path / 'for_process'
     process_dir.mkdir()
-    incoming_buffer = io.BytesIO(bytes(f'not-json-data with extra garbage:{"f"*10000}', encoding='utf-8'))
+    incoming_buffer = io.BytesIO(bytes(f'not-json-data with extra garbage:{"f" * 10000}', encoding='utf-8'))
 
     def status_receiver(status_data, runner_config):  # pylint: disable=W0613
         assert status_data['status'] == 'error'

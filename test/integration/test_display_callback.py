@@ -213,7 +213,7 @@ def test_callback_plugin_task_args_leak(executor, playbook):  # pylint: disable=
         },  # noqa
     ],
 )
-def test_resolved_actions(executor, playbook):  # pylint: disable=W0613,W0621
+def test_resolved_actions(executor, playbook, skipif_ansible_219_or_higher):  # pylint: disable=W0613,W0621
     executor.run()
     events = list(executor.events)
 
@@ -365,8 +365,7 @@ def test_output_when_given_invalid_playbook(tmp_path):
     ex.run()
     with ex.stdout as f:
         stdout = f.read()
-    assert "ERROR! the playbook:" in stdout
-    assert "could not be found" in stdout
+    assert "fake_playbook.yml could not be found" in stdout
 
 
 def test_output_when_given_non_playbook_script(tmp_path):

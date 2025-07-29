@@ -125,7 +125,7 @@ def test_playbook_on_stats_summary_fields(project_fixtures):
         assert runner_stats[stat]  # expected at least 1 host in each stat type
 
 
-def test_include_role_events(project_fixtures):
+def test_include_role_events(project_fixtures, skipif_ansible_219_or_higher):  # pylint: disable=W0613
     r = run(
         private_data_dir=str(project_fixtures / 'use_role'),
         playbook='use_role.yml'
@@ -142,7 +142,7 @@ def test_include_role_events(project_fixtures):
             assert event_data['resolved_action'] == 'ansible.builtin.debug'
 
 
-def test_include_role_from_collection_events(project_fixtures):
+def test_include_role_from_collection_events(project_fixtures, skipif_ansible_219_or_higher):  # pylint: disable=W0613
     r = run(
         private_data_dir=str(project_fixtures / 'collection_role'),
         playbook='use_role.yml'

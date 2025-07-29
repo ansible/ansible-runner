@@ -48,7 +48,7 @@ def test_run_command_with_unicode(rc):
     status, exitcode = Runner(config=rc).run()
     assert status == 'successful'
     assert exitcode == 0
-    with open(os.path.join(rc.artifact_dir, 'command')) as f:
+    with open(os.path.join(rc.artifact_dir, 'command'), encoding='utf-8') as f:
         data = json.load(f)
         assert data.get('command') == ['echo', expected]
         assert 'cwd' in data

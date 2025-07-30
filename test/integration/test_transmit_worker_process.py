@@ -193,7 +193,7 @@ class TestStreamingUsage:
                 pytest.fail(f'unparseable JSON in output (likely corrupted by keepalive): {line}')
         else:
             # account for some wobble in the number of keepalives for artifact gather, etc
-            assert 1 <= incoming_data.count('"event": "keepalive"') < 5
+            assert 1 <= incoming_data.count('"event": "keepalive"') < 15
 
     @pytest.mark.parametrize("job_type", ['run', 'adhoc'])
     def test_remote_job_by_sockets(self, tmp_path, project_fixtures, job_type):

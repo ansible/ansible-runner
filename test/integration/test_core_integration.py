@@ -5,7 +5,6 @@ from ansible_runner.interface import run
 
 
 TEST_BRANCHES = (
-    'devel',
     'milestone',
     'stable-2.19',   # current stable
     'stable-2.18',   # stable - 1

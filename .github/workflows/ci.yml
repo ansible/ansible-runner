@@ -156,6 +156,72 @@ jobs:
     secrets:
       codecov-token: ${{ secrets.CODECOV_TOKEN }}
 
+  devel-tests:
+    name: 🧪 Devel-Tests${{ '' }}
+
+    needs:
+    - pre-setup
+
+    strategy:
+      fail-fast: >-  # ${{ runner.debug }} is unavailable in this context
+        ${{
+          fromJSON(needs.pre-setup.outputs.is-debug-mode)
+          && false
+          || true
+        }}
+      matrix:
+        python-version:
+        - 3.13
+        runner-vm-os:
+        - ubuntu-24.04
+        toxenv:
+        - unit-devel
+        - integration-devel
+        xfail:
+        - true
+
+    uses: tox-dev/workflow/.github/workflows/reusable-tox.yml@89de3c6be3cd179adf71e28aa4ac5bef60804209  # yamllint disable-line rule:line-length
+    with:
+      cache-key-for-dependency-files:  # FIXME
+      check-name: >-
+        ${{ matrix.toxenv }}
+        under 🐍${{ matrix.python-version }}
+      job-dependencies-context: >-  # context for hooks
+        ${{ toJSON(needs) }}
+      python-version: >-
+        ${{ matrix.python-version }}
+      require-successful-codecov-uploads: >-
+        ${{
+          toJSON(
+          needs.pre-setup.outputs.upstream-repository-id
+          == github.repository_id
+          )
+        }}
+      runner-vm-os: >-
+        ${{ matrix.runner-vm-os }}
+      timeout-minutes: >-
+        ${{ matrix.toxenv == 'unit-devel' && 2 || 5 }}
+      toxenv: >-
+        ${{ matrix.toxenv }}
+      tox-run-posargs: >-
+        --cov-report=xml:.tox/.tmp/.test-results/pytest-${{
+          matrix.python-version
+        }}/cobertura.xml
+        --junitxml=.tox/.tmp/.test-results/pytest-${{
+          matrix.python-version
+        }}/test.xml
+      tox-rerun-posargs: >-
+        --no-cov
+        -vvvvv
+        --lf
+      tox-tool-deps: >-
+        'tox == 4.25.0'
+        'tox-uv == 1.25.0'
+      xfail: >-
+        ${{ fromJSON(matrix.xfail) }}
+    secrets:
+      codecov-token: ${{ secrets.CODECOV_TOKEN }}
+
   check:  # This job does nothing and is only used for the branch protection
     name: ✅ All tests passed
     if: always()
@@ -164,6 +230,7 @@ jobs:
     - pre-setup  # transitive, for accessing settings
     - sanity
     - tests
+    - devel-tests
 
     runs-on: ubuntu-latest
 
@@ -174,3 +241,4 @@ jobs:
       uses: re-actors/alls-green@release/v1
       with:
         jobs: ${{ toJSON(needs) }}
+        allowed-failures: devel-tests

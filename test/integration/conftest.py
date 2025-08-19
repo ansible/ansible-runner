@@ -148,6 +148,7 @@ def container_image_devel(request, cli, tmp_path):  # pylint: disable=W0621
 
     DOCKERFILE = f"""
 FROM quay.io/centos/centos:stream10
+RUN dnf install -y python3-pip
 RUN python3 -m pip install 'ansible-core @ https://github.com/ansible/ansible/archive/{branch}.tar.gz'
 RUN mkdir -p /runner/{{env,inventory,project,artifacts}} /home/runner/.ansible/tmp
 RUN chmod -R 777 /runner /home/runner

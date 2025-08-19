@@ -1,5 +1,5 @@
 # This is not fully compatible builder Dockerfile, but meets the needs of tests
-FROM quay.io/centos/centos:stream9
+FROM quay.io/centos/centos:stream10
 RUN dnf install -y python3-pip
 RUN python3 -m pip install ansible-core
 RUN mkdir -p /runner/{env,inventory,project,artifacts} /home/runner/.ansible/tmp

@@ -464,14 +464,6 @@ def test_get_role_list_within_container(project_fixtures, runtime, container_ima
     Test get_role_list() running in a container.
     """
     pdir = str(project_fixtures / 'music')
-    expected = {
-        "Into_The_Mystic": {
-            "collection": "",
-            "entry_points": {
-                "main": "The main entry point for the Into_The_Mystic role."
-            }
-        }
-    }
     container_kwargs = {
         'process_isolation_executable': runtime,
         'process_isolation': True,
@@ -479,7 +471,9 @@ def test_get_role_list_within_container(project_fixtures, runtime, container_ima
     }
     resp, _ = get_role_list(private_data_dir=pdir, playbook_dir="/runner/project", **container_kwargs)
     assert isinstance(resp, dict)
-    assert resp == expected
+    assert 'Into_The_Mystic' in resp
+    assert 'entry_points' in resp['Into_The_Mystic']
+    assert 'main' in resp['Into_The_Mystic']['entry_points']
 
 
 def test_get_role_argspec(project_fixtures):

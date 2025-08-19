@@ -147,13 +147,8 @@ def container_image_devel(request, cli, tmp_path):  # pylint: disable=W0621
     branch = request.getfixturevalue('branch')
 
     DOCKERFILE = f"""
-FROM quay.io/centos/centos:stream9
-
-# Need python 3.11 minimum for devel
-RUN dnf install -y python3.11 python3.11-pip git
-RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 0
-RUN python3 -m pip install git+https://github.com/ansible/ansible@{branch}
-
+FROM quay.io/centos/centos:stream10
+RUN python3 -m pip install 'ansible-core @ https://github.com/ansible/ansible/archive/{branch}.tar.gz'
 RUN mkdir -p /runner/{{env,inventory,project,artifacts}} /home/runner/.ansible/tmp
 RUN chmod -R 777 /runner /home/runner
 WORKDIR /runner

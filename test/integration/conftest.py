@@ -132,12 +132,12 @@ def container_image(request, cli, tmp_path):  # pylint: disable=W0621
     image_name = f'ansible-runner-{random_string}-event-test'
 
     cli(
-        [runtime, 'build', '--rm=true', '-t', image_name, '-f', str(dockerfile_path), str(tmp_path)],
+        [runtime, 'build', '-t', image_name, '-f', str(dockerfile_path), str(tmp_path)],
         bare=True,
     )
     yield image_name
     cli(
-        [runtime, 'rmi', '-f', image_name],
+        [runtime, 'rmi', '-f', '--no-prune', image_name],
         bare=True,
     )
 
@@ -177,11 +177,11 @@ CMD ["ansible", "--version"]
     image_name = f'ansible-runner-{random_string}-event-test'
 
     cli(
-        [runtime, 'build', '--rm=true', '-t', image_name, '-f', str(dockerfile_path), str(tmp_path)],
+        [runtime, 'build', '-t', image_name, '-f', str(dockerfile_path), str(tmp_path)],
         bare=True,
     )
     yield image_name
     cli(
-        [runtime, 'rmi', '-f', image_name],
+        [runtime, 'rmi', '-f', '--no-prune', image_name],
         bare=True,
     )

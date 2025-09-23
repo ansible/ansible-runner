@@ -102,8 +102,9 @@ In order for **Runner** to respond with the correct password, it needs to be abl
 by providing a yaml or json formatted file with a regular expression and a value to emit, for example::
 
   ---
-  "^SSH password:\\s*?$": "some_password"
-  "^BECOME password.*:\\s*?$": "become_password"
+  "^SSH\s[pP]assword:\s*$": 'some_password',
+  "^BECOME\s[pP]assword.*:\s*$": 'become_password',
+  "^Vault\s[pP]assword:\s*$": 'vault_password',
 
 ``env/cmdline``
 ---------------

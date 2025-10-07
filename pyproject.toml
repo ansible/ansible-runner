@@ -1,6 +1,51 @@
 [build-system]
-requires = ["setuptools>=45, <=72.1.0", "setuptools-scm[toml]>=6.2, <=8.1.0"]  # pin max versions of build deps and update as needed
+# pin max versions of build deps and update as needed
+# setuptools 77.0.3 introduces PEP 639 support, used here
+requires = ["setuptools>=77.0.3, <=80.9.0", "setuptools-scm[toml]>=6.2, <=9.2.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+requires-python = ">=3.10"
+name = "ansible-runner"
+dynamic = ["version"]
+authors = [
+    {name = "Ansible Project"},
+]
+description = "Consistent Ansible Python API and CLI with container and process isolation runtime capabilities"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE.md"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "Natural Language :: English",
+    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "pexpect>=4.5",
+    "packaging",
+    "python-daemon",
+    "pyyaml",
+]
+
+[project.urls]
+source = "https://github.com/ansible/ansible-runner"
+issues = "https://github.com/ansible/ansible-runner/issues"
+documentation = "https://ansible-runner.readthedocs.io"
+
+[project.scripts]
+ansible-runner = "ansible_runner.__main__:main"
 
 [tool.setuptools_scm]
 

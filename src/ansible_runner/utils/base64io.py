@@ -13,6 +13,14 @@
 """Base64 stream with context manager support."""
 from __future__ import division
 
+from types import TracebackType
+from typing import (
+    AnyStr,
+    IO,
+    Optional,
+    Type,
+)
+
 import base64
 import io
 import logging
@@ -20,18 +28,6 @@ import string
 import math
 
 LOGGER_NAME = "base64io"
-
-try:  # Python 3.5.0 and 3.5.1 have incompatible typing modules
-    from types import TracebackType  # noqa pylint: disable=unused-import
-    from typing import (
-        IO,
-        AnyStr,
-        Optional,
-        Type,
-    )
-except ImportError:  # pragma: no cover
-    # We only actually need these imports when running the mypy checks
-    pass
 
 __all__ = ("Base64IO",)
 __version__ = "1.0.3"

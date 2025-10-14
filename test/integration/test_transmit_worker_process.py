@@ -517,3 +517,42 @@ def test_unparsable_really_big_line_processor(tmp_path):
         private_data_dir=process_dir,
         status_handler=status_receiver
     )
+
+
+def test_error_on_empty_line_processor(tmp_path):
+    process_dir = tmp_path / 'for_process'
+    process_dir.mkdir()
+    incoming_buffer = io.BytesIO(b'')
+
+    def status_receiver(status_data, runner_config):  # pylint: disable=unused-argument
+        assert status_data['status'] == 'error'
+        assert (
+            'Unexpected empty line encountered during worker stream. '
+            'Worker did not produce events or streaming was aborted, check execution node health.'
+        ) in status_data['job_explanation']
+
+    run(
+        streamer='process',
+        _input=incoming_buffer,
+        private_data_dir=process_dir,
+        status_handler=status_receiver,
+    )
+
+
+def test_error_on_os_error_processor(tmp_path, mocker):
+    process_dir = tmp_path / 'for_process'
+    process_dir.mkdir()
+
+    incoming_buffer = mocker.Mock()
+    incoming_buffer.readline.side_effect = OSError("Simulated OS error")
+
+    def status_receiver(status_data, runner_config):  # pylint: disable=unused-argument
+        assert status_data['status'] == 'error'
+        assert 'Failed to read from worker stream. Error: Simulated OS error' in status_data['job_explanation']
+
+    run(
+        streamer='process',
+        _input=incoming_buffer,
+        private_data_dir=process_dir,
+        status_handler=status_receiver,
+    )

@@ -345,8 +345,26 @@ class Processor:
         while True:
             try:
                 line = self._input.readline()
+                if len(line) == 0:
+                    self.status_callback({
+                        'status': 'error',
+                        'job_explanation': (
+                            'Unexpected empty line encountered during worker stream. '
+                            'Worker did not produce events or streaming was aborted, check execution node health.'
+                        )
+                    })
+                    break
+            except (OSError) as exc:
+                self.status_callback({
+                    'status': 'error',
+                    'job_explanation': (
+                        f'Failed to read from worker stream. Error: {exc}'
+                    )
+                })
+                break
+            try:
                 data = json.loads(line)
-            except (json.decoder.JSONDecodeError, IOError) as exc:
+            except (json.decoder.JSONDecodeError) as exc:
                 self.status_callback({
                     'status': 'error',
                     'job_explanation': (

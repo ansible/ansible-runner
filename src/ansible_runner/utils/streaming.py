@@ -2,7 +2,6 @@
 
 import calendar
 import io
-import time
 import tempfile
 import zipfile
 import os

@@ -1,5 +1,6 @@
 # pylint: disable=R0914
 
+import calendar
 import io
 import time
 import tempfile
@@ -104,7 +105,9 @@ def unstream_dir(stream: io.FileIO, length: int, target_directory: str) -> None:
                 # Fancy logic to preserve modification times
                 # AWX uses modification times to determine if new facts were written for a host
                 # https://stackoverflow.com/questions/9813243/extract-files-from-zip-file-and-retain-mod-date
-                date_time = time.mktime(info.date_time + (0, 0, -1))
+                # Use calendar.timegm() instead of time.mktime() to interpret the date_time as UTC
+                # This prevents timezone issues when nodes are in different timezones
+                date_time = calendar.timegm(info.date_time + (0, 0, -1))
                 os.utime(out_path, times=(date_time, date_time))
 
                 if is_symlink:

@@ -82,13 +82,13 @@ at a later time (e.g., to stop the container when the job is canceled).
 ~/.ssh/ symlinks
 ^^^^^^^^^^^^^^^^
 
-In order to make the ``run`` container execution of Ansible
-easier, Ansible Runner will automatically bind mount your local ssh agent
-UNIX-domain socket (``SSH_AUTH_SOCK``) into the container runtime. However, this
-does not work if files in your ``~/.ssh/`` directory happen to be symlinked to
-another directory that is also not mounted into the container runtime. The Ansible
-Runner ``run`` subcommand provides the ``--container-volume-mount``
-option to address this, among other things.
+When using the ``run_command()`` Python API method, Ansible Runner will automatically
+bind mount your local SSH agent UNIX-domain socket (``SSH_AUTH_SOCK``) into the container runtime.
+However, this does not work if files in your ``~/.ssh/`` directory happen to be symlinked to
+another directory that is also not mounted into the container runtime.
+To address this, or to manually mount your SSH directory, you may utilize the ``--container-volume-mount``
+CLI option, or the ``container_volume_mounts`` API parameter for the ``run_command()``, ``run()``, or ``run_async()``
+API methods.
 
 Here is an example of an ssh config file that is a symlink:
 

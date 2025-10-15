@@ -83,7 +83,7 @@ at a later time (e.g., to stop the container when the job is canceled).
 ^^^^^^^^^^^^^^^^
 
 When using the ``run_command()`` Python API method, Ansible Runner will automatically
-bind mount your local ssh agent UNIX-domain socket (``SSH_AUTH_SOCK``) into the container runtime.
+bind mount your local SSH agent UNIX-domain socket (``SSH_AUTH_SOCK``) into the container runtime.
 However, this does not work if files in your ``~/.ssh/`` directory happen to be symlinked to
 another directory that is also not mounted into the container runtime.
 To address this, or to manually mount your SSH directory, you may utilize the ``--container-volume-mount``

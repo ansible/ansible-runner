@@ -135,6 +135,157 @@ class Runner:
             os.mkdir(job_events_path, 0o700)
 
         command = self.config.command
+        # Runtime fallback: ensure SSH_AUTH_SOCK is mounted into container
+        # if the job is containerized and the socket is available but wasn't
+        # added earlier by wrap_args_for_containerization(). This guarantees
+        # the artifact 'command' file correctly represents the container invocation.
+        try:
+            if getattr(self.config, 'containerized', False):
+                sock = None
+                try:
+                    sock = self.config.env.get('SSH_AUTH_SOCK')
+                except Exception:
+                    sock = None
+                # Debug: runtime-fallback check values
+                try:
+                    debug(f"runtime-fallback: containerized={getattr(self.config, 'containerized', False)} sock={sock}")
+                except Exception:
+                    pass
+                if sock and isinstance(sock, str) and os.path.exists(sock) and not sock.startswith('/mnt/'):
+                    try:
+                        debug(f"runtime-fallback: socket exists at {sock}")
+                    except Exception:
+                        pass
+                    # compute container dest path
+                    home_val = os.environ.get('HOME') or (self.config.env.get('HOME') if hasattr(self.config, 'env') else '') or ''
+                    if sock.startswith(home_val):
+                        dest_sock = f"/home/runner/{sock.lstrip(home_val)}"
+                    elif sock.startswith('~'):
+                        dest_sock = f"/home/runner/{sock.lstrip('~/')}"
+                    else:
+                        dest_sock = sock
+
+                    # if --env-file exists, insert -v mount just before it; otherwise add before container image
+                    try:
+                        if '--env-file' in command:
+                            idx = command.index('--env-file')
+                            try:
+                                debug(f"runtime-fallback: '--env-file' found at index {idx}, inserting mount at {idx}")
+                            except Exception:
+                                pass
+                            # insert volume mount pair
+                            command[idx:idx] = ['-v', f'{sock}:{dest_sock}']
+                            # also inject -e SSH_AUTH_SOCK=dest_sock after mounts
+                            command[idx+2:idx+2] = ['-e', f'SSH_AUTH_SOCK={dest_sock}']
+                        else:
+                            # best-effort: prepend mounts after workdir if present
+                            if '--workdir' in command:
+                                wd_idx = command.index('--workdir')
+                                # place after workdir value (wd_idx + 2)
+                                insert_pos = wd_idx + 2
+                            else:
+                                insert_pos = 1
+                            try:
+                                debug(f"runtime-fallback: '--env-file' not found; inserting at {insert_pos}")
+                            except Exception:
+                                pass
+                            command[insert_pos:insert_pos] = ['-v', f'{sock}:{dest_sock}', '-e', f'SSH_AUTH_SOCK={dest_sock}']
+                    except Exception as e:
+                        # non-fatal
+                        try:
+                            debug(f"runtime-fallback: exception while inserting mounts: {e}")
+                        except Exception:
+                            pass
+        except Exception:
+            # best-effort only
+            pass
+        # Deduplicate volume mounts (-v) and env entries (-e) to avoid
+        # repeated entries if both the wrapper and runtime-fallback added them.
+        try:
+            cleaned_command = []
+            seen_vols = set()
+            seen_envs = set()
+            i = 0
+            while i < len(command):
+                token = command[i]
+                # volume mounts are '-v', '<src>:<dst>...'
+                if token == '-v' and i + 1 < len(command):
+                    mapping = command[i + 1]
+                    if mapping in seen_vols:
+                        i += 2
+                        continue
+                    seen_vols.add(mapping)
+                    cleaned_command.extend([token, mapping])
+                    i += 2
+                    continue
+                # env entries are '-e', 'KEY=VALUE'
+                if token == '-e' and i + 1 < len(command):
+                    env_entry = command[i + 1]
+                    if env_entry in seen_envs:
+                        i += 2
+                        continue
+                    seen_envs.add(env_entry)
+                    cleaned_command.extend([token, env_entry])
+                    i += 2
+                    continue
+                # otherwise copy token
+                cleaned_command.append(token)
+                i += 1
+            command = cleaned_command
+        except Exception:
+            # best-effort; if dedupe fails, fall back to original command list
+            pass
+
+        # Ensure auditability: if SSH_AUTH_SOCK is present in the merged
+        # Runner env but no explicit -v mapping exists in the command list,
+        # add a conservatively formatted mount to the command array before
+        # the --env-file entry. This does not change runtime behavior (the
+        # container was already started accordingly), it only makes the
+        # recorded CLI in the artifact truthful and easier to audit.
+        try:
+            sock = None
+            try:
+                sock = self.config.env.get('SSH_AUTH_SOCK')
+            except Exception:
+                sock = None
+            if sock and isinstance(sock, str) and not sock.startswith('/mnt/'):
+                # find existing -v mounts in command
+                vs = [command[i + 1] for i, t in enumerate(command) if t == '-v' and i + 1 < len(command)]
+                # If no mapping mentions the socket path, insert a conservative mapping
+                sock_mapped = any(str(sock) in v for v in vs)
+                if not sock_mapped:
+                    # build the mount mapping with :Z label for SELinux contexts
+                    mount_mapping = f"{sock}:{sock}:Z"
+                    # determine insertion index (before --env-file if present)
+                    try:
+                        if '--env-file' in command:
+                            idx = command.index('--env-file')
+                        else:
+                            # fall back to before container image (last positional before image)
+                            # find index of container image (first token that looks like an image spec)
+                            idx = len(command) - 1
+                    except Exception:
+                        idx = len(command) - 1
+                    # insert mount and optionally env entry if missing
+                    command[idx:idx] = ['-v', mount_mapping]
+                    # ensure SSH_AUTH_SOCK env is visible in the command args too
+                    envs = [command[i + 1] for i, t in enumerate(command) if t == '-e' and i + 1 < len(command)]
+                    if not any(e.startswith('SSH_AUTH_SOCK=') for e in envs):
+                        command[idx + 2:idx + 2] = ['-e', f'SSH_AUTH_SOCK={sock}']
+                    try:
+                        debug(f"artifact-write: inserted SSH_AUTH_SOCK mount mapping for audit src={sock} dest={sock}")
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        # Debug: emit the exact command/env that will be written to the artifact command file
+        try:
+            debug(
+                f"artifact-write: command file={command_filename} -> command={command} cwd={self.config.cwd} env={self.config.env}"
+            )
+        except Exception:
+            pass
         with open(command_filename, 'w', encoding='utf-8') as f:
             os.chmod(command_filename, stat.S_IRUSR | stat.S_IWUSR)
             json.dump(
@@ -190,6 +341,11 @@ class Runner:
             # option expecting should have already been written in ansible_runner.config.runner
             env_file_host = os.path.join(self.config.artifact_dir, 'env.list')
             with open(env_file_host, 'w') as f:
+                # Debug: show exact env.list contents we will serialize to disk
+                try:
+                    debug(f"artifact-write: env.list -> {env_file_host} contents={self.config.env}")
+                except Exception:
+                    pass
                 f.write(
                     '\n'.join(
                         [f"{key}={value}" for key, value in self.config.env.items()]

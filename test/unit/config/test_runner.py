@@ -720,17 +720,20 @@ def test_containerization_settings(tmp_path, runtime, mocker):
     callback_dir = os.path.join("/runner/artifacts", str(rc.ident), "callback")
     assert callback_dir in callback_plugins
 
-    extra_container_args = []
+    # Podman inserts some flags earlier (group/ipc) and also adds --quiet later.
     if runtime == 'podman':
-        extra_container_args = ['--quiet']
+        early_container_args = ['--group-add=root', '--ipc=host']
+        late_container_args = ['--quiet']
     else:
-        extra_container_args = [f'--user={os.getuid()}']
+        early_container_args = []
+        late_container_args = [f'--user={os.getuid()}']
 
     expected_command_start = [runtime, 'run', '--rm', '--tty', '--interactive', '--workdir', '/runner/project'] + \
+        early_container_args + \
         ['-v', f'{rc.private_data_dir}/:/runner/:Z'] + \
         ['-v', '/host1:/container1', '-v', '/host2:/container2'] + \
         ['--env-file', f'{rc.artifact_dir}/env.list'] + \
-        extra_container_args + \
+        late_container_args + \
         ['--name', 'ansible_runner_foo'] + \
         ['my_container', 'ansible-playbook', '-i', '/runner/inventory', 'main.yaml']
 

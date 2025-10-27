@@ -26,6 +26,10 @@ def _get_version():
 
 
 nitpicky = True
+nitpick_ignore = {
+    ('py:class', '_io.FileIO')
+}
+
 default_role = 'any'  # This catches single backticks (incorrectly) used for inline code formatting
 project = 'ansible-runner'
 copyright = f'2018-{datetime.datetime.today().year}, Red Hat, Inc'

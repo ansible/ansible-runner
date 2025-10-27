@@ -17,6 +17,8 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+from __future__ import annotations
+
 import os
 import json
 import sys
@@ -24,6 +26,7 @@ import threading
 import logging
 
 from ansible_runner import output
+from ansible_runner._internal._dump_artifacts import dump_artifacts
 from ansible_runner.config.runner import RunnerConfig
 from ansible_runner.config.command import CommandConfig
 from ansible_runner.config.inventory import InventoryConfig
@@ -32,7 +35,6 @@ from ansible_runner.config.doc import DocConfig
 from ansible_runner.runner import Runner
 from ansible_runner.streaming import Transmitter, Worker, Processor
 from ansible_runner.utils import (
-    dump_artifacts,
     check_isolation_executable_installed,
     sanitize_json_response,
     signal_handler,
@@ -41,7 +43,7 @@ from ansible_runner.utils import (
 logging.getLogger('ansible-runner').addHandler(logging.NullHandler())
 
 
-def init_runner(**kwargs):
+def init_runner(config: RunnerConfig, streamer: str):
     '''
     Initialize the Runner() instance
 
@@ -51,170 +53,120 @@ def init_runner(**kwargs):
     See parameters given to :py:func:`ansible_runner.interface.run`
     '''
 
-    # Handle logging first thing
-    debug = kwargs.pop('debug', None)
-    logfile = kwargs.pop('logfile', None)
-
-    if not kwargs.pop("ignore_logging", True):
-        output.configure()
-        if debug in (True, False):
-            output.set_debug('enable' if debug is True else 'disable')
-
-        if logfile:
-            output.set_logfile(logfile)
-
     # If running via the transmit-worker-process method, we must only extract things as read-only
     # inside of one of these commands. That could be either transmit or worker.
-    if kwargs.get('streamer') not in ('worker', 'process'):
-        dump_artifacts(kwargs)
+    if streamer not in ('worker', 'process'):
+        dump_artifacts(config)
 
-    if kwargs.get('streamer'):
+    if streamer:
         # undo any full paths that were dumped by dump_artifacts above in the streamer case
-        private_data_dir = kwargs['private_data_dir']
+        private_data_dir = config.private_data_dir or ""
         project_dir = os.path.join(private_data_dir, 'project')
 
-        playbook_path = kwargs.get('playbook') or ''
-        if os.path.isabs(playbook_path) and playbook_path.startswith(project_dir):
-            kwargs['playbook'] = os.path.relpath(playbook_path, project_dir)
+        playbook_path = config.playbook or ''
+        if isinstance(playbook_path, str) and os.path.isabs(playbook_path) and playbook_path.startswith(project_dir):
+            config.playbook = os.path.relpath(playbook_path, project_dir)
 
-        inventory_path = kwargs.get('inventory') or ''
-        if os.path.isabs(inventory_path) and inventory_path.startswith(private_data_dir):
-            kwargs['inventory'] = os.path.relpath(inventory_path, private_data_dir)
+        inventory_path = config.inventory or ''
+        if isinstance(inventory_path, str) and os.path.isabs(inventory_path) and inventory_path.startswith(private_data_dir):
+            config.inventory = os.path.relpath(inventory_path, private_data_dir)
 
-        roles_path = kwargs.get('envvars', {}).get('ANSIBLE_ROLES_PATH') or ''
+        if config.envvars is None:
+            config.envvars = {}
+        roles_path = config.envvars.get('ANSIBLE_ROLES_PATH') or ''
         if os.path.isabs(roles_path) and roles_path.startswith(private_data_dir):
-            kwargs['envvars']['ANSIBLE_ROLES_PATH'] = os.path.relpath(roles_path, private_data_dir)
+            config.envvars['ANSIBLE_ROLES_PATH'] = os.path.relpath(roles_path, private_data_dir)
 
-    event_callback_handler = kwargs.pop('event_handler', None)
-    status_callback_handler = kwargs.pop('status_handler', None)
-    artifacts_handler = kwargs.pop('artifacts_handler', None)
-    cancel_callback = kwargs.pop('cancel_callback', None)
-    if cancel_callback is None:
+    if config.cancel_callback is None:
         # attempt to load signal handler.
         # will return None if we are not in the main thread
-        cancel_callback = signal_handler()
-    finished_callback = kwargs.pop('finished_callback', None)
+        config.cancel_callback = signal_handler()
 
-    streamer = kwargs.pop('streamer', None)
-    if streamer:
-        if streamer == 'transmit':
-            stream_transmitter = Transmitter(**kwargs)
-            return stream_transmitter
+    if streamer == 'transmit':
+        stream_transmitter = Transmitter(config)
+        return stream_transmitter
 
-        if streamer == 'worker':
-            stream_worker = Worker(**kwargs)
-            return stream_worker
+    if streamer == 'worker':
+        stream_worker = Worker(config)
+        return stream_worker
 
-        if streamer == 'process':
-            stream_processor = Processor(event_handler=event_callback_handler,
-                                         status_handler=status_callback_handler,
-                                         artifacts_handler=artifacts_handler,
-                                         cancel_callback=cancel_callback,
-                                         finished_callback=finished_callback,
-                                         **kwargs)
-            return stream_processor
+    if streamer == 'process':
+        stream_processor = Processor(config)
+        return stream_processor
 
-    if kwargs.get("process_isolation", False):
-        pi_executable = kwargs.get("process_isolation_executable", "podman")
+    if config.process_isolation:
+        pi_executable = config.process_isolation_executable
         if not check_isolation_executable_installed(pi_executable):
             print(f'Unable to find process isolation executable: {pi_executable}')
             sys.exit(1)
 
-    kwargs.pop('_input', None)
-    kwargs.pop('_output', None)
-    rc = RunnerConfig(**kwargs)
-    rc.prepare()
+    config.prepare()
 
-    return Runner(rc,
-                  event_handler=event_callback_handler,
-                  status_handler=status_callback_handler,
-                  artifacts_handler=artifacts_handler,
-                  cancel_callback=cancel_callback,
-                  finished_callback=finished_callback)
+    return Runner(config,
+                  event_handler=config.event_handler,
+                  status_handler=config.status_handler,
+                  artifacts_handler=config.artifacts_handler,
+                  cancel_callback=config.cancel_callback,
+                  finished_callback=config.finished_callback)
 
 
-def run(**kwargs):
-    '''
-    Run an Ansible Runner task in the foreground and return a Runner object when complete.
+def run(config: RunnerConfig | None = None,
+        streamer: str = "",
+        debug: bool = False,
+        logfile: str = "",
+        ignore_logging: bool = True,
+        **kwargs):
+    """Run an Ansible Runner task in the foreground and return a Runner object when complete.
 
-    :param str private_data_dir: The directory containing all runner metadata needed to invoke the runner
-                             module. Output artifacts will also be stored here for later consumption.
-    :param str ident: The run identifier for this invocation of Runner. Will be used to create and name
-                  the artifact directory holding the results of the invocation.
-    :param bool json_mode: Store event data in place of stdout on the console and in the stdout file
-    :param str or list playbook: The playbook (either a list or dictionary of plays, or as a path relative to
-                     ``private_data_dir/project``) that will be invoked by runner when executing Ansible.
-    :param str module: The module that will be invoked in ad-hoc mode by runner when executing Ansible.
-    :param str module_args: The module arguments that will be supplied to ad-hoc mode.
-    :param str host_pattern: The host pattern to match when running in ad-hoc mode.
-    :param str or dict or list inventory: Overrides the inventory directory/file (supplied at ``private_data_dir/inventory``) with
-        a specific host or list of hosts. This can take the form of:
+    This function may be called in two different formats, both of which are equivalent. The first uses only
+    keyword arguments and does NOT specify a value for the ``config`` parameter.
 
-            - Path to the inventory file in the ``private_data_dir/inventory`` directory or
-              an absolute path to the inventory file
-            - Native python dict supporting the YAML/json inventory structure
-            - A text INI formatted string
-            - A list of inventory sources, or an empty list to disable passing inventory
+    .. code-block:: python
 
-    :param str role: Name of the role to execute.
-    :param str or list roles_path: Directory or list of directories to assign to ANSIBLE_ROLES_PATH
-    :param dict envvars: Environment variables to be used when running Ansible. Environment variables will also be
-                    read from ``env/envvars`` in ``private_data_dir``
-    :param dict extravars: Extra variables to be passed to Ansible at runtime using ``-e``. Extra vars will also be
-                      read from ``env/extravars`` in ``private_data_dir``.
-    :param dict passwords: A dictionary containing password prompt patterns and response values used when processing output from
-                      Ansible. Passwords will also be read from ``env/passwords`` in ``private_data_dir``.
-    :param dict settings: A dictionary containing settings values for the ``ansible-runner`` runtime environment. These will also
-                     be read from ``env/settings`` in ``private_data_dir``.
-    :param str ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
-    :param str cmdline: Command line options passed to Ansible read from ``env/cmdline`` in ``private_data_dir``
-    :param bool suppress_env_files: Disable the writing of files into the ``env`` which may store sensitive information
-    :param str limit: Matches ansible's ``--limit`` parameter to further constrain the inventory to be used
-    :param int forks: Control Ansible parallel concurrency
-    :param int verbosity: Control how verbose the output of ansible-playbook is
-    :param bool quiet: Disable all output
-    :param str artifact_dir: The path to the directory where artifacts should live, this defaults to 'artifacts' under the private data dir
-    :param str project_dir: The path to the playbook content, this defaults to 'project' within the private data dir
-    :param int rotate_artifacts: Keep at most n artifact directories, disable with a value of 0 which is the default
-    :param int timeout: The timeout value in seconds that will be passed to either ``pexpect`` of ``subprocess`` invocation
-                    (based on ``runner_mode`` selected) while executing command. It the timeout is triggered it will force cancel the
-                    execution.
-    :param str streamer: Optionally invoke ansible-runner as one of the steps in the streaming pipeline
-    :param io.FileIO _input: An optional file or file-like object for use as input in a streaming pipeline
-    :param io.FileIO _output: An optional file or file-like object for use as output in a streaming pipeline
-    :param Callable event_handler: An optional callback that will be invoked any time an event is received by Runner itself, return True to keep the event
-    :param Callable cancel_callback: An optional callback that can inform runner to cancel (returning True) or not (returning False)
-    :param Callable finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
-    :param Callable status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
-    :param Callable artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
-    :param bool process_isolation: Enable process isolation, using either a container engine (e.g. podman) or a sandbox (e.g. bwrap).
-    :param str process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
-    :param str process_isolation_path: Path that an isolated playbook run will use for staging. (default: /tmp)
-    :param str or list process_isolation_hide_paths: A path or list of paths on the system that should be hidden from the playbook run.
-    :param str or list process_isolation_show_paths: A path or list of paths on the system that should be exposed to the playbook run.
-    :param str or list process_isolation_ro_paths: A path or list of paths on the system that should be exposed to the playbook run as read-only.
-    :param str container_image: Container image to use when running an ansible task
-    :param list container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir. (default: None)
-    :param list container_options: List of container options to pass to execution engine.
-    :param str directory_isolation_base_path: An optional path will be used as the base path to create a temp directory, the project contents will be
-                                          copied to this location which will then be used as the working directory during playbook execution.
-    :param str fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
-                       This is only used for 'jsonfile' type fact caches.
-    :param str fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
-    :param bool omit_event_data: Omits extra ansible event data from event payload (stdout and event still included)
-    :param bool only_failed_event_data: Omits extra ansible event data unless it's a failed event (stdout and event still included)
-    :param bool check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
-                                 value is set to 'True' it will raise 'AnsibleRunnerException' exception,
-                                 if set to 'False' it log a debug message and continue execution. Default value is 'False'
+        run(private_data_dir='/tmp/demo', playbook='test.yml')
+        run(private_data_dir='/tmp/streaming-demo', playbook='test.yml', streamer='transmit')
+
+    The second format uses a `RunnerConfig` object supplied in the ``config`` parameter for all available
+    run values. All other ``**kwarg`` keywords and their values are ignored.
+
+    .. code-block:: python
+
+        config = RunnerConfig(private_data_dir='/tmp/demo', playbook='test.yml')
+        run(config=config)
+
+        streaming_config = RunnerConfig(private_data_dir='/tmp/streaming-demo', playbook='test.yml')
+        run(config=streaming_config, streamer='transmit')
+
+    :param RunnerConfig config: A configuration object describing the run characteristics.
+    :param str streamer: Optionally invoke ansible-runner as one of the steps in the streaming pipeline.
+        Valid values are ``transmit``, ``worker``, or ``process``.
+    :param bool debug: If ``True``, debugging output from ansible-runner is enabled.
+    :param str logfile: Path to a file where logging output will be sent.
+    :param bool ignore_logging: If ``True``, ansible-runner log output will be disabled.
+    :param dict kwargs: Keyword arguments that match the parameters for a `RunnerConfig` object.
 
     :returns: A :py:class:`ansible_runner.runner.Runner` object, or a simple object containing ``rc`` if run remotely
-    '''
-    r = init_runner(**kwargs)
+    """
+
+    # Initialize logging
+    if not ignore_logging:
+        output.configure(debug, logfile)
+
+    if not config:
+        config = RunnerConfig(**kwargs)
+
+    r = init_runner(config=config, streamer=streamer)
     r.run()
     return r
 
 
-def run_async(**kwargs):
+def run_async(
+        config: RunnerConfig | None = None,
+        streamer: str = "",
+        debug: bool = False,
+        logfile: str = "",
+        ignore_logging: bool = True,
+        **kwargs):
     '''
     Runs an Ansible Runner task in the background which will start immediately. Returns the thread object and a Runner object.
 
@@ -222,7 +174,15 @@ def run_async(**kwargs):
 
     :returns: A tuple containing a :py:class:`threading.Thread` object and a :py:class:`ansible_runner.runner.Runner` object
     '''
-    r = init_runner(**kwargs)
+
+    # Initialize logging
+    if not ignore_logging:
+        output.configure(debug, logfile)
+
+    if not config:
+        config = RunnerConfig(**kwargs)
+
+    r = init_runner(config=config, streamer=streamer)
     runner_thread = threading.Thread(target=r.run)
     runner_thread.start()
     return runner_thread, r

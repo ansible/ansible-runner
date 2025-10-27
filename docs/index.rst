@@ -15,7 +15,7 @@ want to manage the complexities of the interface on their own (such as CI/CD pla
 for running ``ansible`` and ``ansible-playbook`` tasks and gathers the output from it. It does this by presenting a common interface that doesn't
 change, even as **Ansible** itself grows and evolves.
 
-Part of what makes this tooling useful is that it can gather its inputs in a flexible way (See :ref:`intro`:). It also has a system for storing the
+Part of what makes this tooling useful is that it can gather its inputs in a flexible way (See :ref:`config`). It also has a system for storing the
 output (stdout) and artifacts (host-level event data, fact data, etc) of the playbook run.
 
 There are 3 primary ways of interacting with **Runner**
@@ -30,20 +30,30 @@ Examples of this could include:
 * Sending status to Ansible AWX
 * Sending events to an external logging service
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Installation, Upgrade & Configuration
+
+   install
+   configuration
+   porting_guides/porting_guide
 
 .. toctree::
    :maxdepth: 1
-   :caption: Contents:
+   :caption: Using Ansible Runner
 
-   intro
-   install
-   community
    external_interface
    standalone
    python_interface
    execution_environments
    remote_jobs
    modules
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Getting Help
+
+   community
 
 
 Indices and tables

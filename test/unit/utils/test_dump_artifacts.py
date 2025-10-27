@@ -1,27 +1,7 @@
 import pytest
 
-from ansible_runner.utils import dump_artifacts
-
-
-def test_dump_artifacts_private_data_dir_does_not_exists():
-    data_dir = '/not/a/path'
-    kwargs = {'private_data_dir': data_dir}
-
-    with pytest.raises(ValueError, match='invalid or does not exist'):
-        dump_artifacts(kwargs)
-
-    assert kwargs['private_data_dir'] == data_dir
-
-
-def test_dump_artifacts_private_data_dir_create_tempfile(mocker):
-    mocker.patch('ansible_runner.utils.os.path.exists', side_effect=AttributeError('Raised intentionally'))
-    mocker.patch('ansible_runner.utils.tempfile.mkdtemp', return_value='/tmp/dir')
-
-    kwargs = {}
-    with pytest.raises(AttributeError, match='Raised intentionally'):
-        dump_artifacts(kwargs)
-
-    assert kwargs['private_data_dir'] == '/tmp/dir'
+from ansible_runner.config.runner import RunnerConfig
+from ansible_runner._internal._dump_artifacts import dump_artifacts
 
 
 @pytest.mark.parametrize(
@@ -31,20 +11,20 @@ def test_dump_artifacts_private_data_dir_create_tempfile(mocker):
     )
 )
 def test_dump_artifacts_playbook_object(mocker, playbook):
-    mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact', side_effect=AttributeError('Raised intentionally'))
+    mock_dump_artifact = mocker.patch('ansible_runner._internal._dump_artifacts.dump_artifact', side_effect=AttributeError('Raised intentionally'))
     mocker.patch('ansible_runner.utils.isplaybook', return_value=True)
 
     playbook_string = '[{"playbook": [{"hosts": "all"}]}]'
     kwargs = {'private_data_dir': '/tmp', 'playbook': playbook}
 
     with pytest.raises(AttributeError, match='Raised intentionally'):
-        dump_artifacts(kwargs)
+        dump_artifacts(RunnerConfig(**kwargs))
 
     mock_dump_artifact.assert_called_once_with(playbook_string, '/tmp/project', 'main.json')
 
 
 def test_dump_artifacts_role(mocker):
-    mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact')
+    mock_dump_artifact = mocker.patch('ansible_runner._internal._dump_artifacts.dump_artifact')
 
     kwargs = {
         'private_data_dir': '/tmp',
@@ -52,14 +32,14 @@ def test_dump_artifacts_role(mocker):
         'playbook': [{'playbook': [{'hosts': 'all'}]}],
     }
 
-    dump_artifacts(kwargs)
+    dump_artifacts(RunnerConfig(**kwargs))
 
     assert mock_dump_artifact.call_count == 2
     mock_dump_artifact.assert_called_with('{"ANSIBLE_ROLES_PATH": "/tmp/roles"}', '/tmp/env', 'envvars')
 
 
 def test_dump_artifacts_roles_path(mocker):
-    mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact')
+    mock_dump_artifact = mocker.patch('ansible_runner._internal._dump_artifacts.dump_artifact')
 
     kwargs = {
         'private_data_dir': '/tmp',
@@ -68,14 +48,14 @@ def test_dump_artifacts_roles_path(mocker):
         'playbook': [{'playbook': [{'hosts': 'all'}]}],
     }
 
-    dump_artifacts(kwargs)
+    dump_artifacts(RunnerConfig(**kwargs))
 
     assert mock_dump_artifact.call_count == 2
     mock_dump_artifact.assert_called_with('{"ANSIBLE_ROLES_PATH": "/tmp/altrole:/tmp/roles"}', '/tmp/env', 'envvars')
 
 
 def test_dump_artifacts_role_vars(mocker):
-    mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact', side_effect=AttributeError('Raised intentionally'))
+    mock_dump_artifact = mocker.patch('ansible_runner._internal._dump_artifacts.dump_artifact', side_effect=AttributeError('Raised intentionally'))
 
     kwargs = {
         'private_data_dir': '/tmp',
@@ -85,7 +65,7 @@ def test_dump_artifacts_role_vars(mocker):
     }
 
     with pytest.raises(AttributeError, match='Raised intentionally'):
-        dump_artifacts(kwargs)
+        dump_artifacts(RunnerConfig(**kwargs))
 
     mock_dump_artifact.assert_called_once_with(
         '[{"hosts": "all", "roles": [{"name": "test", "vars": {"name": "nginx"}}]}]',
@@ -95,7 +75,7 @@ def test_dump_artifacts_role_vars(mocker):
 
 
 def test_dump_artifacts_role_skip_facts(mocker):
-    mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact', side_effect=AttributeError('Raised intentionally'))
+    mock_dump_artifact = mocker.patch('ansible_runner._internal._dump_artifacts.dump_artifact', side_effect=AttributeError('Raised intentionally'))
 
     kwargs = {
         'private_data_dir': '/tmp',
@@ -105,7 +85,7 @@ def test_dump_artifacts_role_skip_facts(mocker):
     }
 
     with pytest.raises(AttributeError, match='Raised intentionally'):
-        dump_artifacts(kwargs)
+        dump_artifacts(RunnerConfig(**kwargs))
 
     mock_dump_artifact.assert_called_once_with(
         '[{"hosts": "all", "roles": [{"name": "test"}], "gather_facts": false}]',
@@ -115,21 +95,21 @@ def test_dump_artifacts_role_skip_facts(mocker):
 
 
 def test_dump_artifacts_inventory_string(mocker):
-    mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact')
+    mock_dump_artifact = mocker.patch('ansible_runner._internal._dump_artifacts.dump_artifact')
 
     inv = '[all]\nlocalhost'
     kwargs = {'private_data_dir': '/tmp', 'inventory': inv}
-    dump_artifacts(kwargs)
+    dump_artifacts(RunnerConfig(**kwargs))
 
     mock_dump_artifact.assert_called_once_with(inv, '/tmp/inventory', 'hosts')
 
 
 def test_dump_artifacts_inventory_path(mocker):
-    mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact')
+    mock_dump_artifact = mocker.patch('ansible_runner._internal._dump_artifacts.dump_artifact')
 
     inv = '/tmp'
     kwargs = {'private_data_dir': '/tmp', 'inventory': inv}
-    dump_artifacts(kwargs)
+    dump_artifacts(RunnerConfig(**kwargs))
 
     assert mock_dump_artifact.call_count == 0
     assert mock_dump_artifact.called is False
@@ -137,12 +117,12 @@ def test_dump_artifacts_inventory_path(mocker):
 
 
 def test_dump_artifacts_inventory_object(mocker):
-    mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact')
+    mock_dump_artifact = mocker.patch('ansible_runner._internal._dump_artifacts.dump_artifact')
 
     inv = {'foo': 'bar'}
     inv_string = '{"foo": "bar"}'
     kwargs = {'private_data_dir': '/tmp', 'inventory': inv}
-    dump_artifacts(kwargs)
+    dump_artifacts(RunnerConfig(**kwargs))
 
     mock_dump_artifact.assert_called_once_with(inv_string, '/tmp/inventory', 'hosts.json')
 
@@ -152,9 +132,10 @@ def test_dump_artifacts_inventory_string_path(mocker):
 
     inv_string = 'site1'
     kwargs = {'private_data_dir': '/tmp', 'inventory': inv_string}
-    dump_artifacts(kwargs)
+    rc = RunnerConfig(**kwargs)
+    dump_artifacts(rc)
 
-    assert kwargs['inventory'] == '/tmp/inventory/site1'
+    assert rc.inventory == '/tmp/inventory/site1'
 
 
 def test_dump_artifacts_inventory_string_abs_path(mocker):
@@ -162,13 +143,14 @@ def test_dump_artifacts_inventory_string_abs_path(mocker):
 
     inv_string = '/tmp/site1'
     kwargs = {'private_data_dir': '/tmp', 'inventory': inv_string}
-    dump_artifacts(kwargs)
+    rc = RunnerConfig(**kwargs)
+    dump_artifacts(rc)
 
-    assert kwargs['inventory'] == '/tmp/site1'
+    assert rc.inventory == '/tmp/site1'
 
 
 def test_dump_artifacts_passwords(mocker):
-    mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact')
+    mock_dump_artifact = mocker.patch('ansible_runner._internal._dump_artifacts.dump_artifact')
 
     kwargs = {
         'private_data_dir': '/tmp',
@@ -177,7 +159,7 @@ def test_dump_artifacts_passwords(mocker):
         'ssh_key': 'asdfg1234',
     }
 
-    dump_artifacts(kwargs)
+    dump_artifacts(RunnerConfig(**kwargs))
 
     assert mock_dump_artifact.call_count == 3
     mock_dump_artifact.assert_any_call('{"a": "b"}', '/tmp/env', 'passwords')
@@ -186,7 +168,7 @@ def test_dump_artifacts_passwords(mocker):
 
 
 def test_dont_dump_artifacts_passwords(mocker):
-    mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact')
+    mock_dump_artifact = mocker.patch('ansible_runner._internal._dump_artifacts.dump_artifact')
 
     kwargs = {
         'private_data_dir': '/tmp',
@@ -196,7 +178,7 @@ def test_dont_dump_artifacts_passwords(mocker):
         'suppress_env_files': True
     }
 
-    dump_artifacts(kwargs)
+    dump_artifacts(RunnerConfig(**kwargs))
 
     assert mock_dump_artifact.call_count == 0
 
@@ -211,12 +193,12 @@ def test_dont_dump_artifacts_passwords(mocker):
     )
 )
 def test_dump_artifacts_extra_keys(mocker, key, value, value_str):
-    mock_dump_artifact = mocker.patch('ansible_runner.utils.dump_artifact')
+    mock_dump_artifact = mocker.patch('ansible_runner._internal._dump_artifacts.dump_artifact')
 
     kwargs = {'private_data_dir': '/tmp'}
     kwargs.update({key: value})
 
-    dump_artifacts(kwargs)
+    rc = RunnerConfig(**kwargs)
+    dump_artifacts(rc)
 
     mock_dump_artifact.assert_called_once_with(value_str, '/tmp/env', key)
-    assert 'settings' not in kwargs

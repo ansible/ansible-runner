@@ -9,7 +9,8 @@ import threading
 
 import pytest
 
-from ansible_runner import run
+from ansible_runner.config.runner import RunnerConfig
+from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.streaming import Transmitter, Worker, Processor
 
 import ansible_runner.interface  # AWX import pattern
@@ -26,7 +27,7 @@ class TestStreamingUsage:
         self.status_data = status_data
 
     def get_job_kwargs(self, job_type):
-        """For this test scenaro, the ansible-runner interface kwargs"""
+        """For this test scenario, the ansible-runner interface kwargs"""
         if job_type == 'run':
             job_kwargs = {'playbook': 'debug.yml'}
         else:
@@ -72,41 +73,42 @@ class TestStreamingUsage:
 
         outgoing_buffer_file = tmp_path / 'buffer_out'
         outgoing_buffer_file.touch()
-        outgoing_buffer = outgoing_buffer_file.open('b+r')
 
-        transmitter = Transmitter(_output=outgoing_buffer, private_data_dir=transmit_dir, **job_kwargs)
+        with outgoing_buffer_file.open('b+r') as outgoing_buffer:
+            config = RunnerConfig(private_data_dir=str(transmit_dir), _output=outgoing_buffer, **job_kwargs)
+            transmitter = Transmitter(config)
 
-        for key, value in job_kwargs.items():
-            assert transmitter.kwargs.get(key, '') == value
+            for key, value in job_kwargs.items():
+                assert transmitter.kwargs.get(key, '') == value
 
-        status, rc = transmitter.run()
-        assert rc in (None, 0)
-        assert status == 'unstarted'
+            status, rc = transmitter.run()
+            assert rc in (None, 0)
+            assert status == 'unstarted'
 
-        outgoing_buffer.seek(0)
-        sent = outgoing_buffer.read()
-        assert sent  # should not be blank at least
-        assert b'zipfile' in sent
+            outgoing_buffer.seek(0)
+            sent = outgoing_buffer.read()
+            assert sent  # should not be blank at least
+            assert b'zipfile' in sent
 
-        incoming_buffer_file = tmp_path / 'buffer_in'
-        incoming_buffer_file.touch()
-        incoming_buffer = incoming_buffer_file.open('b+r')
+            incoming_buffer_file = tmp_path / 'buffer_in'
+            incoming_buffer_file.touch()
 
-        outgoing_buffer.seek(0)
+            with incoming_buffer_file.open('b+r') as incoming_buffer:
+                outgoing_buffer.seek(0)
 
-        worker = Worker(_input=outgoing_buffer, _output=incoming_buffer, private_data_dir=worker_dir)
-        worker.run()
+                rc = RunnerConfig(private_data_dir=str(worker_dir), _input=outgoing_buffer, _output=incoming_buffer)
+                worker = Worker(rc)
+                worker.run()
 
-        outgoing_buffer.seek(0)
-        assert set(os.listdir(worker_dir)) == {'artifacts', 'inventory', 'project', 'env'}, outgoing_buffer.read()
+                outgoing_buffer.seek(0)
+                assert set(os.listdir(worker_dir)) == {'artifacts', 'inventory', 'project', 'env'}, outgoing_buffer.read()
 
-        incoming_buffer.seek(0)  # again, be kind, rewind
+                incoming_buffer.seek(0)  # again, be kind, rewind
 
-        processor = Processor(_input=incoming_buffer, private_data_dir=process_dir)
-        processor.run()
+                rc = RunnerConfig(private_data_dir=str(process_dir), _input=incoming_buffer)
+                processor = Processor(rc)
+                processor.run()
 
-        outgoing_buffer.close()
-        incoming_buffer.close()
         self.check_artifacts(str(process_dir), job_type)
 
     @pytest.mark.parametrize("keepalive_setting", [
@@ -141,20 +143,24 @@ class TestStreamingUsage:
         for buffer in (outgoing_buffer, incoming_buffer):
             buffer.name = 'foo'
 
-        status, rc = Transmitter(
-            _output=outgoing_buffer, private_data_dir=project_fixtures / 'sleep',
-            playbook='sleep.yml', extravars={'sleep_interval': 2}, verbosity=verbosity
-        ).run()
+        config = RunnerConfig(private_data_dir=project_fixtures / 'sleep',
+                              playbook='sleep.yml',
+                              extravars={'sleep_interval': 2},
+                              verbosity=verbosity,
+                              only_transmit_kwargs=False,
+                              _output=outgoing_buffer,
+                              )
+
+        status, rc = Transmitter(config).run()
         assert rc in (None, 0)
         assert status == 'unstarted'
         outgoing_buffer.seek(0)
 
         worker_start_time = time.time()
 
-        worker = Worker(
-            _input=outgoing_buffer, _output=incoming_buffer, private_data_dir=worker_dir,
-            keepalive_seconds=keepalive_setting
-        )
+        rc = RunnerConfig(private_data_dir=str(worker_dir), keepalive_seconds=keepalive_setting,
+                          _input=outgoing_buffer, _output=incoming_buffer)
+        worker = Worker(rc)
         worker.run()
 
         assert time.time() - worker_start_time > 2.0  # task sleeps for 2 second
@@ -164,7 +170,8 @@ class TestStreamingUsage:
         assert not worker._keepalive_thread.is_alive()  # make sure it's dead
 
         incoming_buffer.seek(0)
-        Processor(_input=incoming_buffer, private_data_dir=process_dir).run()
+        rc = RunnerConfig(private_data_dir=str(process_dir), _input=incoming_buffer)
+        Processor(rc).run()
 
         stdout = self.get_stdout(process_dir)
         assert 'Sleep for a specified interval' in stdout
@@ -256,6 +263,9 @@ class TestStreamingUsage:
                     break
                 time.sleep(0.05)  # additionally, AWX calls cancel_callback()
 
+            res = process_future.result()
+            assert res.status == 'successful'
+
         for s in (
             transmit_socket_write, transmit_socket_read, results_socket_write, results_socket_read,
             transmit_socket_write_file, transmit_socket_read_file, results_socket_write_file, results_socket_read_file,
@@ -291,7 +301,7 @@ class TestStreamingUsage:
             **job_kwargs,
         )
 
-        # valide process_isolation kwargs are passed to transmitter
+        # valid process_isolation kwargs are passed to transmitter
         assert transmitter.kwargs['process_isolation'] == job_kwargs['process_isolation']
         assert transmitter.kwargs['process_isolation_executable'] == job_kwargs['process_isolation_executable']
 
@@ -329,7 +339,7 @@ class TestStreamingUsage:
                 _output=incoming_buffer,
                 private_data_dir=worker_dir,
             )
-            assert exc.value.code == 1
+        assert exc.value.code == 1
         outgoing_buffer.close()
         incoming_buffer.close()
 
@@ -340,8 +350,14 @@ def transmit_stream(project_fixtures, tmp_path):
     outgoing_buffer.touch()
 
     transmit_dir = project_fixtures / 'debug'
+
     with outgoing_buffer.open('wb') as f:
-        transmitter = Transmitter(_output=f, private_data_dir=transmit_dir, playbook='debug.yml')
+        config = RunnerConfig(private_data_dir=str(transmit_dir),
+                              playbook='debug.yml',
+                              only_transmit_kwargs=False,
+                              _output=f,
+                              )
+        transmitter = Transmitter(config)
         status, rc = transmitter.run()
 
         assert rc in (None, 0)
@@ -358,12 +374,33 @@ def worker_stream(transmit_stream, tmp_path):  # pylint: disable=W0621
     worker_dir.mkdir()
     with transmit_stream.open('rb') as out:
         with ingoing_buffer.open('wb') as f:
-            worker = Worker(_input=out, _output=f, private_data_dir=worker_dir)
+            config = RunnerConfig(private_data_dir=str(worker_dir), _input=out, _output=f)
+            worker = Worker(config)
             status, rc = worker.run()
 
             assert rc in (None, 0)
             assert status == 'successful'
             return ingoing_buffer
+
+
+def test_transmit_role(tmp_path, cli, project_fixtures):
+    """When transmitting a role job via CLI, expect only 'playbook' in the job arguments.
+
+    When we 'transmit' a role through the CLI command, we expect a playbook to be generated via
+    the role_manager(), which will in turn be transmitted as an artifact. No other parameters
+    are expected to be present.
+    """
+    outgoing_buffer = tmp_path / 'buffer'
+    outgoing_buffer.touch()
+
+    transmit_dir = project_fixtures / 'debug'
+
+    r = cli(['transmit', str(transmit_dir), '--role', 'hello_world'])
+    data = json.loads(r.stdout.split('\n')[0])
+    assert 'kwargs' in data
+    assert len(data['kwargs']) == 2
+    assert 'playbook' in data['kwargs']
+    assert 'ident' in data['kwargs']
 
 
 def test_worker_without_delete_no_dir(tmp_path, cli, transmit_stream):  # pylint: disable=W0621
@@ -447,15 +484,15 @@ def test_missing_private_dir_transmit():
     outgoing_buffer = io.BytesIO()
 
     # Transmit
-    with pytest.raises(ValueError) as excinfo:
-        run(
+    with pytest.raises(ConfigurationError) as excinfo:
+        ansible_runner.interface.run(
             streamer='transmit',
             _output=outgoing_buffer,
             private_data_dir='/foo/bar/baz',
             playbook='debug.yml',
         )
 
-    assert "private_data_dir path is either invalid or does not exist" in str(excinfo.value)
+    assert "Unable to create private_data_dir /foo/bar/baz" in str(excinfo.value)
 
 
 def test_garbage_private_dir_worker(tmp_path):
@@ -466,7 +503,7 @@ def test_garbage_private_dir_worker(tmp_path):
     outgoing_buffer = io.BytesIO()
 
     # Worker
-    run(
+    ansible_runner.interface.run(
         streamer='worker',
         _input=incoming_buffer,
         _output=outgoing_buffer,
@@ -487,7 +524,7 @@ def test_unparsable_line_worker(tmp_path):
     outgoing_buffer = io.BytesIO()
 
     # Worker
-    run(
+    ansible_runner.interface.run(
         streamer='worker',
         _input=incoming_buffer,
         _output=outgoing_buffer,
@@ -511,10 +548,10 @@ def test_unparsable_really_big_line_processor(tmp_path):
         assert 'not-json-data with extra garbage:ffffffffff' in status_data['job_explanation']
         assert len(status_data['job_explanation']) < 2000
 
-    run(
+    ansible_runner.interface.run(
         streamer='process',
         _input=incoming_buffer,
-        private_data_dir=process_dir,
+        private_data_dir=str(process_dir),
         status_handler=status_receiver
     )
 

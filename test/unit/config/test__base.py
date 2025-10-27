@@ -2,6 +2,7 @@
 
 import os
 import re
+import tempfile
 from functools import partial
 
 from test.utils.common import RSAKey
@@ -20,6 +21,19 @@ def load_file_side_effect(path, value, *args, **kwargs):
         if value:
             return value
     raise ConfigurationError
+
+
+def test_base_config_empty_pvt_data_dir():
+    """Make sure we create a pvt data dir even when not supplied"""
+    rc = BaseConfig()
+    tmpdir = tempfile.gettempdir()
+    assert tmpdir in rc.private_data_dir
+
+
+def test_base_config_invalid_pvt_data_dir():
+    """A ConfigurationError should be raised if we cannot create the requested pvt data dir"""
+    with pytest.raises(ConfigurationError, match="Unable to create private_data_dir"):
+        BaseConfig("/not/a/writable/path")
 
 
 def test_base_config_init_defaults(tmp_path):
@@ -159,7 +173,7 @@ def test_prepare_env_settings(mocker):
 def test_prepare_env_sshkey_defaults():
     rc = BaseConfig()
     rc.prepare_env()
-    assert rc.ssh_key_data is None
+    assert rc.ssh_key is None
 
 
 def test_prepare_env_sshkey(mocker):
@@ -171,7 +185,7 @@ def test_prepare_env_sshkey(mocker):
 
     mocker.patch.object(rc.loader, 'load_file', side_effect=sshkey_side_effect)
     rc.prepare_env()
-    assert rc.ssh_key_data == rsa_private_key_value
+    assert rc.ssh_key == rsa_private_key_value
 
 
 def test_prepare_env_defaults():
@@ -191,7 +205,7 @@ def test_prepare_env_ansible_vars(mocker, tmp_path):
 
     artifact_dir = tmp_path.joinpath('some_artifacts')
     rc = BaseConfig(artifact_dir=artifact_dir.as_posix())
-    rc.ssh_key_data = None
+    rc.ssh_key = None
     rc.env = {}
     rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
 
@@ -215,7 +229,7 @@ def test_prepare_with_ssh_key(mocker, tmp_path):
     rc.env = {}
     rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
     rsa_key = RSAKey()
-    rc.ssh_key_data = rsa_key.private
+    rc.ssh_key = rsa_key.private
     rc.command = 'ansible-playbook'
     rc.cmdline_args = []
     rc.prepare_env()

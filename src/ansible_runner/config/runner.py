@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+from __future__ import annotations
 
 # pylint: disable=W0201
 
@@ -23,12 +24,15 @@ import json
 import logging
 import os
 import shlex
+import shutil
 import stat
 import tempfile
-import shutil
+
+from dataclasses import dataclass, field, fields
+from typing import Any, BinaryIO
 
 from ansible_runner import output
-from ansible_runner.config._base import BaseConfig, BaseExecutionMode
+from ansible_runner.config._base import BaseConfig, BaseExecutionMode, MetaValues
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.output import debug
 from ansible_runner.utils import register_for_cleanup
@@ -44,13 +48,13 @@ class ExecutionMode():
     RAW = 3
 
 
+@dataclass
 class RunnerConfig(BaseConfig):
-    """
-    A ``Runner`` configuration object that's meant to encapsulate the configuration used by the
+    """A ``Runner`` configuration object that's meant to encapsulate the configuration used by the
     :py:mod:`ansible_runner.runner.Runner` object to launch and manage the invocation of ``ansible``
     and ``ansible-playbook``
 
-    Typically this object is initialized for you when using the standard ``run`` interfaces in :py:mod:`ansible_runner.interface`
+    Typically, this object is initialized for you when using the standard ``run`` interfaces in :py:mod:`ansible_runner.interface`
     but can be used to construct the ``Runner`` configuration to be invoked elsewhere. It can also be overridden to provide different
     functionality to the Runner object.
 
@@ -60,51 +64,178 @@ class RunnerConfig(BaseConfig):
     >>> r = Runner(config=rc)
     >>> r.run()
 
+    This class inherits all the initialization parameters of the `BaseConfig` parent class, plus:
+
+    :param BinaryIO _input: An optional file or file-like object for use as input in a streaming pipeline.
+    :param BinaryIO _output: An optional file or file-like object for use as output in a streaming pipeline.
+    :param str binary: Path to an alternative ansible command.
+    :param str cmdline: Command line options passed to Ansible read from ``env/cmdline`` in ``private_data_dir``
+    :param str directory_isolation_base_path: An optional path will be used as the base path to create a temp directory.
+        The project contents will be copied to this location which will then be used as the working directory during
+        playbook execution.
+    :param dict extravars: Extra variables to be passed to Ansible at runtime using ``-e``. Extra vars will also be
+                      read from ``env/extravars`` in ``private_data_dir``.
+    :param int forks: Control Ansible parallel concurrency.
+    :param str host_pattern: The host pattern to match when running in ad-hoc mode.
+    :param str or dict or list inventory: Overrides the inventory directory/file (supplied at ``private_data_dir/inventory``) with
+        a specific host or list of hosts. This can take the form of:
+
+            - Path to the inventory file in the ``private_data_dir/inventory`` directory or
+              an absolute path to the inventory file
+            - Native python dict supporting the YAML/json inventory structure
+            - A text INI formatted string
+            - A list of inventory sources, or an empty list to disable passing inventory
+    :param str limit: Matches ansible's ``--limit`` parameter to further constrain the inventory to be used.
+    :param str module: The module that will be invoked in ad-hoc mode by runner when executing Ansible.
+    :param str module_args: The module arguments that will be supplied to ad-hoc mode.
+    :param bool omit_event_data: Omits extra ansible event data from event payload (stdout and event still included).
+    :param bool only_failed_event_data: Omits extra ansible event data unless it's a failed event (stdout and event still included).
+    :param bool only_transmit_kwargs: If ``True``, the streaming Transmitter process will only send job arguments.
+    :param str or dict or list playbook: The playbook (either a list or dictionary of plays, or as a path relative to
+        ``private_data_dir/project``) that will be invoked by runner when executing Ansible.
+    :param str or list process_isolation_hide_paths: A path or list of paths on the system that should be hidden from the playbook run.
+    :param str or list process_isolation_ro_paths: A path or list of paths on the system that should be exposed to the playbook run as read-only.
+    :param str or list process_isolation_show_paths: A path or list of paths on the system that should be exposed to the playbook run.
+    :param str process_isolation_path: Path that an isolated playbook run will use for staging. (default: ``/tmp``)
+    :param str role: Name of the role to execute.
+    :param bool role_skip_facts: If ``True``, ``gather_facts`` will be set to ``False`` for execution of the namedgit  ``role``.
+    :param str or list roles_path: Directory or list of directories to assign to ``ANSIBLE_ROLES_PATH``.
+    :param dict role_vars: Variables and their values to use with the named ``role``.
+    :param str skip_tags: Value to pass to the ``--skip-tags`` option of ``ansible-playbook``.
+    :param bool suppress_ansible_output: If ``True``, Ansible output will not appear to stdout.
+    :param bool suppress_output_file: If ``True``, Ansible output will not be written to a file in the artifacts directory.
+    :param str tags: Value to pass to the ``--tags`` option of ``ansible-playbook``.
+    :param int verbosity: Control the verbosity level of ansible-playbook.
     """
 
-    def __init__(self,
-                 private_data_dir, playbook=None, inventory=None, roles_path=None, limit=None,
-                 module=None, module_args=None, verbosity=None, host_pattern=None, binary=None,
-                 extravars=None, suppress_output_file=False, suppress_ansible_output=False, process_isolation_path=None,
-                 process_isolation_hide_paths=None, process_isolation_show_paths=None,
-                 process_isolation_ro_paths=None, tags=None, skip_tags=None,
-                 directory_isolation_base_path=None, forks=None, cmdline=None, omit_event_data=False,
-                 only_failed_event_data=False, **kwargs):
+    _input: BinaryIO | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+    _output: BinaryIO | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
 
+    # 'binary' comes from the --binary CLI opt for an alternative ansible command path
+    binary: str | None = None
+    cmdline: str | None = None
+    directory_isolation_base_path: str | None = None
+    extravars: dict | None = None
+    forks: int | None = None
+    host_pattern: str | None = None
+    inventory: str | dict | list | None = None
+    limit: str | None = None
+    module: str | None = None
+    module_args: str | None = None
+    omit_event_data: bool = False
+    only_failed_event_data: bool = False
+    only_transmit_kwargs: bool = field(metadata={MetaValues.TRANSMIT: False}, default=False)
+    playbook: str | dict | list | None = None
+    process_isolation_hide_paths: str | list | None = None
+    process_isolation_ro_paths: str | list | None = None
+    process_isolation_show_paths: str | list | None = None
+    process_isolation_path: str | None = None
+    role: str = ""
+    role_skip_facts: bool = False
+    roles_path: str | None = None
+    role_vars: dict[str, str] | None = None
+    skip_tags: str | None = None
+    suppress_ansible_output: bool = False
+    suppress_output_file: bool = False
+    tags: str | None = None
+    verbosity: int | None = None
+
+    def __post_init__(self) -> None:
+        # NOTE: Cannot call base class __init__() here as that causes some recursion madness.
+        # We can call its __post_init__().
+        super().__post_init__()   # TODO: Should we rename this in base class?
         self.runner_mode = "pexpect"
-
-        super().__init__(private_data_dir, **kwargs)
-
-        self.playbook = playbook
-        self.inventory = inventory
-        self.roles_path = roles_path
-        self.limit = limit
-        self.module = module
-        self.module_args = module_args
-        self.host_pattern = host_pattern
-        self.binary = binary
-        self.extra_vars = extravars
-        self.process_isolation_path = process_isolation_path
         self.process_isolation_path_actual = None
-        self.process_isolation_hide_paths = process_isolation_hide_paths
-        self.process_isolation_show_paths = process_isolation_show_paths
-        self.process_isolation_ro_paths = process_isolation_ro_paths
-        self.directory_isolation_path = directory_isolation_base_path
-        self.verbosity = verbosity
-        self.suppress_output_file = suppress_output_file
-        self.suppress_ansible_output = suppress_ansible_output
-        self.tags = tags
-        self.skip_tags = skip_tags
         self.execution_mode = ExecutionMode.NONE
-        self.forks = forks
-        self.cmdline_args = cmdline
-
-        self.omit_event_data = omit_event_data
-        self.only_failed_event_data = only_failed_event_data
 
     @property
     def sandboxed(self):
         return self.process_isolation and self.process_isolation_executable not in self._CONTAINER_ENGINES
+
+    @property
+    def cmdline_args(self):
+        """Alias for backward compatibility."""
+        return self.cmdline
+
+    @cmdline_args.setter
+    def cmdline_args(self, value):
+        self.cmdline = value
+
+    @property
+    def directory_isolation_path(self):
+        """Alias for backward compatibility."""
+        return self.directory_isolation_base_path
+
+    @directory_isolation_path.setter
+    def directory_isolation_path(self, value):
+        self.directory_isolation_base_path = value
+
+    @property
+    def hosts(self):
+        """Alias for backward compatibility.
+
+        dump_artifacts() makes reference to 'hosts' kwargs (API) value, even though it
+        is undocumented as an API parameter to interface.run(). We make it equivalent
+        to 'host_pattern' here to not break anyone.
+        """
+        return self.host_pattern
+
+    @hosts.setter
+    def hosts(self, value):
+        self.host_pattern = value
+
+    @property
+    def extra_vars(self):
+        """Alias for backward compatibility."""
+        return self.extravars
+
+    @extra_vars.setter
+    def extra_vars(self, value):
+        self.extravars = value
+
+    # Create internal aliases for '_input' and '_output' attributes since those are named like
+    # private attributes, yet they can be set from our public interfaces... go figure.
+    @property
+    def input(self):
+        return self._input
+
+    @input.setter
+    def input(self, value):
+        self._input = value
+
+    @property
+    def output(self):
+        return self._output
+
+    @output.setter
+    def output(self, value):
+        self._output = value
+
+    def streamable_attributes(self) -> dict[str, Any]:
+        """Get the set of streamable attributes that have a value that is different from the default.
+
+        The field metadata indicates if the attribute is streamable from Transmit. By default, an attribute
+        is considered streamable (must be explicitly disabled).
+
+        :return: A dict of attribute names and their values.
+        """
+        retval = {}
+        for field_obj in fields(self):
+            if field_obj.metadata and not field_obj.metadata.get(MetaValues.TRANSMIT, True):
+                continue
+            current_value = getattr(self, field_obj.name)
+
+            if field_obj.default == current_value:
+                continue
+
+            # Treat an empty current value (e.g., {} or "") as the same as a default of None to prevent
+            # streaming unnecessary empty values.
+            if field_obj.default is None and current_value in ({}, "", []):
+                continue
+
+            retval[field_obj.name] = current_value
+
+        return retval
 
     def prepare(self):
         """
@@ -115,7 +246,7 @@ class RunnerConfig(BaseConfig):
         - prepare_command
 
         It's also responsible for wrapping the command with the proper ssh agent invocation
-        and setting early ANSIBLE_ environment variables.
+        and setting early ``ANSIBLE_`` environment variables.
         """
         # ansible_path = find_executable('ansible')
         # if ansible_path is None or not os.access(ansible_path, os.X_OK):
@@ -131,11 +262,11 @@ class RunnerConfig(BaseConfig):
         # we must call prepare_env() before we can reference it.
         self.prepare_env()
 
-        if self.sandboxed and self.directory_isolation_path is not None:
-            self.directory_isolation_path = tempfile.mkdtemp(prefix='runner_di_', dir=self.directory_isolation_path)
+        if self.sandboxed and self.directory_isolation_base_path is not None:
+            self.directory_isolation_base_path = tempfile.mkdtemp(prefix='runner_di_', dir=self.directory_isolation_base_path)
             if os.path.exists(self.project_dir):
-                output.debug(f"Copying directory tree from {self.project_dir} to {self.directory_isolation_path} for working directory isolation")
-                shutil.copytree(self.project_dir, self.directory_isolation_path, dirs_exist_ok=True, symlinks=True)
+                output.debug(f"Copying directory tree from {self.project_dir} to {self.directory_isolation_base_path} for working directory isolation")
+                shutil.copytree(self.project_dir, self.directory_isolation_base_path, dirs_exist_ok=True, symlinks=True)
 
         self.prepare_inventory()
         self.prepare_command()
@@ -186,14 +317,14 @@ class RunnerConfig(BaseConfig):
         self.process_isolation_hide_paths = self.settings.get('process_isolation_hide_paths', self.process_isolation_hide_paths)
         self.process_isolation_show_paths = self.settings.get('process_isolation_show_paths', self.process_isolation_show_paths)
         self.process_isolation_ro_paths = self.settings.get('process_isolation_ro_paths', self.process_isolation_ro_paths)
-        self.directory_isolation_path = self.settings.get('directory_isolation_base_path', self.directory_isolation_path)
+        self.directory_isolation_base_path = self.settings.get('directory_isolation_base_path', self.directory_isolation_base_path)
         self.directory_isolation_cleanup = bool(self.settings.get('directory_isolation_cleanup', True))
 
         if 'AD_HOC_COMMAND_ID' in self.env or not os.path.exists(self.project_dir):
             self.cwd = self.private_data_dir
         else:
-            if self.directory_isolation_path is not None:
-                self.cwd = self.directory_isolation_path
+            if self.directory_isolation_base_path is not None:
+                self.cwd = self.directory_isolation_base_path
             else:
                 self.cwd = self.project_dir
 
@@ -240,8 +371,8 @@ class RunnerConfig(BaseConfig):
         exec_list = [base_command]
 
         try:
-            if self.cmdline_args:
-                cmdline_args = self.cmdline_args
+            if self.cmdline:
+                cmdline_args = self.cmdline
             else:
                 cmdline_args = self.loader.load_file('env/cmdline', str, encoding=None)
 
@@ -271,11 +402,11 @@ class RunnerConfig(BaseConfig):
                 extravars_path = self.loader.abspath('env/extravars')
             exec_list.extend(['-e', f'@{extravars_path}'])
 
-        if self.extra_vars:
-            if isinstance(self.extra_vars, dict) and self.extra_vars:
+        if self.extravars:
+            if isinstance(self.extravars, dict) and self.extravars:
                 extra_vars_list = []
-                for k in self.extra_vars:
-                    extra_vars_list.append(f"\"{k}\":{json.dumps(self.extra_vars[k])}")
+                for k in self.extravars:
+                    extra_vars_list.append(f"\"{k}\":{json.dumps(self.extravars[k])}")
 
                 exec_list.extend(
                     [
@@ -283,8 +414,8 @@ class RunnerConfig(BaseConfig):
                         f'{{{",".join(extra_vars_list)}}}'
                     ]
                 )
-            elif self.loader.isfile(self.extra_vars):
-                exec_list.extend(['-e', f'@{self.loader.abspath(self.extra_vars)}'])
+            elif self.loader.isfile(self.extravars):
+                exec_list.extend(['-e', f'@{self.loader.abspath(self.extravars)}'])
 
         if self.verbosity:
             v = 'v' * self.verbosity
@@ -385,8 +516,8 @@ class RunnerConfig(BaseConfig):
 
         if self.execution_mode == ExecutionMode.ANSIBLE_PLAYBOOK:
             # playbook runs should cwd to the SCM checkout dir
-            if self.directory_isolation_path is not None:
-                new_args.extend(['--chdir', os.path.realpath(self.directory_isolation_path)])
+            if self.directory_isolation_base_path is not None:
+                new_args.extend(['--chdir', os.path.realpath(self.directory_isolation_base_path)])
             else:
                 new_args.extend(['--chdir', os.path.realpath(self.project_dir)])
         elif self.execution_mode == ExecutionMode.ANSIBLE:
@@ -398,7 +529,7 @@ class RunnerConfig(BaseConfig):
 
     def handle_command_wrap(self):
         # wrap args for ssh-agent
-        if self.ssh_key_data:
+        if self.ssh_key:
             debug('ssh-agent agrs added')
             self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path)
 
@@ -413,6 +544,6 @@ class RunnerConfig(BaseConfig):
             # container volume mount is handled explicitly for run API's
             # using 'container_volume_mounts' arguments
             base_execution_mode = BaseExecutionMode.NONE
-            self.command = self.wrap_args_for_containerization(self.command, base_execution_mode, self.cmdline_args)
+            self.command = self.wrap_args_for_containerization(self.command, base_execution_mode, self.cmdline)
         else:
             debug('containerization disabled')

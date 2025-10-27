@@ -29,9 +29,10 @@ import stat
 import tempfile
 import shutil
 from base64 import b64encode
+from dataclasses import dataclass, field
 from enum import Enum
 from uuid import uuid4
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any
 
 import pexpect
@@ -61,96 +62,166 @@ class BaseExecutionMode(Enum):
     GENERIC_COMMANDS = 2
 
 
-class BaseConfig:
+# Metadata string values
+class MetaValues(Enum):
+    # When True, value is emitted from Transmitter to send to Worker.
+    TRANSMIT = 'transmit'
 
-    def __init__(self,
-                 private_data_dir: str | None = None,
-                 host_cwd: str | None = None,
-                 envvars: dict[str, Any] | None = None,
-                 passwords=None,
-                 settings=None,
-                 project_dir: str | None = None,
-                 artifact_dir: str | None = None,
-                 fact_cache_type: str = 'jsonfile',
-                 fact_cache=None,
-                 process_isolation: bool = False,
-                 process_isolation_executable: str | None = None,
-                 container_image: str = "",
-                 container_volume_mounts=None,
-                 container_options=None,
-                 container_workdir: str | None = None,
-                 container_auth_data=None,
-                 ident: str | None = None,
-                 rotate_artifacts: int = 0,
-                 timeout: int | None = None,
-                 ssh_key: str | None = None,
-                 quiet: bool = False,
-                 json_mode: bool = False,
-                 check_job_event_data: bool = False,
-                 suppress_env_files: bool = False,
-                 keepalive_seconds: int | None = None
-                 ):
+
+@dataclass
+class BaseConfig:
+    """The base configuration object.
+
+    This object has multiple initialization responsibilities, including:
+        - guaranteeing the ``private_data_dir`` directory exists
+        - guaranteeing that ``ident`` value is set
+        - setting the various work directory attributes based on ``private_data_dir``
+
+    :param str private_data_dir: The directory containing all runner metadata needed to invoke the runner
+        module. Output artifacts will also be stored here for later consumption.
+    :param str artifact_dir: The path to the directory where artifacts should live. This defaults to
+        ``artifacts`` under ``private_data_dir``.
+    :param bool check_job_event_data: Check if job events data is completely generated. If event data is
+        not completely generated and if value is set to ``True`` it will raise an `AnsibleRunnerException` exception.
+        If set to ``False``, it log a debug message and continue execution. Default value is ``False``.
+    :param dict container_auth_data: Container registry authentication data containing ``host``, ``username``, and
+        ``password`` entries.
+    :param str container_image: Container image to use when running an ansible task.
+    :param list container_options: List of container options to pass to execution engine.
+    :param list container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir`. Default to ``None``.
+    :param str container_workdir: The working directory within the container.
+    :param dict envvars: Environment variables to be used when running Ansible. Environment variables will also be
+        read from ``env/envvars`` in ``private_data_dir``.
+    :param str fact_cache: A string that will be used as the name for the subdirectory of the fact cache in
+        artifacts directory. This is only used for ``jsonfile`` type fact caches.
+    :param str fact_cache_type: A string of the type of fact cache to use. Defaults to ``jsonfile``.
+    :param str host_cwd: The host current working directory to be mounted within the container (if enabled) and will be
+        the work directory within container.
+    :param str ident: The run identifier for this invocation of Runner. Will be used to create and name
+        the artifact directory holding the results of the invocation.
+    :param bool json_mode: Store event data in place of stdout on the console and in the stdout file.
+    :param int keepalive_seconds: Use within the streaming Worker object to inject a keepalive event.
+    :param dict passwords: A dictionary containing password prompt patterns and response values used when processing
+        output from Ansible. Passwords will also be read from ``env/passwords`` in ``private_data_dir``.
+    :param bool process_isolation: Enable process isolation, using either a container engine (e.g. podman) or a
+        sandbox (e.g. bwrap).
+    :param str process_isolation_executable: Process isolation executable or container engine used to isolate
+        execution. (default: podman)
+    :param str project_dir: The path to the playbook content. Defaults to ``project`` within ``private_data_dir``.
+    :param bool quiet: Disable all output.
+    :param int rotate_artifacts: Keep at most n artifact directories. Disable with a value of ``0`` (the default).
+    :param dict settings: A dictionary containing settings values for the ``ansible-runner`` runtime environment.
+        These will also be read from ``env/settings`` in ``private_data_dir``.
+    :param str ssh_key: The ssh private key passed to ``ssh-agent`` as part of the ansible-playbook run.
+    :param bool suppress_env_files: Disable the writing of files into the ``env`` which may store sensitive information.
+    :param int timeout: The timeout value, in seconds, that will be passed to either ``pexpect`` of ``subprocess``
+        invocation (based on ``runner_mode`` selected) while executing command. It the timeout is triggered it will
+        force cancel the execution.
+    :param Callable event_handler: An optional callback that will be invoked any time an event is received by Runner itself.
+        Return ``True`` to keep the event
+    :param Callable cancel_callback: An optional callback that can inform runner to cancel (returning ``True``) or not
+        (returning ``False``).
+    :param Callable finished_callback: An optional callback that will be invoked at shutdown after process cleanup.
+    :param Callable status_handler: An optional callback that will be invoked any time the status changes (e.g...started, running, failed, successful, timeout)
+    :param Callable artifacts_handler: An optional callback that will be invoked at the end of the run to deal with the artifacts from the run.
+    """
+
+    # This MUST be the first field we define to handle the use case where a RunnerConfig object
+    # is instantiated with private_data_dir as the first positional argument (non-keyword).
+    # No other config objects make use of positional parameters, so this should be fine.
+    #
+    # Example use case: RunnerConfig("/tmp/demo", playbook="main.yml", ...)
+    private_data_dir: str | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+
+    artifact_dir: str | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+    check_job_event_data: bool = False
+    container_auth_data: dict[str, str] | None = None
+    container_image: str | None = None
+    container_options: list[str] | None = None
+    container_volume_mounts: list[str] | None = None
+    container_workdir: str | None = None
+    envvars: dict[str, Any] | None = None
+    fact_cache: str | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+    fact_cache_type: str = 'jsonfile'
+    host_cwd: str | None = None
+    ident: str | None = None
+    json_mode: bool = False
+    keepalive_seconds: int | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+    passwords: dict[str, str] | None = None
+    process_isolation: bool = False
+    process_isolation_executable: str = defaults.default_process_isolation_executable
+    project_dir: str | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+    quiet: bool = False
+    rotate_artifacts: int = 0
+    settings: dict | None = None
+    ssh_key: str | None = None
+    suppress_env_files: bool = False
+    timeout: int | None = None
+
+    event_handler: Callable[[dict], None] | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+    status_handler: Callable[[dict, BaseConfig], bool] | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+    artifacts_handler: Callable[[str], None] | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+    cancel_callback: Callable[[], bool] | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+    finished_callback: Callable[[BaseConfig], None] | None = field(metadata={MetaValues.TRANSMIT: False}, default=None)
+
+    _CONTAINER_ENGINES = ('docker', 'podman')
+
+    def __post_init__(self) -> None:
+        """
+        Completes object initialization after the Dataclass __init__() call is complete.
+
+        Finish initialization by setting other attribute defaults and normalize the path attributes
+        by setting absolute paths. Also make sure that the private_data_dir and artifact directories
+        exist, creating them if necessary.
+
+        The Runner, Transmitter, Worker and Processor objects all depend, in some manner, on this
+        path normalization being completed when they are initialized (mostly for private_data_dir).
+
+        BaseConfig and RunnerConfig both make use of the ArtifactLoader object that is created here.
+        """
         # pylint: disable=W0613
 
-        # common params
-        self.host_cwd = host_cwd
-        self.envvars = envvars
-        self.ssh_key_data = ssh_key
         self.command: list[str] = []
-
-        # container params
-        self.process_isolation = process_isolation
-        self.process_isolation_executable = process_isolation_executable or defaults.default_process_isolation_executable
-        self.container_image = container_image
-        self.container_volume_mounts = container_volume_mounts
-        self.container_workdir = container_workdir
-        self.container_auth_data = container_auth_data
-        self.registry_auth_path: str
+        self.registry_auth_path: str = ""
         self.container_name: str = ""  # like other properties, not accurate until prepare is called
-        self.container_options = container_options
+        if self.container_image is None:
+            self.container_image = ''
 
-        # runner params
-        self.rotate_artifacts = rotate_artifacts
-        self.quiet = quiet
-        self.json_mode = json_mode
-        self.passwords = passwords
-        self.settings = settings
-        self.timeout = timeout
-        self.check_job_event_data = check_job_event_data
-        self.suppress_env_files = suppress_env_files
         # ignore this for now since it's worker-specific and would just trip up old runners
         # self.keepalive_seconds = keepalive_seconds
 
         # setup initial environment
-        if private_data_dir:
-            self.private_data_dir = os.path.abspath(private_data_dir)
+        if self.private_data_dir:
+            self.private_data_dir = os.path.abspath(self.private_data_dir)
             # Note that os.makedirs, exist_ok=True is dangerous.  If there's a directory writable
             # by someone other than the user anywhere in the path to be created, an attacker can
             # attempt to compromise the directories via a race.
-            os.makedirs(self.private_data_dir, exist_ok=True, mode=0o700)
+            try:
+                os.makedirs(self.private_data_dir, exist_ok=True, mode=0o700)
+            except Exception as error:
+                raise ConfigurationError(f"Unable to create private_data_dir {self.private_data_dir}") from error
         else:
             self.private_data_dir = tempfile.mkdtemp(prefix=defaults.AUTO_CREATE_NAMING, dir=defaults.AUTO_CREATE_DIR)
+            register_for_cleanup(self.private_data_dir)
 
-        if artifact_dir is None:
-            artifact_dir = os.path.join(self.private_data_dir, 'artifacts')
+        if self.artifact_dir is None:
+            self.artifact_dir = os.path.join(self.private_data_dir, 'artifacts')
         else:
-            artifact_dir = os.path.abspath(artifact_dir)
+            self.artifact_dir = os.path.abspath(self.artifact_dir)
 
-        if ident is None:
+        if self.ident is None:
             self.ident = str(uuid4())
+            self.ident_set_by_user = False
         else:
-            self.ident = str(ident)
+            self.ident_set_by_user = True
+            self.ident = str(self.ident)
 
-        self.artifact_dir = os.path.join(artifact_dir, self.ident)
+        self.artifact_dir = os.path.join(self.artifact_dir, self.ident)
 
-        if not project_dir:
+        if not self.project_dir:
             self.project_dir = os.path.join(self.private_data_dir, 'project')
-        else:
-            self.project_dir = project_dir
 
-        self.rotate_artifacts = rotate_artifacts
-        self.fact_cache_type = fact_cache_type
-        self.fact_cache = os.path.join(self.artifact_dir, fact_cache or 'fact_cache') if self.fact_cache_type == 'jsonfile' else None
+        self.fact_cache = os.path.join(self.artifact_dir, self.fact_cache or 'fact_cache') if self.fact_cache_type == 'jsonfile' else None
 
         self.loader = ArtifactLoader(self.private_data_dir)
 
@@ -162,25 +233,41 @@ class BaseConfig:
 
         os.makedirs(self.artifact_dir, exist_ok=True, mode=0o700)
 
-    _CONTAINER_ENGINES = ('docker', 'podman')
-
     @property
     def containerized(self):
         return self.process_isolation and self.process_isolation_executable in self._CONTAINER_ENGINES
+
+    @property
+    def ssh_key_data(self):
+        """ Alias for backward compatibility. """
+        return self.ssh_key
+
+    @ssh_key_data.setter
+    def ssh_key_data(self, value):
+        self.ssh_key = value
 
     def prepare_env(self, runner_mode: str = 'pexpect') -> None:
         """
         Manages reading environment metadata files under ``private_data_dir`` and merging/updating
         with existing values so the :py:class:`ansible_runner.runner.Runner` object can read and use them easily
         """
+        if self.ident is None:
+            raise ConfigurationError("ident value cannot be None")
+        if self.artifact_dir is None:
+            raise ConfigurationError("artifact_dir value cannot be None")
+
         self.runner_mode = runner_mode
         try:
             if self.settings and isinstance(self.settings, dict):
                 self.settings.update(self.loader.load_file('env/settings', Mapping))  # type: ignore
             else:
-                self.settings = self.loader.load_file('env/settings', Mapping)
+                self.settings = self.loader.load_file('env/settings', Mapping)  # type: ignore
         except ConfigurationError:
             debug("Not loading settings")
+            self.settings = {}
+
+        # Safety net
+        if self.settings is None:
             self.settings = {}
 
         if self.runner_mode == 'pexpect':
@@ -188,11 +275,11 @@ class BaseConfig:
                 if self.passwords and isinstance(self.passwords, dict):
                     self.passwords.update(self.loader.load_file('env/passwords', Mapping))  # type: ignore
                 else:
-                    self.passwords = self.passwords or self.loader.load_file('env/passwords', Mapping)
+                    self.passwords = self.passwords or self.loader.load_file('env/passwords', Mapping)  # type: ignore
             except ConfigurationError:
                 debug('Not loading passwords')
 
-            self.expect_passwords = {}
+            self.expect_passwords: dict[Any, Any] = {}
             try:
                 if self.passwords:
                     self.expect_passwords = {
@@ -268,16 +355,16 @@ class BaseConfig:
             # Still need to pass default environment to pexpect
 
         try:
-            if self.ssh_key_data is None:
-                self.ssh_key_data = self.loader.load_file('env/ssh_key', str)  # type: ignore
+            if self.ssh_key is None:
+                self.ssh_key = self.loader.load_file('env/ssh_key', str)  # type: ignore
         except ConfigurationError:
             debug("Not loading ssh key")
-            self.ssh_key_data = None
+            self.ssh_key = None
 
         # write the SSH key data into a fifo read by ssh-agent
-        if self.ssh_key_data:
+        if self.ssh_key:
             self.ssh_key_path = os.path.join(self.artifact_dir, 'ssh_key_data')
-            open_fifo_write(self.ssh_key_path, self.ssh_key_data)
+            open_fifo_write(self.ssh_key_path, self.ssh_key)
 
         self.suppress_output_file = self.settings.get('suppress_output_file', False)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
@@ -340,7 +427,7 @@ class BaseConfig:
             debug(f' {k}: {v}')
 
     def handle_command_wrap(self, execution_mode: BaseExecutionMode, cmdline_args: list[str]) -> None:
-        if self.ssh_key_data:
+        if self.ssh_key:
             logger.debug('ssh key data added')
             self.command = self.wrap_args_with_ssh_agent(self.command, self.ssh_key_path)
 
@@ -492,6 +579,15 @@ class BaseConfig:
                                        execution_mode: BaseExecutionMode,
                                        cmdline_args: list[str]
                                        ) -> list[str]:
+        if self.artifact_dir is None:
+            raise ConfigurationError("artifact_dir value cannot be None")
+
+        if self.private_data_dir is None:
+            raise ConfigurationError("private_data_dir value cannot be None")
+
+        if self.container_image is None:
+            raise ConfigurationError("container_image value cannot be None")
+
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm'])
 
@@ -639,6 +735,9 @@ class BaseConfig:
         Given an existing command line and parameterization this will return the same command line wrapped with the
         necessary calls to ``ssh-agent``
         """
+        if self.ident is None:
+            raise ConfigurationError("ident value cannot be None")
+
         if self.containerized:
             artifact_dir = os.path.join("/runner/artifacts", self.ident)
             ssh_key_path = os.path.join(artifact_dir, "ssh_key_data")

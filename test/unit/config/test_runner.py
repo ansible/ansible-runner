@@ -139,7 +139,7 @@ def test_prepare_env_extra_vars_defaults(mocker):
 
     rc = RunnerConfig('/')
     rc.prepare_env()
-    assert rc.extra_vars is None
+    assert rc.extravars is None
 
 
 def test_prepare_env_settings_defaults(mocker):
@@ -169,7 +169,7 @@ def test_prepare_env_sshkey_defaults(mocker):
 
     rc = RunnerConfig('/')
     rc.prepare_env()
-    assert rc.ssh_key_data is None
+    assert rc.ssh_key is None
 
 
 def test_prepare_env_sshkey(mocker):
@@ -184,7 +184,7 @@ def test_prepare_env_sshkey(mocker):
     mocker.patch.object(rc.loader, 'load_file', side_effect=sshkey_side_effect)
 
     rc.prepare_env()
-    assert rc.ssh_key_data == rsa_private_key_value
+    assert rc.ssh_key == rsa_private_key_value
 
 
 def test_prepare_env_defaults(mocker):
@@ -206,7 +206,7 @@ def test_prepare_env_directory_isolation(mocker):
     path_exists.return_value = True
 
     rc = RunnerConfig('/')
-    rc.directory_isolation_path = '/tmp/foo'
+    rc.directory_isolation_base_path = '/tmp/foo'
     rc.prepare_env()
     assert rc.cwd == '/tmp/foo'
 
@@ -235,11 +235,11 @@ def test_prepare_env_directory_isolation_from_settings(mocker, project_fixtures)
     assert os.path.exists(rc.project_dir)
 
     # `directory_isolation_path` should be used to create a new temp path underneath
-    assert rc.directory_isolation_path == '/tmp/runner/runner_di_XYZ'
+    assert rc.directory_isolation_base_path == '/tmp/runner/runner_di_XYZ'
     mkdtemp.assert_called_once_with(prefix='runner_di_', dir='/tmp/runner')
 
     # The project files should be copied to the isolation path.
-    copy_tree.assert_called_once_with(rc.project_dir, rc.directory_isolation_path, dirs_exist_ok=True, symlinks=True)
+    copy_tree.assert_called_once_with(rc.project_dir, rc.directory_isolation_base_path, dirs_exist_ok=True, symlinks=True)
 
 
 def test_prepare_inventory(mocker):
@@ -282,7 +282,7 @@ def test_generate_ansible_command_extra_vars(mocker, extra_vars, expected):
 
     mocker.patch.object(rc.loader, 'isfile', side_effect=lambda x: True)
 
-    rc.extra_vars = extra_vars
+    rc.extravars = extra_vars
     cmd = rc.generate_ansible_command()
     assert cmd == expected
 
@@ -293,15 +293,15 @@ def test_generate_ansible_command(mocker):
 
     rc = RunnerConfig(private_data_dir='/', playbook='main.yaml')
     rc.prepare_inventory()
-    rc.extra_vars = None
+    rc.extravars = None
 
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', '/inventory', 'main.yaml']
 
-    rc.extra_vars = {'test': 'key'}
+    rc.extravars = {'test': 'key'}
     cmd = rc.generate_ansible_command()
     assert cmd == ['ansible-playbook', '-i', '/inventory', '-e', '{"test":"key"}', 'main.yaml']
-    rc.extra_vars = None
+    rc.extravars = None
 
     rc.inventory = "localhost,"
     cmd = rc.generate_ansible_command()
@@ -386,7 +386,7 @@ def test_generate_ansible_command_with_cmdline_args(cmdline, tokens, mocker):
     path_exists.return_value = True
 
     rc.prepare_inventory()
-    rc.extra_vars = {}
+    rc.extravars = {}
 
     cmdline_side_effect = partial(load_file_side_effect, 'env/cmdline', cmdline)
     mocker.patch.object(rc.loader, 'load_file', side_effect=cmdline_side_effect)
@@ -421,7 +421,7 @@ def test_prepare_with_defaults(mocker):
     rc.prepare_env = mocker.Mock()
     rc.prepare_command = mocker.Mock()
 
-    rc.ssh_key_data = None
+    rc.ssh_key = None
     rc.artifact_dir = '/'
     rc.env = {}
 
@@ -440,7 +440,7 @@ def test_prepare(mocker):
     rc = RunnerConfig('/')
     rc.prepare_inventory = mocker.Mock()
     rc.prepare_command = mocker.Mock()
-    rc.ssh_key_data = None
+    rc.ssh_key = None
     rc.artifact_dir = '/'
     rc.env = {}
     rc.execution_mode = ExecutionMode.ANSIBLE_PLAYBOOK
@@ -470,13 +470,13 @@ def test_prepare_with_ssh_key(mocker):
 
     rc.wrap_args_with_ssh_agent = mocker.Mock()
 
-    rc.ssh_key_data = None
+    rc.ssh_key = None
     rc.artifact_dir = '/'
     rc.env = {}
     rc.execution_mode = ExecutionMode.ANSIBLE_PLAYBOOK
     rc.playbook = 'main.yaml'
     rsa_key = RSAKey()
-    rc.ssh_key_data = rsa_key.private
+    rc.ssh_key = rsa_key.private
     rc.command = 'ansible-playbook'
 
     mocker.patch.dict('os.environ', {'AWX_LIB_DIRECTORY': '/'})
@@ -583,7 +583,7 @@ def test_bwrap_process_isolation_and_directory_isolation(mocker, patch_private_d
 
     rc = RunnerConfig('/')
     rc.artifact_dir = tmp_path / 'artifacts'
-    rc.directory_isolation_path = tmp_path / 'dirisolation'
+    rc.directory_isolation_base_path = tmp_path / 'dirisolation'
     rc.playbook = 'main.yaml'
     rc.command = 'ansible-playbook'
     rc.process_isolation = True
@@ -605,7 +605,7 @@ def test_bwrap_process_isolation_and_directory_isolation(mocker, patch_private_d
         '--symlink', 'usr/lib', '/lib',
         '--symlink', 'usr/lib64', '/lib64',
         '--bind', '/', '/',
-        '--chdir', os.path.realpath(rc.directory_isolation_path),
+        '--chdir', os.path.realpath(rc.directory_isolation_base_path),
         'ansible-playbook', '-i', '/inventory', 'main.yaml',
     ]
 
@@ -735,3 +735,31 @@ def test_containerization_settings(tmp_path, runtime, mocker):
         ['my_container', 'ansible-playbook', '-i', '/runner/inventory', 'main.yaml']
 
     assert expected_command_start == rc.command
+
+
+def test_streamable_attributes_all_defaults():
+    """Test that all default values return an empty dict."""
+    rc = RunnerConfig()
+    attrs = rc.streamable_attributes()
+    assert len(attrs) == 1
+    assert 'ident' in attrs
+
+
+def test_streamable_attributes_non_default(tmp_path):
+    """Test that non-default, streamable values are returned."""
+    rc = RunnerConfig(private_data_dir=str(tmp_path),
+                      keepalive_seconds=10,
+                      host_pattern="hostA,",
+                      json_mode=True,
+                      playbook=[],
+                      verbosity=3)
+
+    # Don't expect private_data_dir or keepalive_seconds since they are not streamable.
+    # Don't expect playbook since it is an empty value.
+    attrs = rc.streamable_attributes()
+    assert attrs['host_pattern'] == 'hostA,'
+    assert attrs['json_mode']
+    assert attrs['verbosity'] == 3
+    assert 'private_data_dir' not in attrs
+    assert 'keepalive_seconds' not in attrs
+    assert 'playbook' not in attrs

@@ -1,5 +1,6 @@
 import os
 
+from ansible_runner.config.runner import RunnerConfig
 from ansible_runner.streaming import Processor
 
 
@@ -10,7 +11,8 @@ class TestProcessor:
             'private_data_dir': str(tmp_path),
             'ident': 123,
         }
-        p = Processor(**kwargs)
+        rc = RunnerConfig(**kwargs)
+        p = Processor(rc)
         assert p.artifact_dir == os.path.join(kwargs['private_data_dir'],
                                               'artifacts',
                                               str(kwargs['ident']))

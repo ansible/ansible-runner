@@ -95,8 +95,8 @@ the environment variables that will be added to the environment at run-time::
    have to worry about the format of certain prompts emitted from **Ansible** itself. In particular, vault passwords need to become more flexible.
 
 **Ansible** itself is set up to emit passwords to certain prompts, these prompts can be requested (``-k`` for example to prompt for the connection password).
-Likewise, prompts can be emitted via `vars_prompt <https://docs.ansible.com/ansible/latest/user_guide/playbooks_prompts.html>`_ and also
-`Ansible Vault <https://docs.ansible.com/ansible/2.5/user_guide/vault.html#vault-ids-and-multiple-vault-passwords>`_.
+Likewise, prompts can be emitted via `vars_prompt <https://docs.ansible.com/projects/ansible/latest/user_guide/playbooks_prompts.html>`_ and also
+`Ansible Vault <https://docs.ansible.com/projects/ansible/latest/index.html#vault-ids-and-multiple-vault-passwords>`_.
 
 In order for **Runner** to respond with the correct password, it needs to be able to match the prompt and provide the correct password. This is currently supported
 by providing a yaml or json formatted file with a regular expression and a value to emit, for example::
@@ -157,7 +157,7 @@ The process isolation settings are meant to control the process isolation featur
 * ``process_isolation_ro_paths``: ``None`` Path or list of paths on the system that should be exposed to the playbook run as read-only.
 
 These settings instruct **Runner** to execute **Ansible** tasks inside a container environment.
-For information about building execution environments, see `ansible-builder <https://ansible-builder.readthedocs.io/>`_.
+For information about building execution environments, see `ansible-builder <https://docs.ansible.com/projects/builder/en/latest/>`_.
 
 To execute **Runner** with an execution environment:
 
@@ -189,7 +189,7 @@ Modules
 Roles
 -----
 
-**Runner** has the ability to execute `Roles <https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.html>`_ directly without first needing
+**Runner** has the ability to execute `Roles <https://docs.ansible.com/projects/ansible/latest/user_guide/playbooks_reuse_roles.html>`_ directly without first needing
 a playbook to reference them. This directory holds roles used for that. Behind the scenes, **Runner** will generate a playbook and invoke the ``Role``.
 
 .. _artifactdir:

@@ -93,7 +93,7 @@ html_title = "Ansible Runner Documentation"
 html_theme_options = {
     'display_version': False,
     'titles_only': False,
-    'documentation_home_url': 'https://ansible-runner.readthedocs.io/en/stable/',
+    'documentation_home_url': 'https://docs.ansible.com/projects/runner/en/stable/',
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

@@ -168,7 +168,7 @@ will return an open file handle containing the ``stderr`` of the **Ansible** pro
 ``Runner.get_fact_cache``
 -------------------------
 
-:meth:`ansible_runner.runner.Runner.get_fact_cache` is a method that, given a hostname, will return a dictionary containing the `Facts <https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#variables-discovered-from-systems-facts>`_ stored for that host during execution.
+:meth:`ansible_runner.runner.Runner.get_fact_cache` is a method that, given a hostname, will return a dictionary containing the `Facts <https://docs.ansible.com/projects/ansible/latest/user_guide/playbooks_variables.html#variables-discovered-from-systems-facts>`_ stored for that host during execution.
 
 ``Runner.event_handler``
 ------------------------

@@ -10,7 +10,7 @@ body:
         **Thank you for reporting a bug in Ansible Runner.**
 
         If this is a question about using `ansible-runner`, please do not use a new issue for your question.
-        New issues should be used only for submitting a new bug report. Please consult the [Community guide](https://ansible.readthedocs.io/projects/runner/en/latest/community/)
+        New issues should be used only for submitting a new bug report. Please consult the [Community guide](https://docs.ansible.com/projects/runner/en/latest/community/)
         for information on how to submit your question to the [Ansible Forum](https://forum.ansible.com/).
 
   - type: input

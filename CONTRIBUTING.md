@@ -3,7 +3,7 @@
 Hi there! We're excited to have you as a contributor.
 
 If you have questions about this document or anything not covered here?
-See the [Community section](https://ansible.readthedocs.io/projects/runner/en/latest/community/) of the docs for information about getting in touch.
+See the [Community section](https://docs.ansible.com/projects/runner/en/latest/community/) of the docs for information about getting in touch.
 
 ## Things to know prior to submitting code
 
@@ -42,5 +42,5 @@ To reactivate the virtual environment:
 ```
 
 
-[Ansible code of conduct]: http://docs.ansible.com/ansible/latest/community/code_of_conduct.html
+[Ansible code of conduct]: https://docs.ansible.com/projects/ansible/latest/community/code_of_conduct.html
 [codeofconduct@ansible.com]: mailto:codeofconduct@ansible.com

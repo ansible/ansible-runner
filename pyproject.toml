@@ -43,7 +43,7 @@ dependencies = [
 [project.urls]
 source = "https://github.com/ansible/ansible-runner"
 issues = "https://github.com/ansible/ansible-runner/issues"
-documentation = "https://ansible-runner.readthedocs.io"
+documentation = "https://docs.ansible.com/projects/runner/en/latest/"
 
 [project.scripts]
 ansible-runner = "ansible_runner.__main__:main"

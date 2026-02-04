@@ -387,6 +387,11 @@ class CallbackModule(DefaultCallbackModule):
         # NOTE: Ansible doesn't generate a UUID for playbook_on_start so do it for them.
         self.playbook_uuid = str(uuid.uuid4())
 
+    def set_options(self, task_keys=None, var_options=None, direct=None):
+        super().set_options(task_keys, var_options, direct)
+        # load options from original stdout callback
+        self._plugin_options.update(C.config.get_plugin_options(self.plugin_type, default_stdout_callback, keys=task_keys, variables=var_options, direct=direct))
+
     @contextlib.contextmanager
     def capture_event_data(self, event, **event_data):
         event_data.setdefault('uuid', str(uuid.uuid4()))

@@ -72,7 +72,7 @@ elif IS_ADHOC:
 else:
     default_stdout_callback = 'default'
 
-DefaultCallbackModule: CallbackBase = callback_loader.get(default_stdout_callback).__class__
+DefaultCallbackModule: CallbackBase = callback_loader.get(default_stdout_callback, class_only=True)
 
 CENSORED = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"
 
@@ -386,6 +386,12 @@ class CallbackModule(DefaultCallbackModule):
 
         # NOTE: Ansible doesn't generate a UUID for playbook_on_start so do it for them.
         self.playbook_uuid = str(uuid.uuid4())
+
+    def set_options(self, *args, **kwargs):
+        base_config = C.config.get_configuration_definition(DefaultCallbackModule._load_name, plugin_type='callback')
+        my_config = C.config.get_configuration_definition(self._load_name, plugin_type='callback')
+        C.config.initialize_plugin_configuration_definitions('callback', self._load_name, base_config | my_config)
+        return super().set_options(*args, **kwargs)
 
     @contextlib.contextmanager
     def capture_event_data(self, event, **event_data):

@@ -439,3 +439,79 @@ def test_large_stdout_parsing_when_using_json_output(executor, playbook):  # pyl
     with executor.stdout as f:
         text = f.read()
     assert text.count('"F"') == 150
+
+
+@pytest.mark.parametrize('playbook', [
+    {'test_callback_with_options.yml': '''
+- name: Test callback plugins that use get_option
+  connection: local
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Simple debug task
+      debug:
+        msg: "Testing callback with options"
+'''},  # noqa
+])
+@pytest.mark.parametrize('callback_config', [
+    {
+        'callback_name': 'tree',
+        'env_vars': {
+            'ANSIBLE_CALLBACKS_ENABLED': 'tree',
+            'ANSIBLE_STDOUT_CALLBACK': 'tree',
+            'ANSIBLE_CALLBACK_TREE_DIR': None,  # Will be set to tmp_path in test
+        },
+        'check_artifacts': True  # Verify tree creates artifacts
+    },
+], ids=['tree-callback'])
+def test_callback_plugins_with_get_option(tmp_path, playbook, callback_config):
+    """
+    Test that callback plugins using get_option() work correctly with awx_display.
+    """
+    private_data_dir = tmp_path / 'runner_test'
+    private_data_dir.mkdir()
+
+    inventory = 'localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"'
+
+    # Set up environment variables for the callback
+    envvars = {
+        "ANSIBLE_DEPRECATION_WARNINGS": "False",
+        "ANSIBLE_PYTHON_INTERPRETER": "auto_silent",
+    }
+
+    # Add callback-specific environment variables
+    for key, value in callback_config['env_vars'].items():
+        if value is None and key == 'ANSIBLE_CALLBACK_TREE_DIR':
+            # Set tree directory to a temp location
+            tree_dir = tmp_path / 'tree_output'
+            tree_dir.mkdir()
+            envvars[key] = str(tree_dir)
+        elif value is not None:
+            envvars[key] = value
+
+    playbook = list(playbook.values())[0]
+
+    r = init_runner(
+        private_data_dir=private_data_dir,
+        inventory=inventory,
+        envvars=envvars,
+        playbook=yaml.safe_load(playbook)
+    )
+
+    # Run the playbook
+    r.run()
+
+    # Verify the run was successful
+    assert r.status == 'successful', f"Playbook run failed with status: {r.status}"
+
+    # Verify events were captured (awx_display still works)
+    events = list(r.events)
+    assert len(events) > 0, "No events were captured"
+    assert 'playbook_on_start' in [e['event'] for e in events]
+    assert 'playbook_on_stats' in [e['event'] for e in events]
+
+    if callback_config.get('check_artifacts'):
+        # For tree callback, verify it created output files
+        tree_dir = tmp_path / 'tree_output'
+        tree_files = list(tree_dir.glob('localhost'))
+        assert len(tree_files) > 0, "Tree callback did not create expected output files"

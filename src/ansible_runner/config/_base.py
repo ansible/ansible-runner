@@ -487,6 +487,17 @@ class BaseConfig:
 
             self._update_volume_mount_paths(args_list, optional_arg_value)
 
+
+    def _should_allocate_tty(self) -> bool:
+        if self.runner_mode == 'pexpect':
+            return True
+        # input_fd is only defined on CommandConfig, not on BaseConfig.
+        # When present and connected to a real terminal, allocate a TTY
+        # so interactive tools work. When not a terminal (CI/CD, pipes),
+        # skip --tty to prevent tools like `less` from hanging.
+        input_fd = getattr(self, 'input_fd', None)
+        return input_fd and hasattr(input_fd, 'isatty') and input_fd.isatty()
+
     def wrap_args_for_containerization(self,
                                        args: list[str],
                                        execution_mode: BaseExecutionMode,
@@ -495,7 +506,7 @@ class BaseConfig:
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm'])
 
-        if self.runner_mode == 'pexpect' or getattr(self, 'input_fd', False):
+        if self._should_allocate_tty():
             new_args.extend(['--tty'])
 
         new_args.append('--interactive')

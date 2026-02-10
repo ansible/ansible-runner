@@ -487,7 +487,6 @@ class BaseConfig:
 
             self._update_volume_mount_paths(args_list, optional_arg_value)
 
-
     def _should_allocate_tty(self) -> bool:
         if self.runner_mode == 'pexpect':
             return True

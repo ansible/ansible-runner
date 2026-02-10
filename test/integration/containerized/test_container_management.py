@@ -181,25 +181,8 @@ def test_registry_auth_file_cleanup(tmp_path, cli, runtime):
 
 
 @pytest.mark.test_all_runtimes
-def test_containerized_run_command_no_tty_when_input_fd_is_not_a_terminal(tmp_path, runtime, container_image):
-    """Verify --tty is not passed to the container when input_fd is not a real TTY.
-
-    Regression test for ansible-runner PR#1306 (partial fix for
-    ansible-navigator#1607).  When ansible-navigator runs in a CI/CD
-    pipeline or cron job, sys.stdin is not a terminal, yet it is still
-    forwarded to ansible-runner as input_fd.  Before the fix, any truthy
-    input_fd caused --tty to be added, making the container allocate a
-    pseudo-terminal and polluting output with ANSI escape sequences.
-
-    This test uses a regular file as input_fd (isatty() == False) to
-    simulate the non-TTY scenario and asserts that the containerized
-    ``ansible-config init`` output is clean.
-
-    NOTE: the original issue also manifests when stdin *is* a TTY but
-    stdout is redirected (``> ansible.cfg``).  That scenario is not
-    covered here because it requires a different fix (e.g. checking
-    output_fd.isatty() or handling it on the navigator side).
-    """
+def test_containerized_no_tty_when_stdin_not_terminal(tmp_path, runtime, container_image):
+    """Regression for ansible-navigator#1607: no --tty when input_fd is not a real TTY."""
     input_path = tmp_path / 'stdin.txt'
     output_path = tmp_path / 'ansible.cfg'
     error_path = tmp_path / 'stderr.txt'
@@ -230,23 +213,8 @@ def test_containerized_run_command_no_tty_when_input_fd_is_not_a_terminal(tmp_pa
 
 
 @pytest.mark.test_all_runtimes
-def test_containerized_run_command_no_ansi_when_stdout_redirected_but_stdin_is_tty(
-    tmp_path, runtime, container_image,
-):
-    """Reproduce the exact ansible-navigator#1607 scenario.
-
-    The user runs ``ansible-navigator config init -m stdout > ansible.cfg``
-    from a real terminal.  ansible-navigator forwards sys.stdin (a TTY) as
-    input_fd and sys.stdout (redirected to a file, not a TTY) as output_fd.
-
-    The container must not receive --tty in this situation; otherwise
-    ``ansible-config init`` detects a pseudo-terminal inside the container
-    and emits ANSI escape sequences / launches a pager.
-
-    This test uses pty.openpty() to obtain an input_fd where isatty()
-    is True, while output_fd is a regular file (isatty() == False),
-    matching the real-world trigger exactly.
-    """
+def test_containerized_no_tty_when_stdout_redirected(tmp_path, runtime, container_image):
+    """Regression for ansible-navigator#1607: no --tty when stdin is TTY but stdout is redirected."""
     output_path = tmp_path / 'ansible.cfg'
     error_path = tmp_path / 'stderr.txt'
 

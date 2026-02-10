@@ -372,7 +372,6 @@ def test_containerization_unsafe_write_setting(tmp_path, runtime, mocker):
 
 
 def test_should_allocate_tty_pexpect_mode(tmp_path, mocker):
-    """pexpect mode always allocates a TTY even when input_fd is not a terminal."""
     rc = BaseConfig(private_data_dir=str(tmp_path))
     rc.runner_mode = 'pexpect'
     rc.input_fd = mocker.Mock()
@@ -381,14 +380,12 @@ def test_should_allocate_tty_pexpect_mode(tmp_path, mocker):
 
 
 def test_should_allocate_tty_subprocess_no_input_fd(tmp_path):
-    """subprocess mode without input_fd does not allocate TTY (AWX scenario)."""
     rc = BaseConfig(private_data_dir=str(tmp_path))
     rc.runner_mode = 'subprocess'
     assert rc._should_allocate_tty() is False
 
 
 def test_should_allocate_tty_subprocess_both_tty(tmp_path, mocker):
-    """subprocess mode with both input_fd and output_fd as TTY allocates TTY."""
     rc = BaseConfig(private_data_dir=str(tmp_path))
     rc.runner_mode = 'subprocess'
     rc.input_fd = mocker.Mock()
@@ -399,11 +396,6 @@ def test_should_allocate_tty_subprocess_both_tty(tmp_path, mocker):
 
 
 def test_should_allocate_tty_subprocess_input_fd_is_pipe(tmp_path, mocker):
-    """subprocess mode with a pipe input_fd does not allocate TTY.
-
-    When ansible-navigator runs in CI/CD where stdin is not a terminal,
-    --tty must not be added to prevent ANSI escape pollution.
-    """
     rc = BaseConfig(private_data_dir=str(tmp_path))
     rc.runner_mode = 'subprocess'
     rc.input_fd = mocker.Mock()
@@ -414,13 +406,6 @@ def test_should_allocate_tty_subprocess_input_fd_is_pipe(tmp_path, mocker):
 
 
 def test_should_allocate_tty_subprocess_output_fd_is_pipe(tmp_path, mocker):
-    """subprocess mode with TTY stdin but redirected stdout does not allocate TTY.
-
-    This is the exact ansible-navigator#1607 scenario: the user runs
-    ``ansible-navigator config init -m stdout > ansible.cfg`` from a real
-    terminal.  stdin is a TTY but stdout is redirected to a file.
-    --tty must not be added to prevent ANSI escapes in the output.
-    """
     rc = BaseConfig(private_data_dir=str(tmp_path))
     rc.runner_mode = 'subprocess'
     rc.input_fd = mocker.Mock()

@@ -128,8 +128,7 @@ def test_prepare_run_command_with_containerization(tmp_path, runtime, mocker):
 
 @pytest.mark.parametrize('runtime', ('docker', 'podman'))
 def test_prepare_run_command_containerized_subprocess_no_tty_when_piped(tmp_path, runtime, mocker):
-    """Reproduce ansible-navigator#1607: when input_fd is not a tty
-    (output redirected to file), --tty must not appear in container args."""
+    """Regression for ansible-navigator#1607: input_fd is not a tty, --tty must not appear."""
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()
 
@@ -156,7 +155,7 @@ def test_prepare_run_command_containerized_subprocess_no_tty_when_piped(tmp_path
 
 @pytest.mark.parametrize('runtime', ('docker', 'podman'))
 def test_prepare_run_command_containerized_subprocess_tty_when_interactive(tmp_path, runtime, mocker):
-    """When both input_fd and output_fd are real terminals, --tty should be present."""
+    """Both input_fd and output_fd are real terminals, --tty should be present."""
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()
 
@@ -185,8 +184,7 @@ def test_prepare_run_command_containerized_subprocess_tty_when_interactive(tmp_p
 
 @pytest.mark.parametrize('runtime', ('docker', 'podman'))
 def test_prepare_run_command_containerized_subprocess_no_tty_when_stdout_redirected(tmp_path, runtime, mocker):
-    """Reproduce ansible-navigator#1607: stdin is a TTY but stdout is
-    redirected to a file (``> ansible.cfg``).  --tty must not appear."""
+    """Regression for ansible-navigator#1607: stdin is TTY but stdout is redirected, --tty must not appear."""
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()
 
@@ -215,7 +213,7 @@ def test_prepare_run_command_containerized_subprocess_no_tty_when_stdout_redirec
 
 @pytest.mark.parametrize('runtime', ('docker', 'podman'))
 def test_prepare_run_command_containerized_subprocess_no_tty_without_input_fd(tmp_path, runtime, mocker):
-    """Without input_fd (AWX/Controller), subprocess mode should not get --tty."""
+    """Without input_fd (AWX/Controller scenario), subprocess mode should not get --tty."""
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()
 

@@ -124,3 +124,111 @@ def test_prepare_run_command_with_containerization(tmp_path, runtime, mocker):
     expected_command_start.extend(cmdline_args)
 
     assert expected_command_start == rc.command
+
+
+@pytest.mark.parametrize('runtime', ('docker', 'podman'))
+def test_prepare_run_command_containerized_subprocess_no_tty_when_piped(tmp_path, runtime, mocker):
+    """Reproduce ansible-navigator#1607: when input_fd is not a tty
+    (output redirected to file), --tty must not appear in container args."""
+    mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
+    tmp_path.joinpath('.ssh').mkdir()
+
+    mock_stdin = mocker.Mock()
+    mock_stdin.isatty.return_value = False
+
+    kwargs = {
+        'private_data_dir': tmp_path,
+        'process_isolation': True,
+        'container_image': 'my_container',
+        'process_isolation_executable': runtime,
+        'input_fd': mock_stdin,
+        'output_fd': mocker.Mock(),
+        'error_fd': mocker.Mock(),
+    }
+    rc = CommandConfig(**kwargs)
+    rc.ident = 'foo'
+    rc.prepare_run_command('ansible-config', cmdline_args=['init'])
+
+    assert rc.runner_mode == 'subprocess'
+    assert '--tty' not in rc.command
+    assert '--interactive' in rc.command
+
+
+@pytest.mark.parametrize('runtime', ('docker', 'podman'))
+def test_prepare_run_command_containerized_subprocess_tty_when_interactive(tmp_path, runtime, mocker):
+    """When both input_fd and output_fd are real terminals, --tty should be present."""
+    mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
+    tmp_path.joinpath('.ssh').mkdir()
+
+    mock_stdin = mocker.Mock()
+    mock_stdin.isatty.return_value = True
+    mock_stdout = mocker.Mock()
+    mock_stdout.isatty.return_value = True
+
+    kwargs = {
+        'private_data_dir': tmp_path,
+        'process_isolation': True,
+        'container_image': 'my_container',
+        'process_isolation_executable': runtime,
+        'input_fd': mock_stdin,
+        'output_fd': mock_stdout,
+        'error_fd': mocker.Mock(),
+    }
+    rc = CommandConfig(**kwargs)
+    rc.ident = 'foo'
+    rc.prepare_run_command('ansible-config', cmdline_args=['init'])
+
+    assert rc.runner_mode == 'subprocess'
+    assert '--tty' in rc.command
+    assert '--interactive' in rc.command
+
+
+@pytest.mark.parametrize('runtime', ('docker', 'podman'))
+def test_prepare_run_command_containerized_subprocess_no_tty_when_stdout_redirected(tmp_path, runtime, mocker):
+    """Reproduce ansible-navigator#1607: stdin is a TTY but stdout is
+    redirected to a file (``> ansible.cfg``).  --tty must not appear."""
+    mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
+    tmp_path.joinpath('.ssh').mkdir()
+
+    mock_stdin = mocker.Mock()
+    mock_stdin.isatty.return_value = True
+    mock_stdout = mocker.Mock()
+    mock_stdout.isatty.return_value = False
+
+    kwargs = {
+        'private_data_dir': tmp_path,
+        'process_isolation': True,
+        'container_image': 'my_container',
+        'process_isolation_executable': runtime,
+        'input_fd': mock_stdin,
+        'output_fd': mock_stdout,
+        'error_fd': mocker.Mock(),
+    }
+    rc = CommandConfig(**kwargs)
+    rc.ident = 'foo'
+    rc.prepare_run_command('ansible-config', cmdline_args=['init'])
+
+    assert rc.runner_mode == 'subprocess'
+    assert '--tty' not in rc.command
+    assert '--interactive' in rc.command
+
+
+@pytest.mark.parametrize('runtime', ('docker', 'podman'))
+def test_prepare_run_command_containerized_subprocess_no_tty_without_input_fd(tmp_path, runtime, mocker):
+    """Without input_fd (AWX/Controller), subprocess mode should not get --tty."""
+    mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
+    tmp_path.joinpath('.ssh').mkdir()
+
+    kwargs = {
+        'private_data_dir': tmp_path,
+        'process_isolation': True,
+        'container_image': 'my_container',
+        'process_isolation_executable': runtime,
+    }
+    rc = CommandConfig(**kwargs)
+    rc.ident = 'foo'
+    rc.prepare_run_command('ansible-config', cmdline_args=['init'])
+
+    assert rc.runner_mode == 'subprocess'
+    assert '--tty' not in rc.command
+    assert '--interactive' in rc.command

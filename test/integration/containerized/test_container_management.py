@@ -1,4 +1,5 @@
 import os
+import pty
 import time
 import json
 
@@ -7,7 +8,7 @@ from uuid import uuid4
 
 import pytest
 
-from ansible_runner.interface import run
+from ansible_runner.interface import run, run_command
 
 
 @pytest.mark.test_all_runtimes
@@ -177,3 +178,99 @@ def test_registry_auth_file_cleanup(tmp_path, cli, runtime):
     discovered_registry_files = set(glob(auth_registry_glob)) - registry_files_before
     for file_name in discovered_registry_files:
         assert this_ident not in file_name
+
+
+@pytest.mark.test_all_runtimes
+def test_containerized_run_command_no_tty_when_input_fd_is_not_a_terminal(tmp_path, runtime, container_image):
+    """Verify --tty is not passed to the container when input_fd is not a real TTY.
+
+    Regression test for ansible-runner PR#1306 (partial fix for
+    ansible-navigator#1607).  When ansible-navigator runs in a CI/CD
+    pipeline or cron job, sys.stdin is not a terminal, yet it is still
+    forwarded to ansible-runner as input_fd.  Before the fix, any truthy
+    input_fd caused --tty to be added, making the container allocate a
+    pseudo-terminal and polluting output with ANSI escape sequences.
+
+    This test uses a regular file as input_fd (isatty() == False) to
+    simulate the non-TTY scenario and asserts that the containerized
+    ``ansible-config init`` output is clean.
+
+    NOTE: the original issue also manifests when stdin *is* a TTY but
+    stdout is redirected (``> ansible.cfg``).  That scenario is not
+    covered here because it requires a different fix (e.g. checking
+    output_fd.isatty() or handling it on the navigator side).
+    """
+    input_path = tmp_path / 'stdin.txt'
+    output_path = tmp_path / 'ansible.cfg'
+    error_path = tmp_path / 'stderr.txt'
+    input_path.write_text('')
+
+    with input_path.open('r', encoding='utf-8') as input_fd, \
+            output_path.open('w', encoding='utf-8') as output_fd, \
+            error_path.open('w', encoding='utf-8') as error_fd:
+        _, _, rc = run_command(
+            executable_cmd='ansible-config',
+            cmdline_args=['init'],
+            input_fd=input_fd,
+            output_fd=output_fd,
+            error_fd=error_fd,
+            private_data_dir=str(tmp_path),
+            process_isolation=True,
+            process_isolation_executable=runtime,
+            container_image=container_image,
+        )
+
+    content = output_path.read_text(encoding='utf-8')
+    assert rc == 0
+    assert '[defaults]' in content
+    assert '\x1b' not in content
+
+    errors = error_path.read_text(encoding='utf-8')
+    assert 'not a TTY' not in errors
+
+
+@pytest.mark.test_all_runtimes
+def test_containerized_run_command_no_ansi_when_stdout_redirected_but_stdin_is_tty(
+    tmp_path, runtime, container_image,
+):
+    """Reproduce the exact ansible-navigator#1607 scenario.
+
+    The user runs ``ansible-navigator config init -m stdout > ansible.cfg``
+    from a real terminal.  ansible-navigator forwards sys.stdin (a TTY) as
+    input_fd and sys.stdout (redirected to a file, not a TTY) as output_fd.
+
+    The container must not receive --tty in this situation; otherwise
+    ``ansible-config init`` detects a pseudo-terminal inside the container
+    and emits ANSI escape sequences / launches a pager.
+
+    This test uses pty.openpty() to obtain an input_fd where isatty()
+    is True, while output_fd is a regular file (isatty() == False),
+    matching the real-world trigger exactly.
+    """
+    output_path = tmp_path / 'ansible.cfg'
+    error_path = tmp_path / 'stderr.txt'
+
+    master_fd, slave_fd = pty.openpty()
+    try:
+        stdin_tty = os.fdopen(slave_fd, 'r')
+        with output_path.open('w', encoding='utf-8') as output_fd, \
+                error_path.open('w', encoding='utf-8') as error_fd:
+            _, _, rc = run_command(
+                executable_cmd='ansible-config',
+                cmdline_args=['init'],
+                input_fd=stdin_tty,
+                output_fd=output_fd,
+                error_fd=error_fd,
+                private_data_dir=str(tmp_path),
+                process_isolation=True,
+                process_isolation_executable=runtime,
+                container_image=container_image,
+            )
+        stdin_tty.close()
+    finally:
+        os.close(master_fd)
+
+    content = output_path.read_text(encoding='utf-8')
+    assert rc == 0
+    assert '[defaults]' in content
+    assert '\x1b' not in content

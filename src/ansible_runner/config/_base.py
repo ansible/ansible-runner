@@ -491,12 +491,18 @@ class BaseConfig:
     def _should_allocate_tty(self) -> bool:
         if self.runner_mode == 'pexpect':
             return True
-        # input_fd is only defined on CommandConfig, not on BaseConfig.
-        # When present and connected to a real terminal, allocate a TTY
-        # so interactive tools work. When not a terminal (CI/CD, pipes),
-        # skip --tty to prevent tools like `less` from hanging.
-        input_fd = getattr(self, 'input_fd', None)
-        return input_fd and hasattr(input_fd, 'isatty') and input_fd.isatty()
+        # input_fd / output_fd are only defined on CommandConfig, not on
+        # BaseConfig.  Allocate a TTY only when *both* sides are real
+        # terminals – if either side is redirected (file, pipe, /dev/null)
+        # the container must not get --tty, otherwise tools like `less`
+        # hang or ANSI escapes pollute the redirected output.
+        # See: https://github.com/ansible/ansible-navigator/issues/1607
+        input_fd = getattr(self, 'input_fd', False)
+        output_fd = getattr(self, 'output_fd', False)
+        return (
+            input_fd and hasattr(input_fd, 'isatty') and input_fd.isatty()
+            and output_fd and hasattr(output_fd, 'isatty') and output_fd.isatty()
+        )
 
     def wrap_args_for_containerization(self,
                                        args: list[str],

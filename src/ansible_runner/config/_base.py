@@ -281,6 +281,7 @@ class BaseConfig:
 
         self.suppress_output_file = self.settings.get('suppress_output_file', False)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
+        self.rotate_artifacts = self.settings.get('rotate_artifacts', self.rotate_artifacts)
 
         if 'fact_cache' in self.settings:
             if 'fact_cache_type' in self.settings:

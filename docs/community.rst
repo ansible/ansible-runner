@@ -27,3 +27,10 @@ Search by categories and tags to find interesting topics or start a new one; sub
 * `News & Announcements <https://forum.ansible.com/c/news/5>`_: track project-wide announcements including social events.
 
 See `Navigating the Ansible forum <https://forum.ansible.com/t/navigating-the-ansible-forum-tags-categories-and-concepts/39>`_ for some practical advice on finding your way around.
+
+Source Code
+-----------
+
+The ansible-runner source code is hosted on GitHub. Contributions, bug reports, and feature requests are welcome!
+
+* `GitHub Repository <https://github.com/ansible/ansible-runner>`_: Browse the source code, open issues, or submit pull requests.

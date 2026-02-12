@@ -496,11 +496,11 @@ class BaseConfig:
         # the container must not get --tty, otherwise tools like `less`
         # hang or ANSI escapes pollute the redirected output.
         # See: https://github.com/ansible/ansible-navigator/issues/1607
-        input_fd = getattr(self, 'input_fd', False)
-        output_fd = getattr(self, 'output_fd', False)
+        input_fd = getattr(self, 'input_fd', None)
+        output_fd = getattr(self, 'output_fd', None)
         return (
-            input_fd and hasattr(input_fd, 'isatty') and input_fd.isatty()
-            and output_fd and hasattr(output_fd, 'isatty') and output_fd.isatty()
+            input_fd is not None and hasattr(input_fd, 'isatty') and input_fd.isatty()
+            and output_fd is not None and hasattr(output_fd, 'isatty') and output_fd.isatty()
         )
 
     def wrap_args_for_containerization(self,

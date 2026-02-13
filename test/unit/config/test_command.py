@@ -127,93 +127,19 @@ def test_prepare_run_command_with_containerization(tmp_path, runtime, mocker):
 
 
 @pytest.mark.parametrize('runtime', ('docker', 'podman'))
-def test_prepare_run_command_containerized_subprocess_no_tty_when_piped(tmp_path, runtime, mocker):
-    """Regression for ansible-navigator#1607: input_fd is not a tty, --tty must not appear."""
-    mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
-    tmp_path.joinpath('.ssh').mkdir()
-
-    mock_stdin = mocker.Mock()
-    mock_stdin.isatty.return_value = False
-
-    kwargs = {
-        'private_data_dir': tmp_path,
-        'process_isolation': True,
-        'container_image': 'my_container',
-        'process_isolation_executable': runtime,
-        'input_fd': mock_stdin,
-        'output_fd': mocker.Mock(),
-        'error_fd': mocker.Mock(),
-    }
-    rc = CommandConfig(**kwargs)
-    rc.ident = 'foo'
-    rc.prepare_run_command('ansible-config', cmdline_args=['init'])
-
-    assert rc.runner_mode == 'subprocess'
-    assert '--tty' not in rc.command
-    assert '--interactive' in rc.command
-
-
-@pytest.mark.parametrize('runtime', ('docker', 'podman'))
-def test_prepare_run_command_containerized_subprocess_tty_when_interactive(tmp_path, runtime, mocker):
-    """Both input_fd and output_fd are real terminals, --tty should be present."""
-    mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
-    tmp_path.joinpath('.ssh').mkdir()
-
-    mock_stdin = mocker.Mock()
-    mock_stdin.isatty.return_value = True
-    mock_stdout = mocker.Mock()
-    mock_stdout.isatty.return_value = True
-
-    kwargs = {
-        'private_data_dir': tmp_path,
-        'process_isolation': True,
-        'container_image': 'my_container',
-        'process_isolation_executable': runtime,
-        'input_fd': mock_stdin,
-        'output_fd': mock_stdout,
-        'error_fd': mocker.Mock(),
-    }
-    rc = CommandConfig(**kwargs)
-    rc.ident = 'foo'
-    rc.prepare_run_command('ansible-config', cmdline_args=['init'])
-
-    assert rc.runner_mode == 'subprocess'
-    assert '--tty' in rc.command
-    assert '--interactive' in rc.command
-
-
-@pytest.mark.parametrize('runtime', ('docker', 'podman'))
-def test_prepare_run_command_containerized_subprocess_no_tty_when_stdout_redirected(tmp_path, runtime, mocker):
-    """Regression for ansible-navigator#1607: stdin is TTY but stdout is redirected, --tty must not appear."""
-    mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
-    tmp_path.joinpath('.ssh').mkdir()
-
-    mock_stdin = mocker.Mock()
-    mock_stdin.isatty.return_value = True
-    mock_stdout = mocker.Mock()
-    mock_stdout.isatty.return_value = False
-
-    kwargs = {
-        'private_data_dir': tmp_path,
-        'process_isolation': True,
-        'container_image': 'my_container',
-        'process_isolation_executable': runtime,
-        'input_fd': mock_stdin,
-        'output_fd': mock_stdout,
-        'error_fd': mocker.Mock(),
-    }
-    rc = CommandConfig(**kwargs)
-    rc.ident = 'foo'
-    rc.prepare_run_command('ansible-config', cmdline_args=['init'])
-
-    assert rc.runner_mode == 'subprocess'
-    assert '--tty' not in rc.command
-    assert '--interactive' in rc.command
-
-
-@pytest.mark.parametrize('runtime', ('docker', 'podman'))
-def test_prepare_run_command_containerized_subprocess_no_tty_without_input_fd(tmp_path, runtime, mocker):
-    """Without input_fd (AWX/Controller scenario), subprocess mode should not get --tty."""
+@pytest.mark.parametrize(
+    ('stdin_is_tty', 'stdout_is_tty', 'expect_tty'),
+    (
+        pytest.param(False, False, False, id='piped-stdin'),
+        pytest.param(True, True, True, id='interactive-tty'),
+        pytest.param(True, False, False, id='stdout-redirected'),
+        pytest.param(None, None, False, id='no-fd-headless'),
+    ),
+)
+def test_prepare_run_command_containerized_tty_allocation(
+    tmp_path, runtime, mocker, stdin_is_tty, stdout_is_tty, expect_tty,
+):
+    """Regression for ansible-navigator#1607: --tty must only appear when both fds are real TTYs."""
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()
 
@@ -223,10 +149,20 @@ def test_prepare_run_command_containerized_subprocess_no_tty_without_input_fd(tm
         'container_image': 'my_container',
         'process_isolation_executable': runtime,
     }
+
+    if stdin_is_tty is not None:
+        mock_stdin = mocker.Mock()
+        mock_stdin.isatty.return_value = stdin_is_tty
+        kwargs['input_fd'] = mock_stdin
+    if stdout_is_tty is not None:
+        mock_stdout = mocker.Mock()
+        mock_stdout.isatty.return_value = stdout_is_tty
+        kwargs['output_fd'] = mock_stdout
+
     rc = CommandConfig(**kwargs)
     rc.ident = 'foo'
     rc.prepare_run_command('ansible-config', cmdline_args=['init'])
 
     assert rc.runner_mode == 'subprocess'
-    assert '--tty' not in rc.command
+    assert ('--tty' in rc.command) == expect_tty
     assert '--interactive' in rc.command

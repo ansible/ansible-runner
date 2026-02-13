@@ -181,64 +181,88 @@ def test_registry_auth_file_cleanup(tmp_path, cli, runtime):
 
 
 @pytest.mark.test_all_runtimes
-def test_containerized_no_tty_when_stdin_not_terminal(tmp_path, runtime, container_image):
-    """Regression for ansible-navigator#1607: no --tty when input_fd is not a real TTY."""
-    input_path = tmp_path / 'stdin.txt'
-    output_path = tmp_path / 'ansible.cfg'
-    error_path = tmp_path / 'stderr.txt'
-    input_path.write_text('')
+@pytest.mark.parametrize(
+    ('stdin_is_tty', 'stdout_is_tty', 'expect_tty'),
+    (
+        pytest.param(False, False, False, id='piped-stdin'),
+        pytest.param(True, True, True, id='interactive-tty'),
+        pytest.param(True, False, False, id='stdout-redirected'),
+        pytest.param(None, None, False, id='no-fd-headless'),
+    ),
+)
+def test_containerized_tty_allocation(
+    tmp_path, runtime, container_image, stdin_is_tty, stdout_is_tty, expect_tty,
+):
+    """Regression for ansible-navigator#1607: --tty must only appear when both fds are real TTYs."""
+    ptys_to_close = []
+    fds_to_close = []
+    out_master = None
+    pty_output = ''
+    kwargs = {
+        'executable_cmd': 'ansible-config',
+        'cmdline_args': ['init'],
+        'private_data_dir': str(tmp_path),
+        'process_isolation': True,
+        'process_isolation_executable': runtime,
+        'container_image': container_image,
+    }
 
-    with input_path.open('r', encoding='utf-8') as input_fd, \
-            output_path.open('w', encoding='utf-8') as output_fd, \
-            error_path.open('w', encoding='utf-8') as error_fd:
-        _, _, rc = run_command(
-            executable_cmd='ansible-config',
-            cmdline_args=['init'],
-            input_fd=input_fd,
-            output_fd=output_fd,
-            error_fd=error_fd,
-            private_data_dir=str(tmp_path),
-            process_isolation=True,
-            process_isolation_executable=runtime,
-            container_image=container_image,
-        )
+    if stdin_is_tty is not None:
+        if stdin_is_tty:
+            master, slave = pty.openpty()
+            ptys_to_close.append(master)
+            kwargs['input_fd'] = os.fdopen(slave, 'r')
+        else:
+            input_path = tmp_path / 'stdin.txt'
+            input_path.write_text('')
+            kwargs['input_fd'] = input_path.open('r', encoding='utf-8')
+        fds_to_close.append(kwargs['input_fd'])
 
-    content = output_path.read_text(encoding='utf-8')
-    assert rc == 0
-    assert '[defaults]' in content
-    assert '\x1b' not in content
+    if stdout_is_tty is not None:
+        if stdout_is_tty:
+            master, slave = pty.openpty()
+            out_master = master
+            ptys_to_close.append(master)
+            kwargs['output_fd'] = os.fdopen(slave, 'w')
+        else:
+            kwargs['output_fd'] = (tmp_path / 'stdout.txt').open('w', encoding='utf-8')
+        fds_to_close.append(kwargs['output_fd'])
 
-    errors = error_path.read_text(encoding='utf-8')
-    assert 'not a TTY' not in errors
+    if stdin_is_tty is not None or stdout_is_tty is not None:
+        kwargs['error_fd'] = (tmp_path / 'stderr.txt').open('w', encoding='utf-8')
+        fds_to_close.append(kwargs['error_fd'])
 
+    if expect_tty:
+        kwargs['timeout'] = 5
 
-@pytest.mark.test_all_runtimes
-def test_containerized_no_tty_when_stdout_redirected(tmp_path, runtime, container_image):
-    """Regression for ansible-navigator#1607: no --tty when stdin is TTY but stdout is redirected."""
-    output_path = tmp_path / 'ansible.cfg'
-    error_path = tmp_path / 'stderr.txt'
-
-    master_fd, slave_fd = pty.openpty()
     try:
-        stdin_tty = os.fdopen(slave_fd, 'r')
-        with output_path.open('w', encoding='utf-8') as output_fd, \
-                error_path.open('w', encoding='utf-8') as error_fd:
-            _, _, rc = run_command(
-                executable_cmd='ansible-config',
-                cmdline_args=['init'],
-                input_fd=stdin_tty,
-                output_fd=output_fd,
-                error_fd=error_fd,
-                private_data_dir=str(tmp_path),
-                process_isolation=True,
-                process_isolation_executable=runtime,
-                container_image=container_image,
-            )
-        stdin_tty.close()
+        response, _, rc = run_command(**kwargs)
     finally:
-        os.close(master_fd)
+        # For interactive-tty: read pager output from pty master *before* closing it.
+        if out_master is not None:
+            chunks = []
+            try:
+                while chunk := os.read(out_master, 4096):
+                    chunks.append(chunk)
+            except OSError:
+                pass
+            pty_output = b''.join(chunks).decode('utf-8', errors='replace')
 
-    content = output_path.read_text(encoding='utf-8')
-    assert rc == 0
-    assert '[defaults]' in content
-    assert '\x1b' not in content
+        for fd in fds_to_close:
+            fd.close()
+        for master in ptys_to_close:
+            os.close(master)
+
+    if expect_tty:
+        # Pager (less) is active: expect timeout (rc=254) and a trailing
+        # ':' prompt, confirming --tty was correctly allocated.
+        assert pty_output.rstrip().endswith(':')
+        assert rc == 254
+    else:
+        if stdin_is_tty is None:
+            content = response
+        else:
+            content = (tmp_path / 'stdout.txt').read_text(encoding='utf-8')
+        assert rc == 0
+        assert '[defaults]' in content
+        assert '\x1b' not in content

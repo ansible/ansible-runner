@@ -182,22 +182,26 @@ def test_registry_auth_file_cleanup(tmp_path, cli, runtime):
 
 @pytest.mark.test_all_runtimes
 @pytest.mark.parametrize(
-    ('stdin_is_tty', 'stdout_is_tty', 'expect_tty'),
+    ('stdin_is_tty', 'stdout_is_tty'),
     (
-        pytest.param(False, False, False, id='piped-stdin'),
-        pytest.param(True, True, True, id='interactive-tty'),
-        pytest.param(True, False, False, id='stdout-redirected'),
-        pytest.param(None, None, False, id='no-fd-headless'),
+        pytest.param(False, False, id='piped-stdin'),
+        pytest.param(True, False, id='stdout-redirected'),
+        pytest.param(None, None, id='no-fd-headless'),
     ),
 )
 def test_containerized_tty_allocation(
-    tmp_path, runtime, container_image, stdin_is_tty, stdout_is_tty, expect_tty,
+    tmp_path, runtime, container_image, stdin_is_tty, stdout_is_tty,
 ):
-    """Regression for ansible-navigator#1607: --tty must only appear when both fds are real TTYs."""
-    ptys_to_close = []
+    """Regression for ansible-navigator#1607: --tty must not appear when fds are not real TTYs.
+
+    The positive case (both fds are TTYs -> --tty is added) is already
+    covered by the unit test
+    ``test_prepare_run_command_containerized_tty_allocation[interactive-tty-*]``
+    which asserts ``'--tty' in rc.command``.  Testing it at the integration
+    level would require a pager (``less``) inside the container image and
+    complex pty plumbing, so we only verify the "no --tty" cases here.
+    """
     fds_to_close = []
-    out_master = None
-    pty_output = ''
     kwargs = {
         'executable_cmd': 'ansible-config',
         'cmdline_args': ['init'],
@@ -210,59 +214,36 @@ def test_containerized_tty_allocation(
     if stdin_is_tty is not None:
         if stdin_is_tty:
             master, slave = pty.openpty()
-            ptys_to_close.append(master)
             kwargs['input_fd'] = os.fdopen(slave, 'r')
+            fds_to_close.append(('fd', kwargs['input_fd']))
+            fds_to_close.append(('raw', master))
         else:
             input_path = tmp_path / 'stdin.txt'
             input_path.write_text('')
             kwargs['input_fd'] = input_path.open('r', encoding='utf-8')
-        fds_to_close.append(kwargs['input_fd'])
+            fds_to_close.append(('fd', kwargs['input_fd']))
 
     if stdout_is_tty is not None:
-        if stdout_is_tty:
-            master, slave = pty.openpty()
-            out_master = master
-            ptys_to_close.append(master)
-            kwargs['output_fd'] = os.fdopen(slave, 'w')
-        else:
-            kwargs['output_fd'] = (tmp_path / 'stdout.txt').open('w', encoding='utf-8')
-        fds_to_close.append(kwargs['output_fd'])
+        kwargs['output_fd'] = (tmp_path / 'stdout.txt').open('w', encoding='utf-8')
+        fds_to_close.append(('fd', kwargs['output_fd']))
 
     if stdin_is_tty is not None or stdout_is_tty is not None:
         kwargs['error_fd'] = (tmp_path / 'stderr.txt').open('w', encoding='utf-8')
-        fds_to_close.append(kwargs['error_fd'])
-
-    if expect_tty:
-        kwargs['timeout'] = 5
+        fds_to_close.append(('fd', kwargs['error_fd']))
 
     try:
         response, _, rc = run_command(**kwargs)
     finally:
-        # For interactive-tty: read pager output from pty master *before* closing it.
-        if out_master is not None:
-            chunks = []
-            try:
-                while chunk := os.read(out_master, 4096):
-                    chunks.append(chunk)
-            except OSError:
-                pass
-            pty_output = b''.join(chunks).decode('utf-8', errors='replace')
+        for kind, fd in fds_to_close:
+            if kind == 'fd':
+                fd.close()
+            else:
+                os.close(fd)
 
-        for fd in fds_to_close:
-            fd.close()
-        for master in ptys_to_close:
-            os.close(master)
-
-    if expect_tty:
-        # Pager (less) is active: expect timeout (rc=254) and a trailing
-        # ':' prompt, confirming --tty was correctly allocated.
-        assert pty_output.rstrip().endswith(':')
-        assert rc == 254
+    if stdin_is_tty is None:
+        content = response
     else:
-        if stdin_is_tty is None:
-            content = response
-        else:
-            content = (tmp_path / 'stdout.txt').read_text(encoding='utf-8')
-        assert rc == 0
-        assert '[defaults]' in content
-        assert '\x1b' not in content
+        content = (tmp_path / 'stdout.txt').read_text(encoding='utf-8')
+    assert rc == 0
+    assert '[defaults]' in content
+    assert '\x1b' not in content

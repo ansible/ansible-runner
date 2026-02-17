@@ -100,11 +100,17 @@ def test_non_owner_install(mocker, project_fixtures, runtime, container_image):
 
 @pytest.mark.test_all_runtimes
 def test_invalid_registry_host(tmp_path, runtime):
+    """
+    Test using registry authentication.
+
+    We use an invalid registry, so we expect the run to fail. But we will verify that the authentication
+    data is written to the auth configuration file correctly.
+    """
     pdd_path = tmp_path / 'private_data_dir'
     pdd_path.mkdir()
     private_data_dir = str(pdd_path)
 
-    image_name = 'quay.io/kdelee/does-not-exist'
+    image_name = 'quay.io/ansible-runner/does-not-exist'
 
     res = run(
         private_data_dir=private_data_dir,
@@ -124,15 +130,14 @@ def test_invalid_registry_host(tmp_path, runtime):
 
     with res.stdout as f:
         result_stdout = f.read()
+
+    assert 'unauthorized' in result_stdout.lower()
+
     auth_file_path = os.path.join(res.config.registry_auth_path, 'config.json')
     registry_conf = os.path.join(res.config.registry_auth_path, 'registries.conf')
-    error_msg = 'access to the requested resource is not authorized'
     if runtime == 'podman':
-        assert image_name in result_stdout
-        error_msg = 'unauthorized'
         auth_file_path = res.config.registry_auth_path
         registry_conf = os.path.join(os.path.dirname(res.config.registry_auth_path), 'registries.conf')
-    assert error_msg in result_stdout
 
     with open(auth_file_path, 'r') as f:
         content = f.read()

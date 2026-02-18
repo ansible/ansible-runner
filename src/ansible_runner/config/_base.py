@@ -487,21 +487,14 @@ class BaseConfig:
 
             self._update_volume_mount_paths(args_list, optional_arg_value)
 
-    def _should_allocate_tty(self) -> bool:
-        if self.runner_mode == 'pexpect':
-            return True
-        # input_fd / output_fd are only defined on CommandConfig, not on
-        # BaseConfig.  Allocate a TTY only when *both* sides are real
-        # terminals – if either side is redirected (file, pipe, /dev/null)
-        # the container must not get --tty, otherwise tools like `less`
-        # hang or ANSI escapes pollute the redirected output.
-        # See: https://github.com/ansible/ansible-navigator/issues/1607
-        input_fd = getattr(self, 'input_fd', None)
-        output_fd = getattr(self, 'output_fd', None)
-        return (
-            input_fd is not None and hasattr(input_fd, 'isatty') and input_fd.isatty()
-            and output_fd is not None and hasattr(output_fd, 'isatty') and output_fd.isatty()
-        )
+    def should_allocate_tty(self) -> bool:
+        """Whether the container should get a ``--tty`` flag.
+
+        The base implementation returns ``False``.
+        Subclasses (e.g. :class:`~ansible_runner.config.command.CommandConfig`)
+        may override this to implement richer logic.
+        """
+        return False
 
     def wrap_args_for_containerization(self,
                                        args: list[str],
@@ -511,7 +504,7 @@ class BaseConfig:
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm'])
 
-        if self._should_allocate_tty():
+        if self.runner_mode == 'pexpect' or self.should_allocate_tty():
             new_args.extend(['--tty'])
 
         new_args.append('--interactive')

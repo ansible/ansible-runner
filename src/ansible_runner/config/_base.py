@@ -487,6 +487,15 @@ class BaseConfig:
 
             self._update_volume_mount_paths(args_list, optional_arg_value)
 
+    def should_allocate_tty(self) -> bool:
+        """Whether the container should get a ``--tty`` flag.
+
+        The base implementation returns ``False``.
+        Subclasses (e.g. :class:`~ansible_runner.config.command.CommandConfig`)
+        may override this to implement richer logic.
+        """
+        return False
+
     def wrap_args_for_containerization(self,
                                        args: list[str],
                                        execution_mode: BaseExecutionMode,
@@ -495,7 +504,7 @@ class BaseConfig:
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm'])
 
-        if self.runner_mode == 'pexpect' or getattr(self, 'input_fd', False):
+        if self.runner_mode == 'pexpect' or self.should_allocate_tty():
             new_args.extend(['--tty'])
 
         new_args.append('--interactive')

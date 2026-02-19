@@ -69,6 +69,20 @@ class CommandConfig(BaseConfig):
         'ansible-galaxy',
     )
 
+    def should_allocate_tty(self) -> bool:
+        """Allocate a TTY only when *both* input and output fds are real terminals.
+
+        If either side is redirected (file, pipe, ``/dev/null``) the container
+        must not get ``--tty``, otherwise tools like ``less`` hang or ANSI
+        escapes pollute the redirected output.
+
+        See: https://github.com/ansible/ansible-navigator/issues/1607
+        """
+        return (
+            self.input_fd is not None and hasattr(self.input_fd, 'isatty') and self.input_fd.isatty()
+            and self.output_fd is not None and hasattr(self.output_fd, 'isatty') and self.output_fd.isatty()
+        )
+
     def _set_runner_mode(self):
         if self.input_fd is not None or self.executable_cmd.split(os.pathsep)[-1] in CommandConfig._ANSIBLE_NON_INERACTIVE_CMDS:
             self.runner_mode = 'subprocess'

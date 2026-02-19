@@ -1,4 +1,5 @@
 import os
+import pty
 import time
 import json
 
@@ -7,7 +8,7 @@ from uuid import uuid4
 
 import pytest
 
-from ansible_runner.interface import run
+from ansible_runner.interface import run, run_command
 
 
 @pytest.mark.test_all_runtimes
@@ -182,3 +183,72 @@ def test_registry_auth_file_cleanup(tmp_path, cli, runtime):
     discovered_registry_files = set(glob(auth_registry_glob)) - registry_files_before
     for file_name in discovered_registry_files:
         assert this_ident not in file_name
+
+
+@pytest.mark.test_all_runtimes
+@pytest.mark.parametrize(
+    ('stdin_is_tty', 'stdout_is_tty'),
+    (
+        pytest.param(False, False, id='piped-stdin'),
+        pytest.param(True, False, id='stdout-redirected'),
+        pytest.param(None, None, id='no-fd-headless'),
+    ),
+)
+def test_containerized_tty_allocation(
+    tmp_path, runtime, container_image, stdin_is_tty, stdout_is_tty,
+):
+    """Regression for ansible-navigator#1607: --tty must not appear when fds are not real TTYs.
+
+    The positive case (both fds are TTYs -> --tty is added) is already
+    covered by the unit test
+    ``test_prepare_run_command_containerized_tty_allocation[interactive-tty-*]``
+    which asserts ``'--tty' in rc.command``.  Testing it at the integration
+    level would require a pager (``less``) inside the container image and
+    complex pty plumbing, so we only verify the "no --tty" cases here.
+    """
+    fds_to_close = []
+    kwargs = {
+        'executable_cmd': 'ansible-config',
+        'cmdline_args': ['init'],
+        'private_data_dir': str(tmp_path),
+        'process_isolation': True,
+        'process_isolation_executable': runtime,
+        'container_image': container_image,
+    }
+
+    if stdin_is_tty is not None:
+        if stdin_is_tty:
+            master, slave = pty.openpty()
+            kwargs['input_fd'] = os.fdopen(slave, 'r')
+            fds_to_close.append(('fd', kwargs['input_fd']))
+            fds_to_close.append(('raw', master))
+        else:
+            input_path = tmp_path / 'stdin.txt'
+            input_path.write_text('')
+            kwargs['input_fd'] = input_path.open('r', encoding='utf-8')
+            fds_to_close.append(('fd', kwargs['input_fd']))
+
+    if stdout_is_tty is not None:
+        kwargs['output_fd'] = (tmp_path / 'stdout.txt').open('w', encoding='utf-8')
+        fds_to_close.append(('fd', kwargs['output_fd']))
+
+    if stdin_is_tty is not None or stdout_is_tty is not None:
+        kwargs['error_fd'] = (tmp_path / 'stderr.txt').open('w', encoding='utf-8')
+        fds_to_close.append(('fd', kwargs['error_fd']))
+
+    try:
+        response, _, rc = run_command(**kwargs)
+    finally:
+        for kind, fd in fds_to_close:
+            if kind == 'fd':
+                fd.close()
+            else:
+                os.close(fd)
+
+    if stdin_is_tty is None:
+        content = response
+    else:
+        content = (tmp_path / 'stdout.txt').read_text(encoding='utf-8')
+    assert rc == 0
+    assert '[defaults]' in content
+    assert '\x1b' not in content

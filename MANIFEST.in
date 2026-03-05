@@ -1,3 +1,8 @@
+# do not include the `.git_archival.txt` file in sdist builds from repo source
+# this avoids setuptools-scm warnings on development builds
+exclude .git_archival.txt
 
-include README.md
-include LICENSE.md
+# furthermore do not include the `MANIFEST.in` file itself in sdist builds from
+# repo source to avoid the following setuptools warning on development builds:
+# warning: no previously-included files found matching '.git_archival.txt'
+exclude MANIFEST.in

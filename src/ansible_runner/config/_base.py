@@ -71,8 +71,6 @@ class BaseConfig:
                  settings=None,
                  project_dir: str | None = None,
                  artifact_dir: str | None = None,
-                 fact_cache_type: str = 'jsonfile',
-                 fact_cache=None,
                  process_isolation: bool = False,
                  process_isolation_executable: str | None = None,
                  container_image: str = "",
@@ -149,9 +147,6 @@ class BaseConfig:
             self.project_dir = project_dir
 
         self.rotate_artifacts = rotate_artifacts
-        self.fact_cache_type = fact_cache_type
-        self.fact_cache = os.path.join(self.artifact_dir, fact_cache or 'fact_cache') if self.fact_cache_type == 'jsonfile' else None
-
         self.loader = ArtifactLoader(self.private_data_dir)
 
         if self.host_cwd:
@@ -249,8 +244,6 @@ class BaseConfig:
 
             artifact_dir = os.path.join("/runner/artifacts", self.ident)
             self.env['AWX_ISOLATED_DATA_DIR'] = artifact_dir
-            if self.fact_cache_type == 'jsonfile':
-                self.env['ANSIBLE_CACHE_PLUGIN_CONNECTION'] = os.path.join(artifact_dir, 'fact_cache')
 
         else:
             # seed env with existing shell env
@@ -281,13 +274,6 @@ class BaseConfig:
 
         self.suppress_output_file = self.settings.get('suppress_output_file', False)
         self.suppress_ansible_output = self.settings.get('suppress_ansible_output', self.quiet)
-
-        if 'fact_cache' in self.settings:
-            if 'fact_cache_type' in self.settings:
-                if self.settings['fact_cache_type'] == 'jsonfile':
-                    self.fact_cache = os.path.join(self.artifact_dir, self.settings['fact_cache'])
-            else:
-                self.fact_cache = os.path.join(self.artifact_dir, self.settings['fact_cache'])
 
         # Use local callback directory
         if self.containerized:
@@ -326,11 +312,6 @@ class BaseConfig:
             self.env['ANSIBLE_HOST_KEY_CHECKING'] = 'False'
         if not self.containerized:
             self.env['AWX_ISOLATED_DATA_DIR'] = self.artifact_dir
-
-        if self.fact_cache_type == 'jsonfile':
-            self.env['ANSIBLE_CACHE_PLUGIN'] = 'jsonfile'
-            if not self.containerized:
-                self.env['ANSIBLE_CACHE_PLUGIN_CONNECTION'] = self.fact_cache
 
         # Pexpect will error with non-string envvars types, so we ensure string types
         self.env = {str(k): str(v) for k, v in self.env.items()}

@@ -27,7 +27,6 @@ def test_base_config_init_defaults(tmp_path):
     assert rc.private_data_dir == tmp_path.as_posix()
     assert rc.ident is not None
     assert rc.process_isolation is False
-    assert rc.fact_cache_type == 'jsonfile'
     assert rc.json_mode is False
     assert rc.quiet is False
     assert rc.quiet is False

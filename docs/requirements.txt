@@ -44,7 +44,7 @@ packaging==24.1
     #   sphinx
 pycparser==2.22
     # via cffi
-pygments==2.18.0
+pygments==2.20.0
     # via
     #   ansible-pygments
     #   sphinx

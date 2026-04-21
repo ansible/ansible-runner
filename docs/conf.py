@@ -26,6 +26,10 @@ def _get_version():
 
 
 nitpicky = True
+nitpick_ignore = {
+    ('py:class', 'threading.Thread'),
+    ('py:class', 'io.FileIO')
+}
 default_role = 'any'  # This catches single backticks (incorrectly) used for inline code formatting
 project = 'ansible-runner'
 copyright = f'2018-{datetime.datetime.today().year}, Red Hat, Inc'
@@ -44,7 +48,6 @@ version = _get_version()
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
-    'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
     'pbr.sphinxext',
@@ -67,7 +70,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

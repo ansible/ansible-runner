@@ -180,8 +180,8 @@ inspect/process/handle events as they come out of Ansible. This function should 
 --------------------------
 
 A function passed to ``__init__`` of :class:`Runner <ansible_runner.runner.Runner>`, and to the :meth:`ansible_runner.interface.run` interface functions.
-This function will be called for every iteration of the :meth:`ansible_runner.interface.run` event loop and should return `True`
-to inform **Runner** cancel and shutdown the **Ansible** process or `False` to allow it to continue.
+This function will be called for every iteration of the :meth:`ansible_runner.interface.run` event loop and should return ``True``
+to inform **Runner** cancel and shutdown the **Ansible** process or ``False`` to allow it to continue.
 
 ``Runner.finished_callback``
 ----------------------------

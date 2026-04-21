@@ -8,7 +8,7 @@ on:
 jobs:
   sanity:
     name: ${{ matrix.test.name }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     container:
       image: quay.io/ansible/ansible-runner-test-container:2.0.0
       env:
@@ -38,7 +38,7 @@ jobs:
 
 
   integration:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: Integration - ${{ matrix.py_version.name }}
 
     env:
@@ -58,6 +58,8 @@ jobs:
           - name: '3.10'
             tox_env: integration-py310
 
+          - name: '3.11'
+            tox_env: integration-py311
 
     steps:
       - name: Checkout
@@ -92,7 +94,7 @@ jobs:
 
   unit:
     name: Unit - ${{ matrix.py_version.name}}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     container:
       image: quay.io/ansible/ansible-runner-test-container:2.0.0
       env:
@@ -113,9 +115,22 @@ jobs:
           - name: '3.10'
             tox_env: unit-py310
 
+          - name: '3.11'
+            tox_env: unit-py311
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Install Python ${{ matrix.py_version.name }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.py_version.name }}
+
+      - name: Install tox
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install "tox<4.0.0"
 
       - name: Create tox environment
         run: tox --notest

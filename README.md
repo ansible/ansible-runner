@@ -14,7 +14,7 @@ See the [latest documentation] for usage details.
 Get Involved
 ============
 
-* [GitHub issues] to track bug report and feature ideas
+* [GitHub issues] to track bug report and feature ideas.
 * [GitHub Milestones] to track what's for the next release
 * Want to contribute? Please check out our [contributing guide]
 * Join us in the `#ansible-runner` channel on Libera.chat IRC

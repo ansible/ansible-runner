@@ -15,7 +15,38 @@
 # You should have received a copy of the GNU General Public License
 # along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import (absolute_import, division, print_function)
+# pylint: disable=W0212
+
+from __future__ import (absolute_import, annotations, division, print_function)
+
+
+# Python
+import json
+import stat
+import threading
+import base64
+import functools
+import collections
+import contextlib
+import datetime
+import inspect
+import os
+import sys
+import types
+import typing as t
+import uuid
+from copy import copy
+
+# Ansible
+from ansible import __version__ as ansible_version_str
+from ansible import constants as C
+from ansible.plugins.loader import callback_loader
+from ansible.utils.display import Display
+
+try:
+    from ansible.utils.multiprocessing import context as multiprocessing_context
+except ImportError:
+    import multiprocessing as multiprocessing_context
 
 
 DOCUMENTATION = '''
@@ -31,27 +62,7 @@ DOCUMENTATION = '''
       - Set as stdout in config
 '''
 
-# Python
-import json
-import stat
-import multiprocessing
-import threading
-import base64
-import functools
-import collections
-import contextlib
-import datetime
-import os
-import sys
-import uuid
-from copy import copy
-
-# Ansible
-from ansible import constants as C
-from ansible.plugins.loader import callback_loader
-from ansible.utils.display import Display
-
-IS_ADHOC = os.getenv('AD_HOC_COMMAND_ID', False)
+IS_ADHOC = os.getenv('AD_HOC_COMMAND_ID') or False
 
 # Dynamically construct base classes for our callback module, to support custom stdout callbacks.
 if os.getenv('ORIGINAL_STDOUT_CALLBACK'):
@@ -64,6 +75,11 @@ else:
 DefaultCallbackModule = callback_loader.get(default_stdout_callback).__class__
 
 CENSORED = "the output has been hidden due to the fact that 'no_log: true' was specified for this result"
+
+_ANSIBLE_VERSION = tuple(int(p) for p in ansible_version_str.split('.')[:2])
+_ANSIBLE_214 = _ANSIBLE_VERSION >= (2, 14)
+
+display = Display()
 
 
 def current_time():
@@ -124,7 +140,11 @@ class EventContext(object):
     '''
 
     def __init__(self):
-        self.display_lock = multiprocessing.RLock()
+        if _ANSIBLE_214:
+            self.display_lock = display._lock
+        else:
+            self.display_lock = multiprocessing_context.RLock()
+        self._global_ctx = {}
         self._local = threading.local()
         if os.getenv('AWX_ISOLATED_DATA_DIR', False):
             self.cache = IsolatedFileWrite()
@@ -246,6 +266,17 @@ class EventContext(object):
 event_context = EventContext()
 
 
+@functools.lru_cache(maxsize=None)
+def _getsignature(f: t.Callable) -> inspect.Signature:
+    return inspect.signature(f)
+
+
+def _getcallargs(sig: inspect.Signature, *args, **kwargs) -> types.MappingProxyType:
+    ba = sig.bind(*args, **kwargs)
+    ba.apply_defaults()
+    return types.MappingProxyType(ba.arguments)
+
+
 def with_context(**context):
     global event_context
 
@@ -273,9 +304,11 @@ def with_verbosity(f):
 
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
-        host = args[2] if len(args) >= 3 else kwargs.get('host', None)
-        caplevel = args[3] if len(args) >= 4 else kwargs.get('caplevel', 2)
-        context = dict(verbose=True, verbosity=(caplevel + 1))
+        sig = _getsignature(f)
+        callargs = _getcallargs(sig, *args, **kwargs)
+        host = callargs.get('host')
+        caplevel = callargs.get('caplevel')
+        context = {'verbose': True, 'verbosity': (caplevel + 1)}
         if host is not None:
             context['remote_addr'] = host
         with event_context.set_local(**context):
@@ -290,8 +323,14 @@ def display_with_context(f):
 
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
-        log_only = args[5] if len(args) >= 6 else kwargs.get('log_only', False)
-        stderr = args[3] if len(args) >= 4 else kwargs.get('stderr', False)
+        if _ANSIBLE_214 and multiprocessing_context.parent_process() is not None:
+            # core 2.14 and newer proxy display, return if we are in a fork
+            return f(*args, **kwargs)
+
+        sig = _getsignature(f)
+        callargs = _getcallargs(sig, *args, **kwargs)
+        log_only = callargs.get('log_only')
+        stderr = callargs.get('stderr')
         event_uuid = event_context.get().get('uuid', None)
         with event_context.display_lock:
             # If writing only to a log file or there is already an event UUID

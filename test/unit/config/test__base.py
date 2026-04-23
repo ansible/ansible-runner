@@ -327,6 +327,9 @@ def test_containerization_settings(tmp_path, runtime, mocker):
         '-v', '{}/.ssh/:/root/.ssh/'.format(str(tmp_path)),
     ]
 
+    if os.path.exists('/etc/ssh/ssh_known_hosts'):
+        expected_command_start.extend(['-v', '/etc/ssh/:/etc/ssh/'])
+
     if runtime == 'podman':
         expected_command_start.extend(['--group-add=root', '--ipc=host'])
 

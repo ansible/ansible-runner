@@ -9,19 +9,16 @@ jobs:
   sanity:
     name: ${{ matrix.test.name }}
     runs-on: ubuntu-22.04
-    container:
-      image: quay.io/ansible/ansible-runner-test-container:2.0.0
-      env:
-        PIP_CACHE_DIR: ${{ runner.temp }}/.cache/pip
-        PY_COLORS: 1
-        TOXENV: ${{ matrix.test.tox_env }}
+    env:
+      TOXENV: ${{ matrix.test.tox_env }}
+      PY_COLORS: 1
 
     strategy:
       fail-fast: false
       matrix:
         test:
           - name: Lint
-            tox_env: linters
+            tox_env: linters-py38
 
           - name: Docs
             tox_env: docs
@@ -29,6 +26,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Install Python 3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install tox
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install "tox<4.0.0"
 
       - name: Create tox environment
         run: tox --notest
@@ -93,12 +100,9 @@ jobs:
   unit:
     name: Unit - ${{ matrix.py_version.name}}
     runs-on: ubuntu-22.04
-    container:
-      image: quay.io/ansible/ansible-runner-test-container:2.0.0
-      env:
-        PIP_CACHE_DIR: ${{ runner.temp }}/.cache/pip
-        TOXENV: ${{ matrix.py_version.tox_env }}
-        PY_COLORS: 1
+    env:
+      TOXENV: ${{ matrix.py_version.tox_env }}
+      PY_COLORS: 1
 
     strategy:
       fail-fast: false
@@ -116,6 +120,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Install Python ${{ matrix.py_version.name }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.py_version.name }}
+
+      - name: Install tox
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install "tox<4.0.0"
 
       - name: Create tox environment
         run: tox --notest

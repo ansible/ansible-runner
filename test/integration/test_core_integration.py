@@ -6,8 +6,8 @@ from ansible_runner.interface import run
 
 TEST_BRANCHES = (
     'milestone',
-    'stable-2.19',   # current stable
-    'stable-2.18',   # stable - 1
+    'stable-2.21',   # current stable
+    'stable-2.20',   # stable - 1
 )
 
 

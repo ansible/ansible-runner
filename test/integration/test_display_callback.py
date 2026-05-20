@@ -26,6 +26,8 @@ def executor(tmp_path, request):
     envvars["ANSIBLE_DEPRECATION_WARNINGS"] = "False"
     # python interpreter used is not of much interest, we really want to silence warnings
     envvars['ANSIBLE_PYTHON_INTERPRETER'] = 'auto_silent'
+    # For Ansible 2.21+, we need this to get 'invocation' args for some tests (e.g., test_module_level_no_log)
+    envvars['ANSIBLE_INJECT_INVOCATION'] = "True"
 
     inventory = 'localhost ansible_connection=local ansible_python_interpreter="{{ ansible_playbook_python }}"'
 

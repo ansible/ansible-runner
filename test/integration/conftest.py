@@ -146,9 +146,11 @@ def container_image(request, cli, tmp_path):  # pylint: disable=W0621
 def container_image_devel(request, cli, tmp_path):  # pylint: disable=W0621
     branch = request.getfixturevalue('branch')
 
+    # ansible-core > 2.21 requires python 3.13 or higher
     DOCKERFILE = f"""
 FROM quay.io/centos/centos:stream10
-RUN dnf install -y python3-pip
+RUN dnf install -y python3.14 python3.14-pip
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.14 10
 RUN python3 -m pip install 'ansible-core @ https://github.com/ansible/ansible/archive/{branch}.tar.gz'
 RUN mkdir -p /runner/{{env,inventory,project,artifacts}} /home/runner/.ansible/tmp
 RUN chmod -R 777 /runner /home/runner

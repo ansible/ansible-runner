@@ -282,7 +282,24 @@ def test_container_volume_mounting_with_Z(tmp_path, mocker):
         raise Exception(f'Could not find expected mount, args: {new_args}')
 
 
-@pytest.mark.parametrize('runtime', ('docker', 'podman'))
+def test_container_runtime_recognized_as_containerized(tmp_path):
+    rc = BaseConfig(
+        private_data_dir=str(tmp_path),
+        process_isolation=True,
+        process_isolation_executable='container',
+        container_image='my_container',
+        ident='foo',
+    )
+
+    rc.prepare_env()
+
+    assert rc.containerized is True
+    assert rc.container_name == 'ansible_runner_foo'
+    assert rc.env['AWX_ISOLATED_DATA_DIR'] == '/runner/artifacts/foo'
+    assert rc.env.get('ANSIBLE_UNSAFE_WRITES') is None
+
+
+@pytest.mark.parametrize('runtime', ('docker', 'podman', 'container'))
 def test_containerization_settings(tmp_path, runtime, mocker):
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()
@@ -306,8 +323,12 @@ def test_containerization_settings(tmp_path, runtime, mocker):
     extra_container_args = []
     if runtime == 'podman':
         extra_container_args = ['--quiet']
+    elif runtime == 'container':
+        extra_container_args = [f'--user={os.getuid()}:{os.getgid()}']
     else:
         extra_container_args = [f'--user={os.getuid()}']
+
+    mount_suffix = '/:Z' if runtime in ('docker', 'podman') else '/'
 
     expected_command_start = [
         runtime,
@@ -328,8 +349,8 @@ def test_containerization_settings(tmp_path, runtime, mocker):
         expected_command_start.extend(['--group-add=root', '--ipc=host'])
 
     expected_command_start.extend([
-        '-v', f'{rc.private_data_dir}/artifacts/:/runner/artifacts/:Z',
-        '-v', f'{rc.private_data_dir}/:/runner/:Z',
+        '-v', f'{rc.private_data_dir}/artifacts/:/runner/artifacts{mount_suffix}',
+        '-v', f'{rc.private_data_dir}/:/runner{mount_suffix}',
         '-v', '/host1:/container1',
         '-v', 'host2:/container2',
         '--env-file', f'{rc.artifact_dir}/env.list',
@@ -345,7 +366,7 @@ def test_containerization_settings(tmp_path, runtime, mocker):
     assert expected_command_start == rc.command
 
 
-@pytest.mark.parametrize('runtime', ('docker', 'podman'))
+@pytest.mark.parametrize('runtime', ('docker', 'podman', 'container'))
 def test_containerization_unsafe_write_setting(tmp_path, runtime, mocker):
     mock_containerized = mocker.patch('ansible_runner.config._base.BaseConfig.containerized', new_callable=mocker.PropertyMock)
 
@@ -366,6 +387,7 @@ def test_containerization_unsafe_write_setting(tmp_path, runtime, mocker):
     expected = {
         'docker': None,
         'podman': '1',
+        'container': None,
     }
 
     assert rc.env.get('ANSIBLE_UNSAFE_WRITES') == expected[runtime]

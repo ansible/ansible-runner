@@ -238,36 +238,51 @@ class Runner:
                     'stderr': error_fd,
                     'universal_newlines': True,
                 }
-                if subprocess_timeout is not None:
-                    kwargs.update({'timeout': subprocess_timeout})
 
-                proc_out = run_subprocess(command, check=True, **kwargs)
+                proc = Popen(command, **kwargs)
+                job_start = time.time()
 
-                stdout_response = proc_out.stdout
-                stderr_response = proc_out.stderr
-                self.rc = proc_out.returncode
-            except CalledProcessError as exc:
-                logger.debug("%s execution failed, returncode: %s, output: %s, stdout: %s, stderr: %s",
-                             exc.cmd, exc.returncode, exc.output, exc.stdout, exc.stderr)
-                self.rc = exc.returncode
-                self.errored = True
-                stdout_response = exc.stdout
-                stderr_response = exc.stderr
-            except TimeoutExpired as exc:
-                logger.debug("%s execution timedout, timeout: %s, output: %s, stdout: %s, stderr: %s",
-                             exc.cmd, exc.timeout, exc.output, exc.stdout, exc.stderr)
-                self.rc = 254
-                stdout_response = exc.stdout
-                stderr_response = exc.stderr
-                self.timed_out = True
+                while True:
+                    try:
+                        stdout_response, stderr_response = proc.communicate(timeout=0.1)
+                        self.rc = proc.returncode
+                        if self.rc != 0:
+                            self.errored = True
+                        break
+                    except TimeoutExpired as exc:
+                        stdout_response = exc.stdout
+                        stderr_response = exc.stderr
+
+                        if self.cancel_callback:
+                            try:
+                                self.canceled = self.cancel_callback()
+                            except Exception as e:
+                                stdout_handle.close()
+                                stderr_handle.close()
+                                raise CallbackError(f"Exception in Cancel Callback: {e}") from e
+
+                        if (
+                            subprocess_timeout is not None
+                            and not self.canceled
+                            and (time.time() - job_start) > subprocess_timeout
+                        ):
+                            self.timed_out = True
+
+                        if self.canceled or self.timed_out or self.errored:
+                            self.kill_container()
+                            Runner.handle_termination(proc.pid)
+                            try:
+                                stdout_response, stderr_response = proc.communicate(timeout=1)
+                            except TimeoutExpired as final_exc:
+                                stdout_response = final_exc.stdout
+                                stderr_response = final_exc.stderr
+                            self.rc = 254
+                            break
             except Exception as exc:
                 stderr_response = traceback.format_exc()
                 self.rc = 254
                 self.errored = True
                 logger.debug("received exception: %s", exc)
-
-            if self.timed_out or self.errored:
-                self.kill_container()
 
             if stdout_response is not None:
                 if isinstance(stdout_response, bytes):

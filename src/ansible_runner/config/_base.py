@@ -162,7 +162,7 @@ class BaseConfig:
 
         os.makedirs(self.artifact_dir, exist_ok=True, mode=0o700)
 
-    _CONTAINER_ENGINES = ('docker', 'podman')
+    _CONTAINER_ENGINES = ('docker', 'podman', 'container')
 
     @property
     def containerized(self):
@@ -501,6 +501,9 @@ class BaseConfig:
                                        execution_mode: BaseExecutionMode,
                                        cmdline_args: list[str]
                                        ) -> list[str]:
+        runtime = self.process_isolation_executable
+        supports_selinux_mount_labels = runtime in ('docker', 'podman')
+
         new_args = [self.process_isolation_executable]
         new_args.extend(['run', '--rm'])
 
@@ -532,7 +535,7 @@ class BaseConfig:
             # Handle automounts for .ssh config
             self._handle_automounts(new_args)
 
-            if 'podman' in self.process_isolation_executable:
+            if runtime == 'podman':
                 # container namespace stuff
                 new_args.extend(["--group-add=root"])
                 new_args.extend(["--ipc=host"])
@@ -548,7 +551,7 @@ class BaseConfig:
             self._update_volume_mount_paths(new_args,
                                             f"{self.private_data_dir}/artifacts",
                                             dst_mount_path="/runner/artifacts",
-                                            labels=":Z")
+                                            labels=":Z" if supports_selinux_mount_labels else None)
 
         else:
             subdir_path = os.path.join(self.private_data_dir, 'artifacts')
@@ -557,12 +560,22 @@ class BaseConfig:
 
         # Mount the entire private_data_dir
         # custom show paths inside private_data_dir do not make sense
-        self._update_volume_mount_paths(new_args, self.private_data_dir, dst_mount_path="/runner", labels=":Z")
+        self._update_volume_mount_paths(
+            new_args,
+            self.private_data_dir,
+            dst_mount_path="/runner",
+            labels=":Z" if supports_selinux_mount_labels else None,
+        )
 
         if self.container_auth_data:
             # Pull in the necessary registry auth info, if there is a container cred
+            if runtime == 'container':
+                raise ConfigurationError(
+                    'container_auth_data is not yet supported when '
+                    'process_isolation_executable=container'
+                )
             self.registry_auth_path, registry_auth_conf_file = self._generate_container_auth_dir(self.container_auth_data)
-            if 'podman' in self.process_isolation_executable:
+            if runtime == 'podman':
                 new_args.extend([f"--authfile={self.registry_auth_path}"])
             else:
                 docker_idx = new_args.index(self.process_isolation_executable)
@@ -584,12 +597,14 @@ class BaseConfig:
         env_file_host = os.path.join(self.artifact_dir, 'env.list')
         new_args.extend(['--env-file', env_file_host])
 
-        if 'podman' in self.process_isolation_executable:
+        if runtime == 'podman':
             # docker doesnt support this option
             new_args.extend(['--quiet'])
 
-        if 'docker' in self.process_isolation_executable:
+        if runtime == 'docker':
             new_args.extend([f'--user={os.getuid()}'])
+        elif runtime == 'container':
+            new_args.extend([f'--user={os.getuid()}:{os.getgid()}'])
 
         new_args.extend(['--name', self.container_name])
 

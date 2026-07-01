@@ -62,7 +62,7 @@ def test_prepare_run_command_generic():
     assert rc.execution_mode == BaseExecutionMode.GENERIC_COMMANDS
 
 
-@pytest.mark.parametrize('runtime', ('docker', 'podman'))
+@pytest.mark.parametrize('runtime', ('docker', 'podman', 'container'))
 def test_prepare_run_command_with_containerization(tmp_path, runtime, mocker):
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)
     tmp_path.joinpath('.ssh').mkdir()
@@ -84,8 +84,12 @@ def test_prepare_run_command_with_containerization(tmp_path, runtime, mocker):
     extra_container_args = []
     if runtime == 'podman':
         extra_container_args = ['--quiet']
+    elif runtime == 'container':
+        extra_container_args = [f'--user={os.getuid()}:{os.getgid()}']
     else:
         extra_container_args = [f'--user={os.getuid()}']
+
+    mount_suffix = '/:Z' if runtime in ('docker', 'podman') else '/'
 
     expected_command_start = [
         runtime,
@@ -107,8 +111,8 @@ def test_prepare_run_command_with_containerization(tmp_path, runtime, mocker):
         expected_command_start.extend(['--group-add=root', '--ipc=host'])
 
     expected_command_start.extend([
-        '-v', f'{rc.private_data_dir}/artifacts/:/runner/artifacts/:Z',
-        '-v', f'{rc.private_data_dir}/:/runner/:Z',
+        '-v', f'{rc.private_data_dir}/artifacts/:/runner/artifacts{mount_suffix}',
+        '-v', f'{rc.private_data_dir}/:/runner{mount_suffix}',
         '--env-file', f'{rc.artifact_dir}/env.list',
     ])
 
@@ -126,7 +130,7 @@ def test_prepare_run_command_with_containerization(tmp_path, runtime, mocker):
     assert expected_command_start == rc.command
 
 
-@pytest.mark.parametrize('runtime', ('docker', 'podman'))
+@pytest.mark.parametrize('runtime', ('docker', 'podman', 'container'))
 @pytest.mark.parametrize(
     ('stdin_is_tty', 'stdout_is_tty', 'expect_tty'),
     (

@@ -179,23 +179,20 @@ def cleanup_images(images: list, runtime: str) -> int:
     return rm_ct
 
 
-def prune_images(runtime: str, retries: int = 1, retry_interval: float | int = .5) -> bool:
-    """Run the prune images command and return changed status"""
-    retries = max(retries, 0)
-    count = retries + 1
-    while True:
+def prune_images(runtime: str) -> bool:
+    """
+    Run the prune images command.
+
+    Since stopped containers may not be removed immediately, just try again, a couple of seconds max.
+    """
+    for attempt in range(1, 5):
         try:
-            stdout = run_command([runtime, 'image', 'prune', '-f'])
-            if not stdout or stdout == "Total reclaimed space: 0B":
-                return False
-            return True
-        except RuntimeError as e:
-            # Image pruning can fail if a container exists that used an image. Since stopped
-            # containers may not be removed immediately, we might need to just try again.
-            count -= 1
-            time.sleep(retry_interval)
-            if count == 0:
-                raise e
+            run_command([runtime, 'image', 'prune', '-f'])
+        except RuntimeError:
+            if attempt == 4:
+                raise
+            time.sleep(.5)
+    return True
 
 
 def run_cleanup(vargs: dict) -> None:

@@ -30,6 +30,9 @@ All aspects of running **Ansible Runner** in standalone mode (see: :ref:`standal
 are true here with the exception that the process isolation is inherently a
 container runtime (`podman <https://podman.io/>`_ by default).
 
+If the selected runtime is Apple Container, see :ref:`apple_container` for the
+runtime-specific authentication model, lifecycle behavior, and known trade-offs.
+
 Using Execution Environments from Protected Registries
 ------------------------------------------------------
 
@@ -43,12 +46,18 @@ file is another way to ensure a successful pull of a protected execution environ
 Note that this involves listing sensitive information in a file which will not automatically get cleaned
 up after the job run is complete.
 
+For Apple Container this differs: the supported approach is to authenticate first
+with ``container registry login <registry>``. See :ref:`apple_container`.
+
 When running a job remotely via AWX, Ansible Runner can pick up the authentication
 information from the Container Registry Credential that was provided by the user. The ``host``,
 ``username``, ``password``, and ``verify_ssl`` inputs from the credential are passed into Ansible Runner via the ``container_auth_data``
 dictionary as key word arguments into a ``json`` file which gets deleted at the end of the job run (even if
 the job was cancelled/interrupted), enabling the bypassing of sensitive information from any potentially
 persistent job-related files.
+
+Apple Container does not use this same per-run auth-file injection model. See
+:ref:`apple_container`.
 
 Notes and Considerations
 ------------------------

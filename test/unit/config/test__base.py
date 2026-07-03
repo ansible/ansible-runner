@@ -299,6 +299,30 @@ def test_container_runtime_recognized_as_containerized(tmp_path):
     assert rc.env.get('ANSIBLE_UNSAFE_WRITES') is None
 
 
+def test_container_auth_requires_preexisting_login(tmp_path):
+    rc = BaseConfig(
+        private_data_dir=str(tmp_path),
+        process_isolation=True,
+        process_isolation_executable='container',
+        container_image='my_container',
+        container_auth_data={
+            'host': 'registry.example.com',
+            'username': 'alice',
+            'password': 'secret',
+        },
+        ident='foo',
+    )
+    rc.cmdline_args = ['main.yaml']
+    rc.command = ['ansible-playbook', 'main.yaml']
+    rc.runner_mode = 'pexpect'
+    rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
+
+    rc.prepare_env()
+
+    with pytest.raises(ConfigurationError, match="container registry login registry.example.com"):
+        rc.handle_command_wrap(rc.execution_mode, rc.cmdline_args)
+
+
 @pytest.mark.parametrize('runtime', ('docker', 'podman', 'container'))
 def test_containerization_settings(tmp_path, runtime, mocker):
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)

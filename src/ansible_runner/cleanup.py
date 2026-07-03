@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import datetime
 import glob
+import json
 import os
 import signal
 import subprocess
@@ -36,7 +37,7 @@ def add_cleanup_args(command: argparse.ArgumentParser) -> None:
     command.add_argument(
         "--remove-images",
         nargs='*',
-        help="A comma separated list of podman or docker tags to delete. "
+        help="A comma separated list of podman, docker, or container tags to delete. "
              "This may not remove the corresponding layers, use the image-prune option to assure full deletion. "
              "Example: --remove-images=quay.io/user/image:devel quay.io/user/builder:latest"
     )
@@ -51,13 +52,13 @@ def add_cleanup_args(command: argparse.ArgumentParser) -> None:
     command.add_argument(
         "--image-prune",
         action="store_true",
-        help="If specified, will run docker / podman image prune --force. "
+        help="If specified, will run docker / podman / container image prune. "
              "This will only run after untagging."
     )
     command.add_argument(
         "--process-isolation-executable",
         default="podman",
-        help="The container image to clean up images for (default=podman)"
+        help="The container runtime to clean up images for (default=podman)"
     )
 
 
@@ -160,6 +161,21 @@ def cleanup_images(images: list, runtime: str) -> int:
     NOTE: this only untag the image and does not delete the image prune_images need to be call to delete
     """
     rm_ct = 0
+    if runtime == 'container':
+        stdout = run_command([runtime, 'image', 'list', '--format', 'json'])
+        discovered_images = json.loads(stdout) if stdout else []
+        known_references = {
+            image.get('configuration', {}).get('name')
+            for image in discovered_images
+            if isinstance(image, dict)
+        }
+        for image_tag in images:
+            if image_tag not in known_references:
+                continue
+            run_command([runtime, 'image', 'delete', image_tag])
+            rm_ct += 1
+        return rm_ct
+
     for image_tag in images:
         stdout = run_command([runtime, 'images', '--format="{{.Repository}}:{{.Tag}}"', image_tag])
         if not stdout:
@@ -180,6 +196,9 @@ def cleanup_images(images: list, runtime: str) -> int:
 
 def prune_images(runtime: str) -> bool:
     """Run the prune images command and return changed status"""
+    if runtime == 'container':
+        stdout = run_command([runtime, 'image', 'prune', '--all'])
+        return bool(stdout)
     stdout = run_command([runtime, 'image', 'prune', '-f'])
     if not stdout or stdout == "Total reclaimed space: 0B":
         return False

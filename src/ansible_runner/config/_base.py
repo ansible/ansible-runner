@@ -570,9 +570,13 @@ class BaseConfig:
         if self.container_auth_data:
             # Pull in the necessary registry auth info, if there is a container cred
             if runtime == 'container':
+                host = self.container_auth_data.get('host')
+                registry = host or '<registry>'
                 raise ConfigurationError(
-                    'container_auth_data is not yet supported when '
-                    'process_isolation_executable=container'
+                    "Automatic registry authentication management is not supported when "
+                    "process_isolation_executable=container. "
+                    f"Please authenticate first with 'container registry login {registry}' "
+                    "and retry."
                 )
             self.registry_auth_path, registry_auth_conf_file = self._generate_container_auth_dir(self.container_auth_data)
             if runtime == 'podman':

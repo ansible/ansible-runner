@@ -85,6 +85,10 @@ list of arguments accepted by ``ansible-runner``::
 
   $ ansible-runner --help
 
+If the selected execution-environment runtime is Apple Container, see
+:ref:`apple_container` for runtime-specific differences such as authentication,
+mount-label handling, and lifecycle behavior.
+
 Running with Directory Isolation
 --------------------------------
 

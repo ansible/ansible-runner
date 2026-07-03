@@ -83,7 +83,9 @@ which would could be used to assure cleanup of paths created by commands like
 ``ansible-runner worker --private_data_dir=/tmp/foo_3``, for example.
 NOTE: see the ``--grace-period`` option, which sets the time window.
 
-This command also takes a ``--remove-images`` option to run the podman or docker ``rmi`` command.
+This command also takes a ``--remove-images`` option to remove tagged images for
+the selected runtime. For Apple Container-specific lifecycle behavior, see
+:ref:`apple_container`.
 There is otherwise no automatic cleanup of images used by a run,
 even if ``container_auth_data`` is used to pull from a private container registry.
 To be sure that layers are deleted as well, the ``--image-prune`` flag is necessary.

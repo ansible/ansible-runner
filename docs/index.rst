@@ -42,6 +42,7 @@ Examples of this could include:
    standalone
    python_interface
    execution_environments
+   apple_container
    remote_jobs
    modules
 

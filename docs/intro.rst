@@ -165,6 +165,9 @@ To execute **Runner** with an execution environment:
 
 See ``ansible-runner -h`` for other container-related options.
 
+If Apple Container is used as the execution-environment runtime, see
+:ref:`apple_container` for runtime-specific authentication and lifecycle notes.
+
 Inventory
 ---------
 

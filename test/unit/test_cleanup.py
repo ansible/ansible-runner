@@ -2,10 +2,12 @@ import os
 import pathlib
 import random
 import time
+import json
 
 import pytest
 
 from ansible_runner.cleanup import cleanup_dirs, validate_pattern
+from ansible_runner.cleanup import cleanup_images, prune_images
 from ansible_runner.config.runner import RunnerConfig
 
 
@@ -71,6 +73,41 @@ def test_registry_auth_cleanup(tmp_path, runtime):
 
     assert not os.path.exists(private_data_dir)
     assert not os.path.exists(rc.registry_auth_path)
+
+
+def test_cleanup_images_container(mocker):
+    run_command = mocker.patch("ansible_runner.cleanup.run_command")
+    run_command.side_effect = [
+        json.dumps(
+            [
+                {
+                    "configuration": {"name": "registry.example.com/ns/image:latest"},
+                    "id": "sha256:abc",
+                },
+            ],
+        ),
+        "",
+    ]
+
+    removed = cleanup_images(["registry.example.com/ns/image:latest"], runtime="container")
+
+    assert removed == 1
+    assert run_command.call_args_list[0].args[0] == ["container", "image", "list", "--format", "json"]
+    assert run_command.call_args_list[1].args[0] == [
+        "container",
+        "image",
+        "delete",
+        "registry.example.com/ns/image:latest",
+    ]
+
+
+def test_prune_images_container(mocker):
+    run_command = mocker.patch("ansible_runner.cleanup.run_command", return_value="untagged registry.example.com/ns/image:latest")
+
+    changed = prune_images(runtime="container")
+
+    assert changed is True
+    run_command.assert_called_once_with(["container", "image", "prune", "--all"])
 
 
 @pytest.mark.parametrize(

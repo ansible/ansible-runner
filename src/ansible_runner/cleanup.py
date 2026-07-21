@@ -7,6 +7,7 @@ import os
 import signal
 import subprocess
 import sys
+import time
 
 from pathlib import Path
 from tempfile import gettempdir
@@ -179,10 +180,18 @@ def cleanup_images(images: list, runtime: str) -> int:
 
 
 def prune_images(runtime: str) -> bool:
-    """Run the prune images command and return changed status"""
-    stdout = run_command([runtime, 'image', 'prune', '-f'])
-    if not stdout or stdout == "Total reclaimed space: 0B":
-        return False
+    """
+    Run the prune images command.
+
+    Since stopped containers may not be removed immediately, just try again, a couple of seconds max.
+    """
+    for attempt in range(1, 5):
+        try:
+            run_command([runtime, 'image', 'prune', '-f'])
+        except RuntimeError:
+            if attempt == 4:
+                raise
+            time.sleep(.5)
     return True
 
 

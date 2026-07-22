@@ -19,7 +19,9 @@ runs:
   using: composite
   steps:
   - name: Set the runner container image reference for testing
-    if: fromJSON(inputs.calling-job-context).toxenv == 'integration'
+    if: >-
+      contains(fromJSON('["integration", "integration-devel"]'),
+      fromJSON(inputs.calling-job-context).toxenv)
     env:
       RUNNER_TEST_IMAGE_NAME: ansible-runner-gha${{ github.run_id }}-event-test
     run: >-

@@ -144,6 +144,11 @@ def container_image(request, cli, tmp_path):  # pylint: disable=W0621
 
 @pytest.fixture
 def container_image_devel(request, cli, tmp_path):  # pylint: disable=W0621
+    """
+    Unlike the `container_image` fixture, we do not honor RUNNER_TEST_IMAGE_NAME here because
+    we want to make sure we always use the inline Dockerfile which is specific to the tests
+    in test_core_integration.py.
+    """
     branch = request.getfixturevalue('branch')
 
     # ansible-core > 2.21 requires python 3.13 or higher
@@ -167,10 +172,6 @@ CMD ["ansible", "--version"]
     except Exception:
         # Test func doesn't use containerized
         pass
-
-    if (env_image_name := os.getenv('RUNNER_TEST_IMAGE_NAME')):
-        yield env_image_name
-        return
 
     runtime = request.getfixturevalue('runtime')
     dockerfile_path = tmp_path / 'Dockerfile'

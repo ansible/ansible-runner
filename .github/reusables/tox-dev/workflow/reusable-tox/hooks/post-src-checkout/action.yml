@@ -19,12 +19,16 @@ runs:
   using: composite
   steps:
   - name: Build a wheel
-    if: fromJSON(inputs.calling-job-context).toxenv == 'integration'
+    if: >-
+      contains(fromJSON('["integration", "integration-devel"]'),
+      fromJSON(inputs.calling-job-context).toxenv)
     run: python3 -Im pip wheel --no-deps --wheel-dir=dist/ .
     shell: bash
 
   - name: Build a runner test container via docker
-    if: fromJSON(inputs.calling-job-context).toxenv == 'integration'
+    if: >-
+      contains(fromJSON('["integration", "integration-devel"]'),
+      fromJSON(inputs.calling-job-context).toxenv)
     run: >-
       docker build
       --build-arg "WHEEL=$(basename dist/ansible_runner*.whl)"
@@ -35,7 +39,9 @@ runs:
     shell: bash
 
   - name: Build a runner test container via podman
-    if: fromJSON(inputs.calling-job-context).toxenv == 'integration'
+    if: >-
+      contains(fromJSON('["integration", "integration-devel"]'),
+      fromJSON(inputs.calling-job-context).toxenv)
     run: >-
       podman build
       --build-arg "WHEEL=$(basename dist/ansible_runner*.whl)"

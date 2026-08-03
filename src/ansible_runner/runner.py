@@ -550,27 +550,3 @@ class Runner:
             os.remove(pidfile)
         except (TypeError, OSError):
             pass
-
-    def get_fact_cache(self, host):
-        '''
-        Get the entire fact cache only if the fact_cache_type is 'jsonfile'
-        '''
-        if self.config.fact_cache_type != 'jsonfile':
-            raise Exception('Unsupported fact cache type.  Only "jsonfile" is supported for reading and writing facts from ansible-runner')
-        fact_cache = os.path.join(self.config.fact_cache, host)
-        if os.path.exists(fact_cache):
-            with open(fact_cache) as f:
-                return json.loads(f.read())
-        return {}
-
-    def set_fact_cache(self, host, data):
-        '''
-        Set the entire fact cache data only if the fact_cache_type is 'jsonfile'
-        '''
-        if self.config.fact_cache_type != 'jsonfile':
-            raise Exception('Unsupported fact cache type.  Only "jsonfile" is supported for reading and writing facts from ansible-runner')
-        fact_cache = os.path.join(self.config.fact_cache, host)
-        if not os.path.exists(os.path.dirname(fact_cache)):
-            os.makedirs(os.path.dirname(fact_cache), mode=0o700)
-        with open(fact_cache, 'w') as f:
-            return f.write(json.dumps(data))

@@ -38,6 +38,7 @@ Examples of this could include:
    intro
    install
    community
+   porting_guides/porting_guide
    external_interface
    standalone
    python_interface

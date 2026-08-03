@@ -197,13 +197,6 @@ class RunnerConfig(BaseConfig):
             else:
                 self.cwd = self.project_dir
 
-        if 'fact_cache' in self.settings:
-            if 'fact_cache_type' in self.settings:
-                if self.settings['fact_cache_type'] == 'jsonfile':
-                    self.fact_cache = os.path.join(self.artifact_dir, self.settings['fact_cache'])
-            else:
-                self.fact_cache = os.path.join(self.artifact_dir, self.settings['fact_cache'])
-
         if self.roles_path:
             if isinstance(self.roles_path, list):
                 self.env['ANSIBLE_ROLES_PATH'] = ':'.join(self.roles_path)

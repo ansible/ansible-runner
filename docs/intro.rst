@@ -141,8 +141,6 @@ The **settings** file is a little different than the other files provided in thi
 
 * ``suppress_output_file``: ``False`` Allow output from ansible to not be streamed to the ``stdout`` or ``stderr`` files inside of the artifacts directory.
 * ``suppress_ansible_output``: ``False`` Allow output from ansible to not be printed to the screen.
-* ``fact_cache``: ``'fact_cache'`` The directory relative to ``artifacts`` where ``jsonfile`` fact caching will be stored.  Defaults to ``fact_cache``.  This is ignored if ``fact_cache_type`` is different than ``jsonfile``.
-* ``fact_cache_type``: ``'jsonfile'`` The type of fact cache to use.  Defaults to ``jsonfile``.
 
 Process Isolation Settings for Runner
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -219,8 +217,6 @@ The artifact directory itself contains a particular structure that provides a lo
     .
     ├── artifacts
     │   └── 37f639a3-1f4f-4acb-abee-ea1898013a25
-    │       ├── fact_cache
-    │       │   └── localhost
     │       ├── job_events
     │       │   ├── 1-34437b34-addd-45ae-819a-4d8c9711e191.json
     │       │   ├── 2-8c164553-8573-b1e0-76e1-000000000006.json

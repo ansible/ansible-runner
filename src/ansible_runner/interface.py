@@ -202,9 +202,6 @@ def run(**kwargs):
     :param list container_options: List of container options to pass to execution engine.
     :param str directory_isolation_base_path: An optional path will be used as the base path to create a temp directory, the project contents will be
                                           copied to this location which will then be used as the working directory during playbook execution.
-    :param str fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
-                       This is only used for 'jsonfile' type fact caches.
-    :param str fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
     :param bool omit_event_data: Omits extra ansible event data from event payload (stdout and event still included)
     :param bool only_failed_event_data: Omits extra ansible event data unless it's a failed event (stdout and event still included)
     :param bool check_job_event_data: Check if job events data is completely generated. If event data is not completely generated and if
@@ -294,9 +291,6 @@ def run_command(executable_cmd, cmdline_args=None, **kwargs):
     :param list container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
     :param list container_options: List of container options to pass to execution engine.
     :param str container_workdir: The working directory within the container.
-    :param str fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
-                       This is only used for 'jsonfile' type fact caches.
-    :param str fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
     :param str private_data_dir: The directory containing all runner metadata needed to invoke the runner
                              module. Output artifacts will also be stored here for later consumption.
     :param str ident: The run identifier for this invocation of Runner. Will be used to create and name
@@ -398,9 +392,6 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format=None, snippe
     :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
     :param container_options: List of container options to pass to execution engine.
     :param container_workdir: The working directory within the container.
-    :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
-                       This is only used for 'jsonfile' type fact caches.
-    :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
     :param private_data_dir: The directory containing all runner metadata needed to invoke the runner
                              module. Output artifacts will also be stored here for later consumption.
     :param ident: The run identifier for this invocation of Runner. Will be used to create and name
@@ -428,8 +419,6 @@ def get_plugin_docs(plugin_names, plugin_type=None, response_format=None, snippe
     :type private_data_dir: str
     :type project_dir: str
     :type artifact_dir: str
-    :type fact_cache_type: str
-    :type fact_cache: str
     :type process_isolation: bool
     :type process_isolation_executable: str
     :type container_image: str
@@ -516,9 +505,6 @@ def get_plugin_list(list_files=None, response_format=None, plugin_type=None, pla
     :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
     :param container_options: List of container options to pass to execution engine.
     :param container_workdir: The working directory within the container.
-    :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
-                       This is only used for 'jsonfile' type fact caches.
-    :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
     :param private_data_dir: The directory containing all runner metadata needed to invoke the runner
                              module. Output artifacts will also be stored here for later consumption.
     :param ident: The run identifier for this invocation of Runner. Will be used to create and name
@@ -545,8 +531,6 @@ def get_plugin_list(list_files=None, response_format=None, plugin_type=None, pla
     :type private_data_dir: str
     :type project_dir: str
     :type artifact_dir: str
-    :type fact_cache_type: str
-    :type fact_cache: str
     :type process_isolation: bool
     :type process_isolation_executable: str
     :type container_image: str
@@ -637,9 +621,6 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
     :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
     :param container_options: List of container options to pass to execution engine.
     :param container_workdir: The working directory within the container.
-    :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
-                       This is only used for 'jsonfile' type fact caches.
-    :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
     :param private_data_dir: The directory containing all runner metadata needed to invoke the runner
                              module. Output artifacts will also be stored here for later consumption.
     :param ident: The run identifier for this invocation of Runner. Will be used to create and name
@@ -669,8 +650,6 @@ def get_inventory(action, inventories, response_format=None, host=None, playbook
     :type private_data_dir: str
     :type project_dir: str
     :type artifact_dir: str
-    :type fact_cache_type: str
-    :type fact_cache: str
     :type process_isolation: bool
     :type process_isolation_executable: str
     :type container_image: str
@@ -752,9 +731,6 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     :param container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir:labels. (default: None)
     :param container_options: List of container options to pass to execution engine.
     :param container_workdir: The working directory within the container.
-    :param fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
-                       This is only used for 'jsonfile' type fact caches.
-    :param fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
     :param private_data_dir: The directory containing all runner metadata needed to invoke the runner
                              module. Output artifacts will also be stored here for later consumption.
     :param ident: The run identifier for this invocation of Runner. Will be used to create and name
@@ -778,8 +754,6 @@ def get_ansible_config(action, config_file=None, only_changed=None, **kwargs):
     :type private_data_dir: str
     :type project_dir: str
     :type artifact_dir: str
-    :type fact_cache_type: str
-    :type fact_cache: str
     :type process_isolation: bool
     :type process_isolation_executable: str
     :type container_image: str
@@ -857,9 +831,6 @@ def get_role_list(collection=None, playbook_dir=None, **kwargs):
     :param list container_volume_mounts: List of bind mounts in the form ``host_dir:/container_dir:labels``. (default: None)
     :param list container_options: List of container options to pass to execution engine.
     :param str container_workdir: The working directory within the container.
-    :param str fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
-                       This is only used for 'jsonfile' type fact caches.
-    :param str fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
     :param str private_data_dir: The directory containing all runner metadata needed to invoke the runner
         module. Output artifacts will also be stored here for later consumption.
     :param str ident: The run identifier for this invocation of Runner. Will be used to create and name
@@ -935,9 +906,6 @@ def get_role_argspec(role, collection=None, playbook_dir=None, **kwargs):
     :param list container_volume_mounts: List of bind mounts in the form ``host_dir:/container_dir:labels``. (default: None)
     :param list container_options: List of container options to pass to execution engine.
     :param str container_workdir: The working directory within the container.
-    :param str fact_cache: A string that will be used as the name for the subdirectory of the fact cache in artifacts directory.
-                       This is only used for 'jsonfile' type fact caches.
-    :param str fact_cache_type: A string of the type of fact cache to use.  Defaults to 'jsonfile'.
     :param str private_data_dir: The directory containing all runner metadata needed to invoke the runner
         module. Output artifacts will also be stored here for later consumption.
     :param str ident: The run identifier for this invocation of Runner. Will be used to create and name

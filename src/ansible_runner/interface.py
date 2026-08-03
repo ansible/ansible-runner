@@ -190,11 +190,15 @@ def run(**kwargs):
     :param bool process_isolation: Enable process isolation, using either a container engine (e.g. podman) or a sandbox (e.g. bwrap).
     :param str process_isolation_executable: Process isolation executable or container engine used to isolate execution. (default: podman)
     :param str process_isolation_path: Path that an isolated playbook run will use for staging. (default: /tmp)
-    :param str or list process_isolation_hide_paths: A path or list of paths on the system that should be hidden from the playbook run.
-    :param str or list process_isolation_show_paths: A path or list of paths on the system that should be exposed to the playbook run.
-    :param str or list process_isolation_ro_paths: A path or list of paths on the system that should be exposed to the playbook run as read-only.
+    :param str or list process_isolation_hide_paths: A path or list of paths on the system that should be hidden
+        from the playbook run. (Only applies to bwrap)
+    :param str or list process_isolation_show_paths: A path or list of paths on the system that should be exposed
+        to the playbook run. (Only applies to bwrap)
+    :param str or list process_isolation_ro_paths: A path or list of paths on the system that should be exposed
+        to the playbook run as read-only. (Only applies to bwrap)
     :param str container_image: Container image to use when running an ansible task
-    :param list container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir. (default: None)
+    :param list container_volume_mounts: List of bind mounts in the form 'host_dir:/container_dir'. This should be
+        used instead of process_isolation_*_paths for container engines like Docker or Podman. (default: None)
     :param list container_options: List of container options to pass to execution engine.
     :param str directory_isolation_base_path: An optional path will be used as the base path to create a temp directory, the project contents will be
                                           copied to this location which will then be used as the working directory during playbook execution.

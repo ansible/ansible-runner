@@ -155,10 +155,11 @@ The process isolation settings are meant to control the process isolation featur
 * ``process_isolation_hide_paths``: ``None`` Path or list of paths on the system that should be hidden from the playbook run.
 * ``process_isolation_show_paths``: ``None`` Path or list of paths on the system that should be exposed to the playbook run.
 * ``process_isolation_ro_paths``: ``None`` Path or list of paths on the system that should be exposed to the playbook run as read-only.
+* ``process_isolation_hide_envvars``: ``None`` Name pattern, or list of name patterns, of environment variables to unset inside the isolated playbook run. Patterns use :mod:`fnmatch` syntax and are matched case-sensitively against the environment the run would otherwise inherit, so an application embedding **Runner** can keep its own credentials (for example ``*_TOKEN`` or ``DATABASE_URL``) out of the sandbox without having to sanitize its own process environment.
 * ``container_volume_mounts``: ``None`` List of volume mounts to use when running inside a container engine (Docker or Podman). This should be used instead of the ``process_isolation_*_paths`` options for container environments.
 
 .. note::
-   The path-specific process isolation settings (``process_isolation_hide_paths``, ``process_isolation_show_paths``, and ``process_isolation_ro_paths``) only apply when using ``bwrap`` (Bubblewrap). They are ignored when executing tasks inside container engines like Docker or Podman.
+   The path-specific process isolation settings (``process_isolation_hide_paths``, ``process_isolation_show_paths``, and ``process_isolation_ro_paths``) and ``process_isolation_hide_envvars`` only apply when using ``bwrap`` (Bubblewrap). They are ignored when executing tasks inside container engines like Docker or Podman.
 
 These settings instruct **Runner** to execute **Ansible** tasks inside a container environment.
 For information about building execution environments, see `ansible-builder <https://docs.ansible.com/projects/builder/en/latest/>`_.

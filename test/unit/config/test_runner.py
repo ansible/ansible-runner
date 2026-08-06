@@ -555,6 +555,54 @@ def test_bwrap_process_isolation_defaults(mocker):
     ]
 
 
+def test_bwrap_process_isolation_hide_envvars(mocker, monkeypatch):
+    """Patterns in process_isolation_hide_envvars are unset inside the sandbox."""
+    mocker.patch('os.makedirs', return_value=True)
+    monkeypatch.setenv('APP_API_TOKEN', 'secret')
+    monkeypatch.setenv('DATABASE_URL', 'postgres://user:pw@localhost/db')
+    monkeypatch.setenv('KEEP_ME', 'value')
+
+    rc = RunnerConfig('/')
+    rc.artifact_dir = '/tmp/artifacts'
+    rc.playbook = 'main.yaml'
+    rc.command = 'ansible-playbook'
+    rc.process_isolation = True
+    rc.process_isolation_executable = 'bwrap'
+    rc.process_isolation_hide_envvars = ['*_TOKEN', 'DATABASE_URL']
+
+    path_exists = mocker.patch('os.path.exists')
+    path_exists.return_value = True
+
+    rc.prepare()
+
+    assert '--unsetenv' in rc.command
+    unset = {rc.command[i + 1] for i, arg in enumerate(rc.command) if arg == '--unsetenv'}
+    assert unset == {'APP_API_TOKEN', 'DATABASE_URL'}
+    # The variable is only hidden from the sandbox, not from Runner itself.
+    assert rc.env['APP_API_TOKEN'] == 'secret'
+
+
+def test_bwrap_process_isolation_hide_envvars_accepts_a_string(mocker, monkeypatch):
+    mocker.patch('os.makedirs', return_value=True)
+    monkeypatch.setenv('APP_API_TOKEN', 'secret')
+
+    rc = RunnerConfig('/')
+    rc.artifact_dir = '/tmp/artifacts'
+    rc.playbook = 'main.yaml'
+    rc.command = 'ansible-playbook'
+    rc.process_isolation = True
+    rc.process_isolation_executable = 'bwrap'
+    rc.process_isolation_hide_envvars = '*_TOKEN'
+
+    path_exists = mocker.patch('os.path.exists')
+    path_exists.return_value = True
+
+    rc.prepare()
+
+    assert rc.command.count('--unsetenv') == 1
+    assert rc.command[rc.command.index('--unsetenv') + 1] == 'APP_API_TOKEN'
+
+
 def test_bwrap_process_isolation_and_directory_isolation(mocker, patch_private_data_dir, tmp_path):
     # pylint: disable=W0613
 

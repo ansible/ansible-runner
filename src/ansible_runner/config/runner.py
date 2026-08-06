@@ -19,6 +19,7 @@
 
 # pylint: disable=W0201
 
+import fnmatch
 import json
 import logging
 import os
@@ -67,7 +68,8 @@ class RunnerConfig(BaseConfig):
                  module=None, module_args=None, verbosity=None, host_pattern=None, binary=None,
                  extravars=None, suppress_output_file=False, suppress_ansible_output=False, process_isolation_path=None,
                  process_isolation_hide_paths=None, process_isolation_show_paths=None,
-                 process_isolation_ro_paths=None, tags=None, skip_tags=None,
+                 process_isolation_ro_paths=None, process_isolation_hide_envvars=None,
+                 tags=None, skip_tags=None,
                  directory_isolation_base_path=None, forks=None, cmdline=None, omit_event_data=False,
                  only_failed_event_data=False, **kwargs):
 
@@ -89,6 +91,7 @@ class RunnerConfig(BaseConfig):
         self.process_isolation_hide_paths = process_isolation_hide_paths
         self.process_isolation_show_paths = process_isolation_show_paths
         self.process_isolation_ro_paths = process_isolation_ro_paths
+        self.process_isolation_hide_envvars = process_isolation_hide_envvars
         self.directory_isolation_path = directory_isolation_base_path
         self.verbosity = verbosity
         self.suppress_output_file = suppress_output_file
@@ -186,6 +189,7 @@ class RunnerConfig(BaseConfig):
         self.process_isolation_hide_paths = self.settings.get('process_isolation_hide_paths', self.process_isolation_hide_paths)
         self.process_isolation_show_paths = self.settings.get('process_isolation_show_paths', self.process_isolation_show_paths)
         self.process_isolation_ro_paths = self.settings.get('process_isolation_ro_paths', self.process_isolation_ro_paths)
+        self.process_isolation_hide_envvars = self.settings.get('process_isolation_hide_envvars', self.process_isolation_hide_envvars)
         self.directory_isolation_path = self.settings.get('directory_isolation_base_path', self.directory_isolation_path)
         self.directory_isolation_cleanup = bool(self.settings.get('directory_isolation_cleanup', True))
 
@@ -326,6 +330,24 @@ class RunnerConfig(BaseConfig):
 
         return path
 
+    def sandbox_hidden_envvars(self):
+        '''
+        Names of environment variables to unset inside the sandbox.
+
+        Each entry of ``process_isolation_hide_envvars`` is a :mod:`fnmatch`
+        pattern matched case-sensitively against the names in the environment
+        the command would otherwise inherit.
+        '''
+        patterns = self.process_isolation_hide_envvars
+        if not patterns:
+            return set()
+        if isinstance(patterns, str):
+            patterns = [patterns]
+        return {
+            name for name in (self.env or {})
+            if any(fnmatch.fnmatchcase(name, pattern) for pattern in patterns)
+        }
+
     def wrap_args_for_sandbox(self, args):
         '''
         Wrap existing command line with bwrap to restrict access to:
@@ -348,6 +370,9 @@ class RunnerConfig(BaseConfig):
             '--symlink', 'usr/lib', '/lib',
             '--symlink', 'usr/lib64', '/lib64',
         ])
+
+        for name in sorted(self.sandbox_hidden_envvars()):
+            new_args.extend(['--unsetenv', name])
 
         for path in sorted(set(self.process_isolation_hide_paths or [])):
             if not os.path.exists(path):

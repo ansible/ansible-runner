@@ -37,7 +37,7 @@ from typing import Any
 import pexpect
 
 from ansible_runner import defaults
-from ansible_runner.output import debug
+from ansible_runner.output import debug, deprecated
 from ansible_runner.exceptions import ConfigurationError
 from ansible_runner.defaults import registry_auth_prefix
 from ansible_runner.loader import ArtifactLoader
@@ -161,6 +161,11 @@ class BaseConfig:
             self.cwd = os.getcwd()
 
         os.makedirs(self.artifact_dir, exist_ok=True, mode=0o700)
+
+        if self.process_isolation_executable == "bwrap":
+            deprecated("Support for bubblewrap is deprecated.",
+                       help_text="Use 'docker' or 'podman' instead.",
+                       version="2.6")
 
     _CONTAINER_ENGINES = ('docker', 'podman')
 

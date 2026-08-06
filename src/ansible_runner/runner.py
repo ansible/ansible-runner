@@ -14,7 +14,7 @@ import traceback
 import pexpect
 
 import ansible_runner.plugins
-from ansible_runner.output import debug
+from ansible_runner.output import debug, deprecated
 
 from .utils import OutputEventFilter, cleanup_artifact_dir, ensure_str, collect_new_events
 from .exceptions import CallbackError, AnsibleRunnerException
@@ -555,6 +555,14 @@ class Runner:
         '''
         Get the entire fact cache only if the fact_cache_type is 'jsonfile'
         '''
+
+        # NOTE: Best-effort notification. This method cannot be called via the CLI and can only be called
+        # through programmatic use, so this deprecation warning may or may not be logged, depending on caller
+        # logging configuration.
+        deprecated("The get_fact_cache() method is deprecated.",
+                   help_text="See issue https://github.com/ansible/ansible-runner/issues/1441",
+                   version="2.6")
+
         if self.config.fact_cache_type != 'jsonfile':
             raise Exception('Unsupported fact cache type.  Only "jsonfile" is supported for reading and writing facts from ansible-runner')
         fact_cache = os.path.join(self.config.fact_cache, host)
@@ -567,6 +575,14 @@ class Runner:
         '''
         Set the entire fact cache data only if the fact_cache_type is 'jsonfile'
         '''
+
+        # NOTE: Best-effort notification. This method cannot be called via the CLI and can only be called
+        # through programmatic use, so this deprecation warning may or may not be logged, depending on caller
+        # logging configuration.
+        deprecated("The set_fact_cache() method is deprecated.",
+                   help_text="See issue https://github.com/ansible/ansible-runner/issues/1441",
+                   version="2.6")
+
         if self.config.fact_cache_type != 'jsonfile':
             raise Exception('Unsupported fact cache type.  Only "jsonfile" is supported for reading and writing facts from ansible-runner')
         fact_cache = os.path.join(self.config.fact_cache, host)

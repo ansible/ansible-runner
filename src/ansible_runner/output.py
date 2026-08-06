@@ -32,6 +32,14 @@ def display(msg: str, log_only: bool = False) -> None:
     _debug_logger.log(10, msg)
 
 
+def deprecated(msg: str, help_text: str | None = None, version: str | None = None) -> None:
+    if help_text:
+        msg += f"\n    {help_text}"
+    if version:
+        msg += f"\n    This feature will be removed in version {version} of ansible-runner."
+    display(f"[DEPRECATION WARNING]: {msg}")
+
+
 def debug(msg: str) -> None:
     if DEBUG_ENABLED:
         if isinstance(msg, Exception):

@@ -31,7 +31,49 @@ foreground and return the :class:`Runner <ansible_runner.runner.Runner>` object 
 :meth:`ansible_runner.interface.run_async`
 
 Takes the same arguments as :meth:`ansible_runner.interface.run` but will launch **Ansible** asynchronously and return a tuple containing
-the ``thread`` object and a :class:`Runner <ansible_runner.runner.Runner>` object. The **Runner** object can be inspected during execution.
+the ``thread`` object and a :class:`Runner <ansible_runner.runner.Runner>` object. 
+
+The returned **Runner** object can be inspected while the playbook is executing. You can query the ``runner_object.events`` generator to read event data as it becomes available.
+
+.. warning::
+    Because the ``events`` attribute reads all event files present in the artifacts directory at the time of access, accessing it repeatedly in a loop will yield duplicate events. You must parse and coalesce the events yourself using the ``uuid`` and ``counter`` keys present in the JSON event data to filter out duplicates and maintain the correct order.
+
+The playbook execution is complete when the ``rc`` attribute of the ``Runner`` object changes from ``None`` to an integer representing the final return code.
+
+**Example: Polling the runner for events during execution**
+
+.. code-block:: python
+
+    import time
+    import ansible_runner
+
+    runner_async_thread, runner_object = ansible_runner.interface.run_async(
+        private_data_dir='/tmp/my_playbook',
+        playbook='main.yml'
+    )
+
+    seen_events = set()
+
+    # The 'rc' attribute remains None until the Ansible process finishes
+    while runner_object.rc is None:
+        for event in runner_object.events:
+            # Use the unique UUID to filter out events we have already processed
+            event_id = event.get('uuid')
+            if event_id and event_id not in seen_events:
+                print(f"New Event [{event.get('counter')}]: {event.get('event')}")
+                seen_events.add(event_id)
+        
+        # Sleep briefly to avoid pegging the CPU while polling
+        time.sleep(1)
+
+    # Perform one final read to catch any events that fired between the last loop and completion
+    for event in runner_object.events:
+        event_id = event.get('uuid')
+        if event_id and event_id not in seen_events:
+            print(f"Final Event [{event.get('counter')}]: {event.get('event')}")
+            seen_events.add(event_id)
+
+    print(f"Playbook finished with return code: {runner_object.rc}")
 
 ``run_command()`` helper function
 ---------------------------------

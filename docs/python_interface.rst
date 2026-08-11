@@ -31,7 +31,7 @@ foreground and return the :class:`Runner <ansible_runner.runner.Runner>` object 
 :meth:`ansible_runner.interface.run_async`
 
 Takes the same arguments as :meth:`ansible_runner.interface.run` but will launch **Ansible** asynchronously and return a tuple containing
-the ``thread`` object and a :class:`Runner <ansible_runner.runner.Runner>` object. The **Runner** object can be inspected during execution.
+the ``thread`` object and a :class:`Runner <ansible_runner.runner.Runner>` object. The **Runner** object can be inspected during execution (see :ref:`runner.events`).
 
 ``run_command()`` helper function
 ---------------------------------
@@ -151,10 +151,49 @@ handle containing the `stdout` of the **Ansible** process.
 When the ``runner_mode`` is set to ``subprocess`` the :class:`Runner <ansible_runner.runner.Runner>` object uses a property :attr:`ansible_runner.runner.Runner.stderr` which
 will return an open file handle containing the ``stderr`` of the **Ansible** process.
 
+.. _runner.events:
+
 ``Runner.events``
 -----------------
 
 :attr:`ansible_runner.runner.Runner.events` is a ``generator`` that will return the :ref:`Playbook and Host Events<artifactevents>` as Python ``dict`` objects.
+
+Events are not held in memory or received over a queue; they are read from the
+per-event JSON files that **Ansible Runner** writes into the ``job_events``
+subdirectory of the artifact directory. Each access of the property scans that
+directory, so the events are always sourced from disk in the order they were
+emitted from **Ansible**.
+
+Because it is a generator, keep the following in mind when using it:
+
+* **Accessing the property is cheap and returns immediately.** No work is done
+  and no files are read until you begin iterating (for example, with a ``for``
+  loop or ``next()``).
+* **Iteration behavior depends on the current** ``status``. If the run is still
+  ``running``, iteration acts as a *live tail*: new events are yielded as
+  **Ansible** writes them, so you receive events incrementally rather than only
+  after the process finishes. However, the generator will not be exhausted until
+  the run leaves the ``running`` state, so fully consuming it (for example, with
+  ``list(r.events)``) will block until the run completes. If the run has already
+  finished, iteration simply reads all event files from disk and returns.
+* **The first iteration may block briefly at startup.** If you begin iterating
+  before the ``job_events`` directory has been created, the generator polls for
+  it for up to 60 seconds and raises
+  :class:`AnsibleRunnerException <ansible_runner.exceptions.AnsibleRunnerException>`
+  if it never appears.
+* **The generator is single-pass, and re-reads the disk each time.** Every
+  access of ``r.events`` returns a fresh generator that rescans the directory.
+  Note that :attr:`ansible_runner.runner.Runner.stats` and
+  :meth:`ansible_runner.runner.Runner.host_events` each iterate over
+  ``r.events`` internally, so calling them triggers additional scans. If you
+  need to inspect the events more than once, materialize them into a list first
+  (for example, ``events = list(r.events)``) and reuse that list.
+
+When you want to process events as they happen without managing the generator
+yourself, consider passing an ``event_handler`` callback instead (see
+:ref:`Runner.event_handler` below), which is invoked for every event as it is
+received.
+
 
 ``Runner.stats``
 ----------------
@@ -169,6 +208,8 @@ will return an open file handle containing the ``stderr`` of the **Ansible** pro
 -------------------------
 
 :meth:`ansible_runner.runner.Runner.get_fact_cache` is a method that, given a hostname, will return a dictionary containing the `Facts <https://docs.ansible.com/projects/ansible/latest/user_guide/playbooks_variables.html#variables-discovered-from-systems-facts>`_ stored for that host during execution.
+
+.. _runner.event_handler:
 
 ``Runner.event_handler``
 ------------------------

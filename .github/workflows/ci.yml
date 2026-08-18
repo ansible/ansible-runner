@@ -2,7 +2,10 @@ name: CI
 
 on:
   pull_request:
+    paths-ignore:  # changes to the cron workflow are triggered through it
+    - .github/workflows/scheduled-runs.yml
   push:
+  workflow_call:  # a way to embed the main tests
 
 
 env:

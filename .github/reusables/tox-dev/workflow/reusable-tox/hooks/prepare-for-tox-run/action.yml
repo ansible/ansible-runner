@@ -4,6 +4,13 @@ inputs:
   calling-job-context:
     description: A JSON with the calling job inputs
     type: string
+  current-job-steps:
+    description: >-
+      The `$ {{ steps }}` context passed from the reusable workflow's
+      tox job encoded as a JSON string. The caller passes it this input
+      as follows:
+      `current-job-steps: $ {{ toJSON(steps) }}`.
+    type: string
   job-dependencies-context:
     default: >-
       {}

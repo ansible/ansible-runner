@@ -53,7 +53,7 @@ jobs:
         xfail:
         - false
 
-    uses: tox-dev/workflow/.github/workflows/reusable-tox.yml@89de3c6be3cd179adf71e28aa4ac5bef60804209  # yamllint disable-line rule:line-length
+    uses: tox-dev/workflow/.github/workflows/reusable-tox.yml@1bb961580e20073f66ccb9024f248357f8c8fecb  # yamllint disable-line rule:line-length
     with:
       cache-key-for-dependency-files:  # FIXME
       check-name: >-
@@ -114,7 +114,7 @@ jobs:
         xfail:
         - false
 
-    uses: tox-dev/workflow/.github/workflows/reusable-tox.yml@89de3c6be3cd179adf71e28aa4ac5bef60804209  # yamllint disable-line rule:line-length
+    uses: tox-dev/workflow/.github/workflows/reusable-tox.yml@1bb961580e20073f66ccb9024f248357f8c8fecb  # yamllint disable-line rule:line-length
     with:
       cache-key-for-dependency-files:  # FIXME
       check-name: >-

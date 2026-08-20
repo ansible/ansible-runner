@@ -207,6 +207,8 @@ received.
 ``Runner.get_fact_cache``
 -------------------------
 
+.. warning:: Deprecated in version 2.5. Does not work with ansible-core 2.19 and above.
+
 :meth:`ansible_runner.runner.Runner.get_fact_cache` is a method that, given a hostname, will return a dictionary containing the `Facts <https://docs.ansible.com/projects/ansible/latest/user_guide/playbooks_variables.html#variables-discovered-from-systems-facts>`_ stored for that host during execution.
 
 .. _runner.event_handler:

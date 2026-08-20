@@ -369,3 +369,22 @@ def test_containerization_unsafe_write_setting(tmp_path, runtime, mocker):
     }
 
     assert rc.env.get('ANSIBLE_UNSAFE_WRITES') == expected[runtime]
+
+
+def test_bwrap_deprecation_log_message(tmp_path, caplog):
+    """The deprecation must emit an appropriate message to the ansible-runner.display logger."""
+    with caplog.at_level(10, logger='ansible-runner.display'):
+        BaseConfig(private_data_dir=tmp_path.as_posix(), process_isolation_executable='bwrap')
+
+    messages = [r.getMessage() for r in caplog.records]
+    assert any(
+        m.startswith('[DEPRECATION WARNING]: Support for bubblewrap is deprecated.')
+        for m in messages
+    ), messages
+
+
+def test_no_bwrap_deprecation_by_default(tmp_path, mocker):
+    """The deprecation must not fire when bwrap is not the process isolation executable."""
+    mock_deprecated = mocker.patch('ansible_runner.config._base.deprecated')
+    BaseConfig(private_data_dir=tmp_path.as_posix())
+    mock_deprecated.assert_not_called()

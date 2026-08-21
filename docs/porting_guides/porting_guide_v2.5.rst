@@ -25,5 +25,5 @@ or above. Because of this, these methods are slotted for removal.
 Bubblewrap
 ----------
 
-Support of ``bubblewrap`` (or ``bwrap``) for process isolation is being deprecated. This has been superseded by
-the use of Execution Environments.
+Support of ``bubblewrap`` (or ``bwrap``) for process isolation is being deprecated.
+This has been superseded by the use of Execution Environments.

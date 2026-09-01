@@ -452,6 +452,8 @@ class CallbackModule(DefaultCallbackModule):
             'task': (task.name or task.action),
             'task_uuid': str(task._uuid),
             'task_action': task.action,
+            'task_become': task.become,
+            'task_become_user': task.become_user,
             'resolved_action': getattr(task, 'resolved_action', task.action),
             'task_args': '',
         }

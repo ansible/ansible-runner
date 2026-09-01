@@ -289,7 +289,8 @@ def test_signal_handler(mocker):
     mocker.patch('ansible_runner.utils.threading.Event', MockEvent)
     mock_signal = mocker.patch('ansible_runner.utils.signal.signal')
 
-    assert signal_handler()() is False
+    callback, _ = signal_handler()
+    assert callback() is False
     assert mock_signal.call_args_list[0][0][0] == signal.SIGTERM
     assert mock_signal.call_args_list[1][0][0] == signal.SIGINT
 
@@ -300,7 +301,9 @@ def test_signal_handler_outside_main_thread(mocker):
     mocker.patch('ansible_runner.utils.threading.main_thread', return_value='thread0')
     mocker.patch('ansible_runner.utils.threading.current_thread', return_value='thread1')
 
-    assert signal_handler() is None
+    callback, original_handlers = signal_handler()
+    assert callback() is None
+    assert len(original_handlers) == 0
 
 
 def test_signal_handler_set(mocker):

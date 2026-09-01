@@ -19,6 +19,7 @@
 #
 import os
 import json
+import signal
 import sys
 import threading
 import logging
@@ -89,11 +90,26 @@ def init_runner(**kwargs):
     status_callback_handler = kwargs.pop('status_handler', None)
     artifacts_handler = kwargs.pop('artifacts_handler', None)
     cancel_callback = kwargs.pop('cancel_callback', None)
+    finished_callback = kwargs.pop('finished_callback', None)
+
     if cancel_callback is None:
         # attempt to load signal handler.
         # will return None if we are not in the main thread
-        cancel_callback = signal_handler()
-    finished_callback = kwargs.pop('finished_callback', None)
+        cancel_callback, original_handlers = signal_handler()
+        if cancel_callback is not None:
+            # need to use finished_callback to restore signals
+            original_finished_callback = finished_callback
+
+            def restoring_finished_callback() -> None:
+                for signum, handler in original_handlers:
+                    if handler is None:
+                        # TODO this will silently fail to restore signal handlers set from outside Python
+                        continue
+                    signal.signal(signum, handler)
+                if original_finished_callback is not None:
+                    original_finished_callback()
+
+            finished_callback = restoring_finished_callback
 
     streamer = kwargs.pop('streamer', None)
     if streamer:

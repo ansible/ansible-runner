@@ -1,4 +1,5 @@
 import base64
+import contextlib
 import io
 import json
 import os
@@ -270,6 +271,74 @@ class TestStreamingUsage:
         assert set(os.listdir(worker_dir)) == {'artifacts', 'inventory', 'project', 'env'}
 
         self.check_artifacts(str(process_dir), job_type)
+
+    @pytest.mark.timeout(timeout=180)
+    def test_large_private_data_dir_by_sockets(self, tmp_path, project_fixtures):
+        """Assure a payload larger than the socket buffer survives short reads.
+
+        A socket opened with buffering=0 is a raw SocketIO, so each read()
+        returns a single recv(2) worth of data rather than looping until the
+        request is filled. That is how a receptor socket behaves once the
+        payload outgrows the kernel buffer. If the reader miscounts, the
+        archive is truncated and the transmitter deadlocks forever on a send
+        buffer nobody is draining - a job that hangs with no error anywhere.
+        """
+        transmit_dir = project_fixtures / 'debug'
+        # incompressible, so the zip stays much larger than any socket buffer
+        payload = os.urandom(8 * 1024 * 1024)
+        (transmit_dir / 'big.bin').write_bytes(payload)
+
+        worker_dir = tmp_path / 'for_worker'
+        worker_dir.mkdir()
+
+        job_kwargs = self.get_job_kwargs('run')
+
+        transmit_socket, worker_socket = socket.socketpair()
+        transmit_file = transmit_socket.makefile('wb')
+        worker_file = worker_socket.makefile('rb', buffering=0)
+        results_file = (tmp_path / 'results').open('wb')
+
+        errors = {}
+
+        def run_streamer(name, **kwargs):
+            def wrapped():
+                try:
+                    ansible_runner.interface.run(**kwargs)
+                except Exception as exc:  # pylint: disable=W0718
+                    errors[name] = exc
+            return wrapped
+
+        threads = [
+            threading.Thread(target=run_streamer(
+                'transmit', streamer='transmit', _output=transmit_file,
+                private_data_dir=transmit_dir, **job_kwargs), daemon=True),
+            threading.Thread(target=run_streamer(
+                'worker', streamer='worker', _input=worker_file, _output=results_file,
+                private_data_dir=worker_dir, **job_kwargs), daemon=True),
+        ]
+
+        for thread in threads:
+            thread.start()
+        deadline = time.monotonic() + 60
+        for thread in threads:
+            thread.join(timeout=max(0, deadline - time.monotonic()))
+
+        deadlocked = [thread for thread in threads if thread.is_alive()]
+
+        # tear the sockets down first, otherwise closing the file objects blocks
+        # on flushing into a send buffer that is already full
+        for s in (transmit_socket, worker_socket):
+            with contextlib.suppress(OSError):
+                s.shutdown(socket.SHUT_RDWR)
+        for f in (transmit_file, worker_file, results_file):
+            with contextlib.suppress(OSError):
+                f.close()
+        for s in (transmit_socket, worker_socket):
+            s.close()
+
+        assert not deadlocked, 'streaming deadlocked, the reader stopped draining the socket'
+        assert not errors, f'streaming raised: {errors}'
+        assert (worker_dir / 'big.bin').read_bytes() == payload
 
     def test_process_isolation_executable_not_exist(self, tmp_path, mocker):
         """Case transmit should not fail if process isolation executable does not exist and

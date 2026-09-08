@@ -5,6 +5,7 @@ import io
 import json
 import os
 import signal
+import threading
 import time
 import stat
 
@@ -165,6 +166,73 @@ def test_unstream_dir_no_hang_on_pipe(tmp_path):
     first_line = outgoing_buffer.readline()
     size_data = json.loads(first_line.strip())
     unstream_dir(outgoing_buffer, size_data['zipfile'], dest_dir)
+
+
+@pytest.mark.timeout(timeout=30)
+def test_unstream_dir_short_reads(tmp_path):
+    """Assure a stream that returns less than was asked for is fully consumed.
+
+    An os.pipe opened with buffering=0 is a raw FileIO, so each read() is a
+    single read(2) and returns only what the 64 KB pipe buffer holds. Counting
+    the requested size rather than the returned size silently truncates the
+    archive, and leaves the writer blocked on a pipe nobody is draining.
+    """
+    pdd = tmp_path / 'short_read_source_dir'
+    pdd.mkdir()
+
+    # incompressible, so the zip stays much larger than the pipe buffer
+    payload = os.urandom(5 * 1024 * 1024)
+    (pdd / 'big.bin').write_bytes(payload)
+
+    read_fd, write_fd = os.pipe()
+
+    def produce():
+        with open(write_fd, 'wb') as writer:
+            stream_dir(pdd, writer)
+
+    producer = threading.Thread(target=produce, daemon=True)
+    producer.start()
+
+    dest_dir = tmp_path / 'short_read_dest'
+    dest_dir.mkdir()
+
+    with open(read_fd, 'rb', buffering=0) as reader:
+        # readline() on a raw stream reads a byte at a time, so it stops at the
+        # newline without consuming any of the payload behind it
+        size_data = json.loads(reader.readline().strip())
+        unstream_dir(reader, size_data['zipfile'], dest_dir)
+
+    producer.join(timeout=10)
+    assert not producer.is_alive(), 'stream_dir is still blocked writing to the pipe'
+    assert (dest_dir / 'big.bin').read_bytes() == payload
+
+
+@pytest.mark.timeout(timeout=30)
+def test_unstream_dir_truncated_stream(tmp_path):
+    """A stream that ends early must raise rather than spin or truncate silently."""
+    pdd = tmp_path / 'truncated_source_dir'
+    pdd.mkdir()
+
+    with open(pdd / 'ordinary_file.txt', 'w') as f:
+        f.write('hello world')
+
+    outgoing_buffer = io.BytesIO()
+    outgoing_buffer.name = 'not_stdout'
+    stream_dir(pdd, outgoing_buffer)
+
+    outgoing_buffer.seek(0)
+    size_data = json.loads(outgoing_buffer.readline().strip())
+
+    # lop off the tail of the base64 payload, on a 4 byte boundary so that what
+    # is left still decodes and the shortfall shows up as a premature EOF
+    contents = outgoing_buffer.read()
+    truncated = io.BytesIO(contents[:(len(contents) // 2) // 4 * 4])
+
+    dest_dir = tmp_path / 'truncated_dest'
+    dest_dir.mkdir()
+
+    with pytest.raises(RuntimeError, match='Stream ended before the transfer completed'):
+        unstream_dir(truncated, size_data['zipfile'], dest_dir)
 
 
 @pytest.mark.parametrize('fperm', [

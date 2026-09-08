@@ -272,8 +272,20 @@ class TestStreamingUsage:
 
         self.check_artifacts(str(process_dir), job_type)
 
+    @staticmethod
+    def _tcp_socketpair():
+        """A connected AF_INET pair, which unlike socketpair() splits reads mid-quantum."""
+        listener = socket.socket()
+        listener.bind(('127.0.0.1', 0))
+        listener.listen(1)
+        client = socket.create_connection(listener.getsockname())
+        server, _ = listener.accept()
+        listener.close()
+        return server, client
+
+    @pytest.mark.parametrize('family', ['af_unix', 'tcp'])
     @pytest.mark.timeout(timeout=180)
-    def test_large_private_data_dir_by_sockets(self, tmp_path, project_fixtures):
+    def test_large_private_data_dir_by_sockets(self, tmp_path, project_fixtures, family):
         """Assure a payload larger than the socket buffer survives short reads.
 
         A socket opened with buffering=0 is a raw SocketIO, so each read()
@@ -282,6 +294,11 @@ class TestStreamingUsage:
         payload outgrows the kernel buffer. If the reader miscounts, the
         archive is truncated and the transmitter deadlocks forever on a send
         buffer nobody is draining - a job that hangs with no error anywhere.
+
+        Both families matter. An AF_UNIX pair hands back page aligned buffers,
+        so every read happens to land on a base64 quantum boundary. TCP, which
+        is what receptor uses, segments wherever it likes and routinely splits
+        a quantum across two reads.
         """
         transmit_dir = project_fixtures / 'debug'
         # incompressible, so the zip stays much larger than any socket buffer
@@ -293,7 +310,10 @@ class TestStreamingUsage:
 
         job_kwargs = self.get_job_kwargs('run')
 
-        transmit_socket, worker_socket = socket.socketpair()
+        if family == 'tcp':
+            transmit_socket, worker_socket = self._tcp_socketpair()
+        else:
+            transmit_socket, worker_socket = socket.socketpair()
         transmit_file = transmit_socket.makefile('wb')
         worker_file = worker_socket.makefile('rb', buffering=0)
         results_file = (tmp_path / 'results').open('wb')
@@ -339,6 +359,11 @@ class TestStreamingUsage:
         assert not deadlocked, 'streaming deadlocked, the reader stopped draining the socket'
         assert not errors, f'streaming raised: {errors}'
         assert (worker_dir / 'big.bin').read_bytes() == payload
+
+        # interface.run() reports failure through the status stream rather than
+        # by raising, so assert the job really ran instead of just transferring
+        results = (tmp_path / 'results').read_bytes()
+        assert b'"status": "successful"' in results, 'worker did not report a successful job'
 
     def test_process_isolation_executable_not_exist(self, tmp_path, mocker):
         """Case transmit should not fail if process isolation executable does not exist and

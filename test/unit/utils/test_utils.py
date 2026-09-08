@@ -419,3 +419,41 @@ class TestBase64IO:
         obj = Base64IO(io.StringIO(''))
         data = _to_bytes('te s t')
         assert obj._read_additional_data_removing_whitespace(data, 4) == b'test'
+
+    @pytest.mark.parametrize('limit', [1, 2, 3, 5, 7, 4093])
+    def test_read_misaligned_chunks(self, limit):
+        """A wrapped stream may split a 4 byte base64 quantum across two reads."""
+        payload = os.urandom(64 * 1024)
+
+        class Chopped(io.RawIOBase):
+            """Returns at most `limit` bytes, so reads land mid-quantum."""
+
+            def __init__(self, data):
+                self.data = data
+                self.pos = 0
+
+            def readable(self):
+                return True
+
+            def read(self, size=-1):
+                if size is None or size < 0:
+                    size = len(self.data) - self.pos
+                size = min(size, limit)
+                chunk = self.data[self.pos:self.pos + size]
+                self.pos += len(chunk)
+                return chunk
+
+        encoded = io.BytesIO()
+        encoded.name = 'not_stdout'
+        with Base64IO(encoded) as target:
+            target.write(payload)
+
+        decoded = b''
+        with Base64IO(Chopped(encoded.getvalue())) as source:
+            while len(decoded) < len(payload):
+                chunk = source.read(1024)
+                if not chunk:
+                    break
+                decoded += chunk
+
+        assert decoded == payload

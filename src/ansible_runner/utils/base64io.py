@@ -76,6 +76,7 @@ class Base64IO(io.IOBase):
         """
         # set before the attr check as we may reach close() after that check fails
         self.__read_buffer = b""
+        self.__encoded_read_buffer = b""
         self.__write_buffer = b""
 
         required_attrs = ("read", "write", "close", "closed", "flush")
@@ -241,14 +242,38 @@ class Base64IO(io.IOBase):
             # Calculate number of encoded bytes that must be read to get b raw bytes.
             _bytes_to_read = int((b - len(self.__read_buffer)) * 4 / 3)
             _bytes_to_read = int(math.ceil(_bytes_to_read / 4.0) * 4.0)
+            # Encoded bytes held back from the previous read count towards that, so
+            # that we never pull more off the wrapped stream than the caller needs.
+            _bytes_to_read = max(_bytes_to_read - len(self.__encoded_read_buffer), 0)
 
         # Read encoded bytes from wrapped stream.
-        data = _to_bytes(self.__wrapped.read(_bytes_to_read))
+        _read_data = _to_bytes(self.__wrapped.read(_bytes_to_read))
         # Remove whitespace from read data and attempt to read more data to get the desired
         # number of bytes.
 
-        if any(char in data for char in string.whitespace.encode("utf-8")):
-            data = self._read_additional_data_removing_whitespace(data, _bytes_to_read)
+        if any(char in _read_data for char in string.whitespace.encode("utf-8")):
+            _read_data = self._read_additional_data_removing_whitespace(_read_data, _bytes_to_read)
+
+        _consumed = len(_read_data)
+        data = self.__encoded_read_buffer + _read_data
+        self.__encoded_read_buffer = b""
+
+        # A stream is free to hand back a partial base64 quantum. Keep pulling,
+        # within what was already asked for, until a whole quantum is available -
+        # decoding nothing here would look like EOF to the caller.
+        while _bytes_to_read > _consumed and _read_data and len(data) < 4:
+            _read_data = _to_bytes(self.__wrapped.read(min(4 - len(data), _bytes_to_read - _consumed)))
+            _consumed += len(_read_data)
+            data += _read_data
+
+        # b64decode rejects a split quantum as incorrect padding, so decode only
+        # whole quanta and carry the remainder over to the next read. At EOF there
+        # is no next read, so decode what is left and let a genuinely truncated
+        # stream raise.
+        at_eof = _bytes_to_read != 0 and not _read_data
+        if not at_eof and len(data) % 4:
+            _whole_quanta = len(data) - (len(data) % 4)
+            data, self.__encoded_read_buffer = data[:_whole_quanta], data[_whole_quanta:]
 
         results = io.BytesIO()
         # First, load any stashed bytes

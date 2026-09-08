@@ -420,7 +420,10 @@ class TestBase64IO:
         data = _to_bytes('te s t')
         assert obj._read_additional_data_removing_whitespace(data, 4) == b'test'
 
-    @pytest.mark.parametrize('limit', [1, 2, 3, 5, 7, 4093])
+    # Base64IO asks the wrapped stream for 1368 bytes per read(1024), so every
+    # limit here has to stay under that to actually chop anything, and none may
+    # be a multiple of 4 or the split would land on a quantum boundary
+    @pytest.mark.parametrize('limit', [1, 2, 3, 5, 7, 1021, 1023])
     def test_read_misaligned_chunks(self, limit):
         """A wrapped stream may split a 4 byte base64 quantum across two reads."""
         payload = os.urandom(64 * 1024)

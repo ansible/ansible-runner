@@ -269,8 +269,9 @@ class Base64IO(io.IOBase):
         # b64decode rejects a split quantum as incorrect padding, so decode only
         # whole quanta and carry the remainder over to the next read. At EOF there
         # is no next read, so decode what is left and let a genuinely truncated
-        # stream raise.
-        at_eof = _bytes_to_read != 0 and not _read_data
+        # stream raise. A readall consumes the stream outright, so it is always at
+        # EOF - holding bytes back there would drop them silently.
+        at_eof = _bytes_to_read < 0 or (_bytes_to_read != 0 and not _read_data)
         if not at_eof and len(data) % 4:
             _whole_quanta = len(data) - (len(data) % 4)
             data, self.__encoded_read_buffer = data[:_whole_quanta], data[_whole_quanta:]

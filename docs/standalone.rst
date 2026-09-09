@@ -44,6 +44,13 @@ Executing **Runner** in the background
 When launching **Runner** with the ``start`` command, the program will generate a pid file and move to the background. You can check its status with the
 ``is-alive`` command, or terminate it with the ``stop`` command. You can find the stdout, status, and return code in the ``artifacts`` directory.
 
+The pid file is written to ``<private_data_dir>/pid`` and contains the process ID of the background process. If a background process is already running for
+that ``private_data_dir``, ``start`` will report the running process ID and exit with a return code of ``1`` rather than starting a second one. A pid file
+left behind by a process that no longer exists (after a ``kill -9`` or a reboot, for example) is discarded automatically.
+
+The background process has no terminal attached to it. Its standard output is discarded, so use ``--logfile`` or read ``artifacts/<ident>/stdout`` to see what
+it did; its standard error, along with any traceback from an unexpected failure, is appended to ``<private_data_dir>/daemon.log``.
+
 Running Playbooks
 -----------------
 

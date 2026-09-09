@@ -33,12 +33,10 @@ import shutil
 import textwrap
 import tempfile
 
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from pathlib import Path
 from uuid import uuid4
 
-import daemon
-from daemon.pidfile import TimeoutPIDLockFile
 from yaml import safe_dump, safe_load
 
 from ansible_runner import run
@@ -46,6 +44,7 @@ from ansible_runner import output
 from ansible_runner import cleanup
 from ansible_runner.utils import dump_artifact, Bunch, register_for_cleanup
 from ansible_runner.utils.capacity import get_cpu_count, get_mem_in_bytes, ensure_uuid
+from ansible_runner.utils._daemonize import DaemonContext
 from ansible_runner.utils.importlib_compat import importlib_metadata
 from ansible_runner.runner import Runner
 
@@ -847,7 +846,6 @@ def main(sys_args=None):
             raise
 
     stderr_path = None
-    context = None
     if vargs.get('command') not in ('run', 'transmit', 'worker'):
         stderr_path = os.path.join(vargs.get('private_data_dir'), 'daemon.log')
         if not os.path.exists(stderr_path):
@@ -855,8 +853,11 @@ def main(sys_args=None):
 
     if vargs.get('command') in ('start', 'run', 'transmit', 'worker', 'process'):
 
+        context: AbstractContextManager
         if vargs.get('command') == 'start':
-            context = daemon.DaemonContext(pidfile=TimeoutPIDLockFile(pidfile))
+            # Only the detached daemon returns from DaemonContext.__enter__(); the
+            # process that invoked us exits from inside the ``with`` statement below.
+            context = DaemonContext(pidfile, stderr=stderr_path)
         else:
             context = threading.Lock()
 
@@ -907,7 +908,9 @@ def main(sys_args=None):
                 except Exception:
                     e = traceback.format_exc()
                     if stderr_path:
-                        with open(stderr_path, 'w+') as ep:
+                        # Appended, not truncated: for ``start`` the daemon's stderr is
+                        # already pointed at this same file.
+                        with open(stderr_path, 'a') as ep:
                             ep.write(e)
                     else:
                         sys.stderr.write(e)

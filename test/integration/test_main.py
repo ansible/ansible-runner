@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
+import logging
 import multiprocessing
+import subprocess
+import sys
 
 from test.utils.common import iterate_timeout
 
@@ -198,3 +201,102 @@ def test_playbook_start(project_fixtures):
 
     rc = main(['stop', str(private_data_dir)])
     assert rc == 1
+
+
+def start_in_background(args):
+    """Run ``main(args)`` in a forked process and return it, already started."""
+    mpcontext = multiprocessing.get_context('fork')
+    p = mpcontext.Process(target=main, args=[args])
+    p.start()
+    return p
+
+
+def test_start_when_already_running(project_fixtures):
+    private_data_dir = project_fixtures / 'sleep'
+    pid_path = private_data_dir / 'pid'
+
+    args = ['start', '-p', 'sleep.yml', str(private_data_dir)]
+    start_in_background(args).join()
+
+    for _ in iterate_timeout(30, "pid file creation"):
+        if pid_path.exists():
+            break
+    running_pid = pid_path.read_text().strip()
+
+    try:
+        # A second start against the same private data dir must refuse to launch
+        # rather than traceback, and must leave the running daemon's pid file alone.
+        second = start_in_background(args)
+        second.join()
+        assert second.exitcode == 1
+        assert pid_path.read_text().strip() == running_pid
+    finally:
+        assert main(['stop', str(private_data_dir)]) == 0
+
+
+def test_start_reclaims_stale_pidfile(project_fixtures):
+    private_data_dir = project_fixtures / 'sleep'
+    pid_path = private_data_dir / 'pid'
+
+    # A pid file left behind by a process that no longer exists (SIGKILL, reboot, ...)
+    # must not block subsequent starts.
+    proc = subprocess.Popen([sys.executable, '-c', ''])  # pylint: disable=R1732
+    proc.wait()
+    pid_path.write_text(f"{proc.pid}\n")
+
+    start_in_background(['start', '-p', 'sleep.yml', str(private_data_dir)]).join()
+
+    try:
+        for _ in iterate_timeout(30, "stale pid file to be reclaimed"):
+            if pid_path.exists() and pid_path.read_text().strip() != str(proc.pid):
+                break
+        assert main(['is-alive', str(private_data_dir)]) == 0
+    finally:
+        assert main(['stop', str(private_data_dir)]) == 0
+
+
+@pytest.fixture
+def no_logfile_handler():
+    """Undo any logfile handler an earlier test left on the process wide debug logger.
+
+    ``output.set_logfile()`` is a no-op once a handler named ``logfile`` is registered,
+    and the forked process inherits that state.
+    """
+    logger = logging.getLogger('ansible-runner.debug')
+    saved = list(logger.handlers)
+    logger.handlers = [h for h in saved if h.get_name() != 'logfile']
+    yield
+    logger.handlers = saved
+
+
+def test_start_writes_logfile(project_fixtures, tmp_path, no_logfile_handler):  # pylint: disable=W0613,W0621
+    # The logfile handler is opened before the process detaches, so it only survives
+    # if daemonizing leaves inherited file descriptors alone.
+    private_data_dir = project_fixtures / 'use_role'
+    logfile = tmp_path / 'runner.log'
+
+    start_in_background([
+        'start',
+        '--debug',
+        '--logfile', str(logfile),
+        '-r', 'benthomasson.hello_role',
+        '--hosts', 'localhost',
+        '--roles-path', str(private_data_dir / 'roles'),
+        str(private_data_dir),
+    ]).join()
+
+    try:
+        # Assert on a line role_manager() logs from inside the ``with`` block, after
+        # the process has detached. Merely checking that the file is non-empty would
+        # pass on the entries written by the launcher before it forked.
+        for _ in iterate_timeout(30, "daemon to write to the logfile after detaching"):
+            if logfile.exists() and 'setting ANSIBLE_ROLES_PATH' in logfile.read_text():
+                break
+    finally:
+        # The run is short, so it may well have finished already: the return code of
+        # stop is deliberately not asserted. Leaving it running would let the fixture
+        # teardown delete the private data dir out from under it.
+        main(['stop', str(private_data_dir)])
+        for _ in iterate_timeout(30, "background process to stop"):
+            if main(['is-alive', str(private_data_dir)]) == 1:
+                break

@@ -197,8 +197,6 @@ def test_unstream_dir_short_reads(tmp_path):
     dest_dir.mkdir()
 
     with open(read_fd, 'rb', buffering=0) as reader:
-        # readline() on a raw stream reads a byte at a time, so it stops at the
-        # newline without consuming any of the payload behind it
         size_data = json.loads(reader.readline().strip())
         unstream_dir(reader, size_data['zipfile'], dest_dir)
 

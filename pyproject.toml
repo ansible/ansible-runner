@@ -36,7 +36,6 @@ classifiers = [
 dependencies = [
     "pexpect>=4.5",
     "packaging",
-    "python-daemon",
     "pyyaml",
 ]
 
@@ -53,7 +52,6 @@ ansible-runner = "ansible_runner.__main__:main"
 [[tool.mypy.overrides]]
 module = [
     "ansible.*",
-    "daemon.*",
     "pexpect",
 ]
 ignore_missing_imports = true

@@ -76,11 +76,10 @@ def pid_is_running(pid: int) -> bool:
         return False
     try:
         os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
     except PermissionError:
-        # The process exists, we are simply not allowed to signal it.
-        return True
+        # The process exists, we are simply not allowed to signal it. This clause must
+        # come first: PermissionError is a subclass of OSError.
+        pass
     except OSError:
         return False
     return True

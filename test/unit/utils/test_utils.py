@@ -5,6 +5,7 @@ import io
 import json
 import os
 import signal
+import threading
 import time
 import stat
 
@@ -165,6 +166,71 @@ def test_unstream_dir_no_hang_on_pipe(tmp_path):
     first_line = outgoing_buffer.readline()
     size_data = json.loads(first_line.strip())
     unstream_dir(outgoing_buffer, size_data['zipfile'], dest_dir)
+
+
+@pytest.mark.timeout(timeout=30)
+def test_unstream_dir_short_reads(tmp_path):
+    """Assure a stream that returns less than was asked for is fully consumed.
+
+    An os.pipe opened with buffering=0 is a raw FileIO, so each read() is a
+    single read(2) and returns only what the 64 KB pipe buffer holds. Counting
+    the requested size rather than the returned size silently truncates the
+    archive, and leaves the writer blocked on a pipe nobody is draining.
+    """
+    pdd = tmp_path / 'short_read_source_dir'
+    pdd.mkdir()
+
+    # incompressible, so the zip stays much larger than the pipe buffer
+    payload = os.urandom(5 * 1024 * 1024)
+    (pdd / 'big.bin').write_bytes(payload)
+
+    read_fd, write_fd = os.pipe()
+
+    def produce():
+        with open(write_fd, 'wb') as writer:
+            stream_dir(pdd, writer)
+
+    producer = threading.Thread(target=produce, daemon=True)
+    producer.start()
+
+    dest_dir = tmp_path / 'short_read_dest'
+    dest_dir.mkdir()
+
+    with open(read_fd, 'rb', buffering=0) as reader:
+        size_data = json.loads(reader.readline().strip())
+        unstream_dir(reader, size_data['zipfile'], dest_dir)
+
+    producer.join(timeout=10)
+    assert not producer.is_alive(), 'stream_dir is still blocked writing to the pipe'
+    assert (dest_dir / 'big.bin').read_bytes() == payload
+
+
+@pytest.mark.timeout(timeout=30)
+def test_unstream_dir_truncated_stream(tmp_path):
+    """A stream that ends early must raise rather than spin or truncate silently."""
+    pdd = tmp_path / 'truncated_source_dir'
+    pdd.mkdir()
+
+    with open(pdd / 'ordinary_file.txt', 'w') as f:
+        f.write('hello world')
+
+    outgoing_buffer = io.BytesIO()
+    outgoing_buffer.name = 'not_stdout'
+    stream_dir(pdd, outgoing_buffer)
+
+    outgoing_buffer.seek(0)
+    size_data = json.loads(outgoing_buffer.readline().strip())
+
+    # lop off the tail of the base64 payload, on a 4 byte boundary so that what
+    # is left still decodes and the shortfall shows up as a premature EOF
+    contents = outgoing_buffer.read()
+    truncated = io.BytesIO(contents[:(len(contents) // 2) // 4 * 4])
+
+    dest_dir = tmp_path / 'truncated_dest'
+    dest_dir.mkdir()
+
+    with pytest.raises(RuntimeError, match='Stream ended before the transfer completed'):
+        unstream_dir(truncated, size_data['zipfile'], dest_dir)
 
 
 @pytest.mark.parametrize('fperm', [
@@ -351,3 +417,44 @@ class TestBase64IO:
         obj = Base64IO(io.StringIO(''))
         data = _to_bytes('te s t')
         assert obj._read_additional_data_removing_whitespace(data, 4) == b'test'
+
+    # Base64IO asks the wrapped stream for 1368 bytes per read(1024), so every
+    # limit here has to stay under that to actually chop anything, and none may
+    # be a multiple of 4 or the split would land on a quantum boundary
+    @pytest.mark.parametrize('limit', [1, 2, 3, 5, 7, 1021, 1023])
+    def test_read_misaligned_chunks(self, limit):
+        """A wrapped stream may split a 4 byte base64 quantum across two reads."""
+        payload = os.urandom(64 * 1024)
+
+        class Chopped(io.RawIOBase):
+            """Returns at most `limit` bytes, so reads land mid-quantum."""
+
+            def __init__(self, data):
+                self.data = data
+                self.pos = 0
+
+            def readable(self):
+                return True
+
+            def read(self, size=-1):
+                if size is None or size < 0:
+                    size = len(self.data) - self.pos
+                size = min(size, limit)
+                chunk = self.data[self.pos:self.pos + size]
+                self.pos += len(chunk)
+                return chunk
+
+        encoded = io.BytesIO()
+        encoded.name = 'not_stdout'
+        with Base64IO(encoded) as target:
+            target.write(payload)
+
+        decoded = b''
+        with Base64IO(Chopped(encoded.getvalue())) as source:
+            while len(decoded) < len(payload):
+                chunk = source.read(1024)
+                if not chunk:
+                    break
+                decoded += chunk
+
+        assert decoded == payload

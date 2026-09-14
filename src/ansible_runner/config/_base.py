@@ -81,7 +81,7 @@ class BaseConfig:
                  container_workdir: str | None = None,
                  container_auth_data=None,
                  ident: str | None = None,
-                 rotate_artifacts: int = 0,
+                 rotate_artifacts: int | None = None,
                  timeout: int | None = None,
                  ssh_key: str | None = None,
                  quiet: bool = False,
@@ -110,7 +110,7 @@ class BaseConfig:
         self.container_options = container_options
 
         # runner params
-        self.rotate_artifacts = rotate_artifacts
+        self.rotate_artifacts = rotate_artifacts if rotate_artifacts is not None else 0
         self.quiet = quiet
         self.json_mode = json_mode
         self.passwords = passwords
@@ -148,7 +148,6 @@ class BaseConfig:
         else:
             self.project_dir = project_dir
 
-        self.rotate_artifacts = rotate_artifacts
         self.fact_cache_type = fact_cache_type
         self.fact_cache = os.path.join(self.artifact_dir, fact_cache or 'fact_cache') if self.fact_cache_type == 'jsonfile' else None
 
@@ -232,6 +231,8 @@ class BaseConfig:
         self.container_volume_mounts = self.settings.get('container_volume_mounts', self.container_volume_mounts)
         self.container_options = self.settings.get('container_options', self.container_options)
         self.container_auth_data = self.settings.get('container_auth_data', self.container_auth_data)
+
+        self.rotate_artifacts = self.settings.get('rotate_artifacts', self.rotate_artifacts)
 
         if self.containerized:
             if not self.container_image:

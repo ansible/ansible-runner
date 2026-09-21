@@ -569,6 +569,9 @@ class BaseConfig:
             self.registry_auth_path, registry_auth_conf_file = self._generate_container_auth_dir(self.container_auth_data)
             if 'podman' in self.process_isolation_executable:
                 new_args.extend([f"--authfile={self.registry_auth_path}"])
+                if self.container_auth_data.get('verify_ssl', True) is False:
+                    # registries.conf is ignored by a remote podman service (e.g. over CONTAINER_HOST), so pass this explicitly too.
+                    new_args.extend(["--tls-verify=false"])
             else:
                 docker_idx = new_args.index(self.process_isolation_executable)
                 new_args.insert(docker_idx + 1, f"--config={self.registry_auth_path}")

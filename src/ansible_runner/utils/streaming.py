@@ -62,6 +62,32 @@ def stream_dir(source_directory: str, stream: io.FileIO) -> None:
 
 def unstream_dir(stream: io.FileIO, length: int, target_directory: str) -> None:
     # NOTE: caller needs to process exceptions
+    target_base = os.path.realpath(target_directory)
+
+    def _confine_member(filename: str) -> str:
+        """Return the sanitized destination path for an archive member.
+
+        Rejects members whose normalized path escapes ``target_directory`` (a ``..``
+        segment in the member name must not reach outside, as the raw name is used
+        for ``os.utime``/``os.chmod``), and members that would be written through a
+        symlink created by an earlier member of the same archive.
+        """
+        dest = os.path.normpath(os.path.join(target_base, filename))
+        if os.path.commonpath([target_base, dest]) != target_base:
+            raise ValueError(f"unsafe path in archive member: {filename!r}")
+        parent = os.path.dirname(dest)
+        if os.path.commonpath([target_base, os.path.realpath(parent)]) != target_base:
+            raise ValueError(f"unsafe path in archive member: {filename!r}")
+        return dest
+
+    def _check_link_target(dest: str, link: str) -> None:
+        """Reject a symlink whose target is absolute or resolves outside target_directory."""
+        if os.path.isabs(link):
+            raise ValueError(f"absolute symlink target in archive member: {link!r}")
+        resolved = os.path.realpath(os.path.join(os.path.dirname(dest), link))
+        if os.path.commonpath([target_base, resolved]) != target_base:
+            raise ValueError(f"symlink target escapes target_directory: {link!r}")
+
     with tempfile.NamedTemporaryFile() as tmp:
         with open(tmp.name, "wb") as target:
             with Base64IO(stream) as source:
@@ -80,12 +106,17 @@ def unstream_dir(stream: io.FileIO, length: int, target_directory: str) -> None:
             # AWX relies on the execution bit, in particular, for inventory
             # https://www.burgundywall.com/post/preserving-file-perms-with-python-zipfile-module
             for info in archive.infolist():
-                out_path = os.path.join(target_directory, info.filename)
+                out_path = _confine_member(info.filename)
 
                 perms = info.external_attr >> 16
                 mode = stat.filemode(perms)
 
                 is_symlink = mode[:1] == 'l'
+                link = None
+                if is_symlink:
+                    # Read and validate the link target before touching target_directory.
+                    link = archive.read(info).decode()
+                    _check_link_target(out_path, link)
                 if os.path.exists(out_path):
                     if is_symlink:
                         os.remove(out_path)
@@ -99,7 +130,7 @@ def unstream_dir(stream: io.FileIO, length: int, target_directory: str) -> None:
                         # Special case, the important dirs were pre-created so don't try to chmod them
                         continue
 
-                archive.extract(info.filename, path=target_directory)
+                archive.extract(info.filename, path=target_base)
 
                 # Fancy logic to preserve modification times
                 # AWX uses modification times to determine if new facts were written for a host
@@ -108,8 +139,6 @@ def unstream_dir(stream: io.FileIO, length: int, target_directory: str) -> None:
                 os.utime(out_path, times=(date_time, date_time))
 
                 if is_symlink:
-                    with open(out_path) as fd:
-                        link = fd.read()
                     os.remove(out_path)
                     os.symlink(link, out_path)
                 else:

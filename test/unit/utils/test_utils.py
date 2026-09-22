@@ -1,5 +1,6 @@
 # pylint: disable=W0212
 
+import base64
 import datetime
 import io
 import json
@@ -7,6 +8,7 @@ import os
 import signal
 import time
 import stat
+import zipfile
 
 from pathlib import Path
 
@@ -64,12 +66,11 @@ def test_sanitize_container_name(container_name, expected_name):
 
 
 @pytest.mark.parametrize('symlink_dest,check_content', [
-    ('/bin', []),
     ('ordinary_file.txt', ['my_link']),
     ('ordinary_directory', ['my_link/dir_file.txt']),
     ('.', ['my_link/ordinary_directory/dir_file.txt', 'my_link/my_link/ordinary_file.txt']),
     ('filedoesnotexist.txt', [])
-], ids=['global', 'local', 'directory', 'recursive', 'bad'])
+], ids=['local', 'directory', 'recursive', 'bad'])
 def test_transmit_symlink(tmp_path, symlink_dest, check_content):
     symlink_dest = Path(symlink_dest)
 
@@ -121,6 +122,83 @@ def test_transmit_symlink(tmp_path, symlink_dest, check_content):
         assert abs_path.exists(), f'Expected "{fname}" in target dir to be a file with content.'
         with open(abs_path, 'r') as f:
             assert f.read() == 'hello world'
+
+
+SYMLINK_MODE = 0o777 | 0xA000
+
+
+def _crafted_stream(entries):
+    """Build a base64 transmit stream (and its decoded length) from raw zip members.
+
+    ``entries`` maps a member name to ``(unix_mode, data)``; ``unix_mode`` carries the
+    file type bits (e.g. ``SYMLINK_MODE`` for a symlink) in the high 16 bits.
+    """
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, 'w') as archive:
+        for name, (unix_mode, data) in entries.items():
+            zip_info = zipfile.ZipInfo(name)
+            zip_info.create_system = 3  # unix
+            zip_info.external_attr = unix_mode << 16
+            archive.writestr(zip_info, data)
+    zip_bytes = buf.getvalue()
+    stream = io.BytesIO()
+    stream.write(base64.b64encode(zip_bytes))
+    stream.seek(0)
+    return stream, len(zip_bytes)
+
+
+def test_unstream_dir_rejects_symlink_write_through(tmp_path):
+    """A member written through an archive-created symlink must not escape target_directory."""
+    target_dir = tmp_path / 'target'
+    outside_dir = tmp_path / 'outside'
+    target_dir.mkdir()
+    outside_dir.mkdir()
+
+    stream, length = _crafted_stream({
+        'pwn': (SYMLINK_MODE, '../outside'),
+        'pwn/owned.txt': (0o644, 'ESCAPED WRITE\n'),
+    })
+    with pytest.raises(ValueError):
+        unstream_dir(stream, length, target_dir)
+    assert list(outside_dir.iterdir()) == []
+
+
+def test_unstream_dir_rejects_parent_traversal(tmp_path):
+    """A ``..`` member must not chmod/utime a file outside target_directory."""
+    target_dir = tmp_path / 'target'
+    target_dir.mkdir()
+    victim = tmp_path / 'victimfile'
+    victim.write_text('x')
+    victim.chmod(0o600)
+
+    stream, length = _crafted_stream({'../victimfile': (0o777, 'y')})
+    with pytest.raises(ValueError):
+        unstream_dir(stream, length, target_dir)
+    assert stat.S_IMODE(victim.stat().st_mode) == 0o600
+
+
+def test_unstream_dir_rejects_absolute_member(tmp_path):
+    """An absolute member name must not write outside target_directory."""
+    target_dir = tmp_path / 'target'
+    target_dir.mkdir()
+    outside = tmp_path / 'evil_abs'
+
+    stream, length = _crafted_stream({str(outside): (0o644, 'z')})
+    with pytest.raises(ValueError):
+        unstream_dir(stream, length, target_dir)
+    assert not outside.exists()
+
+
+@pytest.mark.parametrize('link_target', ['/bin', '../outside'], ids=['absolute', 'escaping'])
+def test_unstream_dir_rejects_unsafe_symlink_target(tmp_path, link_target):
+    """Symlink targets that are absolute or resolve outside target_directory are rejected."""
+    target_dir = tmp_path / 'target'
+    target_dir.mkdir()
+
+    stream, length = _crafted_stream({'my_link': (SYMLINK_MODE, link_target)})
+    with pytest.raises(ValueError):
+        unstream_dir(stream, length, target_dir)
+    assert not (target_dir / 'my_link').exists()
 
 
 @pytest.mark.timeout(timeout=3)

@@ -39,6 +39,7 @@ from copy import copy
 # Ansible
 from ansible import __version__ as ansible_version_str
 from ansible import constants as C
+from ansible.module_utils.common._collections_compat import Mapping
 from ansible.plugins.callback import CallbackBase
 from ansible.plugins.loader import callback_loader
 from ansible.utils.display import Display
@@ -107,6 +108,9 @@ class AnsibleJSONEncoderLocal(json.JSONEncoder):
             return {'__ansible_vault': encrypted_form}
         if isinstance(o, (datetime.date, datetime.datetime)):
             return o.isoformat()
+        if isinstance(o, Mapping):
+            # hostvars and other objects
+            return dict(o)
         return super().default(o)
 
 

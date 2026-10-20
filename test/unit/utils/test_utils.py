@@ -1,5 +1,6 @@
 # pylint: disable=W0212
 
+import base64
 import datetime
 import io
 import json
@@ -7,6 +8,7 @@ import os
 import signal
 import time
 import stat
+import zipfile
 
 from pathlib import Path
 
@@ -64,12 +66,11 @@ def test_sanitize_container_name(container_name, expected_name):
 
 
 @pytest.mark.parametrize('symlink_dest,check_content', [
-    ('/bin', []),
     ('ordinary_file.txt', ['my_link']),
     ('ordinary_directory', ['my_link/dir_file.txt']),
     ('.', ['my_link/ordinary_directory/dir_file.txt', 'my_link/my_link/ordinary_file.txt']),
     ('filedoesnotexist.txt', [])
-], ids=['global', 'local', 'directory', 'recursive', 'bad'])
+], ids=['local', 'directory', 'recursive', 'bad'])
 def test_transmit_symlink(tmp_path, symlink_dest, check_content):
     symlink_dest = Path(symlink_dest)
 
@@ -121,6 +122,266 @@ def test_transmit_symlink(tmp_path, symlink_dest, check_content):
         assert abs_path.exists(), f'Expected "{fname}" in target dir to be a file with content.'
         with open(abs_path, 'r') as f:
             assert f.read() == 'hello world'
+
+
+def test_transmit_symlink_to_external_path_is_rejected(tmp_path):
+    """Symbolic links whose target falls OUTSIDE the destination directory
+    must be refused, not faithfully recreated. Round-tripping an absolute /
+    out-of-tree symlink is what enables the symlink-tar-slip primitive.
+    """
+    pdd = tmp_path / "src"
+    pdd.mkdir()
+    (pdd / "ordinary_file.txt").write_text("hello")
+    (pdd / "my_link").symlink_to("/bin")
+    buf = io.BytesIO()
+    buf.name = "not_stdout"
+    stream_dir(str(pdd), buf)
+    dest = tmp_path / "dest"
+    dest.mkdir()
+    buf.seek(0)
+    header = json.loads(buf.readline().strip())
+    with pytest.raises(zipfile.BadZipFile, match="escape"):
+        unstream_dir(buf, header["zipfile"], str(dest))
+    assert not (dest / "my_link").exists()
+
+
+def _build_symlink_escape_zip(out_path, escape_dir):
+    """Build a zip with a symlink entry that escapes outside escape_dir plus a
+    regular-file entry that traverses through that symlink.
+    """
+    s_iflnk_flag = 0xA000
+    external = (0o777 | s_iflnk_flag) << 16
+    with zipfile.ZipFile(out_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        link_info = zipfile.ZipInfo("evil-link")
+        link_info.create_system = 3
+        link_info.external_attr = external
+        zf.writestr(link_info, str(escape_dir).encode())
+        file_info = zipfile.ZipInfo("evil-link/PWNED.txt")
+        file_info.create_system = 3
+        file_info.external_attr = (0o644 | 0x8000) << 16
+        zf.writestr(file_info, b"SENTINEL")
+
+
+def test_unstream_dir_rejects_symlink_target_escape(tmp_path):
+    """Refuse to extract a zip whose symlink entry targets a directory outside
+    the destination, even when the next file entry traverses through it.
+    """
+    extract_dir = tmp_path / "private_data_dir"
+    extract_dir.mkdir()
+    escape_dir = tmp_path / "outside"
+    escape_dir.mkdir()
+    zip_path = tmp_path / "malicious.zip"
+    _build_symlink_escape_zip(str(zip_path), str(escape_dir))
+    # Wrap the raw zip in the json+base64 framing unstream_dir reads.
+    body = zip_path.read_bytes()
+    encoded = base64.b64encode(body)
+    stream = io.BytesIO(
+        json.dumps({"zipfile": len(body)}).encode() + b"\n" + encoded
+    )
+    first_line = stream.readline()
+    assert b"zipfile" in first_line
+    with pytest.raises(zipfile.BadZipFile, match="escape"):
+        unstream_dir(stream, len(body), str(extract_dir))
+    # The sentinel file MUST NOT exist in the escape directory; the planted
+    # link MUST NOT survive in the extraction directory.
+    assert not (escape_dir / "PWNED.txt").exists()
+    assert not (extract_dir / "evil-link").exists()
+
+
+def _stream_of(zip_path):
+    """Wrap a raw zip file in the json+base64 framing unstream_dir reads."""
+    body = zip_path.read_bytes()
+    stream = io.BytesIO(
+        json.dumps({"zipfile": len(body)}).encode() + b"\n" + base64.b64encode(body)
+    )
+    stream.readline()
+    return stream, len(body)
+
+
+def test_unstream_dir_noncanonical_member_name_stays_contained(tmp_path):
+    """A member name containing ".." must not reach a symlink planted beside it.
+
+    ``ZipFile.extract()`` sanitizes member names by *dropping* ``..`` components
+    rather than resolving them, so it writes ``a/../link/f`` to ``a/link/f``
+    while ``normpath()`` of the same name says ``link/f``. Because the member is
+    written to the path we validated rather than to one predicted for
+    ``extract()``, the planted link is never traversed.
+    """
+    dest = tmp_path / "dest"
+    (dest / "a").mkdir(parents=True)
+    escape_dir = tmp_path / "outside"
+    escape_dir.mkdir()
+    # An attacker-planted (or simply pre-existing) link in the destination.
+    (dest / "a" / "link").symlink_to(escape_dir)
+
+    zip_path = tmp_path / "noncanonical.zip"
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        info = zipfile.ZipInfo("a/../link/PWNED.txt")
+        info.create_system = 3
+        info.external_attr = (0o644 | 0x8000) << 16
+        zf.writestr(info, b"SENTINEL")
+
+    stream, size = _stream_of(zip_path)
+    # The planted link was already in the destination, so the transfer is
+    # refused outright -- but only after the member has been written, which is
+    # what lets us assert where it went.
+    with pytest.raises(zipfile.BadZipFile, match="escape"):
+        unstream_dir(stream, size, str(dest))
+    assert not (escape_dir / "PWNED.txt").exists()
+    assert (dest / "link" / "PWNED.txt").read_bytes() == b"SENTINEL"
+
+
+def test_unstream_dir_does_not_write_through_existing_symlink(tmp_path):
+    """A regular member must not be written through a symlink already present at
+    its destination path, e.g. in a reused private_data_dir.
+    """
+    dest = tmp_path / "dest"
+    dest.mkdir()
+    escape_dir = tmp_path / "outside"
+    escape_dir.mkdir()
+    victim = escape_dir / "victim.txt"
+    victim.write_text("original")
+    (dest / "victim.txt").symlink_to(victim)
+
+    zip_path = tmp_path / "through-link.zip"
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        info = zipfile.ZipInfo("victim.txt")
+        info.create_system = 3
+        info.external_attr = (0o644 | 0x8000) << 16
+        zf.writestr(info, b"SENTINEL")
+
+    stream, size = _stream_of(zip_path)
+    unstream_dir(stream, size, str(dest))
+    assert victim.read_text() == "original"
+    assert (dest / "victim.txt").read_bytes() == b"SENTINEL"
+    assert not (dest / "victim.txt").is_symlink()
+
+
+def test_unstream_dir_preserves_safe_symlinks(tmp_path):
+    """Round-trip a tree that contains a SAFE symlink (target inside the
+    destination) and assert the symlink survives.
+    """
+    pdd = tmp_path / "src"
+    pdd.mkdir()
+    (pdd / "real.txt").write_text("payload")
+    (pdd / "alias").symlink_to("real.txt")
+    buf = io.BytesIO()
+    buf.name = "not_stdout"
+    stream_dir(str(pdd), buf)
+    dest = tmp_path / "dest"
+    dest.mkdir()
+    buf.seek(0)
+    header = json.loads(buf.readline().strip())
+    unstream_dir(buf, header["zipfile"], str(dest))
+    assert (dest / "alias").is_symlink()
+    assert os.readlink(dest / "alias") == "real.txt"
+    assert (dest / "real.txt").read_text() == "payload"
+
+
+def _transmit(source_dir):
+    """Stream a directory and return a buffer positioned past the header, plus
+    the encoded size, ready to hand to unstream_dir.
+    """
+    buf = io.BytesIO()
+    buf.name = "not_stdout"
+    stream_dir(str(source_dir), buf)
+    buf.seek(0)
+    header = json.loads(buf.readline().strip())
+    return buf, header["zipfile"]
+
+
+def _symlink_only_zip(out_path, links):
+    """Build a zip of nothing but symlink members, in the given order."""
+    external = (0o777 | 0xA000) << 16
+    with zipfile.ZipFile(out_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for name, target in links:
+            info = zipfile.ZipInfo(name)
+            info.create_system = 3
+            info.external_attr = external
+            zf.writestr(info, target.encode())
+
+
+def test_transmit_symlink_escaping_only_after_a_later_link_is_rejected(tmp_path):
+    """A link that escapes only once a LATER member exists must be refused.
+
+    ``artifacts -> project/../other_job`` resolves inside the destination while
+    ``project`` is absent, because realpath() collapses ``project/..``
+    lexically over a component that does not exist, and outside it as soon as
+    ``project -> .`` is created. os.walk() reports the broken link among files
+    and the directory link among dirs, so stream_dir always emits ``artifacts``
+    first and the escape is only visible once the whole archive is on disk.
+    """
+    pdd = tmp_path / "src"
+    pdd.mkdir()
+    (pdd / "ordinary_file.txt").write_text("hello")
+    (pdd / "artifacts").symlink_to("project/../other_job")
+    (pdd / "project").symlink_to(".")
+
+    dest = tmp_path / "dest"
+    dest.mkdir()
+    buf, size = _transmit(pdd)
+    with pytest.raises(zipfile.BadZipFile, match="escape"):
+        unstream_dir(buf, size, str(dest))
+
+    # Neither half of the pair may survive: writing to "<dest>/artifacts/<id>",
+    # as the artifact dir setup does, would otherwise land in tmp_path.
+    assert not os.path.lexists(dest / "artifacts")
+    assert not os.path.lexists(dest / "project")
+    assert not (tmp_path / "other_job").exists()
+
+
+def test_unstream_dir_rejects_symlink_redirected_by_later_member(tmp_path):
+    """The same escape, without relying on os.walk to order the two links."""
+    dest = tmp_path / "private_data_dir"
+    dest.mkdir()
+    zip_path = tmp_path / "deferred.zip"
+    _symlink_only_zip(zip_path, [("artifacts", "project/../other_job"), ("project", ".")])
+
+    stream, size = _stream_of(zip_path)
+    with pytest.raises(zipfile.BadZipFile, match="escape"):
+        unstream_dir(stream, size, str(dest))
+    assert not os.path.lexists(dest / "artifacts")
+    assert not os.path.lexists(dest / "project")
+
+
+def test_unstream_dir_rejects_symlink_pair_across_two_archives(tmp_path):
+    """Two archives unpacked into the same destination must not compose into an
+    escape. Neither link escapes on its own, so the second transfer is only
+    refusable by checking links an earlier transfer left behind.
+    """
+    dest = tmp_path / "private_data_dir"
+    dest.mkdir()
+
+    first = tmp_path / "first.zip"
+    _symlink_only_zip(first, [("artifacts", "project/../other_job")])
+    stream, size = _stream_of(first)
+    unstream_dir(stream, size, str(dest))
+    assert os.path.lexists(dest / "artifacts")
+
+    second = tmp_path / "second.zip"
+    _symlink_only_zip(second, [("project", ".")])
+    stream, size = _stream_of(second)
+    with pytest.raises(zipfile.BadZipFile, match="escape"):
+        unstream_dir(stream, size, str(dest))
+
+
+def test_unstream_dir_preserves_symlink_resolved_through_a_later_link(tmp_path):
+    """Deferred resolution is not itself suspicious: a link whose target only
+    resolves through a link created after it is kept, as long as the result
+    lands inside the destination.
+    """
+    pdd = tmp_path / "src"
+    pdd.mkdir()
+    (pdd / "real.txt").write_text("payload")
+    (pdd / "here").symlink_to(".")
+    (pdd / "alias").symlink_to("here/real.txt")
+
+    dest = tmp_path / "dest"
+    dest.mkdir()
+    buf, size = _transmit(pdd)
+    unstream_dir(buf, size, str(dest))
+    assert os.readlink(dest / "alias") == "here/real.txt"
+    assert (dest / "alias").read_text() == "payload"
 
 
 @pytest.mark.timeout(timeout=3)

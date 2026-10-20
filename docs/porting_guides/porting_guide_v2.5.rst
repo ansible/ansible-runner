@@ -31,6 +31,41 @@ This changes the behavior of the ``ansible-runner start`` command in the followi
   preventing any further use of the ``start`` command for that ``private_data_dir``.
 * ``start`` no longer returns until the pid file has been created.
 
+Streamed directories are confined to their destination
+------------------------------------------------------
+
+Every member of a streamed directory is now required to stay inside the directory it is unpacked into.
+This applies to ``ansible-runner worker`` receiving a ``private_data_dir``, and to
+``ansible-runner process`` (and the ``Processor`` class) receiving an artifact directory. Previously a
+member could be written, or have its permissions and modification time changed, outside of that
+directory.
+
+This changes the handling of symbolic links. A link whose target resolves outside the destination is
+rejected, and the transfer is aborted:
+
+* An absolute target, such as a link to ``/bin`` or to a file under ``/etc``, is always outside the
+  destination and is therefore always rejected.
+* A relative target is resolved against the directory holding the link, so one that climbs out with
+  ``..`` is rejected as well.
+
+Links whose targets stay within the directory being streamed continue to work unchanged, including
+relative links that traverse subdirectories, and links whose target does not exist.
+
+Where a link points is judged once the whole directory has been unpacked, not as each link is
+created, so a pair of links that only escapes in combination is rejected as well. Links already
+present in the destination are judged alongside the ones being unpacked. A ``private_data_dir``
+that is reused without ``--delete`` and has been left holding a link out of the directory, by an
+earlier job or otherwise, therefore causes later transfers into it to fail until it is cleared.
+
+A ``private_data_dir`` containing such a link transmitted successfully before and now fails on the
+worker, reported as ``Failed to extract private data directory on worker.``; the equivalent failure for
+an artifact directory is reported as an error status by the processor. If a job depends on content
+outside the ``private_data_dir``, copy that content into the directory instead of linking to it.
+
+Members are also written to the path formed by the destination and the member name with any ``..``
+segments resolved, rather than removed. Streams produced by ``ansible-runner`` never contain such
+segments, so this only affects hand-crafted ones.
+
 Deprecations
 ============
 

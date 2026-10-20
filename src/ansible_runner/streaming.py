@@ -375,7 +375,15 @@ class Processor:
             if 'status' in data:
                 self.status_callback(data)
             elif 'zipfile' in data:
-                self.artifacts_callback(data)
+                try:
+                    self.artifacts_callback(data)
+                except Exception:
+                    self.status_callback({
+                        'status': 'error',
+                        'job_explanation': 'Failed to extract artifacts directory on controller.',
+                        'result_traceback': traceback.format_exc()
+                    })
+                    break
             elif 'eof' in data:
                 break
             elif data.get('event') == 'keepalive':

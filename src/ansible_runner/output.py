@@ -40,12 +40,12 @@ def deprecated(msg: str, help_text: str | None = None, version: str | None = Non
     display(f"[DEPRECATION WARNING]: {msg}")
 
 
-def debug(msg: str) -> None:
+def debug(msg: str | Exception) -> None:
     if DEBUG_ENABLED:
         if isinstance(msg, Exception):
             if TRACEBACK_ENABLED:
                 _debug_logger.exception(msg)
-        display(msg)
+        display(str(msg))
 
 
 def set_logfile(filename: str) -> None:

@@ -4,6 +4,11 @@ Ansible Runner 2.5 Porting Guide
 
 This section discusses the behavioral changes between Ansible Runner version 2.4 and version 2.5.
 
+New Features
+============
+
+* Add support for Python 3.15 and drop support for Python 3.10.
+
 Behavior Changes
 ================
 

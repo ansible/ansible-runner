@@ -24,7 +24,6 @@ from typing import (
 import base64
 import io
 import logging
-import string
 import math
 
 LOGGER_NAME = "base64io"
@@ -194,11 +193,6 @@ class Base64IO(io.IOBase):
         :returns: ``total_bytes_to_read`` bytes from wrapped stream with no whitespace
         :rtype: bytes
         """
-        if total_bytes_to_read is None:
-            # If the requested number of bytes is None, we read the entire message, in which
-            # case the base64 module happily removes any whitespace.
-            return data
-
         _data_buffer = io.BytesIO()
 
         _data_buffer.write(b"".join(data.split()))
@@ -242,12 +236,12 @@ class Base64IO(io.IOBase):
             _bytes_to_read = int((b - len(self.__read_buffer)) * 4 / 3)
             _bytes_to_read = int(math.ceil(_bytes_to_read / 4.0) * 4.0)
 
-        # Read encoded bytes from wrapped stream.
+        # Read encoded bytes from wrapped stream. A stream is free to return fewer
+        # bytes than requested, and _bytes_to_read is always a whole number of base64
+        # quanta, so keep reading until the request is filled: a partial quantum would
+        # make b64decode fail with "Incorrect padding". The same loop drops whitespace.
         data = _to_bytes(self.__wrapped.read(_bytes_to_read))
-        # Remove whitespace from read data and attempt to read more data to get the desired
-        # number of bytes.
-
-        if any(char in data for char in string.whitespace.encode("utf-8")):
+        if _bytes_to_read > 0:
             data = self._read_additional_data_removing_whitespace(data, _bytes_to_read)
 
         results = io.BytesIO()

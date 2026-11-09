@@ -67,13 +67,17 @@ def unstream_dir(stream: io.FileIO, length: int, target_directory: str) -> None:
             with Base64IO(stream) as source:
                 remaining = length
                 chunk_size = 1024 * 1000  # 1 MB
-                while remaining != 0:
-                    chunk_size = min(chunk_size, remaining)
-
-                    data = source.read(chunk_size)
+                while remaining > 0:
+                    # A stream is free to return fewer bytes than requested, so
+                    # account for what was actually read, not what was asked for.
+                    data = source.read(min(chunk_size, remaining))
+                    if not data:
+                        raise RuntimeError(
+                            f'Stream ended before the transfer completed: {remaining} of {length} bytes missing.'
+                        )
                     target.write(data)
 
-                    remaining -= chunk_size
+                    remaining -= len(data)
 
         with zipfile.ZipFile(tmp.name, "r") as archive:
             # Fancy extraction in order to preserve permissions

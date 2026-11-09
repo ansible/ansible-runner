@@ -214,12 +214,14 @@ class BaseConfig:
             self.pexpect_use_poll = self.settings.get('pexpect_use_poll', True)
             self.idle_timeout = self.settings.get('idle_timeout', None)
 
+            self.job_timeout: int | None
             if self.timeout:
                 self.job_timeout = int(self.timeout)
             else:
                 self.job_timeout = self.settings.get('job_timeout', None)
 
         elif self.runner_mode == 'subprocess':
+            self.subprocess_timeout: int | None
             if self.timeout:
                 self.subprocess_timeout = int(self.timeout)
             else:
@@ -233,13 +235,14 @@ class BaseConfig:
         self.container_options = self.settings.get('container_options', self.container_options)
         self.container_auth_data = self.settings.get('container_auth_data', self.container_auth_data)
 
+        self.env: dict[str, Any] = {}
+
         if self.containerized:
             if not self.container_image:
                 raise ConfigurationError(
                     f'container_image required when specifying process_isolation_executable={self.process_isolation_executable}'
                 )
             self.container_name = f"ansible_runner_{sanitize_container_name(self.ident)}"
-            self.env: dict[str, Any] = {}
 
             if self.process_isolation_executable == 'podman':
                 # A kernel bug in RHEL < 8.5 causes podman to use the fuse-overlayfs driver. This results in errors when
@@ -259,7 +262,7 @@ class BaseConfig:
 
         else:
             # seed env with existing shell env
-            self.env = os.environ.copy()
+            self.env.update(os.environ)
 
         if self.envvars and isinstance(self.envvars, dict):
             self.env.update(self.envvars)

@@ -49,6 +49,9 @@ ansible-runner = "ansible_runner.__main__:main"
 
 [tool.setuptools_scm]
 
+[tool.mypy]
+warn_unreachable = true
+
 [[tool.mypy.overrides]]
 module = [
     "ansible.*",

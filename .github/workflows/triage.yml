@@ -1,0 +1,24 @@
+name: Triage
+
+on:
+  issues:
+    types:
+      - opened
+
+  pull_request_target:
+    types:
+      - opened
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    name: Label
+
+    steps:
+      - name: Label issues and PRs
+        uses: github/issue-labeler@v3.5
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          not-before: 2026-11-12T00:00:00Z
+          configuration-path: .github/issue_labeler.yml
+          enable-versioned-regex: 0

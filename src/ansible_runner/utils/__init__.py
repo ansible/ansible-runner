@@ -168,14 +168,23 @@ def dump_artifact(obj: str,
     return fn
 
 
-def cleanup_artifact_dir(path: str, num_keep: int = 0) -> None:
+def cleanup_artifact_dir(path: str, num_keep: int = 0, current_artifact_dir: str | None = None) -> None:
+    """Rotate artifacts, counting the protected current directory towards num_keep."""
     # 0 disables artifact dir cleanup/rotation
     if num_keep < 1:
         return
+    # Resolve the parent before deleting anything: it may contain current/..
+    path = os.path.realpath(path)
+    current_path = os.path.realpath(current_artifact_dir) if current_artifact_dir is not None else None
     all_paths = sorted(
         [os.path.join(path, p) for p in os.listdir(path)],
         key=os.path.getmtime
     )
+    if current_path is not None:
+        removable_paths = [p for p in all_paths if os.path.realpath(p) != current_path]
+        # The current run counts towards the retention limit when present.
+        num_keep -= len(all_paths) - len(removable_paths)
+        all_paths = removable_paths
     total_remove = len(all_paths) - num_keep
     for f in range(total_remove):
         shutil.rmtree(all_paths[f])

@@ -144,7 +144,11 @@ class Runner:
             )
 
         if self.config.ident is not None:
-            cleanup_artifact_dir(os.path.join(self.config.artifact_dir, ".."), self.config.rotate_artifacts)
+            cleanup_artifact_dir(
+                os.path.join(self.config.artifact_dir, ".."),
+                self.config.rotate_artifacts,
+                current_artifact_dir=self.config.artifact_dir,
+            )
 
         if hasattr(self.config, 'suppress_ansible_output'):
             suppress_ansible_output = self.config.suppress_ansible_output

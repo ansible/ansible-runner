@@ -282,6 +282,53 @@ def test_container_volume_mounting_with_Z(tmp_path, mocker):
         raise Exception(f'Could not find expected mount, args: {new_args}')
 
 
+@pytest.mark.parametrize('verify_ssl,expect_tls_verify_flag', (
+    (False, True),
+    (True, False),
+))
+def test_container_auth_data_verify_ssl_false_adds_podman_tls_verify(tmp_path, mocker, verify_ssl, expect_tls_verify_flag):
+    # regression test: registries.conf is ignored by a remote podman service (e.g. over CONTAINER_HOST), so --tls-verify must be passed explicitly too.
+    mocker.patch('os.path.isdir', mocker.Mock())
+    mocker.patch('os.path.exists', return_value=True)
+    mocker.patch('os.makedirs', return_value=True)
+
+    rc = BaseConfig(private_data_dir=str(tmp_path))
+    rc.container_name = 'foo'
+    rc.runner_mode = 'pexpect'
+    rc.env = {}
+    rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
+    rc.command = ['ansible-playbook', 'foo.yml']
+    rc.container_image = 'network-ee'
+    rc.cmdline_args = ['foo.yml']
+    rc.process_isolation_executable = 'podman'
+    rc.container_auth_data = {'host': 'somedomain.invalid', 'username': 'foouser', 'password': '349sk34', 'verify_ssl': verify_ssl}
+
+    new_args = rc.wrap_args_for_containerization(rc.command, rc.execution_mode, rc.cmdline_args)
+
+    assert ('--tls-verify=false' in new_args) == expect_tls_verify_flag
+
+
+def test_container_auth_data_docker_never_gets_tls_verify_flag(tmp_path, mocker):
+    mocker.patch('os.path.isdir', mocker.Mock())
+    mocker.patch('os.path.exists', return_value=True)
+    mocker.patch('os.makedirs', return_value=True)
+
+    rc = BaseConfig(private_data_dir=str(tmp_path))
+    rc.container_name = 'foo'
+    rc.runner_mode = 'pexpect'
+    rc.env = {}
+    rc.execution_mode = BaseExecutionMode.ANSIBLE_COMMANDS
+    rc.command = ['ansible-playbook', 'foo.yml']
+    rc.container_image = 'network-ee'
+    rc.cmdline_args = ['foo.yml']
+    rc.process_isolation_executable = 'docker'
+    rc.container_auth_data = {'host': 'somedomain.invalid', 'username': 'foouser', 'password': '349sk34', 'verify_ssl': False}
+
+    new_args = rc.wrap_args_for_containerization(rc.command, rc.execution_mode, rc.cmdline_args)
+
+    assert '--tls-verify=false' not in new_args
+
+
 @pytest.mark.parametrize('runtime', ('docker', 'podman'))
 def test_containerization_settings(tmp_path, runtime, mocker):
     mocker.patch.dict('os.environ', {'HOME': str(tmp_path)}, clear=True)

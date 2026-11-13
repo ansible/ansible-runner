@@ -206,6 +206,9 @@ class Runner:
         self.status_callback('running')
         self.last_stdout_update = time.time()
 
+        # Touch fact cache files before playbook runs to mark reference time
+        self._touch_fact_cache_files()
+
         # The subprocess runner interface provides stdin/stdout/stderr with streaming capability
         # to the caller if input_fd/output_fd/error_fd is passed to config class.
         # Alsp, provides an workaround for known issue in pexpect for long running non-interactive process
@@ -362,6 +365,9 @@ class Runner:
             self.status_callback('timeout')
         else:
             self.status_callback('failed')
+
+        # Write list of modified fact cache files after playbook finishes
+        self._write_fact_modifications()
 
         for filename, data in [
             ('status', self.status),
@@ -590,3 +596,59 @@ class Runner:
             os.makedirs(os.path.dirname(fact_cache), mode=0o700)
         with open(fact_cache, 'w') as f:
             return f.write(json.dumps(data))
+
+    def _touch_fact_cache_files(self):
+        '''
+        Touch all existing files in fact_cache directory to mark the reference time
+        before the playbook runs. This allows detection of which files were modified
+        during the playbook run, avoiding timezone issues when comparing timestamps.
+        '''
+        if not hasattr(self.config, 'fact_cache') or not self.config.fact_cache:
+            return
+
+        if not os.path.exists(self.config.fact_cache):
+            return
+
+        reference_time = time.time()
+        for filename in os.listdir(self.config.fact_cache):
+            filepath = os.path.join(self.config.fact_cache, filename)
+            if os.path.isfile(filepath):
+                try:
+                    os.utime(filepath, times=(reference_time, reference_time))
+                except OSError:
+                    # Ignore errors touching files
+                    pass
+
+    def _write_fact_modifications(self):
+        '''
+        Detect which fact cache files were modified during the playbook run
+        and write the list of modified filenames to an artifact file that AWX can read.
+        This eliminates timezone issues by using execution node's clock for all comparisons.
+        '''
+        if not hasattr(self.config, 'fact_cache') or not self.config.fact_cache:
+            return
+
+        if not os.path.exists(self.config.fact_cache):
+            return
+
+        # Reference time is when playbook started running
+        # We stored this in status_callback('running') timestamp
+        reference_time = self.last_stdout_update  # Set at line 207
+
+        modified_files = []
+        for filename in os.listdir(self.config.fact_cache):
+            filepath = os.path.join(self.config.fact_cache, filename)
+            if os.path.isfile(filepath):
+                try:
+                    file_mtime = os.path.getmtime(filepath)
+                    if file_mtime >= reference_time:
+                        modified_files.append(filename)
+                except OSError:
+                    # Ignore errors reading files
+                    pass
+
+        # Write the list to artifact directory
+        facts_modified_file = os.path.join(self.config.artifact_dir, 'fact_cache_modified.json')
+        with open(facts_modified_file, 'w', encoding='utf-8') as f:
+            os.chmod(facts_modified_file, stat.S_IRUSR | stat.S_IWUSR)
+            json.dump({'modified_files': modified_files}, f, indent=2)

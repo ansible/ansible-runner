@@ -23,6 +23,7 @@ import signal
 from codecs import StreamReaderWriter
 from collections.abc import Callable, Iterable, MutableMapping
 from io import StringIO
+from types import FrameType
 from typing import Any, Iterator
 
 from ansible_runner.exceptions import ConfigurationError
@@ -502,7 +503,10 @@ def get_executable_path(name: str) -> str:
     return exec_path
 
 
-def signal_handler() -> Callable[[], bool] | None:
+_HANDLER = Callable[[int, FrameType | None], Any] | int | signal.Handlers | None
+
+
+def signal_handler() -> tuple[Callable[[], bool], list[tuple[signal.Signal, _HANDLER]]] | None:
     # Only the main thread is allowed to set a new signal handler
     # pylint: disable=W4902
     if threading.current_thread() is not threading.main_thread():
@@ -515,7 +519,11 @@ def signal_handler() -> Callable[[], bool] | None:
         # pylint: disable=W0613
         signal_event.set()
 
+    original_handlers: list[tuple[signal.Signal, _HANDLER]] = []
+
+    original_handlers.append((signal.SIGTERM, signal.getsignal(signal.SIGTERM)))
     signal.signal(signal.SIGTERM, _handler)
+    original_handlers.append((signal.SIGINT, signal.getsignal(signal.SIGINT)))
     signal.signal(signal.SIGINT, _handler)
 
-    return signal_event.is_set
+    return signal_event.is_set, original_handlers

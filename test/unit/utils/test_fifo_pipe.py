@@ -25,3 +25,18 @@ def test_fifo_write_string(tmp_path):
         assert results == data
     finally:
         remove(path)
+
+
+def test_fifo_write_string_with_existing_file(tmp_path):
+    path = tmp_path / "string_test"
+    data = "string"
+    # Create a fifo
+    open_fifo_write(path, data)
+    try:
+        # Use an existing fifo path
+        open_fifo_write(path, data)
+        with open(path, 'r') as f:
+            results = f.read()
+        assert results == data * 2
+    finally:
+        remove(path)

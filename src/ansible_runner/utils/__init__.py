@@ -172,13 +172,13 @@ def cleanup_artifact_dir(path: str, num_keep: int = 0) -> None:
     # 0 disables artifact dir cleanup/rotation
     if num_keep < 1:
         return
-    all_paths = sorted(
-        [os.path.join(path, p) for p in os.listdir(path)],
-        key=os.path.getmtime
-    )
-    total_remove = len(all_paths) - num_keep
-    for f in range(total_remove):
-        shutil.rmtree(all_paths[f])
+    with os.scandir(path) as entries:
+        directories = sorted(
+            (entry for entry in entries if entry.is_dir(follow_symlinks=False)),
+            key=lambda entry: entry.stat(follow_symlinks=False).st_mtime,
+        )
+    for directory in directories[:-num_keep]:
+        shutil.rmtree(directory.path)
 
 
 def dump_artifacts(kwargs: dict) -> None:
